@@ -1,0 +1,28 @@
+services:
+  app:
+    image: ghcr.io/rails/devcontainer/images/ruby:3.3.8
+    volumes:
+      - ..:/workspaces/dockercrap:cached
+    command: sleep infinity  # Keeps the container running
+    networks:
+      - default
+
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: archive_development
+    ports:
+      - 5432:5432
+    networks:
+      - default
+
+volumes:
+  postgres-data:
+
+networks:
+  default:

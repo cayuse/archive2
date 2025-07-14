@@ -1,0 +1,45 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: archive_development
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  web:
+    build:
+      context: ./archive
+    image: archive:latest
+    depends_on:
+      - db
+    environment:
+      RAILS_ENV: development
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      DATABASE_URL: postgres://postgres:password@db:5432/archive_development
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:-changeme}
+    ports:
+      - "3000:80"
+    volumes:
+      - ./archive:/rails
+    stdin_open: true
+    tty: true
+    command: >
+      sh -c "
+        bundle install &&
+        bin/rails active_storage:install &&
+        bin/rails db:migrate &&
+        ./bin/thrust ./bin/rails server
+      "
+
+volumes:
+  pgdata: 

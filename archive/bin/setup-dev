@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Development setup script for the Music Archive App
+# This script ensures all dependencies are properly installed
+
+set -e
+
+echo "🎵 Setting up Music Archive App development environment..."
+
+# Check if we're in the right directory
+if [ ! -f "Gemfile" ]; then
+    echo "❌ Error: Gemfile not found. Please run this script from the Rails app directory."
+    exit 1
+fi
+
+echo "📦 Installing system dependencies..."
+sudo apt update -qq
+sudo apt install -y libpq-dev postgresql-client
+
+echo "💎 Installing Ruby gems..."
+bundle install
+
+echo "🗄️ Setting up Active Storage..."
+bin/rails active_storage:install
+
+echo "🔐 Setting up Pundit authorization..."
+bin/rails pundit:install
+
+echo "📊 Running database migrations..."
+bin/rails db:migrate
+
+echo "🌱 Seeding database (if seeds exist)..."
+if [ -f "db/seeds.rb" ]; then
+    bin/rails db:seed
+fi
+
+echo "🧪 Running tests to verify setup..."
+bin/rails test:prepare
+
+echo "✅ Development environment setup complete!"
+echo ""
+echo "🚀 You can now start the server with:"
+echo "   bin/rails server"
+echo ""
+echo "🔧 Or use Docker Compose:"
+echo "   docker-compose up"
+echo ""
+echo "📚 Useful commands:"
+echo "   bin/rails console          # Rails console"
+echo "   bin/rails routes           # View routes"
+echo "   bin/rails db:reset         # Reset database"
+echo "   bin/rails test             # Run tests" 
