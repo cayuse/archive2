@@ -20,7 +20,7 @@
         ]
       }
     },
-    "postCreateCommand": "sudo apt update && sudo apt install -y libpq-dev && cd /workspaces/dockercrap/archive && bundle install && bin/rails active_storage:install && bin/rails db:migrate && bin/rails pundit:install",
+    "postCreateCommand": "sudo apt update && sudo apt install -y libpq-dev && cd /workspaces/dockercrap/archive && bundle install && bin/rails active_storage:install && bin/rails db:migrate && bin/rails pundit:install && bin/rails importmap:install && bin/importmap pin @hotwired/turbo-rails && bin/rails db:seed",
     "remoteUser": "vscode",
     "remoteEnv": {
       "POSTGRES_USER": "postgres",

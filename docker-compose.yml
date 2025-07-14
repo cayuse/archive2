@@ -38,6 +38,10 @@ services:
         bundle install &&
         bin/rails active_storage:install &&
         bin/rails db:migrate &&
+        bin/rails pundit:install &&
+        bin/rails importmap:install &&
+        bin/importmap pin @hotwired/turbo-rails &&
+        bin/rails db:seed &&
         ./bin/thrust ./bin/rails server
       "
 

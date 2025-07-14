@@ -1,6 +1,6 @@
-# Rails Archive App
+# Music Archive App
 
-A Rails 8.0 application with Docker and Dev Container support.
+A Rails 8.0 music archive application with Docker and Dev Container support, featuring user management, role-based authentication, and email notifications.
 
 ## Development Setup
 
@@ -127,12 +127,34 @@ bin/rails db:migrate
 bin/rails db:seed
 ```
 
+## User Management System
+
+The app includes a comprehensive user management system with:
+
+### Authentication
+- **Login System**: Email/password authentication
+- **Role-Based Access**: User, Moderator, and Admin roles
+- **Session Management**: Secure session-based authentication
+
+### Admin Features
+- **User Creation**: Admins can create new users with temporary passwords
+- **Email Notifications**: Welcome emails sent automatically to new users
+- **User Management**: View, edit, and delete user accounts with confirmation dialogs
+
+### Initial Admin Access
+- **Email**: `admin@musicarchive.com`
+- **Password**: `admin123`
+
+### Email Configuration
+- **Development**: Uses `letter_opener` to preview emails in browser
+- **Production**: Configure SMTP settings as needed
+
 ## Useful Commands
 
 - `bin/rails server`: Start the Rails server
 - `bin/rails console`: Open Rails console
 - `bin/rails db:migrate`: Run database migrations
-- `bin/rails db:seed`: Seed the database
+- `bin/rails db:seed`: Seed the database with admin user
 - `bin/dev`: Start development server with file watching
 - `./bin/setup-dev`: Complete development environment setup
 
@@ -150,4 +172,9 @@ bin/rails db:seed
 4. **Asset compilation**: Run `bin/rails assets:precompile` for production assets
 5. **Missing master key**: Create `config/master.key` with a secure random key
 6. **PostgreSQL connection**: Ensure PostgreSQL is running and accessible
-7. **Gem installation issues**: Run `bundle install` to reinstall gems 
+7. **Gem installation issues**: Run `bundle install` to reinstall gems
+8. **Email issues**: Check `config/environments/development.rb` for letter_opener configuration
+9. **Authentication issues**: Verify user exists and password is correct
+10. **Permission errors**: Ensure user has appropriate role for the action
+11. **JavaScript issues**: Ensure Turbo is properly installed with `bin/importmap pin @hotwired/turbo-rails`
+12. **Delete functionality**: Uses `button_to` for reliable DELETE requests with confirmation dialogs 

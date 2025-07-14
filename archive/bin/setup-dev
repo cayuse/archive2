@@ -25,18 +25,29 @@ bin/rails active_storage:install
 echo "🔐 Setting up Pundit authorization..."
 bin/rails pundit:install
 
+echo "📧 Setting up email functionality..."
+# letter_opener gem is already in Gemfile
+
+echo "⚡ Setting up JavaScript and Turbo..."
+bin/rails importmap:install
+bin/importmap pin @hotwired/turbo-rails
+
 echo "📊 Running database migrations..."
 bin/rails db:migrate
 
-echo "🌱 Seeding database (if seeds exist)..."
-if [ -f "db/seeds.rb" ]; then
-    bin/rails db:seed
-fi
+echo "🌱 Seeding database with initial data..."
+bin/rails db:seed
 
 echo "🧪 Running tests to verify setup..."
 bin/rails test:prepare
 
 echo "✅ Development environment setup complete!"
+echo ""
+echo "🎵 Music Archive App is ready!"
+echo ""
+echo "🔐 Admin Access:"
+echo "   Email: admin@musicarchive.com"
+echo "   Password: admin123"
 echo ""
 echo "🚀 You can now start the server with:"
 echo "   bin/rails server"
@@ -48,4 +59,7 @@ echo "📚 Useful commands:"
 echo "   bin/rails console          # Rails console"
 echo "   bin/rails routes           # View routes"
 echo "   bin/rails db:reset         # Reset database"
-echo "   bin/rails test             # Run tests" 
+echo "   bin/rails test             # Run tests"
+echo ""
+echo "📧 Email Testing:"
+echo "   When creating users, emails will open in browser automatically" 

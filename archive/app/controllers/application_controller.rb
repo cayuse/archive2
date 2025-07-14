@@ -5,12 +5,14 @@ class ApplicationController < ActionController::Base
   # Include Pundit authorization
   include PunditAuthorization
   
-  # Set up current_user method (you'll need to implement authentication)
-  # def current_user
-  #   @current_user ||= User.find(session[:user_id]) if session[:user_id]
-  # end
-  # 
-  # def authenticate_user!
-  #   redirect_to login_path unless current_user
-  # end
+  # Authentication helpers
+  def current_user
+    @current_user ||= User.find(session[:user_id]) if session[:user_id]
+  end
+  
+  def authenticate_user!
+    redirect_to login_path unless current_user
+  end
+  
+  helper_method :current_user
 end
