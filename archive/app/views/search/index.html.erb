@@ -1,0 +1,75 @@
+<div class="row">
+  <div class="col-12">
+    <h1 class="h3 mb-4">Search Music Archive</h1>
+    
+    <!-- Search Form with HTMX -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <form hx-get="/search" 
+              hx-target="#search-results" 
+              hx-trigger="keyup changed delay:500ms, submit"
+              hx-indicator="#search-spinner"
+              class="row g-3">
+          
+          <div class="col-md-8">
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-search"></i>
+              </span>
+              <input type="text" 
+                     name="q" 
+                     value="<%= @query %>"
+                     class="form-control form-control-lg"
+                     placeholder="Search songs, artists, genres..."
+                     autocomplete="off">
+            </div>
+          </div>
+          
+          <div class="col-md-4">
+            <select name="type" class="form-select form-select-lg">
+              <option value="all" <%= 'selected' if @type == 'all' %>>All</option>
+              <option value="songs" <%= 'selected' if @type == 'songs' %>>Songs</option>
+              <option value="artists" <%= 'selected' if @type == 'artists' %>>Artists</option>
+              <option value="genres" <%= 'selected' if @type == 'genres' %>>Genres</option>
+            </select>
+          </div>
+        </form>
+        
+        <!-- Loading Spinner -->
+        <div id="search-spinner" class="htmx-indicator text-center py-3" style="display: none;">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Search Results -->
+    <div id="search-results">
+      <%= render 'search_results', 
+          songs: @songs || [], 
+          artists: @artists || [], 
+          genres: @genres || [],
+          query: @query,
+          type: @type,
+          page: @page || 1,
+          total_songs: @total_songs || 0,
+          total_artists: @total_artists || 0,
+          total_genres: @total_genres || 0 %>
+    </div>
+  </div>
+</div>
+
+<!-- HTMX Styles -->
+<style>
+  .htmx-indicator {
+    opacity: 0;
+    transition: opacity 200ms ease-in;
+  }
+  .htmx-request .htmx-indicator {
+    opacity: 1
+  }
+  .htmx-request.htmx-indicator {
+    opacity: 1
+  }
+</style>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_14_044230) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_14_061901) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -52,8 +52,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_14_044230) do
     t.integer "duration"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.tsvector "search_vector"
     t.index ["artist_id"], name: "index_albums_on_artist_id"
     t.index ["release_date"], name: "index_albums_on_release_date"
+    t.index ["search_vector"], name: "index_albums_on_search_vector", using: :gin
     t.index ["title"], name: "index_albums_on_title"
     t.index ["total_tracks"], name: "index_albums_on_total_tracks"
     t.check_constraint "duration IS NULL OR duration > 0", name: "check_positive_duration"
@@ -80,9 +82,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_14_044230) do
     t.string "image_url"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.tsvector "search_vector"
     t.index ["country"], name: "index_artists_on_country"
     t.index ["formed_year"], name: "index_artists_on_formed_year"
     t.index ["name"], name: "index_artists_on_name", unique: true
+    t.index ["search_vector"], name: "index_artists_on_search_vector", using: :gin
     t.check_constraint "formed_year IS NULL OR formed_year >= 1900 AND formed_year <= 2030", name: "check_reasonable_formed_year"
   end
 
@@ -102,7 +106,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_14_044230) do
     t.string "color"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.tsvector "search_vector"
     t.index ["name"], name: "index_genres_on_name", unique: true
+    t.index ["search_vector"], name: "index_genres_on_search_vector", using: :gin
     t.check_constraint "color IS NULL OR color::text ~ '^#[0-9A-Fa-f]{6}$'::text", name: "check_valid_hex_color"
   end
 
@@ -142,10 +148,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_14_044230) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "genre_id", null: false
+    t.tsvector "search_vector"
     t.index ["album_id", "track_number"], name: "index_songs_on_album_id_and_track_number", unique: true
     t.index ["album_id"], name: "index_songs_on_album_id"
     t.index ["file_format"], name: "index_songs_on_file_format"
     t.index ["genre_id"], name: "index_songs_on_genre_id"
+    t.index ["search_vector"], name: "index_songs_on_search_vector", using: :gin
     t.index ["title"], name: "index_songs_on_title"
     t.index ["track_number"], name: "index_songs_on_track_number"
     t.check_constraint "duration IS NULL OR duration > 0", name: "check_positive_duration"

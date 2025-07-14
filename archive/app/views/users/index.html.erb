@@ -1,66 +1,65 @@
-<div class="container mx-auto px-4 py-8">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold text-gray-900">User Management</h1>
-    <%= link_to "Add New User", new_user_path, class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" %>
-  </div>
-
-  <% if notice %>
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-      <%= notice %>
+<div class="row">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3 mb-0">User Management</h1>
+      <%= link_to "Add New User", new_user_path, class: "btn btn-primary" %>
     </div>
-  <% end %>
 
-  <% if alert %>
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-      <%= alert %>
-    </div>
-  <% end %>
+    <% if notice %>
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <%= notice %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% end %>
 
-  <div class="bg-white shadow overflow-hidden sm:rounded-md">
-    <ul class="divide-y divide-gray-200">
-      <% @users.each do |user| %>
-        <li class="px-6 py-4">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                  <span class="text-sm font-medium text-gray-700">
-                    <%= user.name.first.upcase %>
-                  </span>
+    <% if alert %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <%= alert %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% end %>
+
+    <div class="card">
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          <% @users.each do |user| %>
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                  <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                    <span class="fw-bold">
+                      <%= user.name.first.upcase %>
+                    </span>
+                  </div>
+                  <div>
+                    <h6 class="mb-0"><%= user.name %></h6>
+                    <small class="text-muted"><%= user.email %></small>
+                    <br>
+                    <span class="badge bg-secondary"><%= user.role.humanize %></span>
+                  </div>
                 </div>
-              </div>
-              <div class="ml-4">
-                <div class="text-sm font-medium text-gray-900">
-                  <%= user.name %>
-                </div>
-                <div class="text-sm text-gray-500">
-                  <%= user.email %>
-                </div>
-                <div class="text-xs text-gray-400">
-                  Role: <%= user.role.humanize %>
+                <div class="btn-group" role="group">
+                  <%= link_to "Edit", edit_user_path(user), class: "btn btn-outline-primary btn-sm" %>
+                  <%= button_to "Delete", user_path(user), 
+                      method: :delete,
+                      form: { 
+                        data: { 
+                          turbo_confirm: "Are you sure you want to delete #{user.name}?"
+                        }
+                      },
+                      class: "btn btn-outline-danger btn-sm ms-1" %>
                 </div>
               </div>
             </div>
-            <div class="flex space-x-2">
-              <%= link_to "Edit", edit_user_path(user), class: "text-blue-600 hover:text-blue-900 text-sm" %>
-              <%= button_to "Delete", user_path(user), 
-                  method: :delete,
-                  form: { 
-                    data: { 
-                      turbo_confirm: "Are you sure you want to delete #{user.name}?"
-                    }
-                  },
-                  class: "text-red-600 hover:text-red-900 text-sm bg-transparent border-0 p-0 cursor-pointer" %>
-            </div>
-          </div>
-        </li>
-      <% end %>
-    </ul>
-  </div>
-
-  <% if @users.empty? %>
-    <div class="text-center py-8">
-      <p class="text-gray-500">No users found.</p>
+          <% end %>
+        </div>
+      </div>
     </div>
-  <% end %>
+
+    <% if @users.empty? %>
+      <div class="text-center py-5">
+        <p class="text-muted">No users found.</p>
+      </div>
+    <% end %>
+  </div>
 </div>

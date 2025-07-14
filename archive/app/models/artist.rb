@@ -26,6 +26,22 @@ class Artist < ApplicationRecord
   scope :by_year, ->(year) { where(formed_year: year) }
   scope :recent, -> { order(created_at: :desc) }
   
+  # Search scopes
+  scope :search_by_name, ->(query) { where("name ILIKE ?", "%#{query}%") }
+  scope :search_by_country, ->(query) { where("country ILIKE ?", "%#{query}%") }
+  
+  # Full-text search
+  scope :full_text_search, ->(query) {
+    return none if query.blank?
+    
+    search_query = query.strip
+    ts_query = "plainto_tsquery('english', ?)"
+    
+    where("search_vector @@ #{ts_query}", search_query)
+      .order("ts_rank(search_vector, #{ts_query}) DESC")
+      .limit(50)
+  }
+  
   # Callbacks
   before_validation :normalize_name
   before_validation :normalize_country

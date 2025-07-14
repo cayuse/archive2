@@ -26,6 +26,23 @@ class Song < ApplicationRecord
   scope :recent, -> { order(created_at: :desc) }
   scope :by_genre, ->(genre) { where(genre: genre) }
   scope :by_genre_name, ->(genre_name) { joins(:genre).where(genres: { name: genre_name }) }
+  
+  # Search scopes
+  scope :search_by_title, ->(query) { where("title ILIKE ?", "%#{query}%") }
+  scope :search_by_artist, ->(query) { joins(:artist).where("artists.name ILIKE ?", "%#{query}%") }
+  scope :search_by_genre, ->(query) { joins(:genre).where("genres.name ILIKE ?", "%#{query}%") }
+  
+  # Full-text search
+  scope :full_text_search, ->(query) {
+    return none if query.blank?
+    
+    search_query = query.strip
+    ts_query = "plainto_tsquery('english', ?)"
+    
+    where("search_vector @@ #{ts_query}", search_query)
+      .order("ts_rank(search_vector, #{ts_query}) DESC")
+      .limit(50)
+  }
 
   # Instance methods
   def display_title

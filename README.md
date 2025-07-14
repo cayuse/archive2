@@ -1,6 +1,6 @@
 # Music Archive App
 
-A Rails 8.0 music archive application with Docker and Dev Container support, featuring user management, role-based authentication, and email notifications.
+A Rails 8.0 music archive application with Docker and Dev Container support, featuring user management, role-based authentication, email notifications, and Bootstrap 5 for modern UI.
 
 ## Development Setup
 
@@ -140,6 +140,7 @@ The app includes a comprehensive user management system with:
 - **User Creation**: Admins can create new users with temporary passwords
 - **Email Notifications**: Welcome emails sent automatically to new users
 - **User Management**: View, edit, and delete user accounts with confirmation dialogs
+- **Modern UI**: Bootstrap 5 for responsive, professional interface
 
 ### Initial Admin Access
 - **Email**: `admin@musicarchive.com`
@@ -177,4 +178,5 @@ The app includes a comprehensive user management system with:
 9. **Authentication issues**: Verify user exists and password is correct
 10. **Permission errors**: Ensure user has appropriate role for the action
 11. **JavaScript issues**: Ensure Turbo is properly installed with `bin/importmap pin @hotwired/turbo-rails`
-12. **Delete functionality**: Uses `button_to` for reliable DELETE requests with confirmation dialogs 
+12. **Delete functionality**: Uses `button_to` for reliable DELETE requests with confirmation dialogs
+13. **Bootstrap styling**: Uses Bootstrap 5 CDN for responsive design and modern components 

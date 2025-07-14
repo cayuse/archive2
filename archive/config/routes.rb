@@ -1,8 +1,13 @@
 Rails.application.routes.draw do
+  get "search/index"
   # Authentication routes
   get '/login', to: 'sessions#new', as: :login
   post '/login', to: 'sessions#create'
   delete '/logout', to: 'sessions#destroy', as: :logout
+  
+  # Search routes
+  get '/search', to: 'search#index'
+  get '/search/suggestions', to: 'search#suggestions'
   
   # User management routes (admin only)
   resources :users, except: [:show]
