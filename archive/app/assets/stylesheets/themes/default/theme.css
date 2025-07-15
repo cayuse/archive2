@@ -1,166 +1,1199 @@
-/* Default Theme CSS */
-:root {
-  /* Color Palette */
-  --primary-color: #4f46e5;
-  --secondary-color: #6366f1;
-  --accent-color: #8b5cf6;
-  --success-color: #10b981;
-  --warning-color: #f59e0b;
-  --danger-color: #ef4444;
-  --info-color: #3b82f6;
-  
-  /* Background Colors */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  
-  /* Text Colors */
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --text-muted: #94a3b8;
-  --text-light: #ffffff;
-  
-  /* Border Colors */
-  --border-color: #e2e8f0;
-  --border-light: #f1f5f9;
-  
-  /* Card Colors */
-  --card-bg: #ffffff;
-  --card-border: #e2e8f0;
-  
-  /* Shadow */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  
-  /* Spacing */
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
-  
-  /* Border Radius */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+/* ===== DEFAULT THEME - PROTOTYPE FOR ALL FUTURE THEMES ===== */
+
+/* 
+  This theme serves as the prototype for all future themes.
+  Each section is heavily commented to show which views/partials are affected.
+  To create a new theme: copy this file and change [data-theme="default"] to [data-theme="your-theme"]
+*/
+
+[data-theme="default"] {
+  /* ===== CSS VARIABLES - AFFECTS ENTIRE APPLICATION ===== */
+  /* 
+    These variables control the entire application's color scheme.
+    Change these for broad theming that affects everything.
+    
+    Used by: ALL views, ALL partials, ALL components
+  */
+  --primary-bg: #0f0f23;          /* Main background - affects body, navbar, etc. */
+  --secondary-bg: hsl(315, 80%, 40%);         /* Secondary backgrounds - cards, dropdowns, etc. */
+  --card-bg: hsl(313, 39%, 44%);              /* Card backgrounds - all .card elements */
+  --accent-color: #4f46e5;         /* Primary accent - buttons, links, highlights */
+  --accent-hover: #6366f1;         /* Hover states for accent elements */
+  --text-primary: #f8fafc;         /* Primary text - headings, main content */
+  --text-secondary: #cbd5e1;       /* Secondary text - descriptions, labels */
+  --text-muted: #64748b;           /* Muted text - placeholders, help text */
+  --border-color: #334155;         /* Borders - cards, forms, tables */
+  --success-color: #10b981;        /* Success states - badges, alerts */
+  --warning-color: #f59e0b;        /* Warning states - badges, alerts */
+  --danger-color: #ef4444;         /* Danger states - badges, alerts, errors */
+  --info-color: #3b82f6;           /* Info states - badges, alerts */
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);    /* Primary gradients */
+  --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);  /* Secondary gradients */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);                           /* Small shadows */
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);  /* Medium shadows */
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Large shadows */
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* Extra large shadows */
 }
 
-/* Theme-aware utility classes */
-.theme-text-primary { color: var(--text-primary) !important; }
-.theme-text-secondary { color: var(--text-secondary) !important; }
-.theme-text-muted { color: var(--text-muted) !important; }
-.theme-text-light { color: var(--text-light) !important; }
+/* ===== MASTER LAYOUT STYLES - AFFECTS ENTIRE APPLICATION ===== */
 
-.theme-bg-primary { background-color: var(--bg-primary) !important; }
-.theme-bg-secondary { background-color: var(--bg-secondary) !important; }
-.theme-bg-tertiary { background-color: var(--bg-tertiary) !important; }
-
-.theme-border { border-color: var(--border-color) !important; }
-.theme-border-light { border-color: var(--border-light) !important; }
-
-.theme-shadow-sm { box-shadow: var(--shadow-sm) !important; }
-.theme-shadow-md { box-shadow: var(--shadow-md) !important; }
-.theme-shadow-lg { box-shadow: var(--shadow-lg) !important; }
-
-/* Form elements */
-.theme-form-label { color: var(--text-primary); font-weight: 500; }
-.theme-form-help { color: var(--text-muted); font-size: 0.875rem; }
-
-/* Card styling */
-.theme-card-content { 
-  background-color: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-md);
+/* 
+  Body styling - affects every page in the application
+  Views affected: ALL views (songs/index.html.erb, songs/show.html.erb, artists/index.html.erb, etc.)
+*/
+[data-theme="default"] body {
+  background: var(--primary-bg);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
 }
 
-/* Button styling */
-.btn-primary {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-}
+/* ===== MASTER CARD SYSTEM - AFFECTS ALL CARDS ACROSS APPLICATION ===== */
 
-.btn-primary:hover {
-  background-color: var(--secondary-color);
-  border-color: var(--secondary-color);
-}
-
-/* Navbar styling */
-.navbar {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  box-shadow: var(--shadow-md);
-}
-
-/* Card styling */
-.card {
-  background-color: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-}
-
-.card-header {
-  background-color: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
-}
-
-/* Form controls */
-.form-control, .form-select {
-  background-color: var(--bg-primary);
+/* 
+  Master Card - All cards inherit from this
+  Partials affected: ALL card-containing partials
+  - app/views/songs/_song.html.erb (song list items)
+  - app/views/songs/show.html.erb (song information cards)
+  - app/views/artists/show.html.erb (artist profile cards)
+  - app/views/albums/show.html.erb (album detail cards)
+  - app/views/genres/show.html.erb (genre info cards)
+  - app/views/settings/theme.html.erb (settings cards)
+  - app/views/upload/new.html.erb (upload form cards)
+  - app/views/maintenance/index.html.erb (maintenance cards)
+  - app/views/layouts/application.html.erb (any cards in layout)
+*/
+[data-theme="default"] .card {
+  background: var(--card-bg);
   border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+[data-theme="default"] .card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* 
+  Master Card Header - All card headers inherit from this
+  Partials affected: Same as .card above, but specifically the .card-header elements
+*/
+[data-theme="default"] .card-header {
+  background: linear-gradient(135deg, var(--card-bg) 0%, var(--secondary-bg) 100%);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: 1rem 1.5rem;
+}
+
+/* 
+  Master Card Body - All card bodies inherit from this
+  Partials affected: Same as .card above, but specifically the .card-body elements
+*/
+[data-theme="default"] .card-body {
+  padding: 1.5rem;
   color: var(--text-primary);
 }
 
-.form-control:focus, .form-select:focus {
-  background-color: var(--bg-primary);
-  border-color: var(--primary-color);
+/* 
+  Master Card Footer - All card footers inherit from this
+  Partials affected: Any partials with .card-footer elements
+*/
+[data-theme="default"] .card-footer {
+  background: var(--secondary-bg);
+  border-top: 1px solid var(--border-color);
+  padding: 1rem 1.5rem;
+}
+
+/* ===== GRANULAR CARD THEMING - SPECIFIC VIEWS/PARTIALS ===== */
+
+/* 
+  Song View Cards - Specific styling for song detail pages
+  Views affected: app/views/songs/show.html.erb
+  Partials affected: Any song detail partials
+  To customize song detail cards, modify these rules
+*/
+[data-theme="default"] .card.song-view-song-information {
+  border-left: 4px solid var(--accent-color);
+}
+
+[data-theme="default"] .card.song-view-song-information .card-header {
+  background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
+  color: white;
+}
+
+[data-theme="default"] .card.song-view-song-information .card-header::before {
+  content: "♪";
+  margin-right: 0.5rem;
+  font-size: 1.2em;
+}
+
+/* ===== SONG LIST CARDS - UNIFIED STYLING ===== */
+/*
+  Song List Cards - Unified styling for all song list items
+  Views affected: app/views/songs/index.html.erb, app/views/maintenance/index.html.erb
+  Partials affected: app/views/songs/_song.html.erb (song list items)
+  All song list items now look the same regardless of status.
+*/
+[data-theme="default"] .card.song-list-song-item {
+  /* Use the same background and border as .card */
+  background: var(--card-bg);
+  border-left: none;
+  transition: none;
+}
+[data-theme="default"] .card.song-list-song-item:hover {
+  /* Optional: subtle hover effect */
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+[data-theme="default"] .card.song-list-song-item .card-header {
+  background: var(--secondary-bg);
+  border-bottom-color: var(--border-color);
+}
+
+/* 
+  Artist View Cards - Specific styling for artist profile pages
+  Views affected: app/views/artists/show.html.erb
+  Partials affected: Any artist detail partials
+  To customize artist profile cards, modify these rules
+*/
+[data-theme="default"] .card.artist-view-artist-profile {
+  border-left: 4px solid var(--info-color);
+}
+
+[data-theme="default"] .card.artist-view-artist-profile .card-header {
+  background: linear-gradient(135deg, var(--info-color) 0%, #0ea5e9 100%);
+  color: white;
+}
+
+[data-theme="default"] .card.artist-view-artist-profile .card-header::before {
+  content: "🎤";
+  margin-right: 0.5rem;
+  font-size: 1.2em;
+}
+
+/* 
+  Album View Cards - Specific styling for album detail pages
+  Views affected: app/views/albums/show.html.erb
+  Partials affected: Any album detail partials
+  To customize album detail cards, modify these rules
+*/
+[data-theme="default"] .card.album-view-album-details {
+  border-left: 4px solid var(--warning-color);
+}
+
+[data-theme="default"] .card.album-view-album-details .card-header {
+  background: linear-gradient(135deg, var(--warning-color) 0%, #fbbf24 100%);
+  color: white;
+}
+
+[data-theme="default"] .card.album-view-album-details .card-header::before {
+  content: "💿";
+  margin-right: 0.5rem;
+  font-size: 1.2em;
+}
+
+/* 
+  Genre View Cards - Specific styling for genre info pages
+  Views affected: app/views/genres/show.html.erb
+  Partials affected: Any genre detail partials
+  To customize genre info cards, modify these rules
+*/
+[data-theme="default"] .card.genre-view-genre-info {
+  border-left: 4px solid var(--danger-color);
+}
+
+[data-theme="default"] .card.genre-view-genre-info .card-header {
+  background: linear-gradient(135deg, var(--danger-color) 0%, #f87171 100%);
+  color: white;
+}
+
+[data-theme="default"] .card.genre-view-genre-info .card-header::before {
+  content: "🏷️";
+  margin-right: 0.5rem;
+  font-size: 1.2em;
+}
+
+/* 
+  Settings Cards - Specific styling for settings pages
+  Views affected: app/views/settings/theme.html.erb, app/views/settings/general.html.erb
+  Partials affected: app/views/settings/_theme_demo.html.erb
+  To customize settings cards, modify these rules
+*/
+[data-theme="default"] .card.settings-view-settings-panel {
+  border-left: 4px solid var(--text-muted);
+  background: linear-gradient(135deg, var(--card-bg) 0%, var(--secondary-bg) 100%);
+}
+
+[data-theme="default"] .card.settings-view-settings-panel .card-header {
+  background: rgba(100, 116, 139, 0.1);
+  border-bottom-color: var(--text-muted);
+}
+
+[data-theme="default"] .card.settings-view-settings-panel .card-header::before {
+  content: "⚙️";
+  margin-right: 0.5rem;
+  font-size: 1.2em;
+}
+
+/* 
+  Upload Cards - Specific styling for upload forms
+  Views affected: app/views/upload/new.html.erb
+  Partials affected: Any upload form partials
+  To customize upload form cards, modify these rules
+*/
+[data-theme="default"] .card.upload-view-upload-form {
+  border-left: 4px solid var(--success-color);
+  background: linear-gradient(135deg, var(--card-bg) 0%, rgba(16, 185, 129, 0.05) 100%);
+}
+
+[data-theme="default"] .card.upload-view-upload-form .card-header {
+  background: linear-gradient(135deg, var(--success-color) 0%, #34d399 100%);
+  color: white;
+}
+
+[data-theme="default"] .card.upload-view-upload-form .card-header::before {
+  content: "📤";
+  margin-right: 0.5rem;
+  font-size: 1.2em;
+}
+
+/* 
+  Maintenance Cards - Specific styling for maintenance pages
+  Views affected: app/views/maintenance/index.html.erb
+  Partials affected: Any maintenance partials
+  To customize maintenance cards, modify these rules
+*/
+[data-theme="default"] .card.maintenance-view-song-item {
+  border-left: 4px solid var(--warning-color);
+  background: linear-gradient(135deg, var(--card-bg) 0%, rgba(245, 158, 11, 0.05) 100%);
+}
+
+[data-theme="default"] .card.maintenance-view-song-item .card-header {
+  background: linear-gradient(135deg, var(--warning-color) 0%, #fbbf24 100%);
+  color: white;
+}
+
+[data-theme="default"] .card.maintenance-view-song-item .card-header::before {
+  content: "🔧";
+  margin-right: 0.5rem;
+  font-size: 1.2em;
+}
+
+/* 
+  Stats Cards - Specific styling for statistics/overview cards
+  Views affected: Any views with statistics cards
+  Partials affected: Any stats partials
+  To customize stats cards, modify these rules
+*/
+[data-theme="default"] .card.stats-view-stats-card {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="default"] .card.stats-view-stats-card::before {
+  content: '♪';
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  font-size: 4rem;
+  opacity: 0.1;
+  transform: rotate(15deg);
+}
+
+[data-theme="default"] .card.stats-view-stats-card .card-header {
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* ===== MASTER NAVBAR SYSTEM - AFFECTS NAVIGATION ACROSS APP ===== */
+
+/* 
+  Master Navbar - Affects the main navigation bar
+  Views affected: ALL views (via app/views/layouts/application.html.erb)
+  Partials affected: Any navbar partials
+  To customize the main navigation, modify these rules
+*/
+[data-theme="default"] .navbar {
+  background: var(--secondary-bg) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+  padding: 0.75rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+/* ===== MASTER BUTTON SYSTEM - AFFECTS ALL BUTTONS ACROSS APP ===== */
+
+/* 
+  Master Button - All buttons inherit from this
+  Views affected: ALL views with buttons
+  Partials affected: ALL partials with buttons
+  Common locations:
+  - app/views/songs/_song.html.erb (edit, delete buttons)
+  - app/views/songs/show.html.erb (action buttons)
+  - app/views/upload/new.html.erb (upload button)
+  - app/views/maintenance/index.html.erb (retry, delete buttons)
+  - app/views/settings/theme.html.erb (save settings button)
+  To customize all buttons, modify these rules
+*/
+[data-theme="default"] .btn {
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: none;
+  padding: 0.5rem 1.5rem;
+}
+
+/* 
+  Master Primary Button - All primary buttons inherit from this
+  Views affected: Same as .btn above, but specifically .btn-primary elements
+  To customize primary buttons, modify these rules
+*/
+[data-theme="default"] .btn-primary {
+  background: var(--gradient-primary);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+[data-theme="default"] .btn-primary:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ===== MASTER FORM SYSTEM - AFFECTS ALL FORMS ACROSS APP ===== */
+
+/* 
+  Master Form Controls - All form inputs inherit from this
+  Views affected: ALL views with forms
+  Partials affected: ALL partials with forms
+  Common locations:
+  - app/views/songs/edit.html.erb (song edit form)
+  - app/views/upload/new.html.erb (upload form)
+  - app/views/settings/theme.html.erb (settings form)
+  - app/views/songs/_song.html.erb (search forms)
+  To customize all form inputs, modify these rules
+*/
+[data-theme="default"] .form-control,
+[data-theme="default"] .form-select {
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+[data-theme="default"] .form-control:focus,
+[data-theme="default"] .form-select:focus {
+  background: var(--secondary-bg);
+  border-color: var(--accent-color);
   color: var(--text-primary);
   box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
 }
 
-/* Alert styling */
-.alert {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+[data-theme="default"] .form-control::placeholder {
+  color: var(--text-muted);
 }
 
-.alert-success {
-  background-color: rgba(16, 185, 129, 0.1);
-  border-color: var(--success-color);
-  color: var(--success-color);
+/* ===== MASTER TABLE SYSTEM - AFFECTS ALL TABLES ACROSS APP ===== */
+
+/* 
+  Master Table - All tables inherit from this
+  Views affected: ALL views with tables
+  Partials affected: ALL partials with tables
+  Common locations:
+  - app/views/songs/index.html.erb (songs table)
+  - app/views/maintenance/index.html.erb (maintenance table)
+  - app/views/artists/index.html.erb (artists table)
+  - app/views/albums/index.html.erb (albums table)
+  - app/views/genres/index.html.erb (genres table)
+  To customize all tables, modify these rules
+*/
+[data-theme="default"] .table {
+  color: var(--text-primary);
+  background: var(--card-bg);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.alert-danger {
-  background-color: rgba(239, 68, 68, 0.1);
-  border-color: var(--danger-color);
-  color: var(--danger-color);
+[data-theme="default"] .table th {
+  background: var(--secondary-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
-.alert-info {
-  background-color: rgba(59, 130, 246, 0.1);
-  border-color: var(--info-color);
-  color: var(--info-color);
+[data-theme="default"] .table td {
+  border-color: var(--border-color);
+  color: var(--text-primary);
 }
 
-/* Badge styling */
-.badge {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
+[data-theme="default"] .table tbody tr:hover {
+  background: rgba(79, 70, 229, 0.1);
+  transform: scale(1.01);
 }
 
-/* Dropdown styling */
-.dropdown-menu {
+/* ===== SONG TABLE ROWS - UNIFIED WITH CARD BACKGROUND ===== */
+/*
+  Song Table Rows - Match card background for uniform appearance
+  Views affected: app/views/songs/index.html.erb, app/views/maintenance/index.html.erb
+  Partials affected: app/views/songs/_song.html.erb (song table rows)
+  Makes table rows blend seamlessly with card backgrounds
+*/
+[data-theme="default"] .table tbody tr {
   background-color: var(--card-bg);
+  border: none;
+}
+
+[data-theme="default"] .table tbody tr:hover {
+  background-color: var(--secondary-bg);
+}
+
+[data-theme="default"] .table td {
+  border: none;
+  color: var(--text-primary);
+  padding: 0.75rem 0.5rem;
+}
+
+[data-theme="default"] .table th {
+  border: none;
+  color: var(--text-primary);
+  padding: 0.75rem 0.5rem;
+}
+
+/* ===== MASTER BADGE SYSTEM - AFFECTS ALL BADGES ACROSS APP ===== */
+
+/* 
+  Master Badge - All badges inherit from this
+  Views affected: ALL views with badges
+  Partials affected: ALL partials with badges
+  Common locations:
+  - app/views/songs/_song.html.erb (status badges)
+  - app/views/songs/show.html.erb (genre badges)
+  - app/views/maintenance/index.html.erb (status badges)
+  To customize all badges, modify these rules
+*/
+[data-theme="default"] .badge {
+  font-size: 0.75em;
+  font-weight: 500;
+  padding: 0.35em 0.65em;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+[data-theme="default"] .badge.bg-primary {
+  background: var(--accent-color) !important;
+}
+
+[data-theme="default"] .badge.bg-success {
+  background: var(--success-color) !important;
+}
+
+[data-theme="default"] .badge.bg-warning {
+  background: var(--warning-color) !important;
+}
+
+[data-theme="default"] .badge.bg-danger {
+  background: var(--danger-color) !important;
+}
+
+/* ===== MASTER ALERT SYSTEM - AFFECTS ALL ALERTS ACROSS APP ===== */
+
+/* 
+  Master Alert - All alerts inherit from this
+  Views affected: ALL views with alerts
+  Partials affected: ALL partials with alerts
+  Common locations:
+  - app/views/layouts/application.html.erb (flash messages)
+  - app/views/upload/new.html.erb (upload success/error messages)
+  - app/views/settings/theme.html.erb (settings messages)
+  To customize all alerts, modify these rules
+*/
+[data-theme="default"] .alert {
+  border: none;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+[data-theme="default"] .alert-success {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success-color);
+  border-left: 4px solid var(--success-color);
+}
+
+[data-theme="default"] .alert-warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning-color);
+  border-left: 4px solid var(--warning-color);
+}
+
+[data-theme="default"] .alert-danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger-color);
+  border-left: 4px solid var(--danger-color);
+}
+
+[data-theme="default"] .alert-info {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--info-color);
+  border-left: 4px solid var(--info-color);
+}
+
+/* ===== MASTER DROPDOWN SYSTEM - AFFECTS ALL DROPDOWNS ACROSS APP ===== */
+
+/* 
+  Master Dropdown - All dropdowns inherit from this
+  Views affected: ALL views with dropdowns
+  Partials affected: ALL partials with dropdowns
+  Common locations:
+  - app/views/layouts/application.html.erb (user dropdown)
+  - app/views/songs/edit.html.erb (artist/album/genre selects)
+  - app/views/upload/new.html.erb (file type selects)
+  To customize all dropdowns, modify these rules
+*/
+[data-theme="default"] .dropdown-menu {
+  background: var(--card-bg);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
 }
 
-.dropdown-item {
+[data-theme="default"] .dropdown-item {
+  color: var(--text-primary);
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  margin: 0.125rem;
+}
+
+[data-theme="default"] .dropdown-item:hover {
+  background: var(--accent-color);
+  color: white;
+  transform: translateX(5px);
+}
+
+[data-theme="default"] .dropdown-divider {
+  border-color: var(--border-color);
+  margin: 0.5rem 0;
+}
+
+/* ===== MASTER PAGINATION SYSTEM - AFFECTS ALL PAGINATION ACROSS APP ===== */
+
+/* 
+  Master Pagination - All pagination inherits from this
+  Views affected: ALL views with pagination
+  Partials affected: ALL partials with pagination
+  Common locations:
+  - app/views/songs/index.html.erb (songs pagination)
+  - app/views/artists/index.html.erb (artists pagination)
+  - app/views/albums/index.html.erb (albums pagination)
+  To customize all pagination, modify these rules
+*/
+[data-theme="default"] .pagination .page-link {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+[data-theme="default"] .pagination .page-link:hover {
+  background: var(--accent-color);
+  color: white;
+  transform: translateY(-1px);
+}
+
+[data-theme="default"] .pagination .page-item.active .page-link {
+  background: var(--gradient-primary);
+  border-color: var(--accent-color);
+}
+
+/* ===== MASTER SCROLLBAR SYSTEM - AFFECTS ALL SCROLLBARS ACROSS APP ===== */
+
+/* 
+  Master Scrollbar - All scrollbars inherit from this
+  Views affected: ALL views with scrollable content
+  Partials affected: ALL partials with scrollable content
+  Common locations:
+  - Song lists with many items
+  - Search results dropdowns
+  - Long content areas
+  To customize all scrollbars, modify these rules
+*/
+[data-theme="default"] ::-webkit-scrollbar {
+  width: 10px;
+}
+
+[data-theme="default"] ::-webkit-scrollbar-track {
+  background: var(--secondary-bg);
+  border-radius: 5px;
+}
+
+[data-theme="default"] ::-webkit-scrollbar-thumb {
+  background: var(--gradient-primary);
+  border-radius: 5px;
+}
+
+[data-theme="default"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-hover);
+}
+
+/* ===== MASTER FOCUS STATES - AFFECTS ALL FOCUS STATES ACROSS APP ===== */
+
+/* 
+  Master Focus States - All focus states inherit from this
+  Views affected: ALL views with focusable elements
+  Partials affected: ALL partials with focusable elements
+  Common locations:
+  - All forms and inputs
+  - All buttons
+  - All interactive elements
+  To customize all focus states, modify these rules
+*/
+[data-theme="default"] .btn:focus,
+[data-theme="default"] .form-control:focus,
+[data-theme="default"] .form-select:focus {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+/* ===== MASTER LOADING ANIMATION - AFFECTS ALL LOADING STATES ACROSS APP ===== */
+
+/* 
+  Master Loading Animation - All loading spinners inherit from this
+  Views affected: ALL views with loading states
+  Partials affected: ALL partials with loading states
+  Common locations:
+  - Upload progress indicators
+  - Search loading states
+  - Form submission loading
+  To customize all loading animations, modify these rules
+*/
+[data-theme="default"] .loading-spinner {
+  border-color: rgba(255, 255, 255, 0.3);
+  border-top-color: var(--accent-color);
+}
+
+/* ===== MASTER MOBILE RESPONSIVENESS - AFFECTS ALL MOBILE VIEWS ===== */
+
+/* 
+  Master Mobile Responsiveness - All mobile views inherit from this
+  Views affected: ALL views on mobile devices
+  Partials affected: ALL partials on mobile devices
+  To customize mobile responsiveness, modify these rules
+*/
+@media (max-width: 768px) {
+  [data-theme="default"] .container {
+    padding: 0 1rem;
+  }
+  
+  [data-theme="default"] .card-body {
+    padding: 1rem;
+  }
+  
+  [data-theme="default"] .table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+}
+
+/* ===== THEME UTILITY CLASSES - HELPER CLASSES FOR THEMING ===== */
+
+/* 
+  These utility classes can be used in any view or partial
+  to apply theme-aware styling without writing custom CSS.
+  
+  Usage examples:
+  - <span class="theme-text-primary">Primary text</span>
+  - <div class="theme-bg-card">Card background</div>
+  - <label class="theme-form-label">Form label</label>
+  
+  Views affected: ANY view that uses these classes
+  Partials affected: ANY partial that uses these classes
+*/
+
+[data-theme="default"] .theme-text-primary { color: var(--text-primary) !important; }
+[data-theme="default"] .theme-text-secondary { color: var(--text-secondary) !important; }
+[data-theme="default"] .theme-text-muted { color: var(--text-muted) !important; }
+[data-theme="default"] .theme-text-light { color: var(--text-secondary) !important; }
+
+[data-theme="default"] .theme-bg-primary { background-color: var(--primary-bg) !important; }
+[data-theme="default"] .theme-bg-secondary { background-color: var(--secondary-bg) !important; }
+[data-theme="default"] .theme-bg-card { background-color: var(--card-bg) !important; }
+
+[data-theme="default"] .theme-border { border-color: var(--border-color) !important; }
+
+[data-theme="default"] .theme-form-label { color: var(--text-primary); font-weight: 500; }
+[data-theme="default"] .theme-form-help { color: var(--text-muted); font-size: 0.875rem; }
+
+[data-theme="default"] .theme-card-content {
   color: var(--text-primary);
 }
 
-.dropdown-item:hover {
-  background-color: var(--bg-secondary);
+[data-theme="default"] .theme-card-content dt,
+[data-theme="default"] .theme-card-content dd {
   color: var(--text-primary);
+}
+
+[data-theme="default"] .theme-card-content .form-label {
+  color: var(--text-primary);
+}
+
+[data-theme="default"] .theme-card-content .form-control-plaintext {
+  color: var(--text-primary);
+}
+
+[data-theme="default"] .theme-card-content small {
+  color: var(--text-secondary);
+}
+
+/* ===== HOW TO CUSTOMIZE SPECIFIC COMPONENTS ===== */
+
+/*
+  TO CUSTOMIZE THE _song.html.erb PARTIAL:
+  - Master card styles: Modify .card rules above
+  - Song list specific: Modify .card.song-list-song-item rules above
+  - Table styles: Modify .table rules above
+  - Button styles: Modify .btn rules above
+  - Badge styles: Modify .badge rules above
+  - Form styles: Modify .form-control rules above
+  
+  TO CUSTOMIZE THE songs/show.html.erb VIEW:
+  - Master card styles: Modify .card rules above
+  - Song detail specific: Modify .card.song-view-song-information rules above
+  - Button styles: Modify .btn rules above
+  - Form styles: Modify .form-control rules above
+  
+  TO CUSTOMIZE THE upload/new.html.erb VIEW:
+  - Master card styles: Modify .card rules above
+  - Upload specific: Modify .card.upload-view-upload-form rules above
+  - Form styles: Modify .form-control rules above
+  - Button styles: Modify .btn rules above
+  - Alert styles: Modify .alert rules above
+  
+  TO CUSTOMIZE THE maintenance/index.html.erb VIEW:
+  - Master card styles: Modify .card rules above
+  - Maintenance specific: Modify .card.maintenance-view-song-item rules above
+  - Table styles: Modify .table rules above
+  - Button styles: Modify .btn rules above
+  - Badge styles: Modify .badge rules above
+  
+  TO CUSTOMIZE THE settings/theme.html.erb VIEW:
+  - Master card styles: Modify .card rules above
+  - Settings specific: Modify .card.settings-view-settings-panel rules above
+  - Form styles: Modify .form-control rules above
+  - Button styles: Modify .btn rules above
+  
+  TO CUSTOMIZE THE LAYOUT (application.html.erb):
+  - Navbar: Modify .navbar rules above
+  - Body: Modify body rules above
+  - Dropdowns: Modify .dropdown-menu rules above
+  - Alerts: Modify .alert rules above
+*/
+
+/* ===== SONG LIST TABLE - GRANULAR CONTROL ===== */
+/*
+  Song List Table - Specific styling for song list table elements
+  Views affected: app/views/songs/index.html.erb, app/views/maintenance/index.html.erb
+  Partials affected: app/views/songs/_song.html.erb (song table rows)
+  Provides granular control over all song list table elements
+*/
+[data-theme="default"] .song-list-table {
+  background-color: var(--card-bg) !important;
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+[data-theme="default"] .song-list-table.table-hover tbody tr {
+  background-color: var(--card-bg) !important;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+[data-theme="default"] .song-list-table.table-hover tbody tr:hover {
+  background-color: var(--secondary-bg) !important;
+}
+
+[data-theme="default"] .song-list-table td {
+  border: none !important;
+  color: var(--text-primary) !important;
+  padding: 0.75rem 0.5rem;
+  vertical-align: middle;
+  background-color: transparent !important;
+}
+
+[data-theme="default"] .song-list-table th {
+  border: none !important;
+  color: var(--text-primary) !important;
+  padding: 0.75rem 0.5rem;
+  font-weight: 600;
+  background-color: var(--secondary-bg) !important;
+}
+
+/* Song list specific text styling */
+[data-theme="default"] .song-list-table .song-title {
+  color: var(--text-primary) !important;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+[data-theme="default"] .song-list-table .song-title:hover {
+  color: var(--accent-color) !important;
+}
+
+[data-theme="default"] .song-list-table .song-artist {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="default"] .song-list-table .song-album {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="default"] .song-list-table .song-genre {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="default"] .song-list-table .song-duration {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="default"] .song-list-table .song-date {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="default"] .song-list-table .song-filename {
+  color: var(--text-secondary) !important;
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+[data-theme="default"] .song-list-table .song-status {
+  /* Status badges keep their Bootstrap styling */
+}
+
+[data-theme="default"] .song-list-table .song-error {
+  color: var(--danger-color) !important;
+  font-size: 0.875rem;
+}
+
+[data-theme="default"] .song-list-table .song-actions {
+  /* Action buttons keep their Bootstrap styling */
+}
+
+/* ===== AUDIO PLAYER STYLING ===== */
+/*
+  Audio Player - Custom styling for HTML5 audio elements
+  Views affected: app/views/songs/index.html.erb, app/views/maintenance/index.html.erb
+  Partials affected: app/views/songs/_song.html.erb (audio player)
+  Customizes the appearance of audio players in song lists
+*/
+[data-theme="default"] .song-list-table .audio-player-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+[data-theme="default"] .song-list-table audio {
+  /* Custom audio player styling */
+  background-color: var(--card-bg);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  outline: none;
+}
+
+[data-theme="default"] .song-list-table audio::-webkit-media-controls-panel {
+  background-color: var(--card-bg);
+}
+
+[data-theme="default"] .song-list-table audio::-webkit-media-controls-play-button {
+  background-color: var(--accent-color);
+  border-radius: 50%;
+  color: white;
+}
+
+[data-theme="default"] .song-list-table audio::-webkit-media-controls-play-button:hover {
+  background-color: var(--accent-hover);
+}
+
+[data-theme="default"] .song-list-table audio::-webkit-media-controls-current-time-display,
+[data-theme="default"] .song-list-table audio::-webkit-media-controls-time-remaining-display {
+  color: var(--text-primary);
+}
+
+[data-theme="default"] .song-list-table audio::-webkit-media-controls-timeline {
+  background-color: var(--border-color);
+}
+
+[data-theme="default"] .song-list-table audio::-webkit-media-controls-timeline::-webkit-slider-thumb {
+  background-color: var(--accent-color);
+  border-radius: 50%;
+}
+
+[data-theme="default"] .song-list-table audio::-webkit-media-controls-volume-slider {
+  background-color: var(--border-color);
+}
+
+[data-theme="default"] .song-list-table audio::-webkit-media-controls-volume-slider::-webkit-slider-thumb {
+  background-color: var(--accent-color);
+  border-radius: 50%;
+}
+
+[data-theme="default"] .song-list-table audio::-webkit-media-controls-mute-button {
+  background-color: var(--text-secondary);
+  border-radius: 4px;
+}
+
+[data-theme="default"] .song-list-table audio::-webkit-media-controls-mute-button:hover {
+  background-color: var(--text-primary);
+}
+
+/* Firefox audio player styling */
+[data-theme="default"] .song-list-table audio::-moz-range-track {
+  background-color: var(--border-color);
+  border-radius: 4px;
+}
+
+[data-theme="default"] .song-list-table audio::-moz-range-thumb {
+  background-color: var(--accent-color);
+  border-radius: 50%;
+  border: none;
+}
+
+/* Compact audio player for table cells */
+[data-theme="default"] .song-list-table .audio-player-container audio {
+  width: 180px;
+  height: 28px;
+  min-width: 180px;
+  max-width: 200px;
+}
+
+/* ===== ARTIST LIST TABLE - UNIFIED STYLING ===== */
+/*
+  Artist List Table - Matches song list table styling
+  Views affected: app/views/artists/index.html.erb
+  Partials affected: app/views/artists/_artist.html.erb
+  Provides uniform styling with song list tables
+*/
+[data-theme="default"] .artist-list-table {
+  background-color: var(--card-bg) !important;
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+[data-theme="default"] .artist-list-table.table-hover tbody tr {
+  background-color: var(--card-bg) !important;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+[data-theme="default"] .artist-list-table.table-hover tbody tr:hover {
+  background-color: var(--secondary-bg) !important;
+}
+
+[data-theme="default"] .artist-list-table td {
+  border: none !important;
+  color: var(--text-primary) !important;
+  padding: 0.75rem 0.5rem;
+  vertical-align: middle;
+  background-color: transparent !important;
+}
+
+[data-theme="default"] .artist-list-table th {
+  border: none !important;
+  color: var(--text-primary) !important;
+  padding: 0.75rem 0.5rem;
+  font-weight: 600;
+  background-color: var(--secondary-bg) !important;
+}
+
+/* Artist list specific text styling */
+[data-theme="default"] .artist-list-table .artist-name {
+  color: var(--text-primary) !important;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+[data-theme="default"] .artist-list-table .artist-name:hover {
+  color: var(--accent-color) !important;
+}
+
+[data-theme="default"] .artist-list-table .artist-country {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="default"] .artist-list-table .artist-song-count {
+  /* Badge styling */
+}
+
+[data-theme="default"] .artist-list-table .artist-genre-more {
+  color: var(--text-secondary) !important;
+  font-size: 0.875rem;
+}
+
+[data-theme="default"] .artist-list-table .artist-date {
+  color: var(--text-primary) !important;
+}
+
+/* ===== ALBUM LIST TABLE - UNIFIED STYLING ===== */
+/*
+  Album List Table - Matches song list table styling
+  Views affected: app/views/albums/index.html.erb
+  Partials affected: app/views/albums/_album.html.erb
+  Provides uniform styling with song list tables
+*/
+[data-theme="default"] .album-list-table {
+  background-color: var(--card-bg) !important;
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+[data-theme="default"] .album-list-table.table-hover tbody tr {
+  background-color: var(--card-bg) !important;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+[data-theme="default"] .album-list-table.table-hover tbody tr:hover {
+  background-color: var(--secondary-bg) !important;
+}
+
+[data-theme="default"] .album-list-table td {
+  border: none !important;
+  color: var(--text-primary) !important;
+  padding: 0.75rem 0.5rem;
+  vertical-align: middle;
+  background-color: transparent !important;
+}
+
+[data-theme="default"] .album-list-table th {
+  border: none !important;
+  color: var(--text-primary) !important;
+  padding: 0.75rem 0.5rem;
+  font-weight: 600;
+  background-color: var(--secondary-bg) !important;
+}
+
+/* Album list specific text styling */
+[data-theme="default"] .album-list-table .album-title {
+  color: var(--text-primary) !important;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+[data-theme="default"] .album-list-table .album-title:hover {
+  color: var(--accent-color) !important;
+}
+
+[data-theme="default"] .album-list-table .album-artist {
+  /* Badge styling */
+}
+
+[data-theme="default"] .album-list-table .album-artist-more {
+  color: var(--text-secondary) !important;
+  font-size: 0.875rem;
+}
+
+[data-theme="default"] .album-list-table .album-song-count {
+  /* Badge styling */
+}
+
+[data-theme="default"] .album-list-table .album-release-date {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="default"] .album-list-table .album-date {
+  color: var(--text-primary) !important;
+}
+
+/* ===== GENRE LIST TABLE - UNIFIED STYLING ===== */
+/*
+  Genre List Table - Matches song list table styling
+  Views affected: app/views/genres/index.html.erb
+  Partials affected: app/views/genres/_genre.html.erb
+  Provides uniform styling with song list tables
+*/
+[data-theme="default"] .genre-list-table {
+  background-color: var(--card-bg) !important;
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+[data-theme="default"] .genre-list-table.table-hover tbody tr {
+  background-color: var(--card-bg) !important;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+[data-theme="default"] .genre-list-table.table-hover tbody tr:hover {
+  background-color: var(--secondary-bg) !important;
+}
+
+[data-theme="default"] .genre-list-table td {
+  border: none !important;
+  color: var(--text-primary) !important;
+  padding: 0.75rem 0.5rem;
+  vertical-align: middle;
+  background-color: transparent !important;
+}
+
+[data-theme="default"] .genre-list-table th {
+  border: none !important;
+  color: var(--text-primary) !important;
+  padding: 0.75rem 0.5rem;
+  font-weight: 600;
+  background-color: var(--secondary-bg) !important;
+}
+
+/* Genre list specific text styling */
+[data-theme="default"] .genre-list-table .genre-name {
+  color: var(--text-primary) !important;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+[data-theme="default"] .genre-list-table .genre-name:hover {
+  color: var(--accent-color) !important;
+}
+
+[data-theme="default"] .genre-list-table .genre-color {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="default"] .genre-list-table .genre-color-badge {
+  /* Badge styling */
+}
+
+[data-theme="default"] .genre-list-table .genre-song-count {
+  /* Badge styling */
+}
+
+[data-theme="default"] .genre-list-table .genre-artist {
+  /* Badge styling */
+}
+
+[data-theme="default"] .genre-list-table .genre-artist-more {
+  color: var(--text-secondary) !important;
+  font-size: 0.875rem;
+}
+
+[data-theme="default"] .genre-list-table .genre-date {
+  color: var(--text-primary) !important;
 }

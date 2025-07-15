@@ -1,7 +1,7 @@
-<tr class="<%= 'table-warning' if song.needs_review? %>" data-song-id="<%= song.id %>">
+<tr data-song-id="<%= song.id %>">
   <% if local_assigns[:show_filename] %>
     <td>
-      <small class="theme-text-muted font-monospace">
+      <small class="song-filename">
         <%= song.original_filename.presence || "N/A" %>
       </small>
     </td>
@@ -9,25 +9,25 @@
   
   <td>
     <% if song.title.present? %>
-      <%= link_to song.title, song_path(song), class: "text-decoration-none fw-medium" %>
+      <%= link_to song.title, song_path(song), class: "song-title text-decoration-none fw-medium" %>
     <% else %>
-      <span class="theme-text-muted">No title</span>
+      <span class="song-title">No title</span>
     <% end %>
   </td>
   
   <td>
     <% if song.artist.present? %>
-      <%= song.artist.name %>
+      <span class="song-artist"><%= song.artist.name %></span>
     <% else %>
-      <span class="theme-text-muted">No artist</span>
+      <span class="song-artist">No artist</span>
     <% end %>
   </td>
   
   <td>
     <% if song.album.present? %>
-      <%= song.album.title %>
+      <span class="song-album"><%= song.album.title %></span>
     <% else %>
-      <span class="theme-text-muted">No album</span>
+      <span class="song-album">No album</span>
     <% end %>
   </td>
   
@@ -48,7 +48,7 @@
         <%= song.genre.name %>
       </span>
     <% else %>
-      <span class="theme-text-muted">No genre</span>
+      <span class="song-genre">No genre</span>
     <% end %>
   </td>
   
@@ -56,17 +56,17 @@
     <td>
       <% case song.processing_status %>
       <% when 'new' %>
-        <span class="badge bg-info">New</span>
+        <span class="badge bg-info song-status">New</span>
       <% when 'pending' %>
-        <span class="badge bg-secondary">Pending</span>
+        <span class="badge bg-secondary song-status">Pending</span>
       <% when 'processing' %>
-        <span class="badge bg-warning">Processing</span>
+        <span class="badge bg-warning song-status">Processing</span>
       <% when 'completed' %>
-        <span class="badge bg-success">Completed</span>
+        <span class="badge bg-success song-status">Completed</span>
       <% when 'failed' %>
-        <span class="badge bg-danger">Failed</span>
+        <span class="badge bg-danger song-status">Failed</span>
       <% when 'needs_review' %>
-        <span class="badge bg-warning">Needs Review</span>
+        <span class="badge bg-warning song-status">Needs Review</span>
       <% end %>
     </td>
   <% end %>
@@ -74,11 +74,11 @@
   <% if local_assigns[:show_metadata] %>
     <td>
       <% if song.has_complete_metadata? %>
-        <span class="badge bg-success">Complete</span>
+        <span class="badge bg-success song-status">Complete</span>
       <% elsif song.has_partial_metadata? %>
-        <span class="badge bg-warning">Partial</span>
+        <span class="badge bg-warning song-status">Partial</span>
       <% else %>
-        <span class="badge bg-danger">None</span>
+        <span class="badge bg-danger song-status">None</span>
       <% end %>
     </td>
   <% end %>
@@ -86,24 +86,24 @@
   <% if local_assigns[:show_error] %>
     <td>
       <% if song.processing_error.present? %>
-        <small class="text-danger" title="<%= song.processing_error %>">
+        <small class="song-error" title="<%= song.processing_error %>">
           <%= truncate(song.processing_error, length: 50) %>
         </small>
       <% else %>
-        <span class="theme-text-muted">-</span>
+        <span class="song-error">-</span>
       <% end %>
     </td>
   <% end %>
   
   <td>
     <% if song.duration.present? %>
-      <%= "#{song.duration / 60}:#{(song.duration % 60).to_s.rjust(2, '0')}" %>
+      <span class="song-duration"><%= "#{song.duration / 60}:#{(song.duration % 60).to_s.rjust(2, '0')}" %></span>
     <% else %>
-      <span class="theme-text-muted">-</span>
+      <span class="song-duration">-</span>
     <% end %>
   </td>
   
-  <td><%= song.created_at.strftime("%Y-%m-%d") %></td>
+  <td><span class="song-date"><%= song.created_at.strftime("%Y-%m-%d") %></span></td>
   
   <td>
     <!-- Audio Player -->
@@ -115,13 +115,13 @@
         </audio>
       </div>
     <% else %>
-      <span class="theme-text-muted">No audio</span>
+      <span class="song-error">No audio</span>
     <% end %>
   </td>
   
   <% if local_assigns[:maintenance_mode] %>
     <td>
-      <div class="btn-group btn-group-sm" role="group">
+      <div class="btn-group btn-group-sm song-actions" role="group">
         <!-- Maintenance mode: Edit, Delete (admin only) -->
         <%= link_to "Edit", edit_song_path(song), class: "btn btn-outline-primary btn-sm" %>
         <% if policy(song).destroy? %>

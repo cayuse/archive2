@@ -27,13 +27,33 @@ module ThemeHelper
     default_options = { width: 24, height: 24, class: 'theme-icon' }
     options = default_options.merge(options)
     
-    image_tag(theme_icon_path(icon), options)
+    # Check if the icon exists in the current theme
+    icon_path = "themes/#{current_theme}/icons/#{icon}"
+    if Rails.application.assets.find_asset(icon_path)
+      image_tag(theme_icon_path(icon), options)
+    else
+      # Fallback to default theme if icon doesn't exist in current theme
+      fallback_path = asset_path("themes/default/icons/#{icon}")
+      image_tag(fallback_path, options)
+    end
   end
 
   def theme_image_tag(image, options = {})
     default_options = { class: 'theme-image' }
     options = default_options.merge(options)
     
-    image_tag(theme_image_path(image), options)
+    # Check if the image exists in the current theme
+    image_path = "themes/#{current_theme}/images/#{image}"
+    if Rails.application.assets.find_asset(image_path)
+      image_tag(theme_image_path(image), options)
+    else
+      # Fallback to default theme if image doesn't exist in current theme
+      fallback_path = asset_path("themes/default/images/#{image}")
+      image_tag(fallback_path, options)
+    end
+  end
+
+  def theme_asset_exists?(asset_path)
+    Rails.application.assets.find_asset(asset_path).present?
   end
 end 

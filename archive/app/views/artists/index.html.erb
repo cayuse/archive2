@@ -12,7 +12,7 @@
         <div class="card-body">
           <% if @artists.any? %>
             <div class="table-responsive">
-              <table class="table table-hover">
+              <table class="table table-hover artist-list-table">
                 <thead>
                   <tr>
                     <th>Name</th>
@@ -23,34 +23,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <% @artists.each do |artist| %>
-                    <tr>
-                      <td>
-                        <%= link_to artist.name, artist_path(artist), class: "text-decoration-none" %>
-                      </td>
-                      <td>
-                        <% if artist.country.present? %>
-                          <%= artist.country %>
-                        <% else %>
-                          <span class="theme-text-muted">-</span>
-                        <% end %>
-                      </td>
-                      <td>
-                        <span class="badge bg-secondary"><%= artist.songs.count %></span>
-                      </td>
-                      <td>
-                        <% artist.genres.limit(3).each do |genre| %>
-                          <span class="badge" style="background-color: <%= genre.color %>">
-                            <%= genre.name %>
-                          </span>
-                        <% end %>
-                        <% if artist.genres.count > 3 %>
-                          <span class="theme-text-muted">+<%= artist.genres.count - 3 %> more</span>
-                        <% end %>
-                      </td>
-                      <td><%= artist.created_at.strftime("%Y-%m-%d") %></td>
-                    </tr>
-                  <% end %>
+                  <%= render partial: 'artist', collection: @artists %>
                 </tbody>
               </table>
             </div>

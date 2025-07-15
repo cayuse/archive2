@@ -40,7 +40,7 @@ class SongTest < ActiveSupport::TestCase
     assert_not song.processing_completed?
     assert_not song.processing_failed?
     assert_not song.needs_review?
-
+    assert_not song.new_import?
   end
 
   test "should have metadata completeness methods" do

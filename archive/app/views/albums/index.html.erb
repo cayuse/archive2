@@ -12,7 +12,7 @@
         <div class="card-body">
           <% if @albums.any? %>
             <div class="table-responsive">
-              <table class="table table-hover">
+              <table class="table table-hover album-list-table">
                 <thead>
                   <tr>
                     <th>Title</th>
@@ -23,32 +23,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <% @albums.each do |album| %>
-                    <tr>
-                      <td>
-                        <%= link_to album.title, album_path(album), class: "text-decoration-none" %>
-                      </td>
-                      <td>
-                        <% album.artists.limit(3).each do |artist| %>
-                          <span class="badge bg-info"><%= artist.name %></span>
-                        <% end %>
-                        <% if album.artists.count > 3 %>
-                          <span class="theme-text-muted">+<%= album.artists.count - 3 %> more</span>
-                        <% end %>
-                      </td>
-                      <td>
-                        <span class="badge bg-secondary"><%= album.songs.count %></span>
-                      </td>
-                      <td>
-                        <% if album.release_date.present? %>
-                          <%= album.release_date.strftime("%Y-%m-%d") %>
-                        <% else %>
-                          <span class="theme-text-muted">-</span>
-                        <% end %>
-                      </td>
-                      <td><%= album.created_at.strftime("%Y-%m-%d") %></td>
-                    </tr>
-                  <% end %>
+                  <%= render partial: 'album', collection: @albums %>
                 </tbody>
               </table>
             </div>

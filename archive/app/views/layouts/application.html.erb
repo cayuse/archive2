@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="<%= current_theme %>">
   <head>
     <title><%= content_for(:title) || "Archive" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -21,7 +21,7 @@
     <link rel="apple-touch-icon" href="/icon.png">
 
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
-    <%= stylesheet_link_tag theme_css_path, media: "all", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag theme_css_path, media: "all", "data-turbo-track": "reload", "data-theme": current_theme %>
     <%= javascript_importmap_tags %>
   </head>
 

@@ -2,17 +2,17 @@
   <div class="col-md-8">
     <h4 class="theme-text-primary mb-3">General Settings</h4>
     
-    <%= form_with url: settings_path, method: :patch, local: true, class: "settings-form" do |form| %>
+    <%= form_with url: settings_path, method: :patch, local: true do |form| %>
       <%= form.hidden_field :tab, value: 'general' %>
       
       <div class="mb-3">
-        <%= form.label :site_name, "Site Name", class: "form-label" %>
+        <%= form.label :site_name, "Site Name", class: "form-label theme-form-label" %>
         <%= form.text_field :site_name, value: @site_name, class: "form-control" %>
         <small class="theme-form-help">The name displayed in the navigation bar and browser title.</small>
       </div>
       
       <div class="mb-3">
-        <%= form.label :site_description, "Site Description", class: "form-label" %>
+        <%= form.label :site_description, "Site Description", class: "form-label theme-form-label" %>
         <%= form.text_area :site_description, value: @site_description, class: "form-control", rows: 3 %>
         <small class="theme-form-help">A brief description of your music archive for SEO purposes.</small>
       </div>
