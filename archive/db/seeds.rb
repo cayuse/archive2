@@ -8,6 +8,13 @@ end
 
 puts "Admin user created: #{admin.email} (password: admin123)"
 
+# Initialize system settings
+SystemSetting.set('current_theme', 'default', 'Currently active theme')
+SystemSetting.set('site_name', 'Music Archive', 'Site name displayed in navigation')
+SystemSetting.set('site_description', 'A comprehensive music archive system', 'Site description for SEO')
+
+puts "System settings initialized"
+
 # Create some sample users for testing
 if User.count < 5
   users_data = [

@@ -1,0 +1,9 @@
+one:
+  name: Test Artist
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>
+
+two:
+  name: Another Artist
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %> 

@@ -1,0 +1,229 @@
+/* Christmas Theme CSS */
+:root {
+  /* Christmas Color Palette */
+  --primary-color: #dc2626;      /* Christmas Red */
+  --secondary-color: #059669;     /* Christmas Green */
+  --accent-color: #d97706;        /* Christmas Gold */
+  --success-color: #059669;       /* Green */
+  --warning-color: #d97706;       /* Gold */
+  --danger-color: #dc2626;        /* Red */
+  --info-color: #0ea5e9;         /* Ice Blue */
+  
+  /* Background Colors */
+  --bg-primary: #ffffff;          /* Snow White */
+  --bg-secondary: #fef2f2;        /* Light Red */
+  --bg-tertiary: #f0fdf4;         /* Light Green */
+  
+  /* Text Colors */
+  --text-primary: #1f2937;        /* Dark Gray */
+  --text-secondary: #6b7280;      /* Medium Gray */
+  --text-muted: #9ca3af;          /* Light Gray */
+  --text-light: #ffffff;          /* White */
+  
+  /* Border Colors */
+  --border-color: #fecaca;        /* Light Red Border */
+  --border-light: #fef2f2;        /* Very Light Red */
+  
+  /* Card Colors */
+  --card-bg: #ffffff;             /* White */
+  --card-border: #fecaca;         /* Light Red */
+  
+  /* Shadow */
+  --shadow-sm: 0 1px 2px 0 rgba(220, 38, 38, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(220, 38, 38, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(220, 38, 38, 0.1);
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+/* Theme-aware utility classes */
+.theme-text-primary { color: var(--text-primary) !important; }
+.theme-text-secondary { color: var(--text-secondary) !important; }
+.theme-text-muted { color: var(--text-muted) !important; }
+.theme-text-light { color: var(--text-light) !important; }
+
+.theme-bg-primary { background-color: var(--bg-primary) !important; }
+.theme-bg-secondary { background-color: var(--bg-secondary) !important; }
+.theme-bg-tertiary { background-color: var(--bg-tertiary) !important; }
+
+.theme-border { border-color: var(--border-color) !important; }
+.theme-border-light { border-color: var(--border-light) !important; }
+
+.theme-shadow-sm { box-shadow: var(--shadow-sm) !important; }
+.theme-shadow-md { box-shadow: var(--shadow-md) !important; }
+.theme-shadow-lg { box-shadow: var(--shadow-lg) !important; }
+
+/* Form elements */
+.theme-form-label { color: var(--text-primary); font-weight: 500; }
+.theme-form-help { color: var(--text-muted); font-size: 0.875rem; }
+
+/* Card styling */
+.theme-card-content { 
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+}
+
+/* Button styling */
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background-color: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.btn-outline-primary {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+/* Navbar styling */
+.navbar {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  box-shadow: var(--shadow-md);
+}
+
+/* Card styling */
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Form controls */
+.form-control, .form-select {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.form-control:focus, .form-select:focus {
+  background-color: var(--bg-primary);
+  border-color: var(--primary-color);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 0.2rem rgba(220, 38, 38, 0.25);
+}
+
+/* Alert styling */
+.alert {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.alert-success {
+  background-color: rgba(5, 150, 105, 0.1);
+  border-color: var(--success-color);
+  color: var(--success-color);
+}
+
+.alert-danger {
+  background-color: rgba(220, 38, 38, 0.1);
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+}
+
+.alert-info {
+  background-color: rgba(14, 165, 233, 0.1);
+  border-color: var(--info-color);
+  color: var(--info-color);
+}
+
+/* Badge styling */
+.badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.badge.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+.badge.bg-secondary {
+  background-color: var(--secondary-color) !important;
+}
+
+/* Dropdown styling */
+.dropdown-menu {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+}
+
+.dropdown-item {
+  color: var(--text-primary);
+}
+
+.dropdown-item:hover {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Christmas-specific decorations */
+.navbar-brand-container::before {
+  content: "🎄";
+  position: absolute;
+  left: -30px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+  opacity: 0.7;
+}
+
+/* Snow effect for cards */
+.card::before {
+  content: "❄";
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 0.8rem;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Festive accent for buttons */
+.btn-primary::after {
+  content: "🎁";
+  margin-left: 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Christmas tree background pattern */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(220, 38, 38, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(5, 150, 105, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(217, 119, 6, 0.02) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+} 

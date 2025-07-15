@@ -1,0 +1,9 @@
+one:
+  name: Rock
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>
+
+two:
+  name: Jazz
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %> 

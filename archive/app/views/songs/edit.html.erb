@@ -25,30 +25,30 @@
           <div class="card-header">
             <h6 class="mb-0">Extracted Metadata</h6>
           </div>
-          <div class="card-body">
+          <div class="card-body theme-card-content">
             <div class="row">
               <div class="col-md-6">
                 <dl class="row">
-                  <dt class="col-sm-4">Title:</dt>
-                  <dd class="col-sm-8"><%= @extracted_metadata[:title] || 'Not found' %></dd>
+                  <dt class="col-sm-4 theme-text-primary">Title:</dt>
+                  <dd class="col-sm-8 theme-text-primary"><%= @extracted_metadata[:title] || 'Not found' %></dd>
                   
-                  <dt class="col-sm-4">Artist:</dt>
-                  <dd class="col-sm-8"><%= @extracted_metadata[:artist] || 'Not found' %></dd>
+                  <dt class="col-sm-4 theme-text-primary">Artist:</dt>
+                  <dd class="col-sm-8 theme-text-primary"><%= @extracted_metadata[:artist] || 'Not found' %></dd>
                   
-                  <dt class="col-sm-4">Album:</dt>
-                  <dd class="col-sm-8"><%= @extracted_metadata[:album] || 'Not found' %></dd>
+                  <dt class="col-sm-4 theme-text-primary">Album:</dt>
+                  <dd class="col-sm-8 theme-text-primary"><%= @extracted_metadata[:album] || 'Not found' %></dd>
                   
-                  <dt class="col-sm-4">Genre:</dt>
-                  <dd class="col-sm-8"><%= @extracted_metadata[:genre] || 'Not found' %></dd>
+                  <dt class="col-sm-4 theme-text-primary">Genre:</dt>
+                  <dd class="col-sm-8 theme-text-primary"><%= @extracted_metadata[:genre] || 'Not found' %></dd>
                 </dl>
               </div>
               <div class="col-md-6">
                 <dl class="row">
-                  <dt class="col-sm-4">Track Number:</dt>
-                  <dd class="col-sm-8"><%= @extracted_metadata[:track_number] || 'Not found' %></dd>
+                  <dt class="col-sm-4 theme-text-primary">Track Number:</dt>
+                  <dd class="col-sm-8 theme-text-primary"><%= @extracted_metadata[:track_number] || 'Not found' %></dd>
                   
-                  <dt class="col-sm-4">Duration:</dt>
-                  <dd class="col-sm-8">
+                  <dt class="col-sm-4 theme-text-primary">Duration:</dt>
+                  <dd class="col-sm-8 theme-text-primary">
                     <% if @extracted_metadata[:duration] %>
                       <%= "#{@extracted_metadata[:duration] / 60}:#{(@extracted_metadata[:duration] % 60).to_s.rjust(2, '0')}" %>
                     <% else %>
@@ -56,11 +56,11 @@
                     <% end %>
                   </dd>
                   
-                  <dt class="col-sm-4">File Format:</dt>
-                  <dd class="col-sm-8"><%= @extracted_metadata[:file_format] || 'Not found' %></dd>
+                  <dt class="col-sm-4 theme-text-primary">File Format:</dt>
+                  <dd class="col-sm-8 theme-text-primary"><%= @extracted_metadata[:file_format] || 'Not found' %></dd>
                   
-                  <dt class="col-sm-4">File Size:</dt>
-                  <dd class="col-sm-8">
+                  <dt class="col-sm-4 theme-text-primary">File Size:</dt>
+                  <dd class="col-sm-8 theme-text-primary">
                     <% if @extracted_metadata[:file_size] %>
                       <%= number_to_human_size(@extracted_metadata[:file_size]) %>
                     <% else %>
@@ -79,7 +79,7 @@
           <div class="card-header">
             <h5 class="mb-0">Song Information</h5>
           </div>
-          <div class="card-body">
+          <div class="card-body theme-card-content">
             <% if @song.errors.any? %>
               <div class="alert alert-danger">
                 <h6>Please fix the following errors:</h6>
@@ -94,15 +94,15 @@
             <div class="row">
               <div class="col-md-6">
                 <div class="mb-3">
-                  <%= form.label :title, class: "form-label" %>
+                  <%= form.label :title, class: "form-label theme-form-label" %>
                   <%= form.text_field :title, class: "form-control" %>
                   <% if Rails.env.development? %>
-                    <small class="text-muted">Debug: @song.title = "<%= @song.title %>"</small>
+                    <small class="theme-form-help">Debug: @song.title = "<%= @song.title %>"</small>
                   <% end %>
                 </div>
                 
                 <div class="mb-3">
-                  <label for="artist_search" class="form-label">Artist</label>
+                  <label for="artist_search" class="form-label theme-form-label">Artist</label>
                   <input type="text" 
                          id="artist_search" 
                          class="form-control" 
@@ -113,13 +113,14 @@
                          hx-target="#artist_results"
                          hx-indicator="#artist_loading">
                   <% if Rails.env.development? %>
-                    <small class="text-muted">Debug: @song.artist&.name = "<%= @song.artist&.name %>"</small>
+                    <small class="theme-form-help">Debug: @song.artist&.name = "<%= @song.artist&.name %>"</small>
                   <% end %>
                   <div id="artist_loading" class="htmx-indicator">
-                    <small class="text-muted">Searching...</small>
+                    <small class="theme-form-help">Searching...</small>
                   </div>
                   <div id="artist_results" class="mt-2"></div>
                   <%= form.hidden_field :artist_id, id: "selected_artist_id", value: @song.artist_id %>
+                  <%= form.hidden_field :artist_name, id: "selected_artist_name", value: @song.artist&.name %>
                   <div id="selected_artist_display" class="mt-2">
                     <% if @song.artist %>
                       <div class="alert alert-info">
@@ -130,19 +131,19 @@
                 </div>
                 
                 <div class="mb-3">
-                  <%= form.label :track_number, class: "form-label" %>
+                  <%= form.label :track_number, class: "form-label theme-form-label" %>
                   <%= form.number_field :track_number, class: "form-control", min: 1 %>
                 </div>
                 
                 <div class="mb-3">
-                  <%= form.label :duration, "Duration (seconds)", class: "form-label" %>
+                  <%= form.label :duration, "Duration (seconds)", class: "form-label theme-form-label" %>
                   <%= form.number_field :duration, class: "form-control", min: 1 %>
                 </div>
               </div>
               
               <div class="col-md-6">
                 <div class="mb-3">
-                  <label for="album_search" class="form-label">Album</label>
+                  <label for="album_search" class="form-label theme-form-label">Album</label>
                   <input type="text" 
                          id="album_search" 
                          class="form-control" 
@@ -153,10 +154,11 @@
                          hx-target="#album_results"
                          hx-indicator="#album_loading">
                   <div id="album_loading" class="htmx-indicator">
-                    <small class="text-muted">Searching...</small>
+                    <small class="theme-form-help">Searching...</small>
                   </div>
                   <div id="album_results" class="mt-2"></div>
                   <%= form.hidden_field :album_id, id: "selected_album_id", value: @song.album_id %>
+                  <%= form.hidden_field :album_title, id: "selected_album_title", value: @song.album&.title %>
                   <div id="selected_album_display" class="mt-2">
                     <% if @song.album %>
                       <div class="alert alert-info">
@@ -167,7 +169,7 @@
                 </div>
                 
                 <div class="mb-3">
-                  <label for="genre_search" class="form-label">Genre</label>
+                  <label for="genre_search" class="form-label theme-form-label">Genre</label>
                   <input type="text" 
                          id="genre_search" 
                          class="form-control" 
@@ -178,10 +180,11 @@
                          hx-target="#genre_results"
                          hx-indicator="#genre_loading">
                   <div id="genre_loading" class="htmx-indicator">
-                    <small class="text-muted">Searching...</small>
+                    <small class="theme-form-help">Searching...</small>
                   </div>
                   <div id="genre_results" class="mt-2"></div>
                   <%= form.hidden_field :genre_id, id: "selected_genre_id", value: @song.genre_id %>
+                  <%= form.hidden_field :genre_name, id: "selected_genre_name", value: @song.genre&.name %>
                   <div id="selected_genre_display" class="mt-2">
                     <% if @song.genre %>
                       <div class="alert alert-info">
@@ -192,7 +195,7 @@
                 </div>
                 
                 <div class="mb-3">
-                  <%= form.label :file_format, class: "form-label" %>
+                  <%= form.label :file_format, class: "form-label theme-form-label" %>
                   <%= form.text_field :file_format, class: "form-control", readonly: true %>
                 </div>
               </div>
@@ -200,8 +203,8 @@
             
             <% if @song.audio_file.attached? %>
               <div class="mb-3">
-                <label class="form-label">Audio File</label>
-                <div class="form-control-plaintext">
+                <label class="form-label theme-form-label">Audio File</label>
+                <div class="form-control-plaintext theme-text-primary">
                   <i class="bi bi-music-note"></i>
                   <%= @song.audio_file.filename %>
                   (<%= number_to_human_size(@song.audio_file.byte_size) %>)
@@ -227,4 +230,82 @@
       <% end %>
     </div>
   </div>
-</div> 
+</div>
+
+<script>
+// Artist selection functionality
+function selectArtist(artistId, artistName) {
+  document.getElementById('selected_artist_id').value = artistId;
+  document.getElementById('selected_artist_display').innerHTML = 
+    '<div class="alert alert-info"><strong>Selected:</strong> ' + artistName + '</div>';
+  document.getElementById('artist_results').innerHTML = '';
+  document.getElementById('artist_search').value = artistName;
+}
+
+function createNewArtist() {
+  const artistName = document.getElementById('artist_search').value.trim();
+  if (artistName) {
+    // Set the name and clear the ID to indicate a new artist
+    document.getElementById('selected_artist_id').value = '';
+    document.getElementById('selected_artist_name').value = artistName;
+    document.getElementById('selected_artist_display').innerHTML = 
+      '<div class="alert alert-warning"><strong>New Artist:</strong> ' + artistName + '</div>';
+    document.getElementById('artist_results').innerHTML = '';
+  }
+}
+
+// Album selection functionality
+function selectAlbum(albumId, albumTitle) {
+  document.getElementById('selected_album_id').value = albumId;
+  document.getElementById('selected_album_display').innerHTML = 
+    '<div class="alert alert-info"><strong>Selected:</strong> ' + albumTitle + '</div>';
+  document.getElementById('album_results').innerHTML = '';
+  document.getElementById('album_search').value = albumTitle;
+}
+
+function createNewAlbum() {
+  const albumTitle = document.getElementById('album_search').value.trim();
+  if (albumTitle) {
+    // Set the title and clear the ID to indicate a new album
+    document.getElementById('selected_album_id').value = '';
+    document.getElementById('selected_album_title').value = albumTitle;
+    document.getElementById('selected_album_display').innerHTML = 
+      '<div class="alert alert-warning"><strong>New Album:</strong> ' + albumTitle + '</div>';
+    document.getElementById('album_results').innerHTML = '';
+  }
+}
+
+// Genre selection functionality
+function selectGenre(genreId, genreName) {
+  document.getElementById('selected_genre_id').value = genreId;
+  document.getElementById('selected_genre_display').innerHTML = 
+    '<div class="alert alert-info"><strong>Selected:</strong> ' + genreName + '</div>';
+  document.getElementById('genre_results').innerHTML = '';
+  document.getElementById('genre_search').value = genreName;
+}
+
+function createNewGenre() {
+  const genreName = document.getElementById('genre_search').value.trim();
+  if (genreName) {
+    // Set the name and clear the ID to indicate a new genre
+    document.getElementById('selected_genre_id').value = '';
+    document.getElementById('selected_genre_name').value = genreName;
+    document.getElementById('selected_genre_display').innerHTML = 
+      '<div class="alert alert-warning"><strong>New Genre:</strong> ' + genreName + '</div>';
+    document.getElementById('genre_results').innerHTML = '';
+  }
+}
+
+// Clear search results when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#artist_search') && !e.target.closest('#artist_results')) {
+    document.getElementById('artist_results').innerHTML = '';
+  }
+  if (!e.target.closest('#album_search') && !e.target.closest('#album_results')) {
+    document.getElementById('album_results').innerHTML = '';
+  }
+  if (!e.target.closest('#genre_search') && !e.target.closest('#genre_results')) {
+    document.getElementById('genre_results').innerHTML = '';
+  }
+});
+</script> 

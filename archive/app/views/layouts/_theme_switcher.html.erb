@@ -1,0 +1,74 @@
+<!-- Theme Switcher Component -->
+<div class="dropdown">
+  <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="themeSwitcher" data-bs-toggle="dropdown" aria-expanded="false">
+    <i class="bi bi-palette"></i> Theme
+  </button>
+  <ul class="dropdown-menu" aria-labelledby="themeSwitcher">
+    <li><a class="dropdown-item theme-option" href="#" data-theme="">Default Dark</a></li>
+    <li><a class="dropdown-item theme-option" href="#" data-theme="theme-light">Light</a></li>
+    <li><a class="dropdown-item theme-option" href="#" data-theme="theme-high-contrast">High Contrast</a></li>
+    <li><a class="dropdown-item theme-option" href="#" data-theme="theme-sunset">Sunset</a></li>
+    <li><a class="dropdown-item theme-option" href="#" data-theme="theme-ocean">Ocean</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item layout-option" href="#" data-layout="">Default Layout</a></li>
+    <li><a class="dropdown-item layout-option" href="#" data-layout="theme-layout-sidebar">Sidebar Layout</a></li>
+    <li><a class="dropdown-item layout-option" href="#" data-layout="theme-layout-center">Center Layout</a></li>
+    <li><a class="dropdown-item layout-option" href="#" data-layout="theme-layout-fullwidth">Full Width</a></li>
+  </ul>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Load saved theme from localStorage
+  const savedTheme = localStorage.getItem('selectedTheme');
+  const savedLayout = localStorage.getItem('selectedLayout');
+  
+  if (savedTheme) {
+    document.body.className = document.body.className.replace(/theme-\w+/g, '').trim();
+    document.body.classList.add(savedTheme);
+  }
+  
+  if (savedLayout) {
+    document.body.className = document.body.className.replace(/theme-layout-\w+/g, '').trim();
+    document.body.classList.add(savedLayout);
+  }
+  
+  // Theme switcher functionality
+  document.querySelectorAll('.theme-option').forEach(option => {
+    option.addEventListener('click', function(e) {
+      e.preventDefault();
+      const theme = this.getAttribute('data-theme');
+      
+      // Remove existing theme classes
+      document.body.className = document.body.className.replace(/theme-\w+/g, '').trim();
+      
+      // Add new theme class
+      if (theme) {
+        document.body.classList.add(theme);
+        localStorage.setItem('selectedTheme', theme);
+      } else {
+        localStorage.removeItem('selectedTheme');
+      }
+    });
+  });
+  
+  // Layout switcher functionality
+  document.querySelectorAll('.layout-option').forEach(option => {
+    option.addEventListener('click', function(e) {
+      e.preventDefault();
+      const layout = this.getAttribute('data-layout');
+      
+      // Remove existing layout classes
+      document.body.className = document.body.className.replace(/theme-layout-\w+/g, '').trim();
+      
+      // Add new layout class
+      if (layout) {
+        document.body.classList.add(layout);
+        localStorage.setItem('selectedLayout', layout);
+      } else {
+        localStorage.removeItem('selectedLayout');
+      }
+    });
+  });
+});
+</script> 

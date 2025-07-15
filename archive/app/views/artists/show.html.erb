@@ -27,7 +27,7 @@
                       <% if @artist.country.present? %>
                         <%= @artist.country %>
                       <% else %>
-                        <span class="text-muted">Not set</span>
+                        <span class="theme-text-muted">Not set</span>
                       <% end %>
                     </dd>
                     
@@ -36,7 +36,7 @@
                       <% if @artist.formed_year.present? %>
                         <%= @artist.formed_year %>
                       <% else %>
-                        <span class="text-muted">Not set</span>
+                        <span class="theme-text-muted">Not set</span>
                       <% end %>
                     </dd>
                   </dl>
@@ -121,7 +121,7 @@
                         <% if song.album.present? %>
                           <%= song.album.title %>
                         <% else %>
-                          <span class="text-muted">-</span>
+                          <span class="theme-text-muted">-</span>
                         <% end %>
                       </td>
                       <td>
@@ -130,14 +130,14 @@
                             <%= song.genre.name %>
                           </span>
                         <% else %>
-                          <span class="text-muted">-</span>
+                          <span class="theme-text-muted">-</span>
                         <% end %>
                       </td>
                       <td>
                         <% if song.duration.present? %>
                           <%= "#{song.duration / 60}:#{song.duration % 60}" %>
                         <% else %>
-                          <span class="text-muted">-</span>
+                          <span class="theme-text-muted">-</span>
                         <% end %>
                       </td>
                       <td><%= song.created_at.strftime("%Y-%m-%d") %></td>
@@ -148,7 +148,7 @@
             </div>
           <% else %>
             <div class="text-center py-4">
-              <p class="text-muted">No songs found for this artist.</p>
+              <p class="theme-text-muted">No songs found for this artist.</p>
             </div>
           <% end %>
         </div>

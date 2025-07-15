@@ -40,6 +40,81 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
+/* Semantic Theming Classes */
+.theme-text-primary { color: var(--text-primary) !important; }
+.theme-text-secondary { color: var(--text-secondary) !important; }
+.theme-text-muted { color: var(--text-muted) !important; }
+.theme-text-light { color: var(--text-secondary) !important; }
+
+.theme-bg-primary { background-color: var(--primary-bg) !important; }
+.theme-bg-secondary { background-color: var(--secondary-bg) !important; }
+.theme-bg-card { background-color: var(--card-bg) !important; }
+
+.theme-border { border-color: var(--border-color) !important; }
+
+/* Card Content Theming */
+.theme-card-content {
+  color: var(--text-primary);
+}
+
+.theme-card-content dt,
+.theme-card-content dd {
+  color: var(--text-primary);
+}
+
+.theme-card-content .form-label {
+  color: var(--text-primary);
+}
+
+.theme-card-content .form-control-plaintext {
+  color: var(--text-primary);
+}
+
+.theme-card-content small {
+  color: var(--text-secondary);
+}
+
+/* Form Theming */
+.theme-form-label {
+  color: var(--text-primary);
+}
+
+.theme-form-help {
+  color: var(--text-secondary);
+}
+
+/* Layout Classes for Flexible Positioning */
+.theme-layout-sidebar {
+  /* Can be customized for sidebar layouts */
+}
+
+.theme-layout-center {
+  /* Can be customized for center-aligned layouts */
+}
+
+.theme-layout-fullwidth {
+  /* Can be customized for full-width layouts */
+}
+
+/* Component Positioning Classes */
+.theme-nav-position-top { /* Default navbar position */ }
+.theme-nav-position-sidebar { /* For sidebar navigation */ }
+.theme-nav-position-bottom { /* For bottom navigation */ }
+
+.theme-content-position-main { /* Main content area */ }
+.theme-content-position-sidebar { /* Sidebar content area */ }
+
+/* Responsive Layout Classes */
+@media (max-width: 768px) {
+  .theme-layout-mobile-stack {
+    /* Stack elements vertically on mobile */
+  }
+  
+  .theme-layout-mobile-sidebar {
+    /* Convert to mobile sidebar layout */
+  }
+}
+
 /* Global Styles */
 * {
   box-sizing: border-box;
@@ -1342,5 +1417,91 @@ a:hover {
   .volume-slider {
     width: 50px;
   }
+}
+
+/* Settings Tabs Styling */
+.settings-tabs .nav-tabs {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.settings-tabs .nav-tabs .nav-link {
+  color: var(--text-secondary);
+  border: none;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.settings-tabs .nav-tabs .nav-link:hover {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent-color);
+}
+
+.settings-tabs .nav-tabs .nav-link.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent-color);
+  background: transparent;
+}
+
+.settings-tabs .tab-content {
+  padding: 1.5rem 0;
+}
+
+/* Settings Cards */
+.settings-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+}
+
+.settings-card .card-header {
+  background: linear-gradient(135deg, var(--card-bg) 0%, var(--secondary-bg) 100%);
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Settings Forms */
+.settings-form .form-label {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.settings-form .form-control,
+.settings-form .form-select {
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.settings-form .form-control:focus,
+.settings-form .form-select:focus {
+  background: var(--secondary-bg);
+  border-color: var(--accent-color);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
+}
+
+.settings-form .form-control::placeholder {
+  color: var(--text-muted);
+}
+
+/* Settings Status */
+.settings-status .badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Settings Alerts */
+.settings-alert {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.settings-alert .alert-heading {
+  color: var(--text-primary);
+}
+
+.settings-alert .alert-body {
+  color: var(--text-secondary);
 }
 

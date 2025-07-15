@@ -1,0 +1,19 @@
+one:
+  title: Test Song
+  user: admin
+  artist: one
+  album: one
+  genre: one
+  processing_status: completed
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>
+
+two:
+  title: Another Song
+  user: admin
+  artist: two
+  album: two
+  genre: two
+  processing_status: needs_review
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %> 

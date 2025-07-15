@@ -21,6 +21,7 @@
     <link rel="apple-touch-icon" href="/icon.png">
 
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag theme_css_path, media: "all", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
@@ -30,12 +31,10 @@
         <!-- Logo and Brand -->
         <div class="navbar-brand-container">
           <div class="logo-area">
-            <div class="logo-placeholder">
-              <span class="music-icon">♪</span>
-            </div>
+            <img src="<%= theme_logo_path %>" alt="Logo" height="40">
           </div>
           <div class="brand-info">
-            <a class="navbar-brand" href="<%= root_path %>">Music Archive</a>
+            <a class="navbar-brand" href="<%= root_path %>"><%= SystemSetting.site_name %></a>
             <% if current_user %>
               <div class="archive-stats">
                 <span class="completed-count"><%= Song.completed.count %></span>
@@ -106,7 +105,9 @@
                   </div>
                   <ul class="dropdown-menu dropdown-menu-end">
                     <li><%= link_to raw('<i class="fas fa-user-edit me-2"></i>Edit Profile'), edit_profile_path, class: "dropdown-item" %></li>
-                    <li><%= link_to raw('<i class="fas fa-cog me-2"></i>Settings'), "#", class: "dropdown-item" %></li>
+                    <% if current_user.admin? %>
+                      <li><%= link_to raw('<i class="fas fa-cog me-2"></i>System Settings'), settings_path, class: "dropdown-item" %></li>
+                    <% end %>
                     <li><hr class="dropdown-divider"></li>
                     <li><%= button_to raw('<i class="fas fa-sign-out-alt me-2"></i>Logout'), logout_path, method: :delete, class: "dropdown-item text-danger" %></li>
                   </ul>

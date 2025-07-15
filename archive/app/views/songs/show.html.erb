@@ -29,9 +29,10 @@
           <h5><i class="bi bi-exclamation-triangle"></i> Processing Failed</h5>
           <p><strong>Error:</strong> <%= @song.processing_error %></p>
           <% if policy(@song).update? %>
-            <%= link_to "Retry Processing", song_path(@song), method: :patch, 
-                       data: { confirm: "Retry processing?" }, 
-                       class: "btn btn-warning" %>
+            <%= button_to "Retry Processing", song_path(@song, retry_processing: true), 
+                         method: :patch, 
+                         data: { confirm: "Retry processing?" }, 
+                         class: "btn btn-warning" %>
           <% end %>
         </div>
       <% elsif @song.processing_in_progress? %>
@@ -44,11 +45,7 @@
           <h5><i class="bi bi-exclamation-circle"></i> Needs Review</h5>
           <p>This song has partial metadata and may need manual review.</p>
         </div>
-      <% elsif @song.new_import? %>
-        <div class="alert alert-info">
-          <h5><i class="bi bi-info-circle"></i> New Import</h5>
-          <p>This song was recently imported and may need metadata added.</p>
-        </div>
+
       <% end %>
       
       <div class="row">
@@ -58,45 +55,45 @@
             <div class="card-header">
               <h5 class="mb-0">Song Information</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body theme-card-content">
               <div class="row">
                 <div class="col-md-6">
                   <dl class="row">
-                    <dt class="col-sm-4">Title:</dt>
-                    <dd class="col-sm-8">
+                    <dt class="col-sm-4 theme-text-primary">Title:</dt>
+                    <dd class="col-sm-8 theme-text-primary">
                       <% if @song.title.present? %>
                         <%= @song.title %>
                       <% else %>
-                        <span class="text-muted">Not set</span>
+                        <span class="theme-text-secondary">Not set</span>
                       <% end %>
                     </dd>
                     
-                    <dt class="col-sm-4">Artist:</dt>
-                    <dd class="col-sm-8">
+                    <dt class="col-sm-4 theme-text-primary">Artist:</dt>
+                    <dd class="col-sm-8 theme-text-primary">
                       <% if @song.artist.present? %>
                         <%= @song.artist.name %>
                       <% else %>
-                        <span class="text-muted">Not set</span>
+                        <span class="theme-text-secondary">Not set</span>
                       <% end %>
                     </dd>
                     
-                    <dt class="col-sm-4">Album:</dt>
-                    <dd class="col-sm-8">
+                    <dt class="col-sm-4 theme-text-primary">Album:</dt>
+                    <dd class="col-sm-8 theme-text-primary">
                       <% if @song.album.present? %>
                         <%= @song.album.title %>
                       <% else %>
-                        <span class="text-muted">Not set</span>
+                        <span class="theme-text-secondary">Not set</span>
                       <% end %>
                     </dd>
                     
-                    <dt class="col-sm-4">Genre:</dt>
+                    <dt class="col-sm-4 theme-text-primary">Genre:</dt>
                     <dd class="col-sm-8">
                       <% if @song.genre.present? %>
                         <span class="badge" style="background-color: <%= @song.genre.color %>">
                           <%= @song.genre.name %>
                         </span>
                       <% else %>
-                        <span class="text-muted">Not set</span>
+                        <span class="theme-text-secondary">Not set</span>
                       <% end %>
                     </dd>
                   </dl>
@@ -104,39 +101,39 @@
                 
                 <div class="col-md-6">
                   <dl class="row">
-                    <dt class="col-sm-4">Track Number:</dt>
-                    <dd class="col-sm-8">
+                    <dt class="col-sm-4 theme-text-primary">Track Number:</dt>
+                    <dd class="col-sm-8 theme-text-primary">
                       <% if @song.track_number.present? %>
                         <%= @song.track_number %>
                       <% else %>
-                        <span class="text-muted">Not set</span>
+                        <span class="theme-text-secondary">Not set</span>
                       <% end %>
                     </dd>
                     
-                    <dt class="col-sm-4">Duration:</dt>
-                    <dd class="col-sm-8">
+                    <dt class="col-sm-4 theme-text-primary">Duration:</dt>
+                    <dd class="col-sm-8 theme-text-primary">
                       <% if @song.duration.present? %>
                         <%= "#{@song.duration / 60}:#{(@song.duration % 60).to_s.rjust(2, '0')}" %>
                       <% else %>
-                        <span class="text-muted">Not set</span>
+                        <span class="theme-text-secondary">Not set</span>
                       <% end %>
                     </dd>
                     
-                    <dt class="col-sm-4">File Format:</dt>
-                    <dd class="col-sm-8">
+                    <dt class="col-sm-4 theme-text-primary">File Format:</dt>
+                    <dd class="col-sm-8 theme-text-primary">
                       <% if @song.file_format.present? %>
                         <%= @song.file_format.upcase %>
                       <% else %>
-                        <span class="text-muted">Not set</span>
+                        <span class="theme-text-secondary">Not set</span>
                       <% end %>
                     </dd>
                     
-                    <dt class="col-sm-4">File Size:</dt>
-                    <dd class="col-sm-8">
+                    <dt class="col-sm-4 theme-text-primary">File Size:</dt>
+                    <dd class="col-sm-8 theme-text-primary">
                       <% if @song.file_size.present? %>
                         <%= number_to_human_size(@song.file_size) %>
                       <% else %>
-                        <span class="text-muted">Not set</span>
+                        <span class="theme-text-secondary">Not set</span>
                       <% end %>
                     </dd>
                   </dl>
@@ -152,9 +149,9 @@
             <div class="card-header">
               <h5 class="mb-0">Processing Status</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body theme-card-content">
               <dl class="row">
-                <dt class="col-sm-6">Status:</dt>
+                <dt class="col-sm-6 theme-text-primary">Status:</dt>
                 <dd class="col-sm-6">
                   <% case @song.processing_status %>
                   <% when 'new' %>
@@ -172,7 +169,7 @@
                   <% end %>
                 </dd>
                 
-                <dt class="col-sm-6">Metadata:</dt>
+                <dt class="col-sm-6 theme-text-primary">Metadata:</dt>
                 <dd class="col-sm-6">
                   <% if @song.has_complete_metadata? %>
                     <span class="badge bg-success">Complete</span>
@@ -183,11 +180,11 @@
                   <% end %>
                 </dd>
                 
-                <dt class="col-sm-6">Created:</dt>
-                <dd class="col-sm-6"><%= @song.created_at.strftime("%Y-%m-%d %H:%M") %></dd>
+                <dt class="col-sm-6 theme-text-primary">Created:</dt>
+                <dd class="col-sm-6 theme-text-primary"><%= @song.created_at.strftime("%Y-%m-%d %H:%M") %></dd>
                 
-                <dt class="col-sm-6">Updated:</dt>
-                <dd class="col-sm-6"><%= @song.updated_at.strftime("%Y-%m-%d %H:%M") %></dd>
+                <dt class="col-sm-6 theme-text-primary">Updated:</dt>
+                <dd class="col-sm-6 theme-text-primary"><%= @song.updated_at.strftime("%Y-%m-%d %H:%M") %></dd>
               </dl>
             </div>
           </div>
@@ -198,13 +195,13 @@
               <div class="card-header">
                 <h5 class="mb-0">Audio File</h5>
               </div>
-              <div class="card-body">
-                <p><i class="bi bi-music-note"></i> <%= @song.audio_file.filename %></p>
-                <p class="text-muted"><%= number_to_human_size(@song.audio_file.byte_size) %></p>
+              <div class="card-body theme-card-content">
+                <p class="theme-text-primary"><i class="bi bi-music-note"></i> <%= @song.audio_file.filename %></p>
+                <p class="theme-text-secondary"><%= number_to_human_size(@song.audio_file.byte_size) %></p>
                 
                 <% if policy(@song).download_audio? %>
                   <%= link_to "Download", rails_blob_path(@song.audio_file, disposition: "attachment"), 
-                             class: "btn btn-outline-primary btn-sm" %>
+                             class: "btn btn-outline-light btn-sm" %>
                 <% end %>
               </div>
             </div>

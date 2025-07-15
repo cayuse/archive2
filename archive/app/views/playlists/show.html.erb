@@ -49,7 +49,7 @@
                       <% if total_duration > 0 %>
                         <%= "#{total_duration / 60}:#{total_duration % 60}" %>
                       <% else %>
-                        <span class="text-muted">-</span>
+                        <span class="theme-text-muted">-</span>
                       <% end %>
                     </dd>
                     
@@ -116,7 +116,7 @@
                         <% if playlist_song&.position.present? %>
                           <%= playlist_song.position %>
                         <% else %>
-                          <span class="text-muted">-</span>
+                          <span class="theme-text-muted">-</span>
                         <% end %>
                       </td>
                       <td>
@@ -126,14 +126,14 @@
                         <% if song.artist.present? %>
                           <%= song.artist.name %>
                         <% else %>
-                          <span class="text-muted">-</span>
+                          <span class="theme-text-muted">-</span>
                         <% end %>
                       </td>
                       <td>
                         <% if song.album.present? %>
                           <%= song.album.title %>
                         <% else %>
-                          <span class="text-muted">-</span>
+                          <span class="theme-text-muted">-</span>
                         <% end %>
                       </td>
                       <td>
@@ -142,14 +142,14 @@
                             <%= song.genre.name %>
                           </span>
                         <% else %>
-                          <span class="text-muted">-</span>
+                          <span class="theme-text-muted">-</span>
                         <% end %>
                       </td>
                       <td>
                         <% if song.duration.present? %>
                           <%= "#{song.duration / 60}:#{song.duration % 60}" %>
                         <% else %>
-                          <span class="text-muted">-</span>
+                          <span class="theme-text-muted">-</span>
                         <% end %>
                       </td>
                     </tr>
@@ -159,7 +159,7 @@
             </div>
           <% else %>
             <div class="text-center py-4">
-              <p class="text-muted">No songs found in this playlist.</p>
+              <p class="theme-text-muted">No songs found in this playlist.</p>
             </div>
           <% end %>
         </div>

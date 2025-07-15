@@ -11,7 +11,10 @@ class UploadController < ApplicationController
     authorize @song
     
     # Set initial processing status
-    @song.processing_status = 'new'
+    @song.processing_status = 'needs_review'
+    
+    # Set the user
+    @song.user = current_user
     
     # Store original filename if audio file is attached
     if @song.audio_file.attached?
@@ -23,6 +26,10 @@ class UploadController < ApplicationController
     if @song.title.blank? && params[:song][:audio_file].present?
       @song.title = params[:song][:audio_file].original_filename.chomp(File.extname(params[:song][:audio_file].original_filename))
     end
+    
+    Rails.logger.info "About to save song with params: #{song_params.inspect}"
+    Rails.logger.info "Song valid? #{@song.valid?}"
+    Rails.logger.info "Song errors: #{@song.errors.full_messages}" unless @song.valid?
     
     if @song.save
       Rails.logger.info "Song saved with ID: #{@song.id}, processing_status: #{@song.processing_status}"
@@ -42,7 +49,7 @@ class UploadController < ApplicationController
   def song_params
     permitted_params = params.require(:song).permit(:title, :track_number, :duration, :file_format, :file_size, 
                                                    :album_id, :genre_id, :processing_status, :processing_error,
-                                                   :original_filename, :audio_file)
+                                                   :original_filename, :audio_file, :user_id)
     
     # Convert empty strings to nil for optional associations
     permitted_params[:album_id] = nil if permitted_params[:album_id].blank?

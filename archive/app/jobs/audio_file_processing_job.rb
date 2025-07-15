@@ -35,58 +35,42 @@ class AudioFileProcessingJob < ApplicationJob
         return
       end
       
-      # Update song with extracted metadata
+      # Update song with extracted metadata (only fill NULL fields)
       updates = {}
       
-      # Basic metadata
-      updates[:title] = metadata[:title] if metadata[:title].present?
-      updates[:track_number] = metadata[:track_number] if metadata[:track_number].present?
-      updates[:duration] = metadata[:duration] if metadata[:duration].present?
-      updates[:file_format] = metadata[:file_format] if metadata[:file_format].present?
-      updates[:file_size] = metadata[:file_size] if metadata[:file_size].present?
+      # Basic metadata - only fill if currently NULL
+      updates[:title] = metadata[:title] if metadata[:title].present? && song.title.blank?
+      updates[:track_number] = metadata[:track_number] if metadata[:track_number].present? && song.track_number.blank?
+      updates[:duration] = metadata[:duration] if metadata[:duration].present? && song.duration.blank?
+      updates[:file_format] = metadata[:file_format] if metadata[:file_format].present? && song.file_format.blank?
+      updates[:file_size] = metadata[:file_size] if metadata[:file_size].present? && song.file_size.blank?
       
-      # Handle artist and album
-      if metadata[:artist].present?
+      # Handle artist - only fill if currently NULL
+      if metadata[:artist].present? && song.artist.blank?
         artist = Artist.find_or_create_by(name: metadata[:artist])
         updates[:artist_id] = artist.id
-        
-        if metadata[:album].present?
-          album = Album.find_or_create_by(title: metadata[:album])
-          updates[:album_id] = album.id
-        elsif song.album.nil?
-          # Create a default album if none exists
-          album = Album.find_or_create_by(title: 'Unknown Album')
-          updates[:album_id] = album.id
-        end
-      elsif song.artist.nil?
-        # Create default artist if no metadata
-        unknown_artist = Artist.find_or_create_by(name: 'Unknown Artist')
-        updates[:artist_id] = unknown_artist.id
-        
-        if song.album.nil?
-          # Create default album if none exists
-          album = Album.find_or_create_by(title: 'Unknown Album')
-          updates[:album_id] = album.id
-        end
       end
       
-      # Handle genre
-      if metadata[:genre].present?
+      # Handle album - only fill if currently NULL
+      if metadata[:album].present? && song.album.blank?
+        album = Album.find_or_create_by(title: metadata[:album])
+        updates[:album_id] = album.id
+      end
+      
+      # Handle genre - only fill if currently NULL
+      if metadata[:genre].present? && song.genre.blank?
         genre = Genre.find_or_create_by(name: metadata[:genre])
         updates[:genre_id] = genre.id
-      elsif song.genre.nil?
-        # Create default genre if none exists
-        genre = Genre.find_or_create_by(name: 'Unknown Genre')
-        updates[:genre_id] = genre.id
       end
       
-      # Determine final status based on metadata completeness
-      if updates[:title].present? && updates[:artist_id].present? && updates[:album_id].present? && updates[:genre_id].present?
+      # Determine final status based on completeness criteria (title + artist)
+      final_title = updates[:title] || song.title
+      final_artist_id = updates[:artist_id] || song.artist_id
+      
+      if final_title.present? && final_artist_id.present?
         updates[:processing_status] = 'completed'
-      elsif updates[:title].present? || updates[:artist_id].present? || updates[:album_id].present? || updates[:genre_id].present?
-        updates[:processing_status] = 'needs_review'
       else
-        updates[:processing_status] = 'new'
+        updates[:processing_status] = 'needs_review'
       end
       
       Rails.logger.info "[AudioFileProcessingJob] Update hash for song #{song.id}: #{updates.inspect}"

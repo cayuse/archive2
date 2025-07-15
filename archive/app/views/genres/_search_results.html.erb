@@ -9,22 +9,7 @@
     <% end %>
   </div>
 <% else %>
-  <div class="text-muted">
+  <div class="theme-text-muted">
     <small>No genres found. <a href="#" onclick="createNewGenre()">Create new genre</a></small>
   </div>
-<% end %>
-
-<script>
-function selectGenre(genreId, genreName) {
-  document.getElementById('selected_genre_id').value = genreId;
-  document.getElementById('selected_genre_display').innerHTML = 
-    '<div class="alert alert-info"><strong>Selected:</strong> ' + genreName + '</div>';
-  document.getElementById('genre_results').innerHTML = '';
-  document.getElementById('genre_search').value = genreName;
-}
-
-function createNewGenre() {
-  // TODO: Implement modal or form for creating new genre
-  alert('Genre creation feature coming soon!');
-}
-</script> 
+<% end %> 

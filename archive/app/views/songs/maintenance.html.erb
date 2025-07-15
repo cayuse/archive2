@@ -16,14 +16,12 @@
             <div class="col-md-8">
               <h5 class="card-title">Filter by Status</h5>
               <div class="btn-group" role="group">
-                <%= link_to "Needs Attention", maintenance_songs_path(status: 'needs_attention'), 
-                    class: "btn #{@status_filter == 'needs_attention' ? 'btn-primary' : 'btn-outline-primary'}" %>
+
                 <%= link_to "Failed", maintenance_songs_path(status: 'failed'), 
                     class: "btn #{@status_filter == 'failed' ? 'btn-primary' : 'btn-outline-primary'}" %>
                 <%= link_to "Needs Review", maintenance_songs_path(status: 'needs_review'), 
                     class: "btn #{@status_filter == 'needs_review' ? 'btn-primary' : 'btn-outline-primary'}" %>
-                <%= link_to "New", maintenance_songs_path(status: 'new'), 
-                    class: "btn #{@status_filter == 'new' ? 'btn-primary' : 'btn-outline-primary'}" %>
+
                 <%= link_to "All", maintenance_songs_path(status: 'all'), 
                     class: "btn #{@status_filter == 'all' ? 'btn-primary' : 'btn-outline-primary'}" %>
               </div>
@@ -62,7 +60,7 @@
               </thead>
               <tbody>
                 <% @songs.each do |song| %>
-                  <%= render 'song', song: song, show_filename: true, show_error: true, maintenance_mode: true %>
+                  <%= render 'song', song: song, show_filename: true, show_status: true, show_error: true, maintenance_mode: true %>
                 <% end %>
               </tbody>
             </table>

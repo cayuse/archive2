@@ -1,4 +1,13 @@
 Rails.application.routes.draw do
+  # Settings routes (admin only)
+  resource :settings, only: [:show, :update] do
+    collection do
+      get :theme
+      get :api_keys
+      get :song_types
+      get :general
+    end
+  end
   # Authentication routes
   get '/login', to: 'sessions#new', as: :login
   post '/login', to: 'sessions#create'

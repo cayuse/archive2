@@ -29,7 +29,7 @@
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0">All Songs</h5>
-          <div id="song-count" class="text-muted"></div>
+          <div id="song-count" class="theme-text-muted"></div>
         </div>
         <div class="card-body">
           <div class="table-responsive">
@@ -69,7 +69,9 @@
 </div>
 
 <script>
-document.addEventListener('turbo:load', function() {
+function initializeSearch() {
+  console.log('Initializing search functionality');
+  
   let searchTimeout;
   let currentPage = 1;
   let currentQuery = '';
@@ -85,28 +87,30 @@ document.addEventListener('turbo:load', function() {
   const loadMoreBtn = document.getElementById('load-more');
   const songCountDiv = document.getElementById('song-count');
   
-  // Audio Player Functionality - Simplified for native HTML5 controls
-  function initializeAudioPlayers() {
-    const audioElements = document.querySelectorAll('audio');
-    console.log('Found audio elements:', audioElements.length);
-    
-    // Set default volume for all audio elements
-    audioElements.forEach(audio => {
-      audio.volume = 0.05; // 5% volume
-      console.log('Set volume to 0.05 for audio element');
-    });
+  console.log('Search input element:', searchInput);
+  console.log('Songs table body element:', songsTableBody);
+  
+  if (!searchInput) {
+    console.error('Search input not found!');
+    return;
   }
   
-  // Initialize audio players when page loads
-  initializeAudioPlayers();
+  if (!songsTableBody) {
+    console.error('Songs table body not found!');
+    return;
+  }
+  
+
   
 
   
   // Live search functionality
   searchInput.addEventListener('input', function() {
+    console.log('Search input event triggered');
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(function() {
       currentQuery = searchInput.value.trim();
+      console.log('Searching for:', currentQuery);
       currentPage = 1;
       hasMore = true;
       loadSongs(true);
@@ -142,6 +146,7 @@ document.addEventListener('turbo:load', function() {
   });
   
   function loadSongs(reset = false) {
+    console.log('loadSongs called with reset:', reset);
     if (isLoading) return;
     
     isLoading = true;
@@ -152,6 +157,7 @@ document.addEventListener('turbo:load', function() {
       page: currentPage
     });
     
+    console.log('Fetching from:', `/songs/search?${params}`);
     fetch(`/songs/search?${params}`)
       .then(response => response.text())
       .then(html => {
@@ -161,10 +167,8 @@ document.addEventListener('turbo:load', function() {
           songsTableBody.insertAdjacentHTML('beforeend', html);
         }
         
-        // Re-initialize audio players for new content
-        setTimeout(() => {
-          initializeAudioPlayers();
-        }, 100);
+        // Re-initialize audio players after loading new content
+        initializeAudioPlayers();
         
         // Update song count
         const songCount = songsTableBody.querySelectorAll('tr').length;
@@ -200,5 +204,111 @@ document.addEventListener('turbo:load', function() {
   // Initialize song count
   const initialCount = songsTableBody.querySelectorAll('tr').length;
   songCountDiv.textContent = `${initialCount} songs`;
-});
+  
+  // Audio Player Functionality
+  function initializeAudioPlayers() {
+    const playButtons = document.querySelectorAll('.play-btn');
+    
+    playButtons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        const audioId = this.getAttribute('data-audio-id');
+        const songTitle = this.getAttribute('data-song-title');
+        const audio = document.getElementById(`audio-${audioId}`);
+        const timeSpan = document.getElementById(`time-${audioId}`);
+        const icon = this.querySelector('i');
+        
+        if (!audio) {
+          console.error('Audio element not found for ID:', audioId);
+          return;
+        }
+        
+        // Stop any currently playing audio
+        if (currentlyPlaying && currentlyPlaying !== audio) {
+          const currentButton = document.querySelector(`[data-audio-id="${currentlyPlaying.id.replace('audio-', '')}"]`);
+          if (currentButton) {
+            const currentIcon = currentButton.querySelector('i');
+            currentIcon.className = 'fas fa-play';
+            currentButton.classList.remove('btn-primary');
+            currentButton.classList.add('btn-outline-primary');
+          }
+          currentlyPlaying.pause();
+          currentlyPlaying.currentTime = 0;
+        }
+        
+        if (audio.paused) {
+          // Play the audio
+          audio.play().then(() => {
+            currentlyPlaying = audio;
+            icon.className = 'fas fa-pause';
+            this.classList.remove('btn-outline-primary');
+            this.classList.add('btn-primary');
+          }).catch(error => {
+            console.error('Error playing audio:', error);
+            alert('Error playing audio file: ' + error.message);
+          });
+        } else {
+          // Pause the audio
+          audio.pause();
+          icon.className = 'fas fa-play';
+          this.classList.remove('btn-primary');
+          this.classList.add('btn-outline-primary');
+          currentlyPlaying = null;
+        }
+      });
+    });
+    
+    // Add time update listeners for all audio elements
+    const audioElements = document.querySelectorAll('audio');
+    audioElements.forEach(audio => {
+      audio.addEventListener('timeupdate', function() {
+        const audioId = this.id.replace('audio-', '');
+        const timeSpan = document.getElementById(`time-${audioId}`);
+        const currentTime = Math.floor(this.currentTime);
+        const duration = Math.floor(this.duration);
+        
+        if (!isNaN(duration)) {
+          const currentMinutes = Math.floor(currentTime / 60);
+          const currentSeconds = currentTime % 60;
+          const totalMinutes = Math.floor(duration / 60);
+          const totalSeconds = duration % 60;
+          
+          timeSpan.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')} / ${totalMinutes}:${totalSeconds.toString().padStart(2, '0')}`;
+        }
+      });
+      
+      audio.addEventListener('ended', function() {
+        const audioId = this.id.replace('audio-', '');
+        const button = document.querySelector(`[data-audio-id="${audioId}"]`);
+        const icon = button.querySelector('i');
+        icon.className = 'fas fa-play';
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-outline-primary');
+        currentlyPlaying = null;
+        
+        const timeSpan = document.getElementById(`time-${audioId}`);
+        timeSpan.textContent = '--:--';
+      });
+      
+      audio.addEventListener('loadedmetadata', function() {
+        const audioId = this.id.replace('audio-', '');
+        const timeSpan = document.getElementById(`time-${audioId}`);
+        const duration = Math.floor(this.duration);
+        
+        if (!isNaN(duration)) {
+          const minutes = Math.floor(duration / 60);
+          const seconds = duration % 60;
+          timeSpan.textContent = `0:00 / ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+      });
+    });
+  }
+  
+  // Initialize audio players when page loads
+  initializeAudioPlayers();
+}
+
+// Initialize on both Turbo and regular page load
+document.addEventListener('turbo:load', initializeSearch);
+document.addEventListener('DOMContentLoaded', initializeSearch);
 </script> 

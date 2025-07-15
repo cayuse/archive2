@@ -4,6 +4,11 @@ class SongPolicy < ApplicationPolicy
   # - Only moderators/admins can create/update
   # - Only admins can destroy
 
+  # Override show? to allow everyone to view songs
+  def show?
+    true
+  end
+
   # Additional methods for song-specific permissions
   def upload?
     user&.moderator? || user&.admin?
@@ -26,6 +31,22 @@ class SongPolicy < ApplicationPolicy
   end
 
   def bulk_update?
+    user&.moderator? || user&.admin?
+  end
+
+  def destroy?
+    user&.admin?
+  end
+
+  def edit?
+    user&.moderator? || user&.admin?
+  end
+
+  def update?
+    user&.moderator? || user&.admin?
+  end
+
+  def create?
     user&.moderator? || user&.admin?
   end
 

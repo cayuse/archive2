@@ -93,7 +93,7 @@
               <!-- Export -->
               <div class="mb-4">
                 <h6>Export Songs</h6>
-                <p class="text-muted">Download all songs as a CSV file for backup or analysis.</p>
+                <p class="theme-text-muted">Download all songs as a CSV file for backup or analysis.</p>
                 <%= link_to export_csv_bulk_operations_path, class: "btn btn-outline-primary" do %>
                   <i class="bi bi-download"></i> Export to CSV
                 <% end %>
@@ -104,7 +104,7 @@
               <!-- Bulk Delete -->
               <div>
                 <h6>Bulk Delete Songs</h6>
-                <p class="text-muted">Enter song IDs separated by commas to delete multiple songs.</p>
+                <p class="theme-text-muted">Enter song IDs separated by commas to delete multiple songs.</p>
                 <form action="<%= bulk_delete_bulk_operations_path %>" method="post" 
                       onsubmit="return confirm('Are you sure you want to delete these songs? This action cannot be undone.')">
                   <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
@@ -142,25 +142,25 @@
                 <div class="col-md-3">
                   <div class="text-center">
                     <h3 class="text-primary"><%= Song.count %></h3>
-                    <p class="text-muted mb-0">Total Songs</p>
+                    <p class="theme-text-muted mb-0">Total Songs</p>
                   </div>
                 </div>
                 <div class="col-md-3">
                   <div class="text-center">
                     <h3 class="text-success"><%= Artist.count %></h3>
-                    <p class="text-muted mb-0">Artists</p>
+                    <p class="theme-text-muted mb-0">Artists</p>
                   </div>
                 </div>
                 <div class="col-md-3">
                   <div class="text-center">
                     <h3 class="text-info"><%= Album.count %></h3>
-                    <p class="text-muted mb-0">Albums</p>
+                    <p class="theme-text-muted mb-0">Albums</p>
                   </div>
                 </div>
                 <div class="col-md-3">
                   <div class="text-center">
                     <h3 class="text-warning"><%= Genre.count %></h3>
-                    <p class="text-muted mb-0">Genres</p>
+                    <p class="theme-text-muted mb-0">Genres</p>
                   </div>
                 </div>
               </div>

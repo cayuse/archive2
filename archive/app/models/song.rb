@@ -34,8 +34,8 @@ class Song < ApplicationRecord
   scope :completed, -> { where(processing_status: 'completed') }
   scope :failed, -> { where(processing_status: 'failed') }
   scope :needs_review, -> { where(processing_status: 'needs_review') }
-  scope :new_imports, -> { where(processing_status: 'new') }
-  scope :needs_attention, -> { where(processing_status: ['failed', 'needs_review', 'new']) }
+
+
   
   # Search scopes
   scope :search_by_title, ->(query) { where("title ILIKE ?", "%#{query}%") }
@@ -90,16 +90,12 @@ class Song < ApplicationRecord
     processing_status == 'needs_review'
   end
 
-  def new_import?
-    processing_status == 'new'
-  end
 
-  def needs_attention?
-    %w[failed needs_review new].include?(processing_status)
-  end
+
+
 
   def has_complete_metadata?
-    artist.present? && album.present? && genre.present?
+    artist.present? && genre.present?
   end
 
   def has_partial_metadata?

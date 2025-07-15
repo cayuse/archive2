@@ -9,22 +9,7 @@
     <% end %>
   </div>
 <% else %>
-  <div class="text-muted">
+  <div class="theme-text-muted">
     <small>No albums found. <a href="#" onclick="createNewAlbum()">Create new album</a></small>
   </div>
-<% end %>
-
-<script>
-function selectAlbum(albumId, albumTitle) {
-  document.getElementById('selected_album_id').value = albumId;
-  document.getElementById('selected_album_display').innerHTML = 
-    '<div class="alert alert-info"><strong>Selected:</strong> ' + albumTitle + '</div>';
-  document.getElementById('album_results').innerHTML = '';
-  document.getElementById('album_search').value = albumTitle;
-}
-
-function createNewAlbum() {
-  // TODO: Implement modal or form for creating new album
-  alert('Album creation feature coming soon!');
-}
-</script> 
+<% end %> 

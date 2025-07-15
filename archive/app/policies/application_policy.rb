@@ -9,18 +9,15 @@ class ApplicationPolicy
   end
 
   def index?
-    # Everyone can view lists
-    true
+    false
   end
 
   def show?
-    # Everyone can view individual records
-    true
+    false
   end
 
   def create?
-    # Only moderators and admins can create content
-    user&.moderator? || user&.admin?
+    false
   end
 
   def new?
@@ -28,8 +25,7 @@ class ApplicationPolicy
   end
 
   def update?
-    # Only moderators and admins can update content
-    user&.moderator? || user&.admin?
+    false
   end
 
   def edit?
@@ -37,8 +33,7 @@ class ApplicationPolicy
   end
 
   def destroy?
-    # Only admins can destroy content
-    user&.admin?
+    false
   end
 
   class Scope
@@ -48,8 +43,7 @@ class ApplicationPolicy
     end
 
     def resolve
-      # By default, show all records
-      scope.all
+      raise NoMethodError, "You must define #resolve in #{self.class}"
     end
 
     private

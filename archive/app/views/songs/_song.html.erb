@@ -1,7 +1,7 @@
-<tr class="<%= 'table-warning' if song.needs_attention? %>" data-song-id="<%= song.id %>">
+<tr class="<%= 'table-warning' if song.needs_review? %>" data-song-id="<%= song.id %>">
   <% if local_assigns[:show_filename] %>
     <td>
-      <small class="text-muted font-monospace">
+      <small class="theme-text-muted font-monospace">
         <%= song.original_filename.presence || "N/A" %>
       </small>
     </td>
@@ -11,7 +11,7 @@
     <% if song.title.present? %>
       <%= link_to song.title, song_path(song), class: "text-decoration-none fw-medium" %>
     <% else %>
-      <span class="text-muted">No title</span>
+      <span class="theme-text-muted">No title</span>
     <% end %>
   </td>
   
@@ -19,7 +19,7 @@
     <% if song.artist.present? %>
       <%= song.artist.name %>
     <% else %>
-      <span class="text-muted">No artist</span>
+      <span class="theme-text-muted">No artist</span>
     <% end %>
   </td>
   
@@ -27,7 +27,7 @@
     <% if song.album.present? %>
       <%= song.album.title %>
     <% else %>
-      <span class="text-muted">No album</span>
+      <span class="theme-text-muted">No album</span>
     <% end %>
   </td>
   
@@ -48,7 +48,7 @@
         <%= song.genre.name %>
       </span>
     <% else %>
-      <span class="text-muted">No genre</span>
+      <span class="theme-text-muted">No genre</span>
     <% end %>
   </td>
   
@@ -89,6 +89,8 @@
         <small class="text-danger" title="<%= song.processing_error %>">
           <%= truncate(song.processing_error, length: 50) %>
         </small>
+      <% else %>
+        <span class="theme-text-muted">-</span>
       <% end %>
     </td>
   <% end %>
@@ -97,7 +99,7 @@
     <% if song.duration.present? %>
       <%= "#{song.duration / 60}:#{(song.duration % 60).to_s.rjust(2, '0')}" %>
     <% else %>
-      <span class="text-muted">-</span>
+      <span class="theme-text-muted">-</span>
     <% end %>
   </td>
   
@@ -113,20 +115,19 @@
         </audio>
       </div>
     <% else %>
-      <span class="text-muted">No audio</span>
+      <span class="theme-text-muted">No audio</span>
     <% end %>
   </td>
   
   <% if local_assigns[:maintenance_mode] %>
     <td>
       <div class="btn-group btn-group-sm" role="group">
-        <!-- Maintenance mode: Edit, View, Delete (admin only) -->
+        <!-- Maintenance mode: Edit, Delete (admin only) -->
         <%= link_to "Edit", edit_song_path(song), class: "btn btn-outline-primary btn-sm" %>
-        <%= link_to "View", song_path(song), class: "btn btn-outline-info btn-sm" %>
         <% if policy(song).destroy? %>
           <%= button_to "Delete", song_path(song), 
                        method: :delete, 
-                       data: { confirm: "Are you sure?" }, 
+                       data: { confirm: "Are you sure you want to delete this song?" }, 
                        class: "btn btn-outline-danger btn-sm" %>
         <% end %>
       </div>

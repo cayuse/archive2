@@ -1,8 +1,6 @@
 //= link_tree ../images
-//= link_directory ../javascripts .js
 //= link_directory ../stylesheets .css
-//= link application.css
-//= link @hotwired--turbo-rails.js
-//= link @hotwired--turbo.js
-//= link @rails--actioncable--src.js
-//= link htmx.org.js 
+//= link_tree ../../javascript .js
+//= link_tree ../../../vendor/javascript .js
+//= link_tree ../stylesheets/themes
+//= link_tree ../images/themes

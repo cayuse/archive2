@@ -1,179 +1,227 @@
 # Music Archive Utilities
 
-This folder contains utilities for bulk uploading songs to the Music Archive via API.
+This directory contains utility scripts for interacting with the Music Archive API.
 
-## Files
+## Bulk Upload Script
 
-- `bulk_upload.sh` - Main bulk upload script
-- `test_api.sh` - API testing script
-- `API_DOCUMENTATION.md` - Complete API documentation
+The `bulk_upload.py` script is a core component for adding large amounts of music to the archive. It supports flexible metadata handling and can extract information from filenames.
 
-## Quick Start
+### Features
 
-### 1. Test the API
+- **Flexible URL Configuration**: Connect to any archive instance
+- **Metadata Extraction**: Automatically extract metadata from filenames
+- **Skip Processing**: Option to skip automatic metadata extraction from audio files
+- **Progress Tracking**: Visual progress bar with file information
+- **Dry Run Mode**: Test uploads without actually uploading
+- **Verbose Output**: Detailed logging for debugging
 
-First, make sure your Rails server is running:
-
-```bash
-cd /workspaces/dockercrap/archive
-bin/rails server -b 0.0.0.0 -p 3000
-```
-
-Then test the API:
+### Usage
 
 ```bash
-cd /workspaces/dockercrap/utilities
-./test_api.sh
+python3 bulk_upload.py <directory_path> [options]
 ```
 
-### 2. Get an API Token
+### Arguments
 
-Use the test script to get an API token, or manually authenticate:
+- `directory_path`: Path to directory containing audio files
+
+### Options
+
+- `--url URL`: Base URL of the archive (default: http://localhost:3000)
+- `--username USERNAME`: Username/email for authentication
+- `--password PASSWORD`: Password for authentication
+- `-d, --dry-run`: Show what would be uploaded without actually uploading
+- `-v, --verbose`: Verbose output
+- `--skip-metadata`: Skip automatic metadata extraction from audio files
+- `--extract-metadata`: Extract metadata from filenames (default: enabled)
+- `-h, --help`: Show help message
+
+### Examples
+
+#### Basic Upload
+```bash
+python3 bulk_upload.py ~/Music --username admin@example.com --password mypass
+```
+
+#### Upload to Remote Archive
+```bash
+python3 bulk_upload.py ~/Music --url https://myarchive.com --username admin@example.com --password mypass
+```
+
+#### Dry Run with Verbose Output
+```bash
+python3 bulk_upload.py ~/Music --username admin@example.com --password mypass --dry-run --verbose
+```
+
+#### Skip Audio Metadata Extraction
+```bash
+python3 bulk_upload.py ~/Music --username admin@example.com --password mypass --skip-metadata
+```
+
+### Filename Metadata Extraction
+
+The script can extract metadata from filenames using common patterns:
+
+#### Supported Patterns
+
+1. **Artist - Album - Track - Title**
+   ```
+   Artist Name - Album Title - 01 - Song Title.mp3
+   ```
+
+2. **Artist - Album - Title**
+   ```
+   Artist Name - Album Title - Song Title.mp3
+   ```
+
+3. **Artist - Title**
+   ```
+   Artist Name - Song Title.mp3
+   ```
+
+4. **Just Title**
+   ```
+   Song Title.mp3
+   ```
+
+#### Metadata Mapping
+
+- `artist_name`: Artist name
+- `album_title`: Album title
+- `track_number`: Track number (if present)
+- `title`: Song title
+
+### Processing Options
+
+#### Metadata Extraction from Filenames
+- **Enabled by default**: The script automatically extracts metadata from filenames
+- **Disable**: Use `--no-extract-metadata` to disable this feature
+
+#### Audio File Metadata Extraction
+- **Enabled by default**: The Rails API extracts metadata from audio file tags
+- **Skip**: Use `--skip-metadata` to skip this processing step
+
+#### Processing Status
+
+The API sets processing status based on provided metadata:
+
+- **`completed`**: All metadata provided (artist, album, genre)
+- **`needs_review`**: Partial metadata provided
+- **`processing`**: No metadata provided, will extract from file
+- **`new`**: Skip metadata extraction, minimal processing
+
+### Authentication
+
+The script supports two authentication methods:
+
+1. **Command line arguments**:
+   ```bash
+   python3 bulk_upload.py ~/Music --username admin@example.com --password mypass
+   ```
+
+2. **Interactive prompts**:
+   ```bash
+   python3 bulk_upload.py ~/Music
+   # Username/Email: admin@example.com
+   # Password: ********
+   ```
+
+### Error Handling
+
+The script handles various error conditions:
+
+- **Network errors**: Retry logic and clear error messages
+- **Authentication failures**: Clear feedback on credential issues
+- **File access errors**: Graceful handling of permission issues
+- **API errors**: Detailed error messages from the server
+
+### Dependencies
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@example.com",
-    "password": "password123"
-  }'
+pip install requests tqdm
 ```
 
-### 3. Upload Songs
+### Testing
 
-Use the bulk upload script:
+Use the test script to verify functionality:
 
 ```bash
-# Dry run (see what would be uploaded)
-./bulk_upload.sh /path/to/music/folder -k YOUR_API_TOKEN -d
-
-# Actually upload
-./bulk_upload.sh /path/to/music/folder -k YOUR_API_TOKEN
-
-# Verbose output
-./bulk_upload.sh /path/to/music/folder -k YOUR_API_TOKEN -v
+python3 test_bulk_upload.py
 ```
 
-## Features
+This will create test files and run dry-run tests to verify the upload process.
 
-### Bulk Upload Script (`bulk_upload.sh`)
+## API Integration
 
-- **Recursive scanning**: Finds all audio files in subdirectories
-- **Multiple formats**: Supports MP3, WAV, FLAC, M4A, OGG, AAC
-- **Progress tracking**: Shows upload progress and file sizes
-- **Error handling**: Continues on individual file failures
-- **Dry run mode**: Test without actually uploading
-- **Verbose output**: Detailed logging for debugging
+The bulk upload script integrates with the Music Archive API:
 
-### API Testing Script (`test_api.sh`)
+### Endpoints Used
 
-- **Server check**: Verifies the Rails server is running
-- **Authentication test**: Tests login and token generation
-- **Endpoint testing**: Tests all major API endpoints
-- **Error reporting**: Clear error messages and status codes
+- `POST /api/v1/auth/login`: Authentication
+- `POST /api/v1/songs/bulk_upload`: File upload with metadata
 
-## Supported Audio Formats
+### API Features
 
-- MP3 (.mp3)
-- WAV (.wav)
-- FLAC (.flac)
-- M4A (.m4a)
-- OGG (.ogg)
-- AAC (.aac)
+- **Flexible Metadata**: Send any combination of metadata parameters
+- **Processing Control**: Skip or enable metadata extraction
+- **Status Tracking**: Monitor processing status of uploaded songs
+- **Error Recovery**: Graceful handling of upload failures
 
-## How It Works
+### Response Format
 
-1. **Authentication**: Script authenticates with email/password to get API token
-2. **File Discovery**: Recursively scans directory for audio files
-3. **Upload**: Each file is uploaded via multipart/form-data
-4. **Metadata Extraction**: Rails automatically extracts metadata from audio files
-5. **Status Tracking**: Songs start as "processing" and update to "complete" when metadata is extracted
-
-## Song Status Values
-
-- `processing` - File uploaded, metadata extraction in progress
-- `complete` - All metadata extracted successfully
-- `needs_review` - Metadata incomplete, requires manual review
-- `error` - Processing failed
-
-## Permissions
-
-- **Admin/Moderator**: Can upload songs and perform all bulk operations
-- **Regular User**: Can only view songs (read-only access)
+```json
+{
+  "success": true,
+  "message": "Song uploaded successfully",
+  "song": {
+    "id": 123,
+    "title": "Song Title",
+    "processing_status": "completed",
+    "created_at": "2025-07-15T14:30:00Z"
+  }
+}
+```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Server not running**
-   ```
-   Error: Server is not running
-   Solution: Start Rails server with `bin/rails server`
-   ```
+1. **Authentication failed**
+   - Check username and password
+   - Verify the user has upload permissions
 
-2. **Authentication failed**
-   ```
-   Error: Invalid email or password
-   Solution: Check your credentials or create a user account
-   ```
+2. **Network errors**
+   - Check the archive URL is correct
+   - Verify network connectivity
 
-3. **Permission denied**
-   ```
-   Error: Insufficient permissions for upload
-   Solution: Use an admin or moderator account
-   ```
+3. **File not found**
+   - Check the directory path exists
+   - Verify file permissions
 
-4. **File not found**
-   ```
-   Error: Directory does not exist
-   Solution: Check the path to your music folder
-   ```
+4. **Upload failures**
+   - Check file format is supported
+   - Verify file is not corrupted
 
 ### Debug Mode
 
 Use verbose output to see detailed information:
 
 ```bash
-./bulk_upload.sh /path/to/music -k YOUR_TOKEN -v
+python3 bulk_upload.py ~/Music --username admin@example.com --password mypass --verbose
 ```
 
-### Dry Run
+### Dry Run Testing
 
-Test what would be uploaded without actually uploading:
+Test uploads without actually uploading:
 
 ```bash
-./bulk_upload.sh /path/to/music -k YOUR_TOKEN -d
+python3 bulk_upload.py ~/Music --username admin@example.com --password mypass --dry-run --verbose
 ```
 
-## Examples
+## Future Enhancements
 
-### Upload a single folder
-```bash
-./bulk_upload.sh ~/Music/Rock -k YOUR_API_TOKEN
-```
-
-### Upload with progress tracking
-```bash
-./bulk_upload.sh ~/Music -k YOUR_API_TOKEN -v
-```
-
-### Test upload without actually uploading
-```bash
-./bulk_upload.sh ~/Music -k YOUR_API_TOKEN -d -v
-```
-
-### Test API endpoints
-```bash
-./test_api.sh -e your_email@example.com -p your_password
-```
-
-## API Endpoints
-
-- `POST /api/v1/auth/login` - Get API token
-- `GET /api/v1/auth/verify` - Verify API token
-- `POST /api/v1/songs/bulk_upload` - Upload single song
-- `GET /api/v1/songs` - List songs
-- `POST /api/v1/songs/bulk_create` - Create multiple songs
-- `GET /api/v1/songs/export` - Export songs to CSV
-
-See `API_DOCUMENTATION.md` for complete API documentation. 
+- **Batch processing**: Upload multiple files in parallel
+- **Resume functionality**: Continue interrupted uploads
+- **Metadata validation**: Verify extracted metadata accuracy
+- **Progress persistence**: Save upload progress for large batches
+- **Custom metadata**: Allow custom metadata field mapping 

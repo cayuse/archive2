@@ -1,0 +1,9 @@
+one:
+  title: Test Album
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>
+
+two:
+  title: Another Album
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %> 
