@@ -1,7 +1,7 @@
 class Album < ApplicationRecord
   # Associations
-  belongs_to :artist
   has_many :songs, dependent: :destroy
+  has_many :artists, through: :songs
   has_and_belongs_to_many :genres, join_table: :albums_genres
 
   # Active Storage for album cover
@@ -9,8 +9,7 @@ class Album < ApplicationRecord
 
   # Validations
   validates :title, presence: true, length: { minimum: 1, maximum: 200 }
-  validates :artist, presence: true
-  validates :release_date, date: { after_or_equal_to: Date.new(1900,1,1), before_or_equal_to: Date.new(2030,12,31) }, allow_blank: true
+  validates :release_date, comparison: { greater_than_or_equal_to: Date.new(1900,1,1), less_than_or_equal_to: Date.new(2030,12,31) }, allow_blank: true
   validates :total_tracks, numericality: { only_integer: true, greater_than: 0 }, allow_blank: true
   validates :duration, numericality: { only_integer: true, greater_than: 0 }, allow_blank: true
 

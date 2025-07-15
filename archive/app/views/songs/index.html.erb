@@ -1,0 +1,204 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <!-- Page Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Songs</h1>
+        <% if policy(Song.new).upload_audio? %>
+          <%= link_to upload_path, class: "btn btn-primary" do %>
+            <i class="fas fa-plus me-2"></i>Upload Song
+          <% end %>
+        <% end %>
+      </div>
+      
+      <!-- Search Bar -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-8">
+              <input type="text" id="search-input" class="form-control" placeholder="Search songs, artists, albums, or genres..." autocomplete="off">
+            </div>
+            <div class="col-md-4">
+              <button id="clear-search" class="btn btn-outline-secondary" style="display: none;">Clear Search</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Songs Table -->
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">All Songs</h5>
+          <div id="song-count" class="text-muted"></div>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Artist</th>
+                  <th>Album</th>
+                  <th>Genre</th>
+                  <th>Duration</th>
+                  <th>Created</th>
+                  <th>Play</th>
+                </tr>
+              </thead>
+              <tbody id="songs-table-body">
+                <%= render partial: 'song_list', locals: { songs: @songs } %>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Loading indicator -->
+          <div id="loading" class="text-center mt-3" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          <!-- Load more button -->
+          <div id="load-more-container" class="text-center mt-3" style="display: none;">
+            <button id="load-more" class="btn btn-outline-primary">Load More Songs</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('turbo:load', function() {
+  let searchTimeout;
+  let currentPage = 1;
+  let currentQuery = '';
+  let isLoading = false;
+  let hasMore = true;
+  let currentlyPlaying = null;
+  
+  const searchInput = document.getElementById('search-input');
+  const clearSearchBtn = document.getElementById('clear-search');
+  const songsTableBody = document.getElementById('songs-table-body');
+  const loadingDiv = document.getElementById('loading');
+  const loadMoreContainer = document.getElementById('load-more-container');
+  const loadMoreBtn = document.getElementById('load-more');
+  const songCountDiv = document.getElementById('song-count');
+  
+  // Audio Player Functionality - Simplified for native HTML5 controls
+  function initializeAudioPlayers() {
+    const audioElements = document.querySelectorAll('audio');
+    console.log('Found audio elements:', audioElements.length);
+    
+    // Set default volume for all audio elements
+    audioElements.forEach(audio => {
+      audio.volume = 0.05; // 5% volume
+      console.log('Set volume to 0.05 for audio element');
+    });
+  }
+  
+  // Initialize audio players when page loads
+  initializeAudioPlayers();
+  
+
+  
+  // Live search functionality
+  searchInput.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(function() {
+      currentQuery = searchInput.value.trim();
+      currentPage = 1;
+      hasMore = true;
+      loadSongs(true);
+    }, 300); // Debounce search
+  });
+  
+  // Clear search
+  clearSearchBtn.addEventListener('click', function() {
+    searchInput.value = '';
+    currentQuery = '';
+    currentPage = 1;
+    hasMore = true;
+    loadSongs(true);
+    clearSearchBtn.style.display = 'none';
+  });
+  
+  // Load more functionality
+  loadMoreBtn.addEventListener('click', function() {
+    if (!isLoading && hasMore) {
+      currentPage++;
+      loadSongs(false);
+    }
+  });
+  
+  // Infinite scroll
+  window.addEventListener('scroll', function() {
+    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+      if (!isLoading && hasMore) {
+        currentPage++;
+        loadSongs(false);
+      }
+    }
+  });
+  
+  function loadSongs(reset = false) {
+    if (isLoading) return;
+    
+    isLoading = true;
+    loadingDiv.style.display = 'block';
+    
+    const params = new URLSearchParams({
+      q: currentQuery,
+      page: currentPage
+    });
+    
+    fetch(`/songs/search?${params}`)
+      .then(response => response.text())
+      .then(html => {
+        if (reset) {
+          songsTableBody.innerHTML = html;
+        } else {
+          songsTableBody.insertAdjacentHTML('beforeend', html);
+        }
+        
+        // Re-initialize audio players for new content
+        setTimeout(() => {
+          initializeAudioPlayers();
+        }, 100);
+        
+        // Update song count
+        const songCount = songsTableBody.querySelectorAll('tr').length;
+        songCountDiv.textContent = `${songCount} songs`;
+        
+        // Show/hide clear search button
+        if (currentQuery) {
+          clearSearchBtn.style.display = 'block';
+        }
+        
+        // Check if we have more songs to load by counting the song rows in the response
+        // Look for actual song data rows (not header rows)
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        const songRows = tempDiv.querySelectorAll('tr[data-song-id]');
+        hasMore = songRows.length > 0;
+        
+        if (hasMore && !reset) {
+          loadMoreContainer.style.display = 'block';
+        } else {
+          loadMoreContainer.style.display = 'none';
+        }
+      })
+      .catch(error => {
+        console.error('Error loading songs:', error);
+      })
+      .finally(() => {
+        isLoading = false;
+        loadingDiv.style.display = 'none';
+      });
+  }
+  
+  // Initialize song count
+  const initialCount = songsTableBody.querySelectorAll('tr').length;
+  songCountDiv.textContent = `${initialCount} songs`;
+});
+</script> 

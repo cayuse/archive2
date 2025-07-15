@@ -1,0 +1,71 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Albums</h1>
+        <div>
+          <span class="badge bg-primary"><%= @albums.total_count %> albums</span>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-body">
+          <% if @albums.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Artists</th>
+                    <th>Songs</th>
+                    <th>Release Date</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @albums.each do |album| %>
+                    <tr>
+                      <td>
+                        <%= link_to album.title, album_path(album), class: "text-decoration-none" %>
+                      </td>
+                      <td>
+                        <% album.artists.limit(3).each do |artist| %>
+                          <span class="badge bg-info"><%= artist.name %></span>
+                        <% end %>
+                        <% if album.artists.count > 3 %>
+                          <span class="text-muted">+<%= album.artists.count - 3 %> more</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <span class="badge bg-secondary"><%= album.songs.count %></span>
+                      </td>
+                      <td>
+                        <% if album.release_date.present? %>
+                          <%= album.release_date.strftime("%Y-%m-%d") %>
+                        <% else %>
+                          <span class="text-muted">-</span>
+                        <% end %>
+                      </td>
+                      <td><%= album.created_at.strftime("%Y-%m-%d") %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Pagination -->
+            <% if @albums.respond_to?(:current_page) %>
+              <div class="d-flex justify-content-center mt-4">
+                <%= paginate @albums if respond_to?(:paginate) %>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="text-center py-4">
+              <p class="text-muted">No albums found.</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

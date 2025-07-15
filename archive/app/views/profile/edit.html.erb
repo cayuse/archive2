@@ -1,0 +1,154 @@
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="h4 mb-0">
+            <i class="fas fa-user-edit me-2"></i>Edit Profile
+          </h2>
+        </div>
+        <div class="card-body">
+          <%= form_with(model: @user, url: profile_path, method: :patch, local: true) do |form| %>
+            <% if @user.errors.any? %>
+              <div class="alert alert-danger">
+                <h6><%= pluralize(@user.errors.count, "error") %> prohibited this profile from being saved:</h6>
+                <ul class="mb-0">
+                  <% @user.errors.full_messages.each do |message| %>
+                    <li><%= message %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+
+            <!-- Profile Picture Section -->
+            <div class="text-center mb-4">
+              <div class="profile-avatar">
+                <div class="avatar-placeholder-large">
+                  <span class="avatar-text"><%= @user.name.first.upcase %></span>
+                </div>
+              </div>
+              <p class="text-muted mt-2">Profile picture coming soon</p>
+            </div>
+
+            <!-- Basic Information -->
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <%= form.label :name, class: "form-label" %>
+                  <%= form.text_field :name, class: "form-control" %>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <%= form.label :email, class: "form-label" %>
+                  <%= form.email_field :email, class: "form-control" %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Password Change Section -->
+            <div class="card mt-4">
+              <div class="card-header">
+                <h5 class="mb-0">
+                  <i class="fas fa-lock me-2"></i>Change Password
+                </h5>
+              </div>
+              <div class="card-body">
+                <div class="alert alert-info">
+                  <i class="fas fa-info-circle me-2"></i>
+                  Leave password fields blank if you don't want to change your password.
+                </div>
+                
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <%= form.label :password, "New Password", class: "form-label" %>
+                      <%= form.password_field :password, class: "form-control", placeholder: "Enter new password" %>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <%= form.label :password_confirmation, "Confirm New Password", class: "form-label" %>
+                      <%= form.password_field :password_confirmation, class: "form-control", placeholder: "Confirm new password" %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Account Information -->
+            <div class="card mt-4">
+              <div class="card-header">
+                <h5 class="mb-0">
+                  <i class="fas fa-info-circle me-2"></i>Account Information
+                </h5>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label class="form-label">Role</label>
+                      <input type="text" class="form-control" value="<%= @user.role.humanize %>" readonly>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label class="form-label">Member Since</label>
+                      <input type="text" class="form-control" value="<%= @user.created_at.strftime('%B %d, %Y') %>" readonly>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-between mt-4">
+              <%= link_to "Cancel", root_path, class: "btn btn-secondary" %>
+              <%= form.submit "Update Profile", class: "btn btn-primary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.profile-avatar {
+  margin-bottom: 1rem;
+}
+
+.avatar-placeholder-large {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-text {
+  color: white;
+  font-size: 2.5rem;
+  font-weight: bold;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.card {
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+}
+
+.card-header {
+  background: var(--secondary-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.form-control:read-only {
+  background-color: var(--secondary-bg);
+  color: var(--text-secondary);
+}
+</style> 

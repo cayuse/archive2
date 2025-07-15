@@ -1,0 +1,30 @@
+<% if albums.any? %>
+  <div class="list-group">
+    <% albums.each do |album| %>
+      <button type="button" 
+              class="list-group-item list-group-item-action"
+              onclick="selectAlbum('<%= album.id %>', '<%= j(album.display_title) %>')">
+        <strong><%= album.title %></strong>
+      </button>
+    <% end %>
+  </div>
+<% else %>
+  <div class="text-muted">
+    <small>No albums found. <a href="#" onclick="createNewAlbum()">Create new album</a></small>
+  </div>
+<% end %>
+
+<script>
+function selectAlbum(albumId, albumTitle) {
+  document.getElementById('selected_album_id').value = albumId;
+  document.getElementById('selected_album_display').innerHTML = 
+    '<div class="alert alert-info"><strong>Selected:</strong> ' + albumTitle + '</div>';
+  document.getElementById('album_results').innerHTML = '';
+  document.getElementById('album_search').value = albumTitle;
+}
+
+function createNewAlbum() {
+  // TODO: Implement modal or form for creating new album
+  alert('Album creation feature coming soon!');
+}
+</script> 

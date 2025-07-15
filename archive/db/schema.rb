@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_14_061901) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_15_072009) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -140,22 +140,30 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_14_061901) do
 
   create_table "songs", force: :cascade do |t|
     t.string "title", null: false
-    t.bigint "album_id", null: false
+    t.bigint "album_id"
     t.integer "track_number"
     t.integer "duration"
     t.string "file_format"
     t.bigint "file_size"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "genre_id", null: false
+    t.bigint "genre_id"
     t.tsvector "search_vector"
-    t.index ["album_id", "track_number"], name: "index_songs_on_album_id_and_track_number", unique: true
+    t.string "processing_status"
+    t.text "processing_error"
+    t.bigint "artist_id"
+    t.string "original_filename"
+    t.bigint "user_id"
+    t.index ["album_id", "track_number"], name: "index_songs_on_album_id_and_track_number"
     t.index ["album_id"], name: "index_songs_on_album_id"
+    t.index ["artist_id"], name: "index_songs_on_artist_id"
     t.index ["file_format"], name: "index_songs_on_file_format"
     t.index ["genre_id"], name: "index_songs_on_genre_id"
+    t.index ["processing_status"], name: "index_songs_on_processing_status"
     t.index ["search_vector"], name: "index_songs_on_search_vector", using: :gin
     t.index ["title"], name: "index_songs_on_title"
     t.index ["track_number"], name: "index_songs_on_track_number"
+    t.index ["user_id"], name: "index_songs_on_user_id"
     t.check_constraint "duration IS NULL OR duration > 0", name: "check_positive_duration"
     t.check_constraint "file_size IS NULL OR file_size > 0", name: "check_positive_file_size"
     t.check_constraint "track_number IS NULL OR track_number > 0", name: "check_positive_track_number"
@@ -184,5 +192,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_14_061901) do
   add_foreign_key "playlists_songs", "playlists"
   add_foreign_key "playlists_songs", "songs"
   add_foreign_key "songs", "albums"
+  add_foreign_key "songs", "artists"
   add_foreign_key "songs", "genres"
+  add_foreign_key "songs", "users"
 end

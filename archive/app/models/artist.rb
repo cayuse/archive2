@@ -1,7 +1,7 @@
 class Artist < ApplicationRecord
   # Associations
-  has_many :albums, dependent: :destroy
-  has_many :songs, through: :albums
+  has_many :songs, dependent: :destroy
+  has_many :albums, through: :songs
   has_and_belongs_to_many :genres, join_table: :artists_genres
 
   # Active Storage for artist images

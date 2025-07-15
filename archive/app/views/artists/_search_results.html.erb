@@ -1,0 +1,33 @@
+<% if artists.any? %>
+  <div class="list-group">
+    <% artists.each do |artist| %>
+      <button type="button" 
+              class="list-group-item list-group-item-action"
+              onclick="selectArtist('<%= artist.id %>', '<%= j(artist.name) %>')">
+        <strong><%= artist.name %></strong>
+        <% if artist.country.present? %>
+          <br><small class="text-muted"><%= artist.country %></small>
+        <% end %>
+      </button>
+    <% end %>
+  </div>
+<% else %>
+  <div class="text-muted">
+    <small>No artists found. <a href="#" onclick="createNewArtist()">Create new artist</a></small>
+  </div>
+<% end %>
+
+<script>
+function selectArtist(artistId, artistName) {
+  document.getElementById('selected_artist_id').value = artistId;
+  document.getElementById('selected_artist_display').innerHTML = 
+    '<div class="alert alert-info"><strong>Selected:</strong> ' + artistName + '</div>';
+  document.getElementById('artist_results').innerHTML = '';
+  document.getElementById('artist_search').value = artistName;
+}
+
+function createNewArtist() {
+  // TODO: Implement modal or form for creating new artist
+  alert('Artist creation feature coming soon!');
+}
+</script> 

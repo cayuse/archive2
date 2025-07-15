@@ -1,0 +1,66 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Playlists</h1>
+        <div>
+          <span class="badge bg-primary"><%= @playlists.total_count %> playlists</span>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-body">
+          <% if @playlists.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Owner</th>
+                    <th>Songs</th>
+                    <th>Visibility</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @playlists.each do |playlist| %>
+                    <tr>
+                      <td>
+                        <%= link_to playlist.name, playlist_path(playlist), class: "text-decoration-none" %>
+                      </td>
+                      <td>
+                        <%= playlist.user.name %>
+                      </td>
+                      <td>
+                        <span class="badge bg-secondary"><%= playlist.songs.count %></span>
+                      </td>
+                      <td>
+                        <% if playlist.is_public? %>
+                          <span class="badge bg-success">Public</span>
+                        <% else %>
+                          <span class="badge bg-warning">Private</span>
+                        <% end %>
+                      </td>
+                      <td><%= playlist.created_at.strftime("%Y-%m-%d") %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Pagination -->
+            <% if @playlists.respond_to?(:current_page) %>
+              <div class="d-flex justify-content-center mt-4">
+                <%= paginate @playlists if respond_to?(:paginate) %>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="text-center py-4">
+              <p class="text-muted">No playlists found.</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

@@ -1,0 +1,48 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <h1 class="h3 mb-4">Upload Audio File</h1>
+      
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-upload"></i> Upload Audio File
+          </h5>
+        </div>
+        <div class="card-body">
+          <%= form_with model: @song, url: upload_path, local: true, multipart: true do |form| %>
+            <div class="mb-3">
+              <label for="song_audio_file" class="form-label">Select Audio File</label>
+              <%= form.file_field :audio_file, 
+                                class: "form-control", 
+                                accept: "audio/*",
+                                required: true %>
+              <div class="form-text">
+                Supported formats: MP3, M4A, MP4, OGG, FLAC, WAV, AAC
+              </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+              <%= form.submit "Upload and Process", class: "btn btn-primary" %>
+              <%= link_to "Cancel", songs_path, class: "btn btn-outline-secondary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+      
+      <div class="mt-4">
+        <h5>Upload Process</h5>
+        <ol>
+          <li><strong>Upload:</strong> Select your audio file</li>
+          <li><strong>Process:</strong> The system will extract metadata from the file (title, artist, album, genre, etc.)</li>
+          <li><strong>Review:</strong> You'll be taken to an edit form with the extracted information</li>
+          <li><strong>Save:</strong> Review and edit the metadata, then save the song</li>
+        </ol>
+        
+        <div class="alert alert-info">
+          <strong>Note:</strong> If the file has no metadata tags, you'll need to fill in the information manually on the review page.
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

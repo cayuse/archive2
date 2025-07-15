@@ -1,0 +1,158 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><%= @artist.name %></h1>
+        <div>
+          <%= link_to "Back to Artists", artists_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+      
+      <!-- Artist Info -->
+      <div class="row">
+        <div class="col-md-8">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Artist Information</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <dl class="row">
+                    <dt class="col-sm-4">Name:</dt>
+                    <dd class="col-sm-8"><%= @artist.name %></dd>
+                    
+                    <dt class="col-sm-4">Country:</dt>
+                    <dd class="col-sm-8">
+                      <% if @artist.country.present? %>
+                        <%= @artist.country %>
+                      <% else %>
+                        <span class="text-muted">Not set</span>
+                      <% end %>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Formed:</dt>
+                    <dd class="col-sm-8">
+                      <% if @artist.formed_year.present? %>
+                        <%= @artist.formed_year %>
+                      <% else %>
+                        <span class="text-muted">Not set</span>
+                      <% end %>
+                    </dd>
+                  </dl>
+                </div>
+                
+                <div class="col-md-6">
+                  <dl class="row">
+                    <dt class="col-sm-4">Songs:</dt>
+                    <dd class="col-sm-8">
+                      <span class="badge bg-primary"><%= @artist.songs.count %></span>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Albums:</dt>
+                    <dd class="col-sm-8">
+                      <span class="badge bg-info"><%= @artist.albums.count %></span>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Genres:</dt>
+                    <dd class="col-sm-8">
+                      <% @artist.genres.limit(3).each do |genre| %>
+                        <span class="badge" style="background-color: <%= genre.color %>">
+                          <%= genre.name %>
+                        </span>
+                      <% end %>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Statistics</h5>
+            </div>
+            <div class="card-body">
+              <dl class="row">
+                <dt class="col-sm-6">Total Songs:</dt>
+                <dd class="col-sm-6"><%= @artist.songs.count %></dd>
+                
+                <dt class="col-sm-6">Total Albums:</dt>
+                <dd class="col-sm-6"><%= @artist.albums.count %></dd>
+                
+                <dt class="col-sm-6">Genres:</dt>
+                <dd class="col-sm-6"><%= @artist.genres.count %></dd>
+                
+                <dt class="col-sm-6">Created:</dt>
+                <dd class="col-sm-6"><%= @artist.created_at.strftime("%Y-%m-%d") %></dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Songs -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h5 class="mb-0">Songs by <%= @artist.name %></h5>
+        </div>
+        <div class="card-body">
+          <% if @songs.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Album</th>
+                    <th>Genre</th>
+                    <th>Duration</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @songs.each do |song| %>
+                    <tr>
+                      <td>
+                        <%= link_to song.title, song_path(song), class: "text-decoration-none" %>
+                      </td>
+                      <td>
+                        <% if song.album.present? %>
+                          <%= song.album.title %>
+                        <% else %>
+                          <span class="text-muted">-</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if song.genre.present? %>
+                          <span class="badge" style="background-color: <%= song.genre.color %>">
+                            <%= song.genre.name %>
+                          </span>
+                        <% else %>
+                          <span class="text-muted">-</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if song.duration.present? %>
+                          <%= "#{song.duration / 60}:#{song.duration % 60}" %>
+                        <% else %>
+                          <span class="text-muted">-</span>
+                        <% end %>
+                      </td>
+                      <td><%= song.created_at.strftime("%Y-%m-%d") %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <p class="text-muted">No songs found for this artist.</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

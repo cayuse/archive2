@@ -191,3 +191,40 @@ This project is licensed under the MIT License.
 **Last Updated**: July 2025
 **Rails Version**: 8.0.2
 **Ruby Version**: 3.3.8
+
+## Email Configuration
+- **Development**: Uses `letter_opener` to preview emails in browser
+- **Production**: Configure SMTP settings as needed
+
+## Environment Variables for Email Delivery (SendGrid)
+
+To enable email delivery via SendGrid in production, set the following environment variables:
+
+| Variable            | Purpose                                 | Example Value                |
+|---------------------|-----------------------------------------|------------------------------|
+| SENDGRID_API_KEY    | SendGrid API key for email delivery     | SG.xxxxxxxx                  |
+| APP_HOST            | Hostname for links in emails            | musicarchive.com             |
+| RAILS_MASTER_KEY    | Rails credentials decryption key        | (from config/master.key)     |
+| DATABASE_URL        | Database connection string (optional)   | postgres://...               |
+
+### How to Set Environment Variables
+
+**Docker Compose:**
+```yaml
+environment:
+  SENDGRID_API_KEY: your-real-sendgrid-api-key
+  APP_HOST: yourdomain.com
+  RAILS_MASTER_KEY: your-rails-master-key
+```
+
+**Linux/Unix Shell:**
+```bash
+export SENDGRID_API_KEY=your-real-sendgrid-api-key
+export APP_HOST=yourdomain.com
+export RAILS_MASTER_KEY=your-rails-master-key
+```
+
+**Cloud Providers:**
+Use their environment variable or secret management UI.
+
+> **Never commit these secrets to version control.** Use your deployment’s secret management or environment variable system.

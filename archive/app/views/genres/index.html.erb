@@ -1,0 +1,73 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Genres</h1>
+        <div>
+          <span class="badge bg-primary"><%= @genres.total_count %> genres</span>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-body">
+          <% if @genres.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Color</th>
+                    <th>Songs</th>
+                    <th>Artists</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @genres.each do |genre| %>
+                    <tr>
+                      <td>
+                        <%= link_to genre.name, genre_path(genre), class: "text-decoration-none" %>
+                      </td>
+                      <td>
+                        <% if genre.color.present? %>
+                          <span class="badge" style="background-color: <%= genre.color %>">
+                            <%= genre.color %>
+                          </span>
+                        <% else %>
+                          <span class="text-muted">-</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <span class="badge bg-secondary"><%= genre.songs.count %></span>
+                      </td>
+                      <td>
+                        <% genre.artists.limit(3).each do |artist| %>
+                          <span class="badge bg-info"><%= artist.name %></span>
+                        <% end %>
+                        <% if genre.artists.count > 3 %>
+                          <span class="text-muted">+<%= genre.artists.count - 3 %> more</span>
+                        <% end %>
+                      </td>
+                      <td><%= genre.created_at.strftime("%Y-%m-%d") %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Pagination -->
+            <% if @genres.respond_to?(:current_page) %>
+              <div class="d-flex justify-content-center mt-4">
+                <%= paginate @genres if respond_to?(:paginate) %>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="text-center py-4">
+              <p class="text-muted">No genres found.</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

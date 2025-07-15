@@ -1,0 +1,169 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><%= @playlist.name %></h1>
+        <div>
+          <%= link_to "Back to Playlists", playlists_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+      
+      <!-- Playlist Info -->
+      <div class="row">
+        <div class="col-md-8">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Playlist Information</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <dl class="row">
+                    <dt class="col-sm-4">Name:</dt>
+                    <dd class="col-sm-8"><%= @playlist.name %></dd>
+                    
+                    <dt class="col-sm-4">Owner:</dt>
+                    <dd class="col-sm-8"><%= @playlist.user.name %></dd>
+                    
+                    <dt class="col-sm-4">Visibility:</dt>
+                    <dd class="col-sm-8">
+                      <% if @playlist.is_public? %>
+                        <span class="badge bg-success">Public</span>
+                      <% else %>
+                        <span class="badge bg-warning">Private</span>
+                      <% end %>
+                    </dd>
+                  </dl>
+                </div>
+                
+                <div class="col-md-6">
+                  <dl class="row">
+                    <dt class="col-sm-4">Songs:</dt>
+                    <dd class="col-sm-8">
+                      <span class="badge bg-primary"><%= @playlist.songs.count %></span>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Duration:</dt>
+                    <dd class="col-sm-8">
+                      <% total_duration = @playlist.songs.sum(:duration) %>
+                      <% if total_duration > 0 %>
+                        <%= "#{total_duration / 60}:#{total_duration % 60}" %>
+                      <% else %>
+                        <span class="text-muted">-</span>
+                      <% end %>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Created:</dt>
+                    <dd class="col-sm-8"><%= @playlist.created_at.strftime("%Y-%m-%d") %></dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Statistics</h5>
+            </div>
+            <div class="card-body">
+              <dl class="row">
+                <dt class="col-sm-6">Total Songs:</dt>
+                <dd class="col-sm-6"><%= @playlist.songs.count %></dd>
+                
+                <dt class="col-sm-6">Artists:</dt>
+                <dd class="col-sm-6">
+                  <% artist_count = @playlist.songs.joins(:artist).distinct.count %>
+                  <span class="badge bg-info"><%= artist_count %></span>
+                </dd>
+                
+                <dt class="col-sm-6">Genres:</dt>
+                <dd class="col-sm-6">
+                  <% genre_count = @playlist.songs.joins(:genre).distinct.count %>
+                  <span class="badge bg-secondary"><%= genre_count %></span>
+                </dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Songs -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h5 class="mb-0">Songs in <%= @playlist.name %></h5>
+        </div>
+        <div class="card-body">
+          <% if @songs.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Position</th>
+                    <th>Title</th>
+                    <th>Artist</th>
+                    <th>Album</th>
+                    <th>Genre</th>
+                    <th>Duration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @songs.each do |song| %>
+                    <tr>
+                      <td>
+                        <% playlist_song = @playlist.playlists_songs.find_by(song: song) %>
+                        <% if playlist_song&.position.present? %>
+                          <%= playlist_song.position %>
+                        <% else %>
+                          <span class="text-muted">-</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <%= link_to song.title, song_path(song), class: "text-decoration-none" %>
+                      </td>
+                      <td>
+                        <% if song.artist.present? %>
+                          <%= song.artist.name %>
+                        <% else %>
+                          <span class="text-muted">-</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if song.album.present? %>
+                          <%= song.album.title %>
+                        <% else %>
+                          <span class="text-muted">-</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if song.genre.present? %>
+                          <span class="badge" style="background-color: <%= song.genre.color %>">
+                            <%= song.genre.name %>
+                          </span>
+                        <% else %>
+                          <span class="text-muted">-</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if song.duration.present? %>
+                          <%= "#{song.duration / 60}:#{song.duration % 60}" %>
+                        <% else %>
+                          <span class="text-muted">-</span>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <p class="text-muted">No songs found in this playlist.</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

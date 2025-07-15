@@ -5,6 +5,10 @@ class SongPolicy < ApplicationPolicy
   # - Only admins can destroy
 
   # Additional methods for song-specific permissions
+  def upload?
+    user&.moderator? || user&.admin?
+  end
+
   def upload_audio?
     user&.moderator? || user&.admin?
   end
@@ -14,6 +18,14 @@ class SongPolicy < ApplicationPolicy
   end
 
   def manage_metadata?
+    user&.moderator? || user&.admin?
+  end
+
+  def maintenance?
+    user&.moderator? || user&.admin?
+  end
+
+  def bulk_update?
     user&.moderator? || user&.admin?
   end
 

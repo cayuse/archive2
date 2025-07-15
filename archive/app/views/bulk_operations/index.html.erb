@@ -1,0 +1,220 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <h1 class="h3 mb-4">Bulk Operations</h1>
+      
+      <!-- Flash Messages -->
+      <% if flash[:notice] %>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <%= flash[:notice] %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      <% end %>
+      
+      <% if flash[:alert] %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <%= flash[:alert] %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      <% end %>
+      
+      <div class="row">
+        <!-- CSV Upload -->
+        <div class="col-md-6 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">
+                <i class="bi bi-upload"></i> Import Songs from CSV
+              </h5>
+            </div>
+            <div class="card-body">
+              <form action="<%= upload_csv_bulk_operations_path %>" method="post" enctype="multipart/form-data">
+                <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+                
+                <div class="mb-3">
+                  <label for="file" class="form-label">Select CSV File</label>
+                  <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
+                  <div class="form-text">
+                    Upload a CSV file with song data. See the template below for the required format.
+                  </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-upload"></i> Upload and Import
+                </button>
+              </form>
+              
+              <hr>
+              
+              <h6>CSV Template</h6>
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered">
+                  <thead class="table-light">
+                    <tr>
+                      <th>title</th>
+                      <th>track_number</th>
+                      <th>duration</th>
+                      <th>file_format</th>
+                      <th>file_size</th>
+                      <th>artist_name</th>
+                      <th>album_title</th>
+                      <th>album_release_date</th>
+                      <th>genre_name</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Song Title</td>
+                      <td>1</td>
+                      <td>180</td>
+                      <td>mp3</td>
+                      <td>5242880</td>
+                      <td>Artist Name</td>
+                      <td>Album Title</td>
+                      <td>2023-01-01</td>
+                      <td>Rock</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Export and Delete -->
+        <div class="col-md-6 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">
+                <i class="bi bi-download"></i> Export and Delete
+              </h5>
+            </div>
+            <div class="card-body">
+              <!-- Export -->
+              <div class="mb-4">
+                <h6>Export Songs</h6>
+                <p class="text-muted">Download all songs as a CSV file for backup or analysis.</p>
+                <%= link_to export_csv_bulk_operations_path, class: "btn btn-outline-primary" do %>
+                  <i class="bi bi-download"></i> Export to CSV
+                <% end %>
+              </div>
+              
+              <hr>
+              
+              <!-- Bulk Delete -->
+              <div>
+                <h6>Bulk Delete Songs</h6>
+                <p class="text-muted">Enter song IDs separated by commas to delete multiple songs.</p>
+                <form action="<%= bulk_delete_bulk_operations_path %>" method="post" 
+                      onsubmit="return confirm('Are you sure you want to delete these songs? This action cannot be undone.')">
+                  <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+                  
+                  <div class="mb-3">
+                    <label for="song_ids" class="form-label">Song IDs</label>
+                    <textarea class="form-control" id="song_ids" name="song_ids" rows="3" 
+                              placeholder="1, 2, 3, 4, 5"></textarea>
+                    <div class="form-text">
+                      Enter song IDs separated by commas (e.g., 1, 2, 3, 4, 5)
+                    </div>
+                  </div>
+                  
+                  <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Delete Selected Songs
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Statistics -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">
+                <i class="bi bi-graph-up"></i> Library Statistics
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-3">
+                  <div class="text-center">
+                    <h3 class="text-primary"><%= Song.count %></h3>
+                    <p class="text-muted mb-0">Total Songs</p>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="text-center">
+                    <h3 class="text-success"><%= Artist.count %></h3>
+                    <p class="text-muted mb-0">Artists</p>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="text-center">
+                    <h3 class="text-info"><%= Album.count %></h3>
+                    <p class="text-muted mb-0">Albums</p>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="text-center">
+                    <h3 class="text-warning"><%= Genre.count %></h3>
+                    <p class="text-muted mb-0">Genres</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Recent Songs -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">
+                <i class="bi bi-music-note-list"></i> Recent Songs
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Title</th>
+                      <th>Artist</th>
+                      <th>Album</th>
+                      <th>Genre</th>
+                      <th>Duration</th>
+                      <th>Added</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% Song.includes(:artist, :album, :genre).order(created_at: :desc).limit(10).each do |song| %>
+                      <tr>
+                        <td><%= song.id %></td>
+                        <td><%= song.title %></td>
+                        <td><%= song.artist&.name %></td>
+                        <td><%= song.album&.title %></td>
+                        <td>
+                          <span class="badge" style="background-color: <%= song.genre&.color %>">
+                            <%= song.genre&.name %>
+                          </span>
+                        </td>
+                        <td><%= song.duration ? "#{song.duration / 60}:#{(song.duration % 60).to_s.rjust(2, '0')}" : '-' %></td>
+                        <td><%= song.created_at.strftime("%Y-%m-%d") %></td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

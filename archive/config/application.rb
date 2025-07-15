@@ -6,6 +6,9 @@ require "rails/all"
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
+# Load custom delivery methods
+require_relative "../lib/sendgrid_actionmailer_delivery_method"
+
 module Archive
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.

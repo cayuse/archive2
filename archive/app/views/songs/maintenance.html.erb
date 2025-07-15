@@ -1,0 +1,238 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Song Maintenance</h1>
+        <div class="btn-group" role="group">
+          <%= link_to "Back to Songs", songs_path, class: "btn btn-outline-secondary" %>
+          <%= link_to "Upload Song", upload_path, class: "btn btn-primary" %>
+        </div>
+      </div>
+      
+      <!-- Status Filter -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-8">
+              <h5 class="card-title">Filter by Status</h5>
+              <div class="btn-group" role="group">
+                <%= link_to "Needs Attention", maintenance_songs_path(status: 'needs_attention'), 
+                    class: "btn #{@status_filter == 'needs_attention' ? 'btn-primary' : 'btn-outline-primary'}" %>
+                <%= link_to "Failed", maintenance_songs_path(status: 'failed'), 
+                    class: "btn #{@status_filter == 'failed' ? 'btn-primary' : 'btn-outline-primary'}" %>
+                <%= link_to "Needs Review", maintenance_songs_path(status: 'needs_review'), 
+                    class: "btn #{@status_filter == 'needs_review' ? 'btn-primary' : 'btn-outline-primary'}" %>
+                <%= link_to "New", maintenance_songs_path(status: 'new'), 
+                    class: "btn #{@status_filter == 'new' ? 'btn-primary' : 'btn-outline-primary'}" %>
+                <%= link_to "All", maintenance_songs_path(status: 'all'), 
+                    class: "btn #{@status_filter == 'all' ? 'btn-primary' : 'btn-outline-primary'}" %>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-end">
+                <span class="badge bg-secondary fs-6"><%= @songs.total_count %> songs</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Songs Table -->
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Songs Requiring Attention</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Original Filename</th>
+                  <th>Title</th>
+                  <th>Artist</th>
+                  <th>Album</th>
+                  <th>Genre</th>
+                  <th>Status</th>
+                  <th>Error</th>
+                  <th>Duration</th>
+                  <th>Created</th>
+                  <th>Play</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @songs.each do |song| %>
+                  <%= render 'song', song: song, show_filename: true, show_error: true, maintenance_mode: true %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Pagination -->
+          <div class="d-flex justify-content-center mt-4">
+            <%= paginate @songs %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('turbo:load', function() {
+  let currentlyPlaying = null;
+  
+  // Audio Player Functionality
+  function initializeAudioPlayers() {
+    const playButtons = document.querySelectorAll('.play-btn');
+    
+    // Initialize volume controls
+    const volumeSliders = document.querySelectorAll('.volume-slider');
+    volumeSliders.forEach(slider => {
+      const audioId = slider.getAttribute('data-audio-id');
+      const audio = document.getElementById(`audio-${audioId}`);
+      const volumeIcon = document.getElementById(`volume-icon-${audioId}`);
+      
+      // Set initial volume
+      audio.volume = slider.value / 100;
+      
+      // Volume slider change
+      slider.addEventListener('input', function() {
+        const volume = this.value / 100;
+        audio.volume = volume;
+        updateVolumeIcon(volumeIcon, volume);
+      });
+      
+      // Volume icon click (mute/unmute)
+      volumeIcon.addEventListener('click', function() {
+        if (audio.volume > 0) {
+          // Mute
+          audio.volume = 0;
+          slider.value = 0;
+          updateVolumeIcon(volumeIcon, 0);
+        } else {
+          // Unmute to previous level or 50%
+          const newVolume = slider.dataset.lastVolume ? slider.dataset.lastVolume / 100 : 0.5;
+          audio.volume = newVolume;
+          slider.value = newVolume * 100;
+          updateVolumeIcon(volumeIcon, newVolume);
+        }
+      });
+      
+      // Store last volume before muting
+      slider.addEventListener('input', function() {
+        if (this.value > 0) {
+          this.dataset.lastVolume = this.value;
+        }
+      });
+    });
+    
+    function updateVolumeIcon(icon, volume) {
+      if (volume === 0) {
+        icon.className = 'fas fa-volume-mute volume-icon';
+      } else if (volume < 0.5) {
+        icon.className = 'fas fa-volume-down volume-icon';
+      } else {
+        icon.className = 'fas fa-volume-up volume-icon';
+      }
+    }
+    
+    playButtons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        const audioId = this.getAttribute('data-audio-id');
+        const songTitle = this.getAttribute('data-song-title');
+        const audio = document.getElementById(`audio-${audioId}`);
+        const timeSpan = document.getElementById(`time-${audioId}`);
+        const icon = this.querySelector('i');
+        
+        if (!audio) {
+          console.error('Audio element not found for ID:', audioId);
+          return;
+        }
+        
+        // Stop any currently playing audio
+        if (currentlyPlaying && currentlyPlaying !== audio) {
+          const currentButton = document.querySelector(`[data-audio-id="${currentlyPlaying.id.replace('audio-', '')}"]`);
+          if (currentButton) {
+            const currentIcon = currentButton.querySelector('i');
+            currentIcon.className = 'fas fa-play';
+            currentButton.classList.remove('btn-primary');
+            currentButton.classList.add('btn-outline-primary');
+          }
+          currentlyPlaying.pause();
+          currentlyPlaying.currentTime = 0;
+        }
+        
+        if (audio.paused) {
+          // Play the audio
+          audio.play().then(() => {
+            currentlyPlaying = audio;
+            icon.className = 'fas fa-pause';
+            this.classList.remove('btn-outline-primary');
+            this.classList.add('btn-primary');
+          }).catch(error => {
+            console.error('Error playing audio:', error);
+            alert('Error playing audio file: ' + error.message);
+          });
+        } else {
+          // Pause the audio
+          audio.pause();
+          icon.className = 'fas fa-play';
+          this.classList.remove('btn-primary');
+          this.classList.add('btn-outline-primary');
+          currentlyPlaying = null;
+        }
+      });
+    });
+    
+    // Add time update listeners for all audio elements
+    const audioElements = document.querySelectorAll('audio');
+    audioElements.forEach(audio => {
+      audio.addEventListener('timeupdate', function() {
+        const audioId = this.id.replace('audio-', '');
+        const timeSpan = document.getElementById(`time-${audioId}`);
+        const currentTime = Math.floor(this.currentTime);
+        const duration = Math.floor(this.duration);
+        
+        if (!isNaN(duration)) {
+          const currentMinutes = Math.floor(currentTime / 60);
+          const currentSeconds = currentTime % 60;
+          const totalMinutes = Math.floor(duration / 60);
+          const totalSeconds = duration % 60;
+          
+          timeSpan.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')} / ${totalMinutes}:${totalSeconds.toString().padStart(2, '0')}`;
+        }
+      });
+      
+      audio.addEventListener('ended', function() {
+        const audioId = this.id.replace('audio-', '');
+        const button = document.querySelector(`[data-audio-id="${audioId}"]`);
+        const icon = button.querySelector('i');
+        icon.className = 'fas fa-play';
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-outline-primary');
+        currentlyPlaying = null;
+        
+        const timeSpan = document.getElementById(`time-${audioId}`);
+        timeSpan.textContent = '--:--';
+      });
+      
+      audio.addEventListener('loadedmetadata', function() {
+        const audioId = this.id.replace('audio-', '');
+        const timeSpan = document.getElementById(`time-${audioId}`);
+        const duration = Math.floor(this.duration);
+        
+        if (!isNaN(duration)) {
+          const minutes = Math.floor(duration / 60);
+          const seconds = duration % 60;
+          timeSpan.textContent = `0:00 / ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+      });
+    });
+  }
+  
+  // Initialize audio players when page loads
+  initializeAudioPlayers();
+});
+</script> 
