@@ -24,12 +24,13 @@ class SongsController < ApplicationController
                   .order(created_at: :desc)
     
     if query.present?
-      # Use LEFT JOINs to include songs with null associations
-      @songs = @songs.joins("LEFT JOIN albums ON songs.album_id = albums.id")
-                     .joins("LEFT JOIN artists ON songs.artist_id = artists.id")
+      # Use a more efficient search with proper joins
+      @songs = @songs.joins("LEFT JOIN artists ON songs.artist_id = artists.id")
+                     .joins("LEFT JOIN albums ON songs.album_id = albums.id")
                      .joins("LEFT JOIN genres ON songs.genre_id = genres.id")
                      .where("songs.title ILIKE ? OR artists.name ILIKE ? OR albums.title ILIKE ? OR genres.name ILIKE ?", 
                             "%#{query}%", "%#{query}%", "%#{query}%", "%#{query}%")
+                     .distinct
     end
     
     @songs = @songs.offset((page - 1) * per_page).limit(per_page)
@@ -346,7 +347,7 @@ class SongsController < ApplicationController
   private
   
   def set_song
-    @song = Song.includes(:artist, :album, :genre).find(params[:id])
+    @song = Song.includes(:artist, :album, :genre).find_by!(id: params[:id])
   end
   
   def authorize_song!

@@ -4,63 +4,133 @@
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Playlists</h1>
         <div>
-          <span class="badge bg-primary"><%= @playlists.total_count %> playlists</span>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newPlaylistModal">
+            <i class="fas fa-plus me-2"></i>New Playlist
+          </button>
         </div>
       </div>
       
-      <div class="card">
-        <div class="card-body">
-          <% if @playlists.any? %>
-            <div class="table-responsive">
-              <table class="table table-hover">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Owner</th>
-                    <th>Songs</th>
-                    <th>Visibility</th>
-                    <th>Created</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% @playlists.each do |playlist| %>
-                    <tr>
-                      <td>
-                        <%= link_to playlist.name, playlist_path(playlist), class: "text-decoration-none" %>
-                      </td>
-                      <td>
-                        <%= playlist.user.name %>
-                      </td>
-                      <td>
-                        <span class="badge bg-secondary"><%= playlist.songs.count %></span>
-                      </td>
-                      <td>
-                        <% if playlist.is_public? %>
-                          <span class="badge bg-success">Public</span>
-                        <% else %>
-                          <span class="badge bg-warning">Private</span>
-                        <% end %>
-                      </td>
-                      <td><%= playlist.created_at.strftime("%Y-%m-%d") %></td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
+      <!-- Tab Navigation -->
+      <ul class="nav nav-tabs mb-4" id="playlistTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="your-playlists-tab" data-bs-toggle="tab" data-bs-target="#your-playlists" type="button" role="tab" aria-controls="your-playlists" aria-selected="true">
+            Your Playlists
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="shared-playlists-tab" data-bs-toggle="tab" data-bs-target="#shared-playlists" type="button" role="tab" aria-controls="shared-playlists" aria-selected="false">
+            Shared Playlists
+          </button>
+        </li>
+      </ul>
+      
+      <!-- Tab Content -->
+      <div class="tab-content" id="playlistTabsContent">
+        <!-- Your Playlists Tab -->
+        <div class="tab-pane fade show active" id="your-playlists" role="tabpanel" aria-labelledby="your-playlists-tab">
+          <div class="card">
+            <div class="card-body">
+              <% if @user_playlists.any? %>
+                <div class="table-responsive">
+                  <table class="table table-hover playlist-list-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Songs</th>
+                        <th>Visibility</th>
+                        <th>Created</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <%= render partial: 'playlist', collection: @user_playlists %>
+                    </tbody>
+                  </table>
+                </div>
+                
+                <!-- Pagination -->
+                <% if @user_playlists.respond_to?(:current_page) %>
+                  <div class="d-flex justify-content-center mt-4">
+                    <%= paginate @user_playlists if respond_to?(:paginate) %>
+                  </div>
+                <% end %>
+              <% else %>
+                <div class="text-center py-4">
+                  <p class="theme-text-muted">You haven't created any playlists yet.</p>
+                  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newPlaylistModal">
+                    <i class="fas fa-plus me-2"></i>Create Your First Playlist
+                  </button>
+                </div>
+              <% end %>
             </div>
-            
-            <!-- Pagination -->
-            <% if @playlists.respond_to?(:current_page) %>
-              <div class="d-flex justify-content-center mt-4">
-                <%= paginate @playlists if respond_to?(:paginate) %>
-              </div>
-            <% end %>
-          <% else %>
-            <div class="text-center py-4">
-              <p class="theme-text-muted">No playlists found.</p>
+          </div>
+        </div>
+        
+        <!-- Shared Playlists Tab -->
+        <div class="tab-pane fade" id="shared-playlists" role="tabpanel" aria-labelledby="shared-playlists-tab">
+          <div class="card">
+            <div class="card-body">
+              <% if @shared_playlists.any? %>
+                <div class="table-responsive">
+                  <table class="table table-hover playlist-list-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Owner</th>
+                        <th>Songs</th>
+                        <th>Created</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <%= render partial: 'playlist', collection: @shared_playlists %>
+                    </tbody>
+                  </table>
+                </div>
+                
+                <!-- Pagination -->
+                <% if @shared_playlists.respond_to?(:current_page) %>
+                  <div class="d-flex justify-content-center mt-4">
+                    <%= paginate @shared_playlists if respond_to?(:paginate) %>
+                  </div>
+                <% end %>
+              <% else %>
+                <div class="text-center py-4">
+                  <p class="theme-text-muted">No shared playlists found.</p>
+                </div>
+              <% end %>
             </div>
-          <% end %>
+          </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Playlist Modal -->
+<div class="modal fade" id="newPlaylistModal" tabindex="-1" aria-labelledby="newPlaylistModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="newPlaylistModalLabel">Create New Playlist</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <%= form_with model: Playlist.new, local: true, class: "new-playlist-form" do |form| %>
+        <div class="modal-body">
+          <div class="mb-3">
+            <%= form.label :name, "Playlist Name", class: "form-label" %>
+            <%= form.text_field :name, class: "form-control", placeholder: "Enter playlist name", required: true %>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <%= form.check_box :is_public, class: "form-check-input" %>
+              <%= form.label :is_public, "Make this playlist public", class: "form-check-label" %>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <%= form.submit "Create Playlist", class: "btn btn-primary" %>
+        </div>
+      <% end %>
     </div>
   </div>
 </div> 

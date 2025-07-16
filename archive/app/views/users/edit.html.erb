@@ -39,6 +39,46 @@
             <%= form.submit "Update User", class: "btn btn-primary" %>
           </div>
         <% end %>
+
+        <% if current_user.admin? %>
+          <!-- Password Management Section -->
+          <div class="card mt-4">
+            <div class="card-header">
+              <h5 class="mb-0">Password Management</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <h6>Set New Password</h6>
+                  <p class="text-muted small">Set a specific password for this user</p>
+                  <%= form_with(url: set_password_user_path(@user), method: :patch, local: true, class: "mb-3") do |password_form| %>
+                    <div class="mb-2">
+                      <%= password_form.label :password, "New Password", class: "form-label" %>
+                      <%= password_form.password_field :password, name: "user[password]", class: "form-control", placeholder: "Enter new password" %>
+                    </div>
+                    <div class="mb-3">
+                      <%= password_form.label :password_confirmation, "Confirm Password", class: "form-label" %>
+                      <%= password_form.password_field :password_confirmation, name: "user[password_confirmation]", class: "form-control", placeholder: "Confirm new password" %>
+                    </div>
+                    <%= password_form.submit "Set Password", class: "btn btn-warning btn-sm" %>
+                  <% end %>
+                </div>
+                
+                <div class="col-md-6">
+                  <h6>Reset Password</h6>
+                  <p class="text-muted small">Generate a new temporary password and send welcome email</p>
+                  <%= button_to "Reset Password & Send Email", 
+                      reset_password_user_path(@user), 
+                      method: :post, 
+                      class: "btn btn-info btn-sm",
+                      data: { 
+                        confirm: "This will generate a new temporary password and send a welcome email to #{@user.email}. Continue?" 
+                      } %>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
       </div>
     </div>
   </div>

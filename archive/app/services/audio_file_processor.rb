@@ -56,10 +56,10 @@ class AudioFileProcessor
         Rails.logger.info "Processing M4A file - WahWah support may be limited"
       end
       
-      file_info[:title] = tag.title unless tag.title.nil? || tag.title.to_s.strip == ''
-      file_info[:artist] = tag.artist unless tag.artist.nil? || tag.artist.to_s.strip == ''
-      file_info[:album] = tag.album unless tag.album.nil? || tag.album.to_s.strip == ''
-      file_info[:genre] = tag.genre unless tag.genre.nil? || tag.genre.to_s.strip == ''
+      file_info[:title] = tag.title unless tag.title.nil?
+      file_info[:artist] = tag.artist unless tag.artist.nil?
+      file_info[:album] = tag.album unless tag.album.nil?
+      file_info[:genre] = tag.genre unless tag.genre.nil?
       file_info[:track_number] = tag.track.to_i if tag.track
       file_info[:duration] = tag.duration.to_i if tag.duration
       
@@ -163,19 +163,19 @@ class AudioFileProcessor
       if match = name.match(pattern)
         case pattern.source
         when /Artist.*Album.*Track.*Title/
-          metadata[:artist] = clean_string(match[1])
-          metadata[:album] = clean_string(match[2])
+          metadata[:artist] = match[1]
+          metadata[:album] = match[2]
           metadata[:track_number] = match[3].to_i
-          metadata[:title] = clean_string(match[4])
+          metadata[:title] = match[4]
         when /Artist.*Album.*Title/
-          metadata[:artist] = clean_string(match[1])
-          metadata[:album] = clean_string(match[2])
-          metadata[:title] = clean_string(match[3])
+          metadata[:artist] = match[1]
+          metadata[:album] = match[2]
+          metadata[:title] = match[3]
         when /Artist.*Title/
-          metadata[:artist] = clean_string(match[1])
-          metadata[:title] = clean_string(match[2])
+          metadata[:artist] = match[1]
+          metadata[:title] = match[2]
         when /Just title/
-          metadata[:title] = clean_string(match[1])
+          metadata[:title] = match[1]
         end
         break
       end
@@ -188,7 +188,7 @@ class AudioFileProcessor
     return nil if str.blank?
     
     # Remove common separators and clean up
-    cleaned = str.strip
+    cleaned = str
       .gsub(/[_-]/, ' ')  # Replace underscores and dashes with spaces
       .gsub(/\s+/, ' ')   # Normalize whitespace
       .strip

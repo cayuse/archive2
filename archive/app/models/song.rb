@@ -57,6 +57,7 @@ class Song < ApplicationRecord
   # Callbacks
   after_create :schedule_processing, if: -> { audio_file.attached? }
   after_update :schedule_processing, if: :should_reschedule_processing?
+  before_save :auto_complete_if_ready
 
   # Instance methods
   def display_title
@@ -95,7 +96,7 @@ class Song < ApplicationRecord
 
 
   def has_complete_metadata?
-    artist.present? && genre.present?
+    title.present? && artist.present?
   end
 
   def has_partial_metadata?
@@ -129,6 +130,15 @@ class Song < ApplicationRecord
   end
 
   private
+
+  def auto_complete_if_ready
+    # If the song has both title and artist, and is currently 'needs_review', 
+    # automatically change status to 'completed'
+    if title.present? && artist.present? && needs_review?
+      self.processing_status = 'completed'
+      Rails.logger.info "Auto-completing song #{id} (#{title}) - has title and artist"
+    end
+  end
 
   def schedule_processing
     AudioFileProcessingJob.perform_later(id)

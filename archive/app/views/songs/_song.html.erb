@@ -1,4 +1,13 @@
 <tr data-song-id="<%= song.id %>">
+  <% if local_assigns[:show_checkbox] %>
+    <td class="song-checkbox">
+      <input type="checkbox" 
+             class="form-check-input song-select-checkbox" 
+             value="<%= song.id %>" 
+             id="song_checkbox_<%= song.id %>">
+    </td>
+  <% end %>
+  
   <% if local_assigns[:show_filename] %>
     <td>
       <small class="song-filename">
@@ -109,7 +118,7 @@
     <!-- Audio Player -->
     <% if song.audio_file.attached? %>
       <div class="audio-player-container">
-        <audio controls preload="none" style="width: 200px; height: 30px;">
+        <audio controls preload="none" style="width: 180px; height: 25px; background-color: var(--card-bg); border-radius: 4px;">
           <source src="<%= rails_blob_url(song.audio_file) %>" type="<%= song.audio_file.content_type %>">
           Your browser does not support the audio element.
         </audio>

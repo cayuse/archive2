@@ -42,10 +42,6 @@ class Artist < ApplicationRecord
       .limit(50)
   }
   
-  # Callbacks
-  before_validation :normalize_name
-  before_validation :normalize_country
-  
   # Instance methods
   def display_name
     name
@@ -65,15 +61,5 @@ class Artist < ApplicationRecord
   
   def album_count
     albums.count
-  end
-  
-  private
-  
-  def normalize_name
-    self.name = name.strip.titleize if name.present?
-  end
-  
-  def normalize_country
-    self.country = country.strip.titleize if country.present?
   end
 end 

@@ -1,0 +1,19 @@
+<tr data-playlist-id="<%= playlist.id %>">
+  <td>
+    <%= link_to playlist.name, playlist_path(playlist), class: "playlist-name text-decoration-none" %>
+  </td>
+  <td>
+    <span class="playlist-owner"><%= playlist.user.name %></span>
+  </td>
+  <td>
+    <span class="playlist-song-count badge bg-secondary"><%= playlist.song_count %></span>
+  </td>
+  <td>
+    <% if playlist.public? %>
+      <span class="badge bg-success playlist-visibility">Public</span>
+    <% else %>
+      <span class="badge bg-warning playlist-visibility">Private</span>
+    <% end %>
+  </td>
+  <td><span class="playlist-date"><%= playlist.created_at.strftime("%Y-%m-%d") %></span></td>
+</tr> 

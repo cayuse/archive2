@@ -31,6 +31,6 @@ class GenresController < ApplicationController
   private
   
   def set_genre
-    @genre = Genre.find(params[:id])
+    @genre = Genre.find_by!(id: params[:id])
   end
 end 

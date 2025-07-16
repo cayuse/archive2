@@ -23,6 +23,9 @@
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag theme_css_path, media: "all", "data-turbo-track": "reload", "data-theme": current_theme %>
     <%= javascript_importmap_tags %>
+    <script type="module">
+      import "htmx.org"
+    </script>
   </head>
 
   <body>
@@ -37,7 +40,9 @@
             <a class="navbar-brand" href="<%= root_path %>"><%= SystemSetting.site_name %></a>
             <% if current_user %>
               <div class="archive-stats">
-                <span class="completed-count"><%= Song.completed.count %></span>
+                <% cache "song_count_completed", expires_in: 5.minutes do %>
+                  <span class="completed-count"><%= Song.completed.count %></span>
+                <% end %>
                 <span class="stats-label">songs</span>
               </div>
             <% end %>
@@ -81,6 +86,9 @@
                 <li class="nav-item">
                   <%= link_to "Manage Users", users_path, class: "nav-link nav-btn" %>
                 </li>
+                <li class="nav-item">
+                  <%= link_to "System Settings", settings_path, class: "nav-link nav-btn" %>
+                </li>
               <% end %>
             <% end %>
           </ul>
@@ -88,7 +96,7 @@
           <!-- User Profile -->
           <ul class="navbar-nav">
             <% if current_user %>
-              <li class="nav-item dropdown">
+              <li class="nav-item">
                 <div class="user-profile-container">
                   <div class="user-info">
                     <span class="user-name"><%= current_user.name %></span>
@@ -99,18 +107,10 @@
                         </span>
                       </div>
                     <% end %>
-                    <button class="btn btn-link dropdown-toggle user-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                      <i class="fas fa-chevron-down"></i>
-                    </button>
-                  </div>
-                  <ul class="dropdown-menu dropdown-menu-end">
-                    <li><%= link_to raw('<i class="fas fa-user-edit me-2"></i>Edit Profile'), edit_profile_path, class: "dropdown-item" %></li>
-                    <% if current_user.admin? %>
-                      <li><%= link_to raw('<i class="fas fa-cog me-2"></i>System Settings'), settings_path, class: "dropdown-item" %></li>
+                    <%= button_to logout_path, method: :delete, class: "btn btn-outline-light btn-sm ms-2", title: "Logout" do %>
+                      <i class="fas fa-sign-out-alt"></i>
                     <% end %>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><%= button_to raw('<i class="fas fa-sign-out-alt me-2"></i>Logout'), logout_path, method: :delete, class: "dropdown-item text-danger" %></li>
-                  </ul>
+                  </div>
                 </div>
               </li>
             <% else %>

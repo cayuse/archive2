@@ -6,11 +6,16 @@ class UserPolicy < ApplicationPolicy
 
   # Users can update their own profile
   def update?
-    user == record || super
+    user&.admin?
   end
 
   def edit?
-    update?
+    user&.admin?
+  end
+
+  # Only admins can index users
+  def index?
+    user&.admin?
   end
 
   # Only admins can create/destroy users
@@ -24,6 +29,11 @@ class UserPolicy < ApplicationPolicy
 
   # Only admins can manage user roles
   def manage_roles?
+    user&.admin?
+  end
+
+  # Only admins can manage user passwords
+  def manage_password?
     user&.admin?
   end
 

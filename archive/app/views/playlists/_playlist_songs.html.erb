@@ -1,0 +1,60 @@
+<% songs.each do |song| %>
+  <tr data-song-id="<%= song.id %>" class="playlist-song-row">
+    <td class="song-checkbox">
+      <input type="checkbox" 
+             class="form-check-input playlist-song-select-checkbox" 
+             value="<%= song.id %>" 
+             id="playlist_song_checkbox_<%= song.id %>">
+    </td>
+    <td class="drag-handle">
+      <% if playlist.owned_by?(current_user) %>
+        <i class="fas fa-grip-vertical text-muted"></i>
+      <% end %>
+    </td>
+    <td>
+      <%= link_to song.title, song_path(song), class: "playlist-song-title text-decoration-none" %>
+    </td>
+    <td>
+      <% if song.artist.present? %>
+        <span class="playlist-song-artist"><%= song.artist.name %></span>
+      <% else %>
+        <span class="playlist-song-artist">-</span>
+      <% end %>
+    </td>
+    <td>
+      <% if song.album.present? %>
+        <span class="playlist-song-album"><%= song.album.title %></span>
+      <% else %>
+        <span class="playlist-song-album">-</span>
+      <% end %>
+    </td>
+    <td>
+      <% if song.genre.present? %>
+        <span class="badge playlist-song-genre" style="background-color: <%= song.genre.color %>">
+          <%= song.genre.name %>
+        </span>
+      <% else %>
+        <span class="playlist-song-genre">-</span>
+      <% end %>
+    </td>
+    <td>
+      <% if song.duration.present? %>
+        <span class="playlist-song-duration"><%= "#{song.duration / 60}:#{(song.duration % 60).to_s.rjust(2, '0')}" %></span>
+      <% else %>
+        <span class="playlist-song-duration">-</span>
+      <% end %>
+    </td>
+    <td>
+      <% if song.audio_file.attached? %>
+        <div class="audio-player-container">
+          <audio controls preload="none" style="width: 150px; height: 25px;">
+            <source src="<%= rails_blob_url(song.audio_file) %>" type="<%= song.audio_file.content_type %>">
+            Your browser does not support the audio element.
+          </audio>
+        </div>
+      <% else %>
+        <span class="playlist-song-error">No audio</span>
+      <% end %>
+    </td>
+  </tr>
+<% end %> 

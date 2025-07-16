@@ -1,12 +1,35 @@
 <div class="container">
   <div class="row">
     <div class="col-12">
+      <!-- Notice Container -->
+      <div id="notice-container"></div>
+      
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0"><%= @playlist.name %></h1>
         <div>
           <%= link_to "Back to Playlists", playlists_path, class: "btn btn-outline-secondary" %>
         </div>
       </div>
+      
+      <!-- Public/Private Toggle (only for owned playlists) -->
+      <% if @playlist.owned_by?(current_user) %>
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="mb-0">Playlist Visibility</h6>
+                <small class="text-muted">Control who can see this playlist</small>
+              </div>
+              <%= form_with model: @playlist, local: true, class: "d-inline" do |form| %>
+                <div class="form-check form-switch">
+                  <%= form.check_box :is_public, class: "form-check-input", onchange: "this.form.submit()" %>
+                  <%= form.label :is_public, "Make this playlist public", class: "form-check-label" %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
       
       <!-- Playlist Info -->
       <div class="row">
@@ -27,7 +50,7 @@
                     
                     <dt class="col-sm-4">Visibility:</dt>
                     <dd class="col-sm-8">
-                      <% if @playlist.is_public? %>
+                      <% if @playlist.public? %>
                         <span class="badge bg-success">Public</span>
                       <% else %>
                         <span class="badge bg-warning">Private</span>
@@ -40,14 +63,14 @@
                   <dl class="row">
                     <dt class="col-sm-4">Songs:</dt>
                     <dd class="col-sm-8">
-                      <span class="badge bg-primary"><%= @playlist.songs.count %></span>
+                      <span class="badge bg-primary"><%= @playlist.song_count %></span>
                     </dd>
                     
                     <dt class="col-sm-4">Duration:</dt>
                     <dd class="col-sm-8">
-                      <% total_duration = @playlist.songs.sum(:duration) %>
+                      <% total_duration = @playlist.total_duration %>
                       <% if total_duration > 0 %>
-                        <%= "#{total_duration / 60}:#{total_duration % 60}" %>
+                        <%= "#{total_duration / 60}:#{(total_duration % 60).to_s.rjust(2, '0')}" %>
                       <% else %>
                         <span class="theme-text-muted">-</span>
                       <% end %>
@@ -70,7 +93,7 @@
             <div class="card-body">
               <dl class="row">
                 <dt class="col-sm-6">Total Songs:</dt>
-                <dd class="col-sm-6"><%= @playlist.songs.count %></dd>
+                <dd class="col-sm-6"><%= @playlist.song_count %></dd>
                 
                 <dt class="col-sm-6">Artists:</dt>
                 <dd class="col-sm-6">
@@ -91,65 +114,100 @@
       
       <!-- Songs -->
       <div class="card mt-4">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0">Songs in <%= @playlist.name %></h5>
+          <% if @playlist.owned_by?(current_user) %>
+            <div>
+              <button class="btn btn-outline-primary btn-sm" id="reorderBtn">
+                <i class="fas fa-arrows-alt me-2"></i>Reorder
+              </button>
+              <button class="btn btn-success btn-sm" id="saveOrderBtn" style="display: none;">
+                <i class="fas fa-save me-2"></i>Save Order
+              </button>
+              <button class="btn btn-secondary btn-sm" id="cancelOrderBtn" style="display: none;">
+                <i class="fas fa-times me-2"></i>Cancel
+              </button>
+              <button class="btn btn-danger btn-sm" id="removeFromPlaylistBtn" style="display: none;">
+                <i class="fas fa-trash me-2"></i>Remove Selected
+              </button>
+            </div>
+          <% end %>
         </div>
         <div class="card-body">
           <% if @songs.any? %>
             <div class="table-responsive">
-              <table class="table table-hover">
+              <table class="table table-hover playlist-songs-table" id="playlistSongsTable">
                 <thead>
                   <tr>
-                    <th>Position</th>
+                    <th style="width: 40px;">
+                      <input type="checkbox" class="form-check-input" id="select-all-playlist-songs">
+                    </th>
+                    <th style="width: 50px;"></th>
                     <th>Title</th>
                     <th>Artist</th>
                     <th>Album</th>
                     <th>Genre</th>
                     <th>Duration</th>
+                    <th>Play</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody id="playlistSongsBody" data-playlist-id="<%= @playlist.id %>">
                   <% @songs.each do |song| %>
-                    <tr>
-                      <td>
-                        <% playlist_song = @playlist.playlists_songs.find_by(song: song) %>
-                        <% if playlist_song&.position.present? %>
-                          <%= playlist_song.position %>
-                        <% else %>
-                          <span class="theme-text-muted">-</span>
+                    <tr data-song-id="<%= song.id %>" class="playlist-song-row">
+                      <td class="song-checkbox">
+                        <input type="checkbox" 
+                               class="form-check-input playlist-song-select-checkbox" 
+                               value="<%= song.id %>" 
+                               id="playlist_song_checkbox_<%= song.id %>">
+                      </td>
+                      <td class="drag-handle">
+                        <% if @playlist.owned_by?(current_user) %>
+                          <i class="fas fa-grip-vertical text-muted"></i>
                         <% end %>
                       </td>
                       <td>
-                        <%= link_to song.title, song_path(song), class: "text-decoration-none" %>
+                        <%= link_to song.title, song_path(song), class: "playlist-song-title text-decoration-none" %>
                       </td>
                       <td>
                         <% if song.artist.present? %>
-                          <%= song.artist.name %>
+                          <span class="playlist-song-artist"><%= song.artist.name %></span>
                         <% else %>
-                          <span class="theme-text-muted">-</span>
+                          <span class="playlist-song-artist">-</span>
                         <% end %>
                       </td>
                       <td>
                         <% if song.album.present? %>
-                          <%= song.album.title %>
+                          <span class="playlist-song-album"><%= song.album.title %></span>
                         <% else %>
-                          <span class="theme-text-muted">-</span>
+                          <span class="playlist-song-album">-</span>
                         <% end %>
                       </td>
                       <td>
                         <% if song.genre.present? %>
-                          <span class="badge" style="background-color: <%= song.genre.color %>">
+                          <span class="badge playlist-song-genre" style="background-color: <%= song.genre.color %>">
                             <%= song.genre.name %>
                           </span>
                         <% else %>
-                          <span class="theme-text-muted">-</span>
+                          <span class="playlist-song-genre">-</span>
                         <% end %>
                       </td>
                       <td>
                         <% if song.duration.present? %>
-                          <%= "#{song.duration / 60}:#{song.duration % 60}" %>
+                          <span class="playlist-song-duration"><%= "#{song.duration / 60}:#{(song.duration % 60).to_s.rjust(2, '0')}" %></span>
                         <% else %>
-                          <span class="theme-text-muted">-</span>
+                          <span class="playlist-song-duration">-</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if song.audio_file.attached? %>
+                          <div class="audio-player-container">
+                            <audio controls preload="none" style="width: 150px; height: 25px;">
+                              <source src="<%= rails_blob_url(song.audio_file) %>" type="<%= song.audio_file.content_type %>">
+                              Your browser does not support the audio element.
+                            </audio>
+                          </div>
+                        <% else %>
+                          <span class="playlist-song-error">No audio</span>
                         <% end %>
                       </td>
                     </tr>
@@ -166,4 +224,272 @@
       </div>
     </div>
   </div>
-</div> 
+</div>
+
+<script>
+// Notice system functions
+window.showNotice = function(message, type = 'success') {
+  const noticeContainer = document.getElementById('notice-container');
+  if (!noticeContainer) return;
+  
+  const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+  const noticeHtml = `
+    <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+  
+  noticeContainer.innerHTML = noticeHtml;
+  
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    const alert = noticeContainer.querySelector('.alert');
+    if (alert) {
+      alert.remove();
+    }
+  }, 5000);
+};
+
+// Initialize playlist functionality when page loads
+document.addEventListener('turbo:load', function() {
+  console.log('Initializing playlist show page functionality...');
+  initializePlaylistSongRemoval();
+  initializePlaylistReordering();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOMContentLoaded - Initializing playlist show page functionality...');
+  initializePlaylistSongRemoval();
+  initializePlaylistReordering();
+});
+
+// Ensure functions are available globally
+window.removeSelectedSongsFromPlaylist = function() {
+  const selectedSongs = document.querySelectorAll('.playlist-song-select-checkbox:checked');
+  const songIds = Array.from(selectedSongs).map(checkbox => checkbox.value);
+  const playlistId = document.getElementById('playlistSongsBody').dataset.playlistId;
+  
+  if (songIds.length === 0) {
+    showNotice('Please select at least one song to remove from the playlist.', 'danger');
+    return;
+  }
+  
+  if (confirm(`Are you sure you want to remove ${songIds.length} song(s) from this playlist?`)) {
+    console.log(`Removing ${songIds.length} songs from playlist: ${playlistId}`);
+    
+    // Use fetch to remove songs from playlist
+    fetch(`/playlists/${playlistId}/remove_songs`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({ song_ids: songIds })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showNotice(`Successfully removed ${songIds.length} song(s) from playlist`, 'success');
+        // Reload the page to show updated playlist
+        window.location.reload();
+      } else {
+        showNotice(data.error || 'Failed to remove songs from playlist', 'danger');
+      }
+    })
+    .catch(error => {
+      console.error('Error removing songs from playlist:', error);
+      showNotice('Error removing songs from playlist', 'danger');
+    });
+  }
+};
+
+function updatePlaylistRemoveButtonState() {
+  const selectedSongs = document.querySelectorAll('.playlist-song-select-checkbox:checked');
+  const removeButton = document.getElementById('removeFromPlaylistBtn');
+  
+  if (removeButton) {
+    if (selectedSongs.length > 0) {
+      removeButton.style.display = 'inline-block';
+      removeButton.textContent = `Remove Selected (${selectedSongs.length})`;
+    } else {
+      removeButton.style.display = 'none';
+    }
+  }
+}
+
+function updateSelectAllPlaylistCheckbox() {
+  const selectAllCheckbox = document.getElementById('select-all-playlist-songs');
+  const songCheckboxes = document.querySelectorAll('.playlist-song-select-checkbox');
+  const checkedCheckboxes = document.querySelectorAll('.playlist-song-select-checkbox:checked');
+  
+  if (selectAllCheckbox) {
+    if (checkedCheckboxes.length === 0) {
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = false;
+    } else if (checkedCheckboxes.length === songCheckboxes.length) {
+      selectAllCheckbox.checked = true;
+      selectAllCheckbox.indeterminate = false;
+    } else {
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = true;
+    }
+  }
+}
+
+function initializePlaylistSongRemoval() {
+  console.log('Initializing playlist song removal...');
+  
+  // Select all checkbox for playlist songs
+  const selectAllPlaylistCheckbox = document.getElementById('select-all-playlist-songs');
+  if (selectAllPlaylistCheckbox) {
+    console.log('Found select all playlist checkbox');
+    selectAllPlaylistCheckbox.addEventListener('change', function() {
+      console.log('Select all playlist checkbox changed');
+      const songCheckboxes = document.querySelectorAll('.playlist-song-select-checkbox');
+      songCheckboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+      });
+      updatePlaylistRemoveButtonState();
+    });
+  } else {
+    console.log('Select all playlist checkbox not found');
+  }
+  
+  // Individual playlist song checkboxes
+  document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('playlist-song-select-checkbox')) {
+      console.log('Individual playlist song checkbox changed');
+      updatePlaylistRemoveButtonState();
+      updateSelectAllPlaylistCheckbox();
+    }
+  });
+  
+  // Remove from playlist button
+  const removeBtn = document.getElementById('removeFromPlaylistBtn');
+  if (removeBtn) {
+    console.log('Found remove from playlist button');
+    removeBtn.addEventListener('click', function() {
+      console.log('Remove from playlist button clicked');
+      removeSelectedSongsFromPlaylist();
+    });
+  } else {
+    console.log('Remove from playlist button not found');
+  }
+  
+  // Initialize button state
+  updatePlaylistRemoveButtonState();
+}
+
+function initializePlaylistReordering() {
+  console.log('Initializing playlist reordering...');
+  
+  const playlistTable = document.getElementById('playlistSongsBody');
+  
+  if (playlistTable && playlistTable.querySelector('.drag-handle')) {
+    console.log('Found playlist table with drag handles');
+    
+    try {
+      new Sortable(playlistTable, {
+        animation: 150,
+        handle: '.drag-handle',
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        dragClass: 'sortable-drag',
+        onStart: function(evt) {
+          console.log('Drag started');
+          // Show save/cancel buttons
+          const saveBtn = document.getElementById('saveOrderBtn');
+          const cancelBtn = document.getElementById('cancelOrderBtn');
+          const reorderBtn = document.getElementById('reorderBtn');
+          
+          if (saveBtn) saveBtn.style.display = 'inline-block';
+          if (cancelBtn) cancelBtn.style.display = 'inline-block';
+          if (reorderBtn) reorderBtn.style.display = 'none';
+        },
+        onEnd: function(evt) {
+          console.log('Drag ended');
+        }
+      });
+      
+      console.log('SortableJS initialized successfully');
+    } catch (error) {
+      console.error('Error initializing SortableJS:', error);
+    }
+    
+    // Save order button functionality
+    const saveBtn = document.getElementById('saveOrderBtn');
+    if (saveBtn) {
+      console.log('Found save button');
+      saveBtn.addEventListener('click', function(e) {
+        console.log('Save button clicked!');
+        e.preventDefault();
+        
+        const songIds = Array.from(playlistTable.children).map(row => 
+          row.dataset.songId
+        );
+        
+        const playlistId = playlistTable.dataset.playlistId;
+        console.log('Playlist ID:', playlistId);
+        console.log('Saving new order:', songIds);
+        
+        if (!playlistId) {
+          console.error('No playlist ID found!');
+          showNotice('Error: Could not determine playlist ID', 'danger');
+          return;
+        }
+        
+        // Use fetch to send the new order
+        fetch(`/playlists/${playlistId}/reorder`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({ song_ids: songIds })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showNotice('Playlist order saved successfully!', 'success');
+            // Reload the page to show updated order
+            window.location.reload();
+          } else {
+            showNotice(data.error || 'Failed to save playlist order', 'danger');
+          }
+        })
+        .catch(error => {
+          console.error('Error saving playlist order:', error);
+          showNotice('Error saving playlist order', 'danger');
+        });
+        
+        // Hide save/cancel buttons, show reorder button
+        this.style.display = 'none';
+        const cancelBtn = document.getElementById('cancelOrderBtn');
+        const reorderBtn = document.getElementById('reorderBtn');
+        if (cancelBtn) cancelBtn.style.display = 'none';
+        if (reorderBtn) reorderBtn.style.display = 'inline-block';
+      });
+    } else {
+      console.log('Save button not found');
+    }
+    
+    // Cancel order button functionality
+    const cancelBtn = document.getElementById('cancelOrderBtn');
+    if (cancelBtn) {
+      console.log('Found cancel button');
+      cancelBtn.addEventListener('click', function() {
+        console.log('Cancel button clicked');
+        // Reload the page to reset the order
+        window.location.reload();
+      });
+    } else {
+      console.log('Cancel button not found');
+    }
+  } else {
+    console.log('Playlist table or drag handles not found');
+  }
+}
+</script> 

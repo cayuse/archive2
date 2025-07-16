@@ -15,8 +15,8 @@
     Used by: ALL views, ALL partials, ALL components
   */
   --primary-bg: #0f0f23;          /* Main background - affects body, navbar, etc. */
-  --secondary-bg: hsl(315, 80%, 40%);         /* Secondary backgrounds - cards, dropdowns, etc. */
-  --card-bg: hsl(313, 39%, 44%);              /* Card backgrounds - all .card elements */
+  --secondary-bg: hwb(283 5% 47%);         /* Secondary backgrounds - cards, dropdowns, etc. */
+  --card-bg: hwb(253 7% 31%);              /* Card backgrounds - all .card elements */
   --accent-color: #4f46e5;         /* Primary accent - buttons, links, highlights */
   --accent-hover: #6366f1;         /* Hover states for accent elements */
   --text-primary: #f8fafc;         /* Primary text - headings, main content */
@@ -895,12 +895,12 @@
   /* Action buttons keep their Bootstrap styling */
 }
 
-/* ===== AUDIO PLAYER STYLING ===== */
+/* ===== AUDIO PLAYER - SIMPLE BACKGROUND COLOR ===== */
 /*
-  Audio Player - Custom styling for HTML5 audio elements
+  Audio Player - Minimal styling with just background color
   Views affected: app/views/songs/index.html.erb, app/views/maintenance/index.html.erb
   Partials affected: app/views/songs/_song.html.erb (audio player)
-  Customizes the appearance of audio players in song lists
+  Keeps default browser styling with just background color change
 */
 [data-theme="default"] .song-list-table .audio-player-container {
   display: flex;
@@ -909,78 +909,19 @@
 }
 
 [data-theme="default"] .song-list-table audio {
-  /* Custom audio player styling */
   background-color: var(--card-bg);
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
+  border-radius: 4px;
   outline: none;
 }
 
-[data-theme="default"] .song-list-table audio::-webkit-media-controls-panel {
-  background-color: var(--card-bg);
-}
-
-[data-theme="default"] .song-list-table audio::-webkit-media-controls-play-button {
-  background-color: var(--accent-color);
-  border-radius: 50%;
-  color: white;
-}
-
-[data-theme="default"] .song-list-table audio::-webkit-media-controls-play-button:hover {
-  background-color: var(--accent-hover);
-}
-
-[data-theme="default"] .song-list-table audio::-webkit-media-controls-current-time-display,
-[data-theme="default"] .song-list-table audio::-webkit-media-controls-time-remaining-display {
-  color: var(--text-primary);
-}
-
-[data-theme="default"] .song-list-table audio::-webkit-media-controls-timeline {
-  background-color: var(--border-color);
-}
-
-[data-theme="default"] .song-list-table audio::-webkit-media-controls-timeline::-webkit-slider-thumb {
-  background-color: var(--accent-color);
-  border-radius: 50%;
-}
-
-[data-theme="default"] .song-list-table audio::-webkit-media-controls-volume-slider {
-  background-color: var(--border-color);
-}
-
-[data-theme="default"] .song-list-table audio::-webkit-media-controls-volume-slider::-webkit-slider-thumb {
-  background-color: var(--accent-color);
-  border-radius: 50%;
-}
-
-[data-theme="default"] .song-list-table audio::-webkit-media-controls-mute-button {
-  background-color: var(--text-secondary);
-  border-radius: 4px;
-}
-
-[data-theme="default"] .song-list-table audio::-webkit-media-controls-mute-button:hover {
-  background-color: var(--text-primary);
-}
-
-/* Firefox audio player styling */
-[data-theme="default"] .song-list-table audio::-moz-range-track {
-  background-color: var(--border-color);
-  border-radius: 4px;
-}
-
-[data-theme="default"] .song-list-table audio::-moz-range-thumb {
-  background-color: var(--accent-color);
-  border-radius: 50%;
-  border: none;
-}
-
-/* Compact audio player for table cells */
 [data-theme="default"] .song-list-table .audio-player-container audio {
   width: 180px;
-  height: 28px;
+  height: 25px;
   min-width: 180px;
   max-width: 200px;
 }
+
+/* (Removed all custom ::-webkit-media-controls and ::-moz-range-* rules for a clean default look) */
 
 /* ===== ARTIST LIST TABLE - UNIFIED STYLING ===== */
 /*
@@ -1197,3 +1138,297 @@
 [data-theme="default"] .genre-list-table .genre-date {
   color: var(--text-primary) !important;
 }
+
+/* ===== PLAYLIST LIST TABLE - UNIFIED STYLING ===== */
+/*
+  Playlist List Table - Matches song list table styling
+  Views affected: app/views/playlists/index.html.erb
+  Partials affected: app/views/playlists/_playlist.html.erb
+  Provides uniform styling with other list tables
+*/
+[data-theme="default"] .playlist-list-table {
+  background-color: var(--card-bg) !important;
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+[data-theme="default"] .playlist-list-table.table-hover tbody tr {
+  background-color: var(--card-bg) !important;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+[data-theme="default"] .playlist-list-table.table-hover tbody tr:hover {
+  background-color: var(--secondary-bg) !important;
+}
+
+[data-theme="default"] .playlist-list-table td {
+  border: none !important;
+  color: var(--text-primary) !important;
+  padding: 0.75rem 0.5rem;
+  vertical-align: middle;
+  background-color: transparent !important;
+}
+
+[data-theme="default"] .playlist-list-table th {
+  border: none !important;
+  color: var(--text-primary) !important;
+  padding: 0.75rem 0.5rem;
+  font-weight: 600;
+  background-color: var(--secondary-bg) !important;
+}
+
+/* Playlist list specific text styling */
+[data-theme="default"] .playlist-list-table .playlist-name {
+  color: var(--text-primary) !important;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+[data-theme="default"] .playlist-list-table .playlist-name:hover {
+  color: var(--accent-color) !important;
+}
+
+[data-theme="default"] .playlist-list-table .playlist-owner {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="default"] .playlist-list-table .playlist-song-count {
+  /* Badge styling */
+}
+
+[data-theme="default"] .playlist-list-table .playlist-visibility {
+  /* Badge styling */
+}
+
+[data-theme="default"] .playlist-list-table .playlist-date {
+  color: var(--text-primary) !important;
+}
+
+/* ===== PLAYLIST SONGS TABLE - UNIFIED STYLING ===== */
+/*
+  Playlist Songs Table - Matches song list table styling
+  Views affected: app/views/playlists/show.html.erb
+  Provides uniform styling with other tables and drag & drop support
+*/
+[data-theme="default"] .playlist-songs-table {
+  background-color: var(--card-bg) !important;
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+[data-theme="default"] .playlist-songs-table.table-hover tbody tr {
+  background-color: var(--card-bg) !important;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+[data-theme="default"] .playlist-songs-table.table-hover tbody tr:hover {
+  background-color: var(--secondary-bg) !important;
+}
+
+[data-theme="default"] .playlist-songs-table td {
+  border: none !important;
+  color: var(--text-primary) !important;
+  padding: 0.75rem 0.5rem;
+  vertical-align: middle;
+  background-color: transparent !important;
+}
+
+[data-theme="default"] .playlist-songs-table th {
+  border: none !important;
+  color: var(--text-primary) !important;
+  padding: 0.75rem 0.5rem;
+  font-weight: 600;
+  background-color: var(--secondary-bg) !important;
+}
+
+/* Playlist songs specific text styling */
+[data-theme="default"] .playlist-songs-table .playlist-song-title {
+  color: var(--text-primary) !important;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+[data-theme="default"] .playlist-songs-table .playlist-song-title:hover {
+  color: var(--accent-color) !important;
+}
+
+[data-theme="default"] .playlist-songs-table .playlist-song-artist {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="default"] .playlist-songs-table .playlist-song-album {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="default"] .playlist-songs-table .playlist-song-genre {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="default"] .playlist-songs-table .playlist-song-duration {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="default"] .playlist-songs-table .playlist-song-error {
+  color: var(--danger-color) !important;
+  font-size: 0.875rem;
+}
+
+/* Drag & Drop styling */
+[data-theme="default"] .playlist-song-row {
+  cursor: move;
+  transition: all 0.2s ease;
+}
+
+[data-theme="default"] .playlist-song-row.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+  box-shadow: var(--shadow-lg);
+}
+
+[data-theme="default"] .playlist-song-row.drag-over {
+  border-top: 2px solid var(--accent-color);
+}
+
+[data-theme="default"] .drag-handle {
+  cursor: grab;
+  text-align: center;
+}
+
+[data-theme="default"] .drag-handle:active {
+  cursor: grabbing;
+}
+
+[data-theme="default"] .drag-handle i {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+[data-theme="default"] .drag-handle:hover i {
+  color: var(--text-secondary);
+}
+
+/* ===== PLAYLIST DRAG & DROP STYLING ===== */
+/* SortableJS visual feedback for playlist reordering */
+
+/* Drag handle styling */
+.drag-handle {
+  cursor: grab;
+  text-align: center;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+
+.drag-handle:hover {
+  color: var(--text-primary);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* SortableJS ghost element (the placeholder) */
+.sortable-ghost {
+  opacity: 0.5;
+  background: var(--card-bg) !important;
+  border: 2px dashed var(--primary-color) !important;
+}
+
+/* SortableJS chosen element (the one being dragged) */
+.sortable-chosen {
+  background: var(--primary-bg) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  transform: rotate(2deg);
+  z-index: 1000;
+}
+
+/* SortableJS drag element (the clone) */
+.sortable-drag {
+  opacity: 0.8;
+  background: var(--card-bg) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Playlist table row styling during drag */
+.playlist-song-row.sortable-ghost {
+  background: var(--secondary-bg) !important;
+  border-left: 4px solid var(--primary-color) !important;
+}
+
+.playlist-song-row.sortable-chosen {
+  background: var(--primary-bg) !important;
+  border-left: 4px solid var(--accent-color) !important;
+}
+
+/* Reorder button states */
+#reorderBtn, #saveOrderBtn, #cancelOrderBtn {
+  transition: all 0.2s ease;
+}
+
+#saveOrderBtn {
+  background: var(--success-color);
+  border-color: var(--success-color);
+  color: white;
+}
+
+#saveOrderBtn:hover {
+  background: var(--success-hover);
+  border-color: var(--success-hover);
+}
+
+#cancelOrderBtn {
+  background: var(--danger-color);
+  border-color: var(--danger-color);
+  color: white;
+}
+
+#cancelOrderBtn:hover {
+  background: var(--danger-hover);
+  border-color: var(--danger-hover);
+}
+
+/* ===== END PLAYLIST DRAG & DROP STYLING ===== */
+
+/* ===== SONG SELECTION CHECKBOXES ===== */
+/* Styling for song selection checkboxes in lists */
+
+.song-checkbox {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.song-select-checkbox,
+.playlist-song-select-checkbox {
+  cursor: pointer;
+  margin: 0;
+}
+
+.song-select-checkbox:checked,
+.playlist-song-select-checkbox:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+/* Select all checkbox styling */
+#select-all-songs,
+#select-all-playlist-songs {
+  cursor: pointer;
+  margin: 0;
+}
+
+#select-all-songs:checked,
+#select-all-playlist-songs:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+/* Disabled state for add to playlist button */
+#addToPlaylistDropdown:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===== END SONG SELECTION CHECKBOXES ===== */

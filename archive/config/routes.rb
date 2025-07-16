@@ -14,7 +14,12 @@ Rails.application.routes.draw do
   delete '/logout', to: 'sessions#destroy', as: :logout
   
   # User management routes (admin only)
-  resources :users, except: [:show]
+  resources :users, except: [:show] do
+    member do
+      post :reset_password
+      patch :set_password
+    end
+  end
   
   # Profile routes (users can edit their own profile)
   resource :profile, only: [:show, :edit, :update], controller: 'profile'
@@ -28,6 +33,15 @@ Rails.application.routes.draw do
     end
   end
   
+  # Album search for autocomplete
+  get '/albums/search', to: 'albums#search'
+  
+  # Artist search for autocomplete
+  get '/artists/search', to: 'artists#search'
+  
+  # Genre search for autocomplete
+  get '/genres/search', to: 'genres#search'
+  
   # Artists management
   resources :artists, only: [:index, :show]
   
@@ -38,16 +52,13 @@ Rails.application.routes.draw do
   resources :genres, only: [:index, :show]
   
   # Playlists management
-  resources :playlists, only: [:index, :show]
-  
-  # Album search for autocomplete
-  get '/albums/search', to: 'albums#search'
-  
-  # Artist search for autocomplete
-  get '/artists/search', to: 'artists#search'
-  
-  # Genre search for autocomplete
-  get '/genres/search', to: 'genres#search'
+  resources :playlists, only: [:index, :show, :create, :update] do
+    member do
+      post :reorder
+      post :add_songs
+      delete :remove_songs
+    end
+  end
   
   # Upload interface
   resource :upload, only: [:show, :create], controller: 'upload'
