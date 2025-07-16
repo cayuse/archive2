@@ -1,0 +1,162 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <!-- Notice Container -->
+      <div id="notice-container"></div>
+      
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><%= @album.title %></h1>
+        <div>
+          <%= link_to "Back to Albums", albums_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+      
+      <!-- Album Info -->
+      <div class="row">
+        <div class="col-md-8">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Album Information</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <dl class="row">
+                    <dt class="col-sm-4">Title:</dt>
+                    <dd class="col-sm-8"><%= @album.title %></dd>
+                    
+                    <dt class="col-sm-4">Release Date:</dt>
+                    <dd class="col-sm-8">
+                      <% if @album.release_date.present? %>
+                        <%= @album.release_date.strftime("%Y-%m-%d") %>
+                      <% else %>
+                        <span class="theme-text-muted">Not set</span>
+                      <% end %>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Total Tracks:</dt>
+                    <dd class="col-sm-8">
+                      <% if @album.total_tracks.present? %>
+                        <%= @album.total_tracks %>
+                      <% else %>
+                        <span class="theme-text-muted">Not set</span>
+                      <% end %>
+                    </dd>
+                  </dl>
+                </div>
+                
+                <div class="col-md-6">
+                  <dl class="row">
+                    <dt class="col-sm-4">Songs:</dt>
+                    <dd class="col-sm-8">
+                      <span class="badge bg-primary"><%= @album.songs.count %></span>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Artists:</dt>
+                    <dd class="col-sm-8">
+                      <% @album.artists.limit(3).each do |artist| %>
+                        <span class="badge bg-info"><%= artist.name %></span>
+                      <% end %>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Duration:</dt>
+                    <dd class="col-sm-8">
+                      <% if @album.duration.present? %>
+                        <%= "#{@album.duration / 60}:#{@album.duration % 60}" %>
+                      <% else %>
+                        <span class="theme-text-muted">Not set</span>
+                      <% end %>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Statistics</h5>
+            </div>
+            <div class="card-body">
+              <dl class="row">
+                <dt class="col-sm-6">Total Songs:</dt>
+                <dd class="col-sm-6"><%= @album.songs.count %></dd>
+                
+                <dt class="col-sm-6">Artists:</dt>
+                <dd class="col-sm-6"><%= @album.artists.count %></dd>
+                
+                <dt class="col-sm-6">Created:</dt>
+                <dd class="col-sm-6"><%= @album.created_at.strftime("%Y-%m-%d") %></dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Songs -->
+      <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Songs on <%= @album.title %></h5>
+        </div>
+        <div class="card-body">
+          <% if @songs.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover song-list-table">
+                <thead>
+                  <tr>
+                    <th>Track</th>
+                    <th>Title</th>
+                    <th>Artist</th>
+                    <th>Genre</th>
+                    <th>Duration</th>
+                    <th>Created</th>
+                    <th>Play</th>
+                  </tr>
+                </thead>
+                <tbody id="songs-table-body">
+                  <%= render partial: 'songs/song_list', locals: { songs: @songs } %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <p class="theme-text-muted">No songs found for this album.</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Notice system functions
+window.showNotice = function(message, type = 'success') {
+  const noticeContainer = document.getElementById('notice-container');
+  if (!noticeContainer) return;
+  
+  const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+  const noticeHtml = `
+    <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+  
+  noticeContainer.innerHTML = noticeHtml;
+  
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    const alert = noticeContainer.querySelector('.alert');
+    if (alert) {
+      alert.remove();
+    }
+  }, 5000);
+};
+
+
+
+
+</script> 

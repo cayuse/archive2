@@ -1,0 +1,26 @@
+<tr data-genre-id="<%= genre.id %>">
+  <td>
+    <%= link_to genre.name, genre_path(genre), class: "genre-name text-decoration-none" %>
+  </td>
+  <td>
+    <% if genre.color.present? %>
+      <span class="badge genre-color-badge" style="background-color: <%= genre.color %>">
+        <%= genre.color %>
+      </span>
+    <% else %>
+      <span class="genre-color">-</span>
+    <% end %>
+  </td>
+  <td>
+    <span class="genre-song-count badge bg-secondary"><%= genre.songs.count %></span>
+  </td>
+  <td>
+    <% genre.artists.limit(3).each do |artist| %>
+      <span class="badge bg-info genre-artist"><%= artist.name %></span>
+    <% end %>
+    <% if genre.artists.count > 3 %>
+      <span class="genre-artist-more">+<%= genre.artists.count - 3 %> more</span>
+    <% end %>
+  </td>
+  <td><span class="genre-date"><%= genre.created_at.strftime("%Y-%m-%d") %></span></td>
+</tr> 

@@ -1,0 +1,46 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Artists</h1>
+        <div>
+          <span class="badge bg-primary"><%= @artists.total_count %> artists</span>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-body">
+          <% if @artists.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover artist-list-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Country</th>
+                    <th>Songs</th>
+                    <th>Genres</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <%= render partial: 'artist', collection: @artists %>
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Pagination -->
+            <% if @artists.respond_to?(:current_page) %>
+              <div class="d-flex justify-content-center mt-4">
+                <%= paginate @artists if respond_to?(:paginate) %>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="text-center py-4">
+              <p class="theme-text-muted">No artists found.</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

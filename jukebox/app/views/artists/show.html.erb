@@ -1,0 +1,368 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <!-- Notice Container -->
+      <div id="notice-container"></div>
+      
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><%= @artist.name %></h1>
+        <div>
+          <%= link_to "Back to Artists", artists_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+      
+      <!-- Artist Info -->
+      <div class="row">
+        <div class="col-md-8">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Artist Information</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <dl class="row">
+                    <dt class="col-sm-4">Name:</dt>
+                    <dd class="col-sm-8"><%= @artist.name %></dd>
+                    
+                    <dt class="col-sm-4">Country:</dt>
+                    <dd class="col-sm-8">
+                      <% if @artist.country.present? %>
+                        <%= @artist.country %>
+                      <% else %>
+                        <span class="theme-text-muted">Not set</span>
+                      <% end %>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Formed:</dt>
+                    <dd class="col-sm-8">
+                      <% if @artist.formed_year.present? %>
+                        <%= @artist.formed_year %>
+                      <% else %>
+                        <span class="theme-text-muted">Not set</span>
+                      <% end %>
+                    </dd>
+                  </dl>
+                </div>
+                
+                <div class="col-md-6">
+                  <dl class="row">
+                    <dt class="col-sm-4">Songs:</dt>
+                    <dd class="col-sm-8">
+                      <span class="badge bg-primary"><%= @artist.songs.count %></span>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Albums:</dt>
+                    <dd class="col-sm-8">
+                      <span class="badge bg-info"><%= @artist.albums.count %></span>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Genres:</dt>
+                    <dd class="col-sm-8">
+                      <% @artist.genres.limit(3).each do |genre| %>
+                        <span class="badge" style="background-color: <%= genre.color %>">
+                          <%= genre.name %>
+                        </span>
+                      <% end %>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Statistics</h5>
+            </div>
+            <div class="card-body">
+              <dl class="row">
+                <dt class="col-sm-6">Total Songs:</dt>
+                <dd class="col-sm-6"><%= @artist.songs.count %></dd>
+                
+                <dt class="col-sm-6">Total Albums:</dt>
+                <dd class="col-sm-6"><%= @artist.albums.count %></dd>
+                
+                <dt class="col-sm-6">Genres:</dt>
+                <dd class="col-sm-6"><%= @artist.genres.count %></dd>
+                
+                <dt class="col-sm-6">Created:</dt>
+                <dd class="col-sm-6"><%= @artist.created_at.strftime("%Y-%m-%d") %></dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Songs -->
+      <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Songs by <%= @artist.name %></h5>
+          <% if current_user %>
+            <div class="d-flex align-items-center gap-3">
+              <div class="dropdown">
+                <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="addToPlaylistDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="fas fa-plus me-1"></i>Add to Playlist
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="addToPlaylistDropdown">
+                  <li><h6 class="dropdown-header">Select Playlist</h6></li>
+                  <% current_user.playlists.each do |playlist| %>
+                    <li><a class="dropdown-item playlist-option" href="#" data-playlist-id="<%= playlist.id %>" data-playlist-name="<%= playlist.name %>" onclick="if (typeof addSelectedSongsToPlaylist === 'function') { addSelectedSongsToPlaylist('<%= playlist.id %>', '<%= playlist.name %>'); } else { console.error('addSelectedSongsToPlaylist is not defined'); } return false;"><%= playlist.name %></a></li>
+                  <% end %>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="#" id="createNewPlaylistOption" onclick="if (typeof showCreatePlaylistModal === 'function') { showCreatePlaylistModal(); } else { console.error('showCreatePlaylistModal is not defined'); } return false;"><i class="fas fa-plus me-2"></i>Create New Playlist</a></li>
+                </ul>
+              </div>
+            </div>
+          <% end %>
+        </div>
+        <div class="card-body">
+          <% if @songs.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover song-list-table">
+                <thead>
+                  <tr>
+                    <th style="width: 40px;">
+                      <input type="checkbox" class="form-check-input" id="select-all-songs">
+                    </th>
+                    <th>Title</th>
+                    <th>Album</th>
+                    <th>Genre</th>
+                    <th>Duration</th>
+                    <th>Created</th>
+                    <th>Play</th>
+                  </tr>
+                </thead>
+                <tbody id="songs-table-body">
+                  <%= render partial: 'songs/song_list', locals: { songs: @songs, show_checkbox: true } %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <p class="theme-text-muted">No songs found for this artist.</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Notice system functions
+window.showNotice = function(message, type = 'success') {
+  const noticeContainer = document.getElementById('notice-container');
+  if (!noticeContainer) return;
+  
+  const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+  const noticeHtml = `
+    <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+  
+  noticeContainer.innerHTML = noticeHtml;
+  
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    const alert = noticeContainer.querySelector('.alert');
+    if (alert) {
+      alert.remove();
+    }
+  }, 5000);
+};
+
+// Playlist functions
+window.addSelectedSongsToPlaylist = function(playlistId, playlistName) {
+  console.log('addSelectedSongsToPlaylist called with:', playlistId, playlistName);
+  
+  const selectedSongs = document.querySelectorAll('.song-select-checkbox:checked');
+  const songIds = Array.from(selectedSongs).map(checkbox => checkbox.value);
+  
+  if (songIds.length === 0) {
+    showNotice('Please select at least one song to add to the playlist.', 'danger');
+    return;
+  }
+  
+  console.log(`Adding ${songIds.length} songs to playlist: ${playlistName}`);
+  
+  // Use fetch instead of HTMX for better control
+  fetch(`/playlists/${playlistId}/add_songs`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: JSON.stringify({ song_ids: songIds })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Show success message
+      const message = `${data.message} (${songIds.length} songs added to "${data.playlist_name}")`;
+      showNotice(message, 'success');
+      
+      // Clear selections
+      selectedSongs.forEach(checkbox => checkbox.checked = false);
+      updatePlaylistButtonState();
+      updateSelectAllCheckbox();
+    } else {
+      showNotice(data.error || 'Failed to add songs to playlist', 'danger');
+    }
+  })
+  .catch(error => {
+    console.error('Error adding songs to playlist:', error);
+    showNotice('Error adding songs to playlist', 'danger');
+  });
+};
+
+window.showCreatePlaylistModal = function() {
+  console.log('showCreatePlaylistModal called');
+  
+  const playlistName = prompt('Enter playlist name:');
+  if (playlistName && playlistName.trim()) {
+    const selectedSongs = document.querySelectorAll('.song-select-checkbox:checked');
+    const songIds = Array.from(selectedSongs).map(checkbox => checkbox.value);
+    
+    if (songIds.length === 0) {
+      showNotice('Please select at least one song to add to the new playlist.', 'danger');
+      return;
+    }
+    
+    console.log(`Creating new playlist "${playlistName}" with ${songIds.length} songs`);
+    
+    // Create playlist and add songs
+    fetch('/playlists', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({ 
+        playlist: { name: playlistName.trim(), is_public: false },
+        song_ids: songIds 
+      })
+    })
+    .then(response => {
+      if (response.redirected) {
+        // Redirect to the new playlist
+        window.location.href = response.url;
+      } else {
+        return response.json();
+      }
+    })
+    .then(data => {
+      if (data && data.success) {
+        showNotice(`Created playlist "${playlistName}" with ${songIds.length} songs`, 'success');
+        
+        // Clear selections
+        selectedSongs.forEach(checkbox => checkbox.checked = false);
+        updatePlaylistButtonState();
+        updateSelectAllCheckbox();
+      } else if (data) {
+        showNotice(data.error || 'Failed to create playlist', 'danger');
+      }
+    })
+    .catch(error => {
+      console.error('Error creating playlist:', error);
+      showNotice('Error creating playlist', 'danger');
+    });
+  }
+};
+
+// Helper functions for playlist functionality
+function updatePlaylistButtonState() {
+  const selectedSongs = document.querySelectorAll('.song-select-checkbox:checked');
+  const dropdownButton = document.getElementById('addToPlaylistDropdown');
+  
+  if (dropdownButton) {
+    if (selectedSongs.length > 0) {
+      dropdownButton.disabled = false;
+      dropdownButton.textContent = `Add to Playlist (${selectedSongs.length})`;
+    } else {
+      dropdownButton.disabled = true;
+      dropdownButton.innerHTML = '<i class="fas fa-plus me-1"></i>Add to Playlist';
+    }
+  }
+}
+
+function updateSelectAllCheckbox() {
+  const selectAllCheckbox = document.getElementById('select-all-songs');
+  const songCheckboxes = document.querySelectorAll('.song-select-checkbox');
+  const checkedCheckboxes = document.querySelectorAll('.song-select-checkbox:checked');
+  
+  if (selectAllCheckbox) {
+    if (checkedCheckboxes.length === 0) {
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = false;
+    } else if (checkedCheckboxes.length === songCheckboxes.length) {
+      selectAllCheckbox.checked = true;
+      selectAllCheckbox.indeterminate = false;
+    } else {
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = true;
+    }
+  }
+}
+
+// Initialize playlist functionality
+document.addEventListener('turbo:load', function() {
+  console.log('Initializing playlist functionality...');
+  
+  // Select all checkbox
+  const selectAllCheckbox = document.getElementById('select-all-songs');
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', function() {
+      const songCheckboxes = document.querySelectorAll('.song-select-checkbox');
+      songCheckboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+      });
+      updatePlaylistButtonState();
+    });
+  }
+  
+  // Individual song checkboxes
+  document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('song-select-checkbox')) {
+      updatePlaylistButtonState();
+      updateSelectAllCheckbox();
+    }
+  });
+  
+  // Initialize button state
+  updatePlaylistButtonState();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOMContentLoaded - Initializing playlist functionality...');
+  
+  // Select all checkbox
+  const selectAllCheckbox = document.getElementById('select-all-songs');
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', function() {
+      const songCheckboxes = document.querySelectorAll('.song-select-checkbox');
+      songCheckboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+      });
+      updatePlaylistButtonState();
+    });
+  }
+  
+  // Individual song checkboxes
+  document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('song-select-checkbox')) {
+      updatePlaylistButtonState();
+      updateSelectAllCheckbox();
+    }
+  });
+  
+  // Initialize button state
+  updatePlaylistButtonState();
+});
+</script> 

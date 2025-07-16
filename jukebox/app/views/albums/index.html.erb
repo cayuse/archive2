@@ -1,0 +1,46 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Albums</h1>
+        <div>
+          <span class="badge bg-primary"><%= @albums.total_count %> albums</span>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-body">
+          <% if @albums.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover album-list-table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Artists</th>
+                    <th>Songs</th>
+                    <th>Release Date</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <%= render partial: 'album', collection: @albums %>
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Pagination -->
+            <% if @albums.respond_to?(:current_page) %>
+              <div class="d-flex justify-content-center mt-4">
+                <%= paginate @albums if respond_to?(:paginate) %>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="text-center py-4">
+              <p class="theme-text-muted">No albums found.</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

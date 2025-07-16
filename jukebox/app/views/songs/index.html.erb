@@ -1,0 +1,413 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <!-- Notice Container -->
+      <div id="notice-container"></div>
+      
+      <!-- Page Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Songs</h1>
+        <% if policy(Song.new).upload_audio? %>
+          <%= link_to upload_path, class: "btn btn-primary" do %>
+            <i class="fas fa-plus me-2"></i>Upload Song
+          <% end %>
+        <% end %>
+      </div>
+      
+      <!-- Search Bar -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-8">
+              <input type="text" id="search-input" class="form-control" placeholder="Search songs, artists, albums, or genres..." autocomplete="off">
+            </div>
+            <div class="col-md-4">
+              <button id="clear-search" class="btn btn-outline-secondary" style="display: none;">Clear Search</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Songs Table -->
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">All Songs</h5>
+          <div class="d-flex align-items-center gap-3">
+            <div id="song-count" class="theme-text-muted"></div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover song-list-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Artist</th>
+                  <th>Album</th>
+                  <th>Genre</th>
+                  <th>Duration</th>
+                  <th>Created</th>
+                  <th>Play</th>
+                </tr>
+              </thead>
+              <tbody id="songs-table-body">
+                <%= render partial: 'song_list', locals: { songs: @songs } %>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Loading indicator -->
+          <div id="loading" class="text-center mt-3" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          <!-- Load more button -->
+          <div id="load-more-container" class="text-center mt-3" style="display: none;">
+            <button id="load-more" class="btn btn-outline-primary">Load More Songs</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Ensure playlist functions are available immediately
+// Notice system functions
+window.showNotice = function(message, type = 'success') {
+  const noticeContainer = document.getElementById('notice-container');
+  if (!noticeContainer) return;
+  
+  const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+  const noticeHtml = `
+    <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+  
+  noticeContainer.innerHTML = noticeHtml;
+  
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    const alert = noticeContainer.querySelector('.alert');
+    if (alert) {
+      alert.remove();
+    }
+  }, 5000);
+};
+
+
+
+function initializeSearch() {
+  console.log('Initializing search functionality');
+  
+  let searchTimeout;
+  let currentPage = 1;
+  let currentQuery = '';
+  let isLoading = false;
+  let hasMore = true;
+  let currentlyPlaying = null;
+  
+  const searchInput = document.getElementById('search-input');
+  const clearSearchBtn = document.getElementById('clear-search');
+  const songsTableBody = document.getElementById('songs-table-body');
+  const loadingDiv = document.getElementById('loading');
+  const loadMoreContainer = document.getElementById('load-more-container');
+  const loadMoreBtn = document.getElementById('load-more');
+  const songCountDiv = document.getElementById('song-count');
+  
+  console.log('Search input element:', searchInput);
+  console.log('Songs table body element:', songsTableBody);
+  
+  if (!searchInput) {
+    console.error('Search input not found!');
+    return;
+  }
+  
+  if (!songsTableBody) {
+    console.error('Songs table body not found!');
+    return;
+  }
+  
+
+  
+
+  
+  // Live search functionality
+  searchInput.addEventListener('input', function() {
+    console.log('Search input event triggered');
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(function() {
+      currentQuery = searchInput.value.trim();
+      console.log('Searching for:', currentQuery);
+      currentPage = 1;
+      hasMore = true;
+      loadSongs(true);
+    }, 300); // Debounce search
+  });
+  
+  // Clear search
+  clearSearchBtn.addEventListener('click', function() {
+    searchInput.value = '';
+    currentQuery = '';
+    currentPage = 1;
+    hasMore = true;
+    loadSongs(true);
+    clearSearchBtn.style.display = 'none';
+  });
+  
+  // Load more functionality
+  loadMoreBtn.addEventListener('click', function() {
+    if (!isLoading && hasMore) {
+      currentPage++;
+      loadSongs(false);
+    }
+  });
+  
+  // Infinite scroll
+  window.addEventListener('scroll', function() {
+    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+      if (!isLoading && hasMore) {
+        currentPage++;
+        loadSongs(false);
+      }
+    }
+  });
+  
+  function loadSongs(reset = false) {
+    console.log('loadSongs called with reset:', reset);
+    if (isLoading) return;
+    
+    isLoading = true;
+    loadingDiv.style.display = 'block';
+    
+    const params = new URLSearchParams({
+      q: currentQuery,
+      page: currentPage
+    });
+    
+    console.log('Fetching from:', `/songs/search?${params}`);
+    fetch(`/songs/search?${params}`)
+      .then(response => response.text())
+      .then(html => {
+        if (reset) {
+          songsTableBody.innerHTML = html;
+        } else {
+          songsTableBody.insertAdjacentHTML('beforeend', html);
+        }
+        
+        // Re-initialize audio players after loading new content
+        initializeAudioPlayers();
+        
+        // Update song count
+        const songCount = songsTableBody.querySelectorAll('tr').length;
+        songCountDiv.textContent = `${songCount} songs`;
+        
+        // Show/hide clear search button
+        if (currentQuery) {
+          clearSearchBtn.style.display = 'block';
+        }
+        
+        // Check if we have more songs to load by counting the song rows in the response
+        // Look for actual song data rows (not header rows)
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        const songRows = tempDiv.querySelectorAll('tr[data-song-id]');
+        hasMore = songRows.length > 0;
+        
+        if (hasMore && !reset) {
+          loadMoreContainer.style.display = 'block';
+        } else {
+          loadMoreContainer.style.display = 'none';
+        }
+      })
+      .catch(error => {
+        console.error('Error loading songs:', error);
+      })
+      .finally(() => {
+        isLoading = false;
+        loadingDiv.style.display = 'none';
+      });
+  }
+  
+  // Initialize song count
+  const initialCount = songsTableBody.querySelectorAll('tr').length;
+  songCountDiv.textContent = `${initialCount} songs`;
+  
+  // Audio Player Functionality
+  function initializeAudioPlayers() {
+    const playButtons = document.querySelectorAll('.play-btn');
+    
+    playButtons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        const audioId = this.getAttribute('data-audio-id');
+        const songTitle = this.getAttribute('data-song-title');
+        const audio = document.getElementById(`audio-${audioId}`);
+        const timeSpan = document.getElementById(`time-${audioId}`);
+        const icon = this.querySelector('i');
+        
+        if (!audio) {
+          console.error('Audio element not found for ID:', audioId);
+          return;
+        }
+        
+        // Stop any currently playing audio
+        if (currentlyPlaying && currentlyPlaying !== audio) {
+          const currentButton = document.querySelector(`[data-audio-id="${currentlyPlaying.id.replace('audio-', '')}"]`);
+          if (currentButton) {
+            const currentIcon = currentButton.querySelector('i');
+            currentIcon.className = 'fas fa-play';
+            currentButton.classList.remove('btn-primary');
+            currentButton.classList.add('btn-outline-primary');
+          }
+          currentlyPlaying.pause();
+          currentlyPlaying.currentTime = 0;
+        }
+        
+        if (audio.paused) {
+          // Play the audio
+          audio.play().then(() => {
+            currentlyPlaying = audio;
+            icon.className = 'fas fa-pause';
+            this.classList.remove('btn-outline-primary');
+            this.classList.add('btn-primary');
+          }).catch(error => {
+            console.error('Error playing audio:', error);
+            showNotice('Error playing audio file: ' + error.message, 'danger');
+          });
+        } else {
+          // Pause the audio
+          audio.pause();
+          icon.className = 'fas fa-play';
+          this.classList.remove('btn-primary');
+          this.classList.add('btn-outline-primary');
+          currentlyPlaying = null;
+        }
+      });
+    });
+    
+    // Add time update listeners for all audio elements
+    const audioElements = document.querySelectorAll('audio');
+    audioElements.forEach(audio => {
+      audio.addEventListener('timeupdate', function() {
+        const audioId = this.id.replace('audio-', '');
+        const timeSpan = document.getElementById(`time-${audioId}`);
+        const currentTime = Math.floor(this.currentTime);
+        const duration = Math.floor(this.duration);
+        
+        if (!isNaN(duration)) {
+          const currentMinutes = Math.floor(currentTime / 60);
+          const currentSeconds = currentTime % 60;
+          const totalMinutes = Math.floor(duration / 60);
+          const totalSeconds = duration % 60;
+          
+          timeSpan.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')} / ${totalMinutes}:${totalSeconds.toString().padStart(2, '0')}`;
+        }
+      });
+      
+      audio.addEventListener('ended', function() {
+        const audioId = this.id.replace('audio-', '');
+        const button = document.querySelector(`[data-audio-id="${audioId}"]`);
+        const icon = button.querySelector('i');
+        icon.className = 'fas fa-play';
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-outline-primary');
+        currentlyPlaying = null;
+        
+        const timeSpan = document.getElementById(`time-${audioId}`);
+        timeSpan.textContent = '--:--';
+      });
+      
+      audio.addEventListener('loadedmetadata', function() {
+        const audioId = this.id.replace('audio-', '');
+        const timeSpan = document.getElementById(`time-${audioId}`);
+        const duration = Math.floor(this.duration);
+        
+        if (!isNaN(duration)) {
+          const minutes = Math.floor(duration / 60);
+          const seconds = duration % 60;
+          timeSpan.textContent = `0:00 / ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+      });
+    });
+  }
+  
+  // Initialize audio players when page loads
+  initializeAudioPlayers();
+}
+
+// Initialize on both Turbo and regular page load
+document.addEventListener('turbo:load', initializeSearch);
+document.addEventListener('DOMContentLoaded', initializeSearch);
+
+// Initialize playlist functionality
+document.addEventListener('turbo:load', function() {
+  console.log('Initializing playlist functionality...');
+  
+  // Select all checkbox
+  const selectAllCheckbox = document.getElementById('select-all-songs');
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', function() {
+      const songCheckboxes = document.querySelectorAll('.song-select-checkbox');
+      songCheckboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+      });
+      updatePlaylistButtonState();
+    });
+  }
+  
+  // Individual song checkboxes
+  document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('song-select-checkbox')) {
+      updatePlaylistButtonState();
+      updateSelectAllCheckbox();
+    }
+  });
+  
+  // Initialize button state
+  updatePlaylistButtonState();
+  
+  console.log('Playlist functions available:', {
+    addSelectedSongsToPlaylist: typeof window.addSelectedSongsToPlaylist,
+    showCreatePlaylistModal: typeof window.showCreatePlaylistModal,
+    testPlaylistFunctions: typeof window.testPlaylistFunctions
+  });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOMContentLoaded - Initializing playlist functionality...');
+  
+  // Select all checkbox
+  const selectAllCheckbox = document.getElementById('select-all-songs');
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', function() {
+      const songCheckboxes = document.querySelectorAll('.song-select-checkbox');
+      songCheckboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+      });
+      updatePlaylistButtonState();
+    });
+  }
+  
+  // Individual song checkboxes
+  document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('song-select-checkbox')) {
+      updatePlaylistButtonState();
+      updateSelectAllCheckbox();
+    }
+  });
+  
+  // Initialize button state
+  updatePlaylistButtonState();
+  
+  console.log('DOMContentLoaded - Playlist functions available:', {
+    addSelectedSongsToPlaylist: typeof window.addSelectedSongsToPlaylist,
+    showCreatePlaylistModal: typeof window.showCreatePlaylistModal,
+    testPlaylistFunctions: typeof window.testPlaylistFunctions
+  });
+});
+</script> 

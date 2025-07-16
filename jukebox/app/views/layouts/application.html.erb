@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html data-theme="<%= current_theme %>">
+  <head>
+    <title><%= content_for(:title) || "Jukebox" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <!-- Bootstrap 5 CSS (minimal for grid system) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag theme_css_path, media: "all", "data-turbo-track": "reload", "data-theme": current_theme %>
+    <%= javascript_importmap_tags %>
+    <script type="module">
+      import "htmx.org"
+    </script>
+  </head>
+
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+      <div class="container-fluid">
+        <!-- Logo and Brand -->
+        <div class="navbar-brand-container">
+          <div class="logo-area">
+            <img src="<%= theme_logo_path %>" alt="Logo" height="40">
+          </div>
+          <div class="brand-info">
+            <a class="navbar-brand" href="<%= root_path %>">🎵 Jukebox</a>
+          </div>
+        </div>
+
+        <!-- Mobile Toggle Button -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Navigation Content -->
+        <div class="collapse navbar-collapse" id="navbarContent">
+          <!-- Main Navigation -->
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <%= link_to "Songs", songs_path, class: "nav-link nav-btn" %>
+            </li>
+            <li class="nav-item">
+              <%= link_to "Artists", artists_path, class: "nav-link nav-btn" %>
+            </li>
+            <li class="nav-item">
+              <%= link_to "Albums", albums_path, class: "nav-link nav-btn" %>
+            </li>
+            <li class="nav-item">
+              <%= link_to "Genres", genres_path, class: "nav-link nav-btn" %>
+            </li>
+          </ul>
+
+          <!-- User Profile -->
+          <ul class="navbar-nav">
+            <% if false && current_user %>
+              <li class="nav-item">
+                <div class="user-profile-container">
+                  <div class="user-info">
+                    <span class="user-name"><%= current_user.name %></span>
+                    <%= button_to logout_path, method: :delete, class: "btn btn-outline-light btn-sm ms-2", title: "Logout" do %>
+                      <i class="fas fa-sign-out-alt"></i>
+                    <% end %>
+                  </div>
+                </div>
+              </li>
+            <% else %>
+              <li class="nav-item">
+                <%= link_to "Login", "#", class: "nav-link nav-btn" %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container mt-4">
+      <% if notice %>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <%= notice %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      <% end %>
+
+      <% if alert %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <%= alert %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      <% end %>
+
+      <%= yield %>
+    </main>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

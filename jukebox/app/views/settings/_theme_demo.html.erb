@@ -1,0 +1,65 @@
+<div class="card">
+  <div class="card-header">
+    <h6 class="mb-0 theme-text-primary">Theme Assets Demo</h6>
+  </div>
+  <div class="card-body theme-card-content">
+    <div class="row">
+      <div class="col-md-6">
+        <h6 class="theme-text-primary">Icons</h6>
+        <div class="d-flex gap-3 mb-3">
+          <% ['music-note.svg', 'play.svg', 'pause.svg', 'volume.svg'].each do |icon| %>
+            <div class="text-center">
+              <%= theme_icon_tag(icon, class: 'theme-icon', style: 'border: 1px solid var(--border-color); padding: 4px; border-radius: 4px;') %>
+              <small class="d-block mt-1 theme-text-muted"><%= icon %></small>
+            </div>
+          <% end %>
+        </div>
+        
+        <h6 class="theme-text-primary">Images</h6>
+        <div class="mb-3">
+          <% if theme_asset_exists?("themes/#{current_theme}/images/background-pattern.svg") %>
+            <%= theme_image_tag('background-pattern.svg', class: 'img-fluid', style: 'max-width: 200px; border: 1px solid var(--border-color); border-radius: 4px;') %>
+            <small class="d-block mt-1 theme-text-muted">background-pattern.svg</small>
+          <% else %>
+            <div class="alert alert-warning">
+              <small>No background pattern image found in current theme</small>
+            </div>
+          <% end %>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <h6 class="theme-text-primary">Theme Information</h6>
+        <dl class="row">
+          <dt class="col-sm-6 theme-text-primary">Current Theme:</dt>
+          <dd class="col-sm-6 theme-text-primary"><%= current_theme.titleize %></dd>
+          
+          <dt class="col-sm-6 theme-text-primary">Theme Path:</dt>
+          <dd class="col-sm-6 theme-text-muted"><small>themes/<%= current_theme %></small></dd>
+          
+          <dt class="col-sm-6 theme-text-primary">CSS File:</dt>
+          <dd class="col-sm-6">
+            <% if theme_asset_exists?("themes/#{current_theme}/theme.css") %>
+              <span class="badge bg-success">Loaded</span>
+            <% else %>
+              <span class="badge bg-warning">Missing</span>
+            <% end %>
+          </dd>
+        </dl>
+        
+        <h6 class="theme-text-primary mt-3">Usage Examples</h6>
+        <pre class="bg-light p-3 rounded"><code>
+# In your views:
+&lt;%= theme_icon_tag('play.svg') %&gt;
+&lt;%= theme_image_tag('background.svg') %&gt;
+&lt;%= theme_logo_path %&gt;
+
+# Helper methods:
+theme_icon_path('play.svg')
+theme_image_path('background.svg')
+theme_logo_path
+        </code></pre>
+      </div>
+    </div>
+  </div>
+</div> 

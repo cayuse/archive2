@@ -1,0 +1,15 @@
+<% if albums.any? %>
+  <div class="list-group">
+    <% albums.each do |album| %>
+      <button type="button" 
+              class="list-group-item list-group-item-action"
+              onclick="selectAlbum('<%= album.id %>', '<%= j(album.display_title) %>')">
+        <strong><%= album.title %></strong>
+      </button>
+    <% end %>
+  </div>
+<% else %>
+  <div class="theme-text-muted">
+    <small>No albums found. <a href="#" onclick="createNewAlbum()">Create new album</a></small>
+  </div>
+<% end %> 

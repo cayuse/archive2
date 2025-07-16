@@ -1,0 +1,46 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Genres</h1>
+        <div>
+          <span class="badge bg-primary"><%= @genres.total_count %> genres</span>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-body">
+          <% if @genres.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover genre-list-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Color</th>
+                    <th>Songs</th>
+                    <th>Artists</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <%= render partial: 'genre', collection: @genres %>
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Pagination -->
+            <% if @genres.respond_to?(:current_page) %>
+              <div class="d-flex justify-content-center mt-4">
+                <%= paginate @genres if respond_to?(:paginate) %>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="text-center py-4">
+              <p class="theme-text-muted">No genres found.</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

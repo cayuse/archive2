@@ -1,0 +1,137 @@
+<tr data-song-id="<%= song.id %>">
+  
+  <% if local_assigns[:show_filename] %>
+    <td>
+      <small class="song-filename">
+        <%= song.original_filename.presence || "N/A" %>
+      </small>
+    </td>
+  <% end %>
+  
+  <td>
+    <% if song.title.present? %>
+      <%= link_to song.title, song_path(song), class: "song-title text-decoration-none fw-medium" %>
+    <% else %>
+      <span class="song-title">No title</span>
+    <% end %>
+  </td>
+  
+  <td>
+    <% if song.artist.present? %>
+      <span class="song-artist"><%= song.artist.name %></span>
+    <% else %>
+      <span class="song-artist">No artist</span>
+    <% end %>
+  </td>
+  
+  <td>
+    <% if song.album.present? %>
+      <span class="song-album"><%= song.album.title %></span>
+    <% else %>
+      <span class="song-album">No album</span>
+    <% end %>
+  </td>
+  
+  <td>
+    <% if song.genre.present? %>
+      <% 
+        # Determine text color based on background brightness
+        bg_color = song.genre.color || '#6c757d' # Fallback to gray if no color
+        # Convert hex to RGB and calculate brightness
+        hex = bg_color.gsub('#', '')
+        r = hex[0..1].to_i(16)
+        g = hex[2..3].to_i(16)
+        b = hex[4..5].to_i(16)
+        brightness = (r * 299 + g * 587 + b * 114) / 1000
+        text_color = brightness > 128 ? '#000000' : '#ffffff'
+      %>
+      <span class="badge genre-badge" style="background-color: <%= bg_color %>; color: <%= text_color %>;">
+        <%= song.genre.name %>
+      </span>
+    <% else %>
+      <span class="song-genre">No genre</span>
+    <% end %>
+  </td>
+  
+  <% if local_assigns[:show_status] %>
+    <td>
+      <% case song.processing_status %>
+      <% when 'new' %>
+        <span class="badge bg-info song-status">New</span>
+      <% when 'pending' %>
+        <span class="badge bg-secondary song-status">Pending</span>
+      <% when 'processing' %>
+        <span class="badge bg-warning song-status">Processing</span>
+      <% when 'completed' %>
+        <span class="badge bg-success song-status">Completed</span>
+      <% when 'failed' %>
+        <span class="badge bg-danger song-status">Failed</span>
+      <% when 'needs_review' %>
+        <span class="badge bg-warning song-status">Needs Review</span>
+      <% end %>
+    </td>
+  <% end %>
+  
+  <% if local_assigns[:show_metadata] %>
+    <td>
+      <% if song.has_complete_metadata? %>
+        <span class="badge bg-success song-status">Complete</span>
+      <% elsif song.has_partial_metadata? %>
+        <span class="badge bg-warning song-status">Partial</span>
+      <% else %>
+        <span class="badge bg-danger song-status">None</span>
+      <% end %>
+    </td>
+  <% end %>
+  
+  <% if local_assigns[:show_error] %>
+    <td>
+      <% if song.processing_error.present? %>
+        <small class="song-error" title="<%= song.processing_error %>">
+          <%= truncate(song.processing_error, length: 50) %>
+        </small>
+      <% else %>
+        <span class="song-error">-</span>
+      <% end %>
+    </td>
+  <% end %>
+  
+  <td>
+    <% if song.duration.present? %>
+      <span class="song-duration"><%= "#{song.duration / 60}:#{(song.duration % 60).to_s.rjust(2, '0')}" %></span>
+    <% else %>
+      <span class="song-duration">-</span>
+    <% end %>
+  </td>
+  
+  <td><span class="song-date"><%= song.created_at.strftime("%Y-%m-%d") %></span></td>
+  
+  <td>
+    <!-- Audio Player -->
+    <% if song.audio_file.attached? %>
+      <div class="audio-player-container">
+        <audio controls preload="none" style="width: 180px; height: 25px; background-color: var(--card-bg); border-radius: 4px;">
+          <source src="<%= rails_blob_url(song.audio_file) %>" type="<%= song.audio_file.content_type %>">
+          Your browser does not support the audio element.
+        </audio>
+      </div>
+    <% else %>
+      <span class="song-error">No audio</span>
+    <% end %>
+  </td>
+  
+  <% if local_assigns[:maintenance_mode] %>
+    <td>
+      <div class="btn-group btn-group-sm song-actions" role="group">
+        <!-- Maintenance mode: Edit, Delete (admin only) -->
+        <%= link_to "Edit", edit_song_path(song), class: "btn btn-outline-primary btn-sm" %>
+        <% if policy(song).destroy? %>
+          <%= button_to "Delete", song_path(song), 
+                       method: :delete, 
+                       data: { confirm: "Are you sure you want to delete this song?" }, 
+                       class: "btn btn-outline-danger btn-sm" %>
+        <% end %>
+      </div>
+    </td>
+  <% end %>
+</tr> 
