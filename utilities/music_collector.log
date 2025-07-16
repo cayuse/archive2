@@ -1,0 +1,1216 @@
+2025-07-16 13:34:56,878 - INFO - Using ffprobe at: C:\Users\cayuse\ffmpeg-2025-07-10-git-82aeee3c19-essentials_build\bin\ffprobe.exe
+2025-07-16 13:34:56,878 - INFO - Using ffprobe at: C:\Users\cayuse\ffmpeg-2025-07-10-git-82aeee3c19-essentials_build\bin\ffprobe.exe
+2025-07-16 13:34:56,878 - INFO - Target size: 25.0 MB
+2025-07-16 13:34:56,878 - INFO - Scanning directory: C:\Users\cayuse\repaired music
+2025-07-16 13:34:58,792 - INFO - Processed 100 files...
+2025-07-16 13:34:58,903 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (1).mp3: 
+2025-07-16 13:34:58,924 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (10).mp3: 
+2025-07-16 13:34:58,946 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (11).mp3: 
+2025-07-16 13:34:58,962 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (12).mp3: 
+2025-07-16 13:34:58,977 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (13).mp3: 
+2025-07-16 13:34:58,995 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (14).mp3: 
+2025-07-16 13:34:59,015 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (15).mp3: 
+2025-07-16 13:34:59,026 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (16).mp3: 
+2025-07-16 13:34:59,046 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (17).mp3: 
+2025-07-16 13:34:59,057 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (18).mp3: 
+2025-07-16 13:34:59,076 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (19).mp3: 
+2025-07-16 13:34:59,096 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (2).mp3: 
+2025-07-16 13:34:59,106 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (20).mp3: 
+2025-07-16 13:34:59,128 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (21).mp3: 
+2025-07-16 13:34:59,139 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (22).mp3: 
+2025-07-16 13:34:59,159 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (23).mp3: 
+2025-07-16 13:34:59,179 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (24).mp3: 
+2025-07-16 13:34:59,189 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (25).mp3: 
+2025-07-16 13:34:59,213 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (26).mp3: 
+2025-07-16 13:34:59,231 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (27).mp3: 
+2025-07-16 13:34:59,247 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (28).mp3: 
+2025-07-16 13:34:59,263 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (29).mp3: 
+2025-07-16 13:34:59,281 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (3).mp3: 
+2025-07-16 13:34:59,295 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (30).mp3: 
+2025-07-16 13:34:59,310 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (31).mp3: 
+2025-07-16 13:34:59,321 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (32).mp3: 
+2025-07-16 13:34:59,331 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (33).mp3: 
+2025-07-16 13:34:59,352 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (34).mp3: 
+2025-07-16 13:34:59,365 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (35).mp3: 
+2025-07-16 13:34:59,383 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (36).mp3: 
+2025-07-16 13:34:59,393 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (37).mp3: 
+2025-07-16 13:34:59,420 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (38).mp3: 
+2025-07-16 13:34:59,437 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (39).mp3: 
+2025-07-16 13:34:59,454 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (4).mp3: 
+2025-07-16 13:34:59,467 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (40).mp3: 
+2025-07-16 13:34:59,484 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (41).mp3: 
+2025-07-16 13:34:59,499 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (42).mp3: 
+2025-07-16 13:34:59,515 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (43).mp3: 
+2025-07-16 13:34:59,531 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (44).mp3: 
+2025-07-16 13:34:59,546 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (45).mp3: 
+2025-07-16 13:34:59,561 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (46).mp3: 
+2025-07-16 13:34:59,579 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (47).mp3: 
+2025-07-16 13:34:59,593 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (48).mp3: 
+2025-07-16 13:34:59,608 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (49).mp3: 
+2025-07-16 13:34:59,617 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (5).mp3: 
+2025-07-16 13:34:59,637 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (50).mp3: 
+2025-07-16 13:34:59,647 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (51).mp3: 
+2025-07-16 13:34:59,672 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (52).mp3: 
+2025-07-16 13:34:59,688 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (53).mp3: 
+2025-07-16 13:34:59,704 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (54).mp3: 
+2025-07-16 13:34:59,720 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (55).mp3: 
+2025-07-16 13:34:59,730 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (56).mp3: 
+2025-07-16 13:34:59,741 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (57).mp3: 
+2025-07-16 13:34:59,761 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (58).mp3: 
+2025-07-16 13:34:59,778 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (59).mp3: 
+2025-07-16 13:34:59,791 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (6).mp3: 
+2025-07-16 13:34:59,804 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (60).mp3: 
+2025-07-16 13:34:59,814 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (61).mp3: 
+2025-07-16 13:34:59,833 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (62).mp3: 
+2025-07-16 13:34:59,843 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (63).mp3: 
+2025-07-16 13:34:59,868 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (7).mp3: 
+2025-07-16 13:34:59,885 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (8).mp3: 
+2025-07-16 13:34:59,900 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (9).mp3: 
+2025-07-16 13:35:00,400 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ We Meet Again (Theme).mp3: 
+2025-07-16 13:35:00,415 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_.mp3: 
+2025-07-16 13:35:02,053 - INFO - Processed 200 files...
+2025-07-16 13:35:04,036 - INFO - Processed 300 files...
+2025-07-16 13:35:04,768 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\2Pac\Greatest Hits\7. How Do U Want It.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:35:06,089 - INFO - Processed 400 files...
+2025-07-16 13:35:08,478 - INFO - Processed 500 files...
+2025-07-16 13:35:11,646 - INFO - Processed 600 files...
+2025-07-16 13:35:14,154 - INFO - Processed 700 files...
+2025-07-16 13:35:16,652 - INFO - Processed 800 files...
+2025-07-16 13:35:19,841 - INFO - Processed 900 files...
+2025-07-16 13:35:21,949 - INFO - Processed 1000 files...
+2025-07-16 13:35:24,149 - INFO - Processed 1100 files...
+2025-07-16 13:35:26,177 - INFO - Processed 1200 files...
+2025-07-16 13:35:28,440 - INFO - Processed 1300 files...
+2025-07-16 13:35:29,426 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Aaron Watson\The Underdog\4. That Look.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:35:30,705 - INFO - Processed 1400 files...
+2025-07-16 13:35:33,250 - INFO - Processed 1500 files...
+2025-07-16 13:35:35,389 - INFO - Processed 1600 files...
+2025-07-16 13:35:37,568 - INFO - Processed 1700 files...
+2025-07-16 13:35:39,789 - INFO - Processed 1800 files...
+2025-07-16 13:35:42,154 - INFO - Processed 1900 files...
+2025-07-16 13:35:44,421 - INFO - Processed 2000 files...
+2025-07-16 13:35:46,073 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\1. What’d I Say.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:35:46,099 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\10. Knock on Wood.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:35:46,115 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\2. Tupelo.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:35:46,144 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\3. Opus de Soul.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:35:46,164 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\4. Baby, What You Want Me to Do.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:35:46,185 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\6. Homer’s Theme.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:35:46,703 - INFO - Processed 2100 files...
+2025-07-16 13:35:48,880 - INFO - Processed 2200 files...
+2025-07-16 13:35:51,119 - INFO - Processed 2300 files...
+2025-07-16 13:35:53,581 - INFO - Processed 2400 files...
+2025-07-16 13:36:31,111 - INFO - Using ffprobe at: C:\Users\cayuse\ffmpeg-2025-07-10-git-82aeee3c19-essentials_build\bin\ffprobe.exe
+2025-07-16 13:36:31,111 - INFO - Using ffprobe at: C:\Users\cayuse\ffmpeg-2025-07-10-git-82aeee3c19-essentials_build\bin\ffprobe.exe
+2025-07-16 13:36:31,111 - INFO - Target size: 25.0 MB
+2025-07-16 13:36:31,111 - INFO - Scanning directory: C:\Users\cayuse\repaired music
+2025-07-16 13:36:32,511 - INFO - Processed 100 files...
+2025-07-16 13:36:32,602 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (1).mp3: 
+2025-07-16 13:36:32,612 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (10).mp3: 
+2025-07-16 13:36:32,623 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (11).mp3: 
+2025-07-16 13:36:32,637 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (12).mp3: 
+2025-07-16 13:36:32,653 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (13).mp3: 
+2025-07-16 13:36:32,663 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (14).mp3: 
+2025-07-16 13:36:32,676 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (15).mp3: 
+2025-07-16 13:36:32,685 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (16).mp3: 
+2025-07-16 13:36:32,700 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (17).mp3: 
+2025-07-16 13:36:32,716 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (18).mp3: 
+2025-07-16 13:36:32,725 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (19).mp3: 
+2025-07-16 13:36:32,740 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (2).mp3: 
+2025-07-16 13:36:32,750 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (20).mp3: 
+2025-07-16 13:36:32,767 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (21).mp3: 
+2025-07-16 13:36:32,779 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (22).mp3: 
+2025-07-16 13:36:32,788 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (23).mp3: 
+2025-07-16 13:36:32,805 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (24).mp3: 
+2025-07-16 13:36:32,818 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (25).mp3: 
+2025-07-16 13:36:32,828 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (26).mp3: 
+2025-07-16 13:36:32,843 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (27).mp3: 
+2025-07-16 13:36:32,849 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (28).mp3: 
+2025-07-16 13:36:32,859 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (29).mp3: 
+2025-07-16 13:36:32,879 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (3).mp3: 
+2025-07-16 13:36:32,891 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (30).mp3: 
+2025-07-16 13:36:32,899 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (31).mp3: 
+2025-07-16 13:36:32,909 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (32).mp3: 
+2025-07-16 13:36:32,922 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (33).mp3: 
+2025-07-16 13:36:32,940 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (34).mp3: 
+2025-07-16 13:36:32,954 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (35).mp3: 
+2025-07-16 13:36:32,961 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (36).mp3: 
+2025-07-16 13:36:32,971 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (37).mp3: 
+2025-07-16 13:36:32,991 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (38).mp3: 
+2025-07-16 13:36:33,002 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (39).mp3: 
+2025-07-16 13:36:33,011 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (4).mp3: 
+2025-07-16 13:36:33,022 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (40).mp3: 
+2025-07-16 13:36:33,042 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (41).mp3: 
+2025-07-16 13:36:33,054 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (42).mp3: 
+2025-07-16 13:36:33,066 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (43).mp3: 
+2025-07-16 13:36:33,073 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (44).mp3: 
+2025-07-16 13:36:33,083 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (45).mp3: 
+2025-07-16 13:36:33,104 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (46).mp3: 
+2025-07-16 13:36:33,114 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (47).mp3: 
+2025-07-16 13:36:33,129 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (48).mp3: 
+2025-07-16 13:36:33,139 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (49).mp3: 
+2025-07-16 13:36:33,149 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (5).mp3: 
+2025-07-16 13:36:33,165 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (50).mp3: 
+2025-07-16 13:36:33,177 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (51).mp3: 
+2025-07-16 13:36:33,188 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (52).mp3: 
+2025-07-16 13:36:33,196 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (53).mp3: 
+2025-07-16 13:36:33,209 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (54).mp3: 
+2025-07-16 13:36:33,226 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (55).mp3: 
+2025-07-16 13:36:33,237 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (56).mp3: 
+2025-07-16 13:36:33,247 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (57).mp3: 
+2025-07-16 13:36:33,259 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (58).mp3: 
+2025-07-16 13:36:33,273 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (59).mp3: 
+2025-07-16 13:36:33,289 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (6).mp3: 
+2025-07-16 13:36:33,298 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (60).mp3: 
+2025-07-16 13:36:33,309 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (61).mp3: 
+2025-07-16 13:36:33,320 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (62).mp3: 
+2025-07-16 13:36:33,336 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (63).mp3: 
+2025-07-16 13:36:33,350 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (7).mp3: 
+2025-07-16 13:36:33,360 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (8).mp3: 
+2025-07-16 13:36:33,370 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (9).mp3: 
+2025-07-16 13:36:33,727 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ We Meet Again (Theme).mp3: 
+2025-07-16 13:36:33,737 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_.mp3: 
+2025-07-16 13:36:34,880 - INFO - Processed 200 files...
+2025-07-16 13:36:36,235 - INFO - Processed 300 files...
+2025-07-16 13:36:36,753 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\2Pac\Greatest Hits\7. How Do U Want It.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:36:37,770 - INFO - Processed 400 files...
+2025-07-16 13:36:39,496 - INFO - Processed 500 files...
+2025-07-16 13:36:42,046 - INFO - Processed 600 files...
+2025-07-16 13:36:43,916 - INFO - Processed 700 files...
+2025-07-16 13:36:45,737 - INFO - Processed 800 files...
+2025-07-16 13:36:47,314 - INFO - Processed 900 files...
+2025-07-16 13:36:48,895 - INFO - Processed 1000 files...
+2025-07-16 13:36:50,363 - INFO - Processed 1100 files...
+2025-07-16 13:36:51,873 - INFO - Processed 1200 files...
+2025-07-16 13:36:53,437 - INFO - Processed 1300 files...
+2025-07-16 13:36:54,151 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Aaron Watson\The Underdog\4. That Look.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:36:55,058 - INFO - Processed 1400 files...
+2025-07-16 13:36:56,857 - INFO - Processed 1500 files...
+2025-07-16 13:36:58,710 - INFO - Processed 1600 files...
+2025-07-16 13:37:00,392 - INFO - Processed 1700 files...
+2025-07-16 13:40:35,587 - INFO - Using ffprobe at: C:\Users\cayuse\ffmpeg-2025-07-10-git-82aeee3c19-essentials_build\bin\ffprobe.exe
+2025-07-16 13:40:35,597 - INFO - Database initialized: music_cache.db
+2025-07-16 13:40:35,597 - INFO - Using ffprobe at: C:\Users\cayuse\ffmpeg-2025-07-10-git-82aeee3c19-essentials_build\bin\ffprobe.exe
+2025-07-16 13:40:35,597 - INFO - Database initialized: music_cache.db
+2025-07-16 13:40:35,597 - INFO - Target size: 1.0 GB
+2025-07-16 13:40:35,597 - INFO - Scanning directory: C:\Users\cayuse\repaired music
+2025-07-16 13:40:35,597 - INFO - Using cached metadata when available (use --force-rescan to bypass cache)
+2025-07-16 13:40:37,429 - INFO - Processed 100 files (cached: 0, new: 100)...
+2025-07-16 13:40:37,538 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (1).mp3: 
+2025-07-16 13:40:37,551 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (10).mp3: 
+2025-07-16 13:40:37,564 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (11).mp3: 
+2025-07-16 13:40:37,576 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (12).mp3: 
+2025-07-16 13:40:37,589 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (13).mp3: 
+2025-07-16 13:40:37,603 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (14).mp3: 
+2025-07-16 13:40:37,616 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (15).mp3: 
+2025-07-16 13:40:37,629 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (16).mp3: 
+2025-07-16 13:40:37,642 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (17).mp3: 
+2025-07-16 13:40:37,656 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (18).mp3: 
+2025-07-16 13:40:37,667 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (19).mp3: 
+2025-07-16 13:40:37,682 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (2).mp3: 
+2025-07-16 13:40:37,694 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (20).mp3: 
+2025-07-16 13:40:37,708 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (21).mp3: 
+2025-07-16 13:40:37,721 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (22).mp3: 
+2025-07-16 13:40:37,729 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (23).mp3: 
+2025-07-16 13:40:37,740 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (24).mp3: 
+2025-07-16 13:40:37,760 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (25).mp3: 
+2025-07-16 13:40:37,774 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (26).mp3: 
+2025-07-16 13:40:37,786 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (27).mp3: 
+2025-07-16 13:40:37,799 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (28).mp3: 
+2025-07-16 13:40:37,813 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (29).mp3: 
+2025-07-16 13:40:37,826 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (3).mp3: 
+2025-07-16 13:40:37,839 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (30).mp3: 
+2025-07-16 13:40:37,851 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (31).mp3: 
+2025-07-16 13:40:37,861 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (32).mp3: 
+2025-07-16 13:40:37,872 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (33).mp3: 
+2025-07-16 13:40:37,887 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (34).mp3: 
+2025-07-16 13:40:37,902 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (35).mp3: 
+2025-07-16 13:40:37,912 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (36).mp3: 
+2025-07-16 13:40:37,922 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (37).mp3: 
+2025-07-16 13:40:37,934 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (38).mp3: 
+2025-07-16 13:40:37,952 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (39).mp3: 
+2025-07-16 13:40:37,965 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (4).mp3: 
+2025-07-16 13:40:37,973 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (40).mp3: 
+2025-07-16 13:40:37,983 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (41).mp3: 
+2025-07-16 13:40:38,003 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (42).mp3: 
+2025-07-16 13:40:38,014 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (43).mp3: 
+2025-07-16 13:40:38,029 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (44).mp3: 
+2025-07-16 13:40:38,033 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (45).mp3: 
+2025-07-16 13:40:38,054 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (46).mp3: 
+2025-07-16 13:40:38,064 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (47).mp3: 
+2025-07-16 13:40:38,075 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (48).mp3: 
+2025-07-16 13:40:38,091 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (49).mp3: 
+2025-07-16 13:40:38,104 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (5).mp3: 
+2025-07-16 13:40:38,114 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (50).mp3: 
+2025-07-16 13:40:38,125 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (51).mp3: 
+2025-07-16 13:40:38,139 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (52).mp3: 
+2025-07-16 13:40:38,156 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (53).mp3: 
+2025-07-16 13:40:38,166 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (54).mp3: 
+2025-07-16 13:40:38,176 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (55).mp3: 
+2025-07-16 13:40:38,186 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (56).mp3: 
+2025-07-16 13:40:38,206 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (57).mp3: 
+2025-07-16 13:40:38,223 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (58).mp3: 
+2025-07-16 13:40:38,238 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (59).mp3: 
+2025-07-16 13:40:38,252 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (6).mp3: 
+2025-07-16 13:40:38,266 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (60).mp3: 
+2025-07-16 13:40:38,279 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (61).mp3: 
+2025-07-16 13:40:38,293 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (62).mp3: 
+2025-07-16 13:40:38,307 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (63).mp3: 
+2025-07-16 13:40:38,321 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (7).mp3: 
+2025-07-16 13:40:38,329 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (8).mp3: 
+2025-07-16 13:40:38,340 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (9).mp3: 
+2025-07-16 13:40:38,801 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ We Meet Again (Theme).mp3: 
+2025-07-16 13:40:38,817 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_.mp3: 
+2025-07-16 13:40:40,413 - INFO - Processed 200 files (cached: 0, new: 200)...
+2025-07-16 13:40:43,110 - INFO - Processed 300 files (cached: 0, new: 300)...
+2025-07-16 13:40:43,759 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\2Pac\Greatest Hits\7. How Do U Want It.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:40:45,113 - INFO - Processed 400 files (cached: 0, new: 400)...
+2025-07-16 13:40:48,111 - INFO - Processed 500 files (cached: 0, new: 500)...
+2025-07-16 13:40:51,965 - INFO - Processed 600 files (cached: 0, new: 600)...
+2025-07-16 13:40:54,274 - INFO - Processed 700 files (cached: 0, new: 700)...
+2025-07-16 13:40:57,055 - INFO - Processed 800 files (cached: 0, new: 800)...
+2025-07-16 13:40:59,063 - INFO - Processed 900 files (cached: 0, new: 900)...
+2025-07-16 13:41:00,978 - INFO - Processed 1000 files (cached: 0, new: 1000)...
+2025-07-16 13:41:03,187 - INFO - Processed 1100 files (cached: 0, new: 1100)...
+2025-07-16 13:41:05,161 - INFO - Processed 1200 files (cached: 0, new: 1200)...
+2025-07-16 13:41:07,826 - INFO - Processed 1300 files (cached: 0, new: 1300)...
+2025-07-16 13:41:08,672 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Aaron Watson\The Underdog\4. That Look.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:09,850 - INFO - Processed 1400 files (cached: 0, new: 1400)...
+2025-07-16 13:41:12,144 - INFO - Processed 1500 files (cached: 0, new: 1500)...
+2025-07-16 13:41:14,185 - INFO - Processed 1600 files (cached: 0, new: 1600)...
+2025-07-16 13:41:16,141 - INFO - Processed 1700 files (cached: 0, new: 1700)...
+2025-07-16 13:41:18,857 - INFO - Processed 1800 files (cached: 0, new: 1800)...
+2025-07-16 13:41:21,829 - INFO - Processed 1900 files (cached: 0, new: 1900)...
+2025-07-16 13:41:24,082 - INFO - Processed 2000 files (cached: 0, new: 2000)...
+2025-07-16 13:41:26,544 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\1. What’d I Say.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:26,564 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\10. Knock on Wood.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:26,584 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\2. Tupelo.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:26,606 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\3. Opus de Soul.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:26,622 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\4. Baby, What You Want Me to Do.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:26,641 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\6. Homer’s Theme.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:27,112 - INFO - Processed 2100 files (cached: 0, new: 2100)...
+2025-07-16 13:41:29,474 - INFO - Processed 2200 files (cached: 0, new: 2200)...
+2025-07-16 13:41:31,489 - INFO - Processed 2300 files (cached: 0, new: 2300)...
+2025-07-16 13:41:33,856 - INFO - Processed 2400 files (cached: 0, new: 2400)...
+2025-07-16 13:41:36,388 - INFO - Processed 2500 files (cached: 0, new: 2500)...
+2025-07-16 13:41:37,675 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Amanda Miguel\Amanda Miguel\1. Ámame una vez más.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:39,194 - INFO - Processed 2600 files (cached: 0, new: 2600)...
+2025-07-16 13:41:42,941 - INFO - Processed 2700 files (cached: 0, new: 2700)...
+2025-07-16 13:41:45,628 - INFO - Processed 2800 files (cached: 0, new: 2800)...
+2025-07-16 13:41:47,862 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Andy Williams\Andy Williams_ His Greatest Hits and Finest Performances\6. Love Theme From “The Godfather” (Speak Softly Love).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:48,509 - INFO - Processed 2900 files (cached: 0, new: 2900)...
+2025-07-16 13:41:51,450 - INFO - Processed 3000 files (cached: 0, new: 3000)...
+2025-07-16 13:41:52,534 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; Academy of Ancient Music, Christopher Hogwood\L’Estro Armonico _ 6 Flute Concertos, op. 10\24. L'Estro Armonico, op. 3 (Twelve Concertos) Concerto no. 2 in G minor Con Due Violini E Violincello Obligati, RV 578, RV 549 I. Adagio E Spiccato.mp3: [WinError 3] The system cannot find the path specified: "C:\\Users\\cayuse\\repaired music\\Antonio Vivaldi; Academy of Ancient Music, Christopher Hogwood\\L’Estro Armonico _ 6 Flute Concertos, op. 10\\24. L'Estro Armonico, op. 3 (Twelve Concertos) Concerto no. 2 in G minor Con Due Violini E Violincello Obligati, RV 578, RV 549 I. Adagio E Spiccato.mp3"
+2025-07-16 13:41:53,168 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\1. Concerto for Strings in G major, RV 151 “alla rustica”_ I. Presto.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:53,195 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\10. Concerto for 2 Violins and Strings in G major, RV 516_ I. Allegro molto.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:53,218 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\11. Concerto for 2 Violins and Strings in G major, RV 516_ II. Andante (molto).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:53,239 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\12. Concerto for 2 Violins and Strings in G major, RV 516_ III. Allegro.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:53,260 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\13. Concerto for Oboe and Strings in A minor, RV 461_ I. Allegro non molto.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:53,286 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\14. Concerto for Oboe and Strings in A minor, RV 461_ II. Larghetto.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:53,302 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\15. Concerto for Oboe and Strings in A minor, RV 461_ III. (Allegro).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:53,333 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\16. Concerto for 2 Mandolins and Strings in G major, RV 532_ I. Allegro.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:53,366 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\17. Concerto for 2 Mandolins and Strings in G major, RV 532_ II. Andante.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:53,396 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\18. Concerto for 2 Mandolins and Strings in G major, RV 532_ III. Allegro.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:53,416 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\2. Concerto for Strings in G major, RV 151 “alla rustica”_ II. Adagio.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:53,443 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\3. Concerto for Strings in G major, RV 151 “alla rustica”_ III. Allegro.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:53,540 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\7. Concerto in C major “con molti stromenti” RV 558_ I. Allegro molto.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:53,561 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\8. Concerto in C major “con molti stromenti” RV 558_ II. Andante molto.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:53,585 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\9. Concerto in C major “con molti stromenti” RV 558_ III. Allegro.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:41:54,952 - INFO - Processed 3100 files (cached: 0, new: 3100)...
+2025-07-16 13:41:57,482 - INFO - Processed 3200 files (cached: 0, new: 3200)...
+2025-07-16 13:42:00,527 - INFO - Processed 3300 files (cached: 0, new: 3300)...
+2025-07-16 13:42:01,695 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Arthur Fiedler\Fiedler_ Greatest Hits\7. Procession of the Nobles from Mlada (1).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:42:01,719 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Arthur Fiedler\Fiedler_ Greatest Hits\7. Procession of the Nobles from Mlada.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:42:02,332 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Arthur Fiedler & Boston Pops Orchestra\Play Million-Dollar Memories\1. George M. Cohan Sing-Along Medley_ Give My Regards to Broadway _ Mary's a Grand Old Name _ Nelly Kelly, I Love You _ You're a Grand Old Flag _ You Remind Me of My Mother _ Harrigan _ Yankee Doodle Boy.mp3: [WinError 3] The system cannot find the path specified: "C:\\Users\\cayuse\\repaired music\\Arthur Fiedler & Boston Pops Orchestra\\Play Million-Dollar Memories\\1. George M. Cohan Sing-Along Medley_ Give My Regards to Broadway _ Mary's a Grand Old Name _ Nelly Kelly, I Love You _ You're a Grand Old Flag _ You Remind Me of My Mother _ Harrigan _ Yankee Doodle Boy.mp3"
+2025-07-16 13:42:02,583 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Arthur Fiedler & Boston Pops Orchestra\Play Million-Dollar Memories\7. America Sings Medley_ A Hot Time in the Old Town Tonight _ I've Been Working on the Railroad _ Down by the Old Mill Stream _ In the Good Old Summertime _ Jingle Bells _ When Irish Eyes Are Smiling _ God Bless America.mp3: [WinError 3] The system cannot find the path specified: "C:\\Users\\cayuse\\repaired music\\Arthur Fiedler & Boston Pops Orchestra\\Play Million-Dollar Memories\\7. America Sings Medley_ A Hot Time in the Old Town Tonight _ I've Been Working on the Railroad _ Down by the Old Mill Stream _ In the Good Old Summertime _ Jingle Bells _ When Irish Eyes Are Smiling _ God Bless America.mp3"
+2025-07-16 13:42:02,785 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Arthur Fiedler & Boston Pops Orchestra\Pops Roundup\12. Pops Hoe-Down (Arkansas Traveler, The Devil's Dream, Chicken Reel, Thunder Hornpipe, Paddy Whack (Irish Jig), Pop! Goes the Weasel, Miss McCloud's Reel, Turkey in the Straw, Stop Buck, Soldier's Joy, The Rakes of Mallow, Lamplighter's Hornpipe).mp3: [WinError 3] The system cannot find the path specified: "C:\\Users\\cayuse\\repaired music\\Arthur Fiedler & Boston Pops Orchestra\\Pops Roundup\\12. Pops Hoe-Down (Arkansas Traveler, The Devil's Dream, Chicken Reel, Thunder Hornpipe, Paddy Whack (Irish Jig), Pop! Goes the Weasel, Miss McCloud's Reel, Turkey in the Straw, Stop Buck, Soldier's Joy, The Rakes of Mallow, Lamplighter's Hornpipe).mp3"
+2025-07-16 13:42:03,598 - INFO - Processed 3400 files (cached: 0, new: 3400)...
+2025-07-16 13:42:06,137 - INFO - Processed 3500 files (cached: 0, new: 3500)...
+2025-07-16 13:42:09,195 - INFO - Processed 3600 files (cached: 0, new: 3600)...
+2025-07-16 13:42:10,471 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Azúcar Moreno\Esclava de tu piel\7. Ámame toda la noche.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:42:12,156 - INFO - Processed 3700 files (cached: 0, new: 3700)...
+2025-07-16 13:42:14,941 - INFO - Processed 3800 files (cached: 0, new: 3800)...
+2025-07-16 13:42:17,607 - INFO - Processed 3900 files (cached: 0, new: 3900)...
+2025-07-16 13:42:17,658 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Baha Men\Move It Like This\5. Best Years of Our Lives.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:42:21,491 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Barry Manilow\Because It’s Christmas\5. Excerpt From Händel’s Messiah (“For unto us a child is born…”) _ Because It’s Christmas (For All the Children).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:42:21,532 - INFO - Processed 4000 files (cached: 0, new: 4000)...
+2025-07-16 13:42:24,219 - INFO - Processed 4100 files (cached: 0, new: 4100)...
+2025-07-16 13:42:26,849 - INFO - Processed 4200 files (cached: 0, new: 4200)...
+2025-07-16 13:42:30,121 - INFO - Processed 4300 files (cached: 0, new: 4300)...
+2025-07-16 13:42:32,898 - INFO - Processed 4400 files (cached: 0, new: 4400)...
+2025-07-16 13:42:35,965 - INFO - Processed 4500 files (cached: 0, new: 4500)...
+2025-07-16 13:42:38,704 - INFO - Processed 4600 files (cached: 0, new: 4600)...
+2025-07-16 13:42:41,810 - INFO - Processed 4700 files (cached: 0, new: 4700)...
+2025-07-16 13:42:42,804 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Beniamino Gigli\Beniamino Gigli - Opera Arias\11. Pagliacci_ “No, Pagliaccio non son !”.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:42:42,855 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Beniamino Gigli\Beniamino Gigli - Opera Arias\8. Rigoletto_ “La donna è mobile”.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:42:44,378 - INFO - Processed 4800 files (cached: 0, new: 4800)...
+2025-07-16 13:42:46,100 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Bernard Haitink, Koninklijk Concertgebouworkest\Bernard Haitink - Concertgebouw Edition_ Complete Studio Recordings\1. Symphony No. 5 in C-sharp minor_ I. Part I. Trauermarsch. In Gemessenem Schritt. Streng. Wie Ein Kondukt - Plötzlich Schneller. Leidenschaftlich. Wild - Tempo I.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\Bernard Haitink, Koninklijk Concertgebouworkest\\Bernard Haitink - Concertgebouw Edition_ Complete Studio Recordings\\1. Symphony No. 5 in C-sharp minor_ I. Part I. Trauermarsch. In Gemessenem Schritt. Streng. Wie Ein Kondukt - Plötzlich Schneller. Leidenschaftlich. Wild - Tempo I.mp3'
+2025-07-16 13:42:46,179 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Bernard Haitink, Koninklijk Concertgebouworkest\Bernard Haitink - Concertgebouw Edition_ Complete Studio Recordings\2. Symphony no. 5 in C-sharp minor_ II. Part I. Stürmisch bewegt. Mit größter Vehemenz - Bedeutend langsamer - Tempo I subito.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\Bernard Haitink, Koninklijk Concertgebouworkest\\Bernard Haitink - Concertgebouw Edition_ Complete Studio Recordings\\2. Symphony no. 5 in C-sharp minor_ II. Part I. Stürmisch bewegt. Mit größter Vehemenz - Bedeutend langsamer - Tempo I subito.mp3'
+2025-07-16 13:42:47,362 - INFO - Processed 4900 files (cached: 0, new: 4900)...
+2025-07-16 13:42:48,087 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Beyoncé\Dangerously in Love\1. Crazy in Love.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:42:48,304 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Big & Rich\Gravity\6. Run Away With You.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:42:50,297 - INFO - Processed 5000 files (cached: 0, new: 5000)...
+2025-07-16 13:42:52,099 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Bill Conti\Rocky\1. Gonna Fly Now (Theme From “Rocky”).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:42:52,872 - INFO - Processed 5100 files (cached: 0, new: 5100)...
+2025-07-16 13:42:56,497 - INFO - Processed 5200 files (cached: 0, new: 5200)...
+2025-07-16 13:42:59,043 - INFO - Processed 5300 files (cached: 0, new: 5300)...
+2025-07-16 13:43:02,034 - INFO - Processed 5400 files (cached: 0, new: 5400)...
+2025-07-16 13:43:04,586 - INFO - Processed 5500 files (cached: 0, new: 5500)...
+2025-07-16 13:43:07,353 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Blackstreet\No Diggity_ Very Best of Blackstreet\1. Baby Be Mine.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:07,427 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Blackstreet\No Diggity_ Very Best of Blackstreet\10. Don’t Leave Me.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:07,511 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Blackstreet\No Diggity_ Very Best of Blackstreet\12. Fix.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:07,582 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Blackstreet\No Diggity_ Very Best of Blackstreet\13. (Money Can’t) Buy Me Love.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:07,659 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Blackstreet\No Diggity_ Very Best of Blackstreet\14. Coming Home To You.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:07,725 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Blackstreet\No Diggity_ Very Best of Blackstreet\15. Get Me Home.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:07,800 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Blackstreet\No Diggity_ Very Best of Blackstreet\16. Girlfriend_Boyfriend.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:07,933 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Blackstreet\No Diggity_ Very Best of Blackstreet\2. Booti Call.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:07,993 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Blackstreet\No Diggity_ Very Best of Blackstreet\4. Joy (New Carnegie Mix).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:08,075 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Blackstreet\No Diggity_ Very Best of Blackstreet\5. Falling In Love Again.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:08,157 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Blackstreet\No Diggity_ Very Best of Blackstreet\6. Tonights The Night.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:08,248 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Blackstreet\No Diggity_ Very Best of Blackstreet\7. No Diggity.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:08,360 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Blackstreet\No Diggity_ Very Best of Blackstreet\8. Billie Jean.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:08,474 - INFO - Processed 5600 files (cached: 0, new: 5600)...
+2025-07-16 13:43:13,270 - INFO - Processed 5700 files (cached: 0, new: 5700)...
+2025-07-16 13:43:15,995 - INFO - Processed 5800 files (cached: 0, new: 5800)...
+2025-07-16 13:43:18,825 - INFO - Processed 5900 files (cached: 0, new: 5900)...
+2025-07-16 13:43:22,486 - INFO - Processed 6000 files (cached: 0, new: 6000)...
+2025-07-16 13:43:25,039 - INFO - Processed 6100 files (cached: 0, new: 6100)...
+2025-07-16 13:43:27,730 - INFO - Processed 6200 files (cached: 0, new: 6200)...
+2025-07-16 13:43:30,414 - INFO - Processed 6300 files (cached: 0, new: 6300)...
+2025-07-16 13:43:33,441 - INFO - Processed 6400 files (cached: 0, new: 6400)...
+2025-07-16 13:43:36,337 - INFO - Processed 6500 files (cached: 0, new: 6500)...
+2025-07-16 13:43:39,126 - INFO - Processed 6600 files (cached: 0, new: 6600)...
+2025-07-16 13:43:42,343 - INFO - Processed 6700 files (cached: 0, new: 6700)...
+2025-07-16 13:43:45,010 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Boston Pops Orchestra, Arthur Fiedler\White Christmas\4. “Hallelujah” -Chor.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:45,128 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Boston Pops Orchestra, Arthur Fiedler\White Christmas\9. Blumenwaltzer.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:45,740 - INFO - Processed 6800 files (cached: 0, new: 6800)...
+2025-07-16 13:43:48,406 - INFO - Processed 6900 files (cached: 0, new: 6900)...
+2025-07-16 13:43:49,398 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Branford Marsalis\Romances for Saxophone\12. Serenata.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:49,416 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Branford Marsalis\Romances for Saxophone\13. The Old Castle.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:49,493 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Branford Marsalis\Romances for Saxophone\4. Vocalise.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:49,518 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Branford Marsalis\Romances for Saxophone\5. Pastorale.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:49,559 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Branford Marsalis\Romances for Saxophone\7. Bachianas Brasilerias no. 5.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:43:51,648 - INFO - Processed 7000 files (cached: 0, new: 7000)...
+2025-07-16 13:43:55,189 - INFO - Processed 7100 files (cached: 0, new: 7100)...
+2025-07-16 13:43:57,812 - INFO - Processed 7200 files (cached: 0, new: 7200)...
+2025-07-16 13:44:00,349 - INFO - Processed 7300 files (cached: 0, new: 7300)...
+2025-07-16 13:44:03,410 - INFO - Processed 7400 files (cached: 0, new: 7400)...
+2025-07-16 13:44:05,906 - INFO - Processed 7500 files (cached: 0, new: 7500)...
+2025-07-16 13:44:06,619 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Buddy Rich & Harry “Sweets” Edison\Buddy and Sweets\1. Yellow Rose of Brooklyn.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:06,635 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Buddy Rich & Harry “Sweets” Edison\Buddy and Sweets\2. Easy Does It.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:06,664 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Buddy Rich & Harry “Sweets” Edison\Buddy and Sweets\3. All Sweets.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:06,685 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Buddy Rich & Harry “Sweets” Edison\Buddy and Sweets\4. Nice Work If You Can Get It.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:06,705 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Buddy Rich & Harry “Sweets” Edison\Buddy and Sweets\5. Barney's Bugle.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:06,731 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Buddy Rich & Harry “Sweets” Edison\Buddy and Sweets\6. Now's the Time.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:06,748 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Buddy Rich & Harry “Sweets” Edison\Buddy and Sweets\7. You're Getting to Be a Habit With Me.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:08,749 - INFO - Processed 7600 files (cached: 0, new: 7600)...
+2025-07-16 13:44:12,097 - INFO - Processed 7700 files (cached: 0, new: 7700)...
+2025-07-16 13:44:15,036 - INFO - Processed 7800 files (cached: 0, new: 7800)...
+2025-07-16 13:44:16,305 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Canadian Brass\The Essential Canadian Brass\11. The Flight of the Tuba Bee.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:18,147 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Carl Stalling\The Carl Stalling Project, Volume 2_ More Music From Warner Bros. Cartoons 1939–1957\10. Variation on Lucky Day (1957, from “Fox Terror”).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:18,170 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Carl Stalling\The Carl Stalling Project, Volume 2_ More Music From Warner Bros. Cartoons 1939–1957\11. Wind-Up Doll (1957, from “Gonzales’ Tamales”).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:18,316 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Carl Stalling\The Carl Stalling Project, Volume 2_ More Music From Warner Bros. Cartoons 1939–1957\16. Drunk La Cucaracha (1957, from “Tabasco Road”).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:18,371 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Carl Stalling\The Carl Stalling Project, Volume 2_ More Music From Warner Bros. Cartoons 1939–1957\18. Golf Cue (1948, from “My Bunny Lies Over the Sea”).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:18,485 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Carl Stalling\The Carl Stalling Project, Volume 2_ More Music From Warner Bros. Cartoons 1939–1957\21. Rubber Dog (1939, from “Porky’s Tire Trouble”).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:18,536 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Carl Stalling\The Carl Stalling Project, Volume 2_ More Music From Warner Bros. Cartoons 1939–1957\23. Variations on La Danza (1951, from “A Hound for Trouble”).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:18,563 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Carl Stalling\The Carl Stalling Project, Volume 2_ More Music From Warner Bros. Cartoons 1939–1957\24. Variations on Johann Strauss (1949, from “Mouse Mazurka”).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:18,646 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Carl Stalling\The Carl Stalling Project, Volume 2_ More Music From Warner Bros. Cartoons 1939–1957\27. Variations on Mexican Hat Dance (1955, from “Speedy Gonzalez”).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:18,673 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Carl Stalling\The Carl Stalling Project, Volume 2_ More Music From Warner Bros. Cartoons 1939–1957\28. Frazzled Coyote (1957, from “Scrambled Aches”).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:18,696 - INFO - Processed 7900 files (cached: 0, new: 7900)...
+2025-07-16 13:44:18,728 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Carl Stalling\The Carl Stalling Project, Volume 2_ More Music From Warner Bros. Cartoons 1939–1957\4. Bad Swiss Band (1957, from “Piker’s Peak”).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:18,752 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Carl Stalling\The Carl Stalling Project, Volume 2_ More Music From Warner Bros. Cartoons 1939–1957\5. Marching Pink Elephants (1940, from “Calling Dr. Porky”).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:18,804 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Carl Stalling\The Carl Stalling Project, Volume 2_ More Music From Warner Bros. Cartoons 1939–1957\7. Orchestra Gag (1942, from “Hobby Horse Laffs”).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:18,831 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Carl Stalling\The Carl Stalling Project, Volume 2_ More Music From Warner Bros. Cartoons 1939–1957\8. Variation on Grandfather’s Clock (1957, from “Fox Terror”).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:18,853 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Carl Stalling\The Carl Stalling Project, Volume 2_ More Music From Warner Bros. Cartoons 1939–1957\9. Variation on Chinatown, My Chinatown (1942, from “Lights Fantastic”).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:22,768 - INFO - Processed 8000 files (cached: 0, new: 8000)...
+2025-07-16 13:44:25,485 - INFO - Processed 8100 files (cached: 0, new: 8100)...
+2025-07-16 13:44:27,937 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Chaka Demus & Pliers\Ultimate Collection\2. Murder She Wrote.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:28,069 - INFO - Processed 8200 files (cached: 0, new: 8200)...
+2025-07-16 13:44:31,209 - INFO - Processed 8300 files (cached: 0, new: 8300)...
+2025-07-16 13:44:34,282 - INFO - Processed 8400 files (cached: 0, new: 8400)...
+2025-07-16 13:44:37,909 - INFO - Processed 8500 files (cached: 0, new: 8500)...
+2025-07-16 13:44:41,368 - INFO - Processed 8600 files (cached: 0, new: 8600)...
+2025-07-16 13:44:43,882 - INFO - Processed 8700 files (cached: 0, new: 8700)...
+2025-07-16 13:44:46,983 - INFO - Processed 8800 files (cached: 0, new: 8800)...
+2025-07-16 13:44:47,271 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Christopher Haupt and Michael Slater\Learning Rails\7. Testing Rails Code.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:49,297 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Clara Schumann, Fanny Mendelssohn, Louise Farrenc, Clémence de Grandval; Ambache Chamber Ensemble, Diana Ambache\BBC Music, Volume 4, Number 9_ Clara Schumann, etc_\5. Piano Trio in D minor, op. 11_ IV. Finale_ Allegro moderato.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\Clara Schumann, Fanny Mendelssohn, Louise Farrenc, Clémence de Grandval; Ambache Chamber Ensemble, Diana Ambache\\BBC Music, Volume 4, Number 9_ Clara Schumann, etc_\\5. Piano Trio in D minor, op. 11_ IV. Finale_ Allegro moderato.mp3'
+2025-07-16 13:44:49,323 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Clara Schumann, Fanny Mendelssohn, Louise Farrenc, Clémence de Grandval; Ambache Chamber Ensemble, Diana Ambache\BBC Music, Volume 4, Number 9_ Clara Schumann, etc_\6. Clarinet Trio in E-flat, op. 44_ I. Andante - Allegro moderato.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\Clara Schumann, Fanny Mendelssohn, Louise Farrenc, Clémence de Grandval; Ambache Chamber Ensemble, Diana Ambache\\BBC Music, Volume 4, Number 9_ Clara Schumann, etc_\\6. Clarinet Trio in E-flat, op. 44_ I. Andante - Allegro moderato.mp3'
+2025-07-16 13:44:49,572 - INFO - Processed 8900 files (cached: 0, new: 8900)...
+2025-07-16 13:44:49,930 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Claude Debussy\Claude Debussy_ The Composer as Pianist\15. Pelléas et Mélisande_ Act III, Scene I. “Mes longs cheveux” (1).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:49,950 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Claude Debussy\Claude Debussy_ The Composer as Pianist\15. Pelléas et Mélisande_ Act III, Scene I. “Mes longs cheveux”.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:44:55,479 - INFO - Processed 9000 files (cached: 0, new: 9000)...
+2025-07-16 13:44:58,181 - INFO - Processed 9100 files (cached: 0, new: 9100)...
+2025-07-16 13:45:01,113 - INFO - Processed 9200 files (cached: 0, new: 9200)...
+2025-07-16 13:45:02,371 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Colt Ford\Thanks For Listening\8. Crank It Up.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:03,744 - INFO - Processed 9300 files (cached: 0, new: 9300)...
+2025-07-16 13:45:06,274 - INFO - Processed 9400 files (cached: 0, new: 9400)...
+2025-07-16 13:45:09,121 - INFO - Processed 9500 files (cached: 0, new: 9500)...
+2025-07-16 13:45:11,341 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Creed\Human Clay\1. Are You Ready_ (1).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:11,592 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Creed\Human Clay\1. Are You Ready_.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:11,686 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Creed\Human Clay\10. Wash Away Those Years (1).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:11,714 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Creed\Human Clay\10. Wash Away Those Years.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:11,744 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Creed\Human Clay\11. Inside Us All.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:11,765 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Creed\Human Clay\13. With Arms Wide Open (strings version) (1).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:11,790 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Creed\Human Clay\13. With Arms Wide Open (strings version).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:11,806 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Creed\Human Clay\2. What If.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:11,838 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Creed\Human Clay\3. Beautiful.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:11,862 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Creed\Human Clay\4. Say I.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:11,886 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Creed\Human Clay\5. Wrong Way.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:11,911 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Creed\Human Clay\6. Faceless Man.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:11,934 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Creed\Human Clay\7. Never Die.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:11,959 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Creed\Human Clay\8. With Arms Wide Open.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:11,982 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Creed\Human Clay\9. Higher.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:12,508 - INFO - Processed 9600 files (cached: 0, new: 9600)...
+2025-07-16 13:45:14,709 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Cristian Castro\Mi vida sin tu amor\6. Ángel.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:15,720 - INFO - Processed 9700 files (cached: 0, new: 9700)...
+2025-07-16 13:45:18,897 - INFO - Processed 9800 files (cached: 0, new: 9800)...
+2025-07-16 13:45:21,524 - INFO - Processed 9900 files (cached: 0, new: 9900)...
+2025-07-16 13:45:24,815 - INFO - Processed 10000 files (cached: 0, new: 10000)...
+2025-07-16 13:45:27,717 - INFO - Processed 10100 files (cached: 0, new: 10100)...
+2025-07-16 13:45:30,782 - INFO - Processed 10200 files (cached: 0, new: 10200)...
+2025-07-16 13:45:34,663 - INFO - Processed 10300 files (cached: 0, new: 10300)...
+2025-07-16 13:45:37,173 - INFO - Processed 10400 files (cached: 0, new: 10400)...
+2025-07-16 13:45:39,884 - INFO - Processed 10500 files (cached: 0, new: 10500)...
+2025-07-16 13:45:41,507 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\David Bowie\Changesbowie\12. “Heroes” (1).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:41,527 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\David Bowie\Changesbowie\12. “Heroes”.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:42,265 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\David Bowie\Lodger\7. Look Back in Anger.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:42,291 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\David Bowie\Lodger\8. Boys Keep Swinging.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:42,585 - INFO - Processed 10600 files (cached: 0, new: 10600)...
+2025-07-16 13:45:45,340 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\David Bowie\The Singles 1969 to 1993\1. “Heroes”.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:45,809 - INFO - Processed 10700 files (cached: 0, new: 10700)...
+2025-07-16 13:45:46,823 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\David Guetta\One Love\6. Choose.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:48,709 - INFO - Processed 10800 files (cached: 0, new: 10800)...
+2025-07-16 13:45:51,226 - INFO - Processed 10900 files (cached: 0, new: 10900)...
+2025-07-16 13:45:51,267 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Daz Dillinger\Who Ride Wit Us_ Tha Compalation, Vol. 1\11. We Came.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:52,767 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\De Organographia\Music of the Ancient Greeks\11. Choral ode from Orestes (Vienna papyrus G 2315) (circa 408 BC).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:45:54,302 - INFO - Processed 11000 files (cached: 0, new: 11000)...
+2025-07-16 13:45:57,287 - INFO - Processed 11100 files (cached: 0, new: 11100)...
+2025-07-16 13:46:00,031 - INFO - Processed 11200 files (cached: 0, new: 11200)...
+2025-07-16 13:46:02,629 - INFO - Processed 11300 files (cached: 0, new: 11300)...
+2025-07-16 13:46:05,455 - INFO - Processed 11400 files (cached: 0, new: 11400)...
+2025-07-16 13:46:08,110 - INFO - Processed 11500 files (cached: 0, new: 11500)...
+2025-07-16 13:46:10,986 - INFO - Processed 11600 files (cached: 0, new: 11600)...
+2025-07-16 13:46:13,490 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\DJ Clue_\The Professional 2\12. Change the Game (remix).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:13,584 - INFO - Processed 11700 files (cached: 0, new: 11700)...
+2025-07-16 13:46:16,554 - INFO - Processed 11800 files (cached: 0, new: 11800)...
+2025-07-16 13:46:20,068 - INFO - Processed 11900 files (cached: 0, new: 11900)...
+2025-07-16 13:46:22,518 - INFO - Processed 12000 files (cached: 0, new: 12000)...
+2025-07-16 13:46:25,765 - INFO - Processed 12100 files (cached: 0, new: 12100)...
+2025-07-16 13:46:27,878 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Drowning Pool\Sinner\1. Sinner.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:27,894 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Drowning Pool\Sinner\10. Told You So.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:27,925 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Drowning Pool\Sinner\11. Sermon.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:27,945 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Drowning Pool\Sinner\2. Bodies.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:27,965 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Drowning Pool\Sinner\3. Tear Away.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:27,985 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Drowning Pool\Sinner\4. All Over Me.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:28,006 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Drowning Pool\Sinner\5. Reminded.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:28,026 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Drowning Pool\Sinner\6. Pity.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:28,053 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Drowning Pool\Sinner\7. Mute.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:28,069 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Drowning Pool\Sinner\8. I Am.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:28,088 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Drowning Pool\Sinner\9. Follow.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:28,785 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Duke Ellington and His Orchestra\Highlights From the Duke Ellington Centennial Edition (1927 – 1973)\5. Take the “A” Train.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:29,424 - INFO - Processed 12200 files (cached: 0, new: 12200)...
+2025-07-16 13:46:32,076 - INFO - Processed 12300 files (cached: 0, new: 12300)...
+2025-07-16 13:46:35,398 - INFO - Processed 12400 files (cached: 0, new: 12400)...
+2025-07-16 13:46:38,160 - INFO - Processed 12500 files (cached: 0, new: 12500)...
+2025-07-16 13:46:41,214 - INFO - Processed 12600 files (cached: 0, new: 12600)...
+2025-07-16 13:46:43,981 - INFO - Processed 12700 files (cached: 0, new: 12700)...
+2025-07-16 13:46:46,863 - INFO - Processed 12800 files (cached: 0, new: 12800)...
+2025-07-16 13:46:47,762 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Elton John, Tim Rice & Hans Zimmer\The Lion King\1. Circle of Life (from “The Lion King”_soundtrack).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:47,848 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Elton John, Tim Rice & Hans Zimmer\The Lion King\2. I Just Can’t Wait to Be King (from “The Lion King”_soundtrack version).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:47,875 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Elton John, Tim Rice & Hans Zimmer\The Lion King\3. Be Prepared (from ”The Lion King”_soundtrack version).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:47,899 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Elton John, Tim Rice & Hans Zimmer\The Lion King\4. Hakuna Matata (from “The Lion King”_soundtrack version).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:47,923 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Elton John, Tim Rice & Hans Zimmer\The Lion King\5. Can You Feel the Love Tonight (from “The Lion King”_soundtrack version).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:49,523 - INFO - Processed 12900 files (cached: 0, new: 12900)...
+2025-07-16 13:46:51,056 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Elvis Presley\Elvis 30 #1 Hits\10. Hard Headed Woman – From the Hal Wallis Production “King Creole”, a Paramount Picture.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:52,344 - INFO - Processed 13000 files (cached: 0, new: 13000)...
+2025-07-16 13:46:54,423 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Empire Brass\Class Brass_ On the Edge\10. Sinfonietta_ Allegretto.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:54,443 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Empire Brass\Class Brass_ On the Edge\11. The Red Poppy_ Russian Sailors' Dance.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:54,468 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Empire Brass\Class Brass_ On the Edge\12. The Firebird_ Berceuse.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:54,568 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Empire Brass\Class Brass_ On the Edge\2. Samson & Delilah_ Danse Bacchanale.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:54,617 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Empire Brass\Class Brass_ On the Edge\4. Festive Overture.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:54,668 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Empire Brass\Class Brass_ On the Edge\6. Caucasian Sketches_ Procession of the Sardar.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:55,144 - INFO - Processed 13100 files (cached: 0, new: 13100)...
+2025-07-16 13:46:56,278 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Enrico Caruso\Prima Voce_ Caruso\19. Il Duca d’Alba_ “Angelo casto e bel” (1915).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:46:57,958 - INFO - Processed 13200 files (cached: 0, new: 13200)...
+2025-07-16 13:46:58,780 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Ensemble Organum, Marcel Pérès\École de Notre-Dame_ Mass for Christmas Day\4. Alleluia “Dies sanctificatus” (organum).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:01,364 - INFO - Processed 13300 files (cached: 0, new: 13300)...
+2025-07-16 13:47:04,339 - INFO - Processed 13400 files (cached: 0, new: 13400)...
+2025-07-16 13:47:04,411 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Eric Clapton\461 Ocean Boulevard\2. Give Me Strength.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:07,063 - INFO - Processed 13500 files (cached: 0, new: 13500)...
+2025-07-16 13:47:09,634 - INFO - Processed 13600 files (cached: 0, new: 13600)...
+2025-07-16 13:47:12,792 - INFO - Processed 13700 files (cached: 0, new: 13700)...
+2025-07-16 13:47:12,949 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Erich Kunzel, Cincinnati Pops Orchestra\The Ultimate Movie Music Collection\6. Don’t Mess With “Z” (SFX).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:15,433 - INFO - Processed 13800 files (cached: 0, new: 13800)...
+2025-07-16 13:47:15,651 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evanescence\Fallen\1. Going Under.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:15,678 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evanescence\Fallen\10. My Last Breath.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:15,701 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evanescence\Fallen\11. Whisper.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:15,724 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evanescence\Fallen\13. My Immortal (band version).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:15,742 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evanescence\Fallen\2. Bring Me to Life.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:15,762 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evanescence\Fallen\3. Everybody’s Fool.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:15,788 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evanescence\Fallen\4. My Immortal.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:15,804 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evanescence\Fallen\5. Haunted.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:15,835 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evanescence\Fallen\6. Tourniquet.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:15,854 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evanescence\Fallen\7. Imaginary.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:15,885 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evanescence\Fallen\8. Taking Over Me.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:15,906 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evanescence\Fallen\9. Hello.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:15,932 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evanescence\The Open Door\2. Call Me When You’re Sober (1).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:15,961 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evanescence\The Open Door\2. Call Me When You’re Sober (2).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:15,979 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evanescence\The Open Door\2. Call Me When You’re Sober.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:16,641 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evelyn Glennie\Rhythm Song\5. The Flight of the Bumble Bee (1).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:16,661 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Evelyn Glennie\Rhythm Song\5. The Flight of the Bumble Bee.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:18,566 - INFO - Processed 13900 files (cached: 0, new: 13900)...
+2025-07-16 13:47:21,765 - INFO - Processed 14000 files (cached: 0, new: 14000)...
+2025-07-16 13:47:23,838 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Ferde Grofé, George Gershwin; Cincinnati Pops Orchestra, Erich Kunzel\Grofé_ Grand Canyon Suite _ Gershwin_ Porgy & Bess_ Symphonic Suite “Catfish Row”\1. Catfish Row_ Symphonic Suite from Porgy & Bess_ I. Catfish Row.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:23,868 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Ferde Grofé, George Gershwin; Cincinnati Pops Orchestra, Erich Kunzel\Grofé_ Grand Canyon Suite _ Gershwin_ Porgy & Bess_ Symphonic Suite “Catfish Row”\11. Crickets & Distant Thunder.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:23,888 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Ferde Grofé, George Gershwin; Cincinnati Pops Orchestra, Erich Kunzel\Grofé_ Grand Canyon Suite _ Gershwin_ Porgy & Bess_ Symphonic Suite “Catfish Row”\12. Grand Canyon Suite_ Cloudburst (with thunderstorm effects) (1).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:23,910 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Ferde Grofé, George Gershwin; Cincinnati Pops Orchestra, Erich Kunzel\Grofé_ Grand Canyon Suite _ Gershwin_ Porgy & Bess_ Symphonic Suite “Catfish Row”\12. Grand Canyon Suite_ Cloudburst (with thunderstorm effects).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:23,942 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Ferde Grofé, George Gershwin; Cincinnati Pops Orchestra, Erich Kunzel\Grofé_ Grand Canyon Suite _ Gershwin_ Porgy & Bess_ Symphonic Suite “Catfish Row”\2. Catfish Row_ Symphonic Suite from Porgy & Bess_ II. Porgy Sings.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:23,959 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Ferde Grofé, George Gershwin; Cincinnati Pops Orchestra, Erich Kunzel\Grofé_ Grand Canyon Suite _ Gershwin_ Porgy & Bess_ Symphonic Suite “Catfish Row”\3. Catfish Row_ Symphonic Suite from Porgy & Bess_ III. Fugue.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:23,980 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Ferde Grofé, George Gershwin; Cincinnati Pops Orchestra, Erich Kunzel\Grofé_ Grand Canyon Suite _ Gershwin_ Porgy & Bess_ Symphonic Suite “Catfish Row”\4. Catfish Row_ Symphonic Suite from Porgy & Bess_ IV. Hurricane.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:24,006 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Ferde Grofé, George Gershwin; Cincinnati Pops Orchestra, Erich Kunzel\Grofé_ Grand Canyon Suite _ Gershwin_ Porgy & Bess_ Symphonic Suite “Catfish Row”\5. Catfish Row_ Symphonic Suite from Porgy & Bess_ V. Good Morning, Sister.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:24,031 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Ferde Grofé, George Gershwin; Cincinnati Pops Orchestra, Erich Kunzel\Grofé_ Grand Canyon Suite _ Gershwin_ Porgy & Bess_ Symphonic Suite “Catfish Row”\6. Grand Canyon Suite_ Sunrise.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:24,054 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Ferde Grofé, George Gershwin; Cincinnati Pops Orchestra, Erich Kunzel\Grofé_ Grand Canyon Suite _ Gershwin_ Porgy & Bess_ Symphonic Suite “Catfish Row”\7. Grand Canyon Suite_ Painted Desert.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:24,072 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Ferde Grofé, George Gershwin; Cincinnati Pops Orchestra, Erich Kunzel\Grofé_ Grand Canyon Suite _ Gershwin_ Porgy & Bess_ Symphonic Suite “Catfish Row”\8. Grand Canyon Suite_ On the Trail.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:24,101 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Ferde Grofé, George Gershwin; Cincinnati Pops Orchestra, Erich Kunzel\Grofé_ Grand Canyon Suite _ Gershwin_ Porgy & Bess_ Symphonic Suite “Catfish Row”\9. Grand Canyon Suite_ Sunset.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:25,233 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Finger Eleven\Finger Eleven\11. One Thing.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:25,899 - INFO - Processed 14100 files (cached: 0, new: 14100)...
+2025-07-16 13:47:28,490 - INFO - Processed 14200 files (cached: 0, new: 14200)...
+2025-07-16 13:47:28,638 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Flo Rida\Mail on Sunday\5. Low.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:31,115 - INFO - Processed 14300 files (cached: 0, new: 14300)...
+2025-07-16 13:47:34,244 - INFO - Processed 14400 files (cached: 0, new: 14400)...
+2025-07-16 13:47:36,957 - INFO - Processed 14500 files (cached: 0, new: 14500)...
+2025-07-16 13:47:39,787 - INFO - Processed 14600 files (cached: 0, new: 14600)...
+2025-07-16 13:47:42,936 - INFO - Processed 14700 files (cached: 0, new: 14700)...
+2025-07-16 13:47:45,217 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Franz Schubert; Sir Clifford Curzon, Wiener Oktett\“Trout” Quintet\1. Piano Quintet in A major, D667 _The Trout__ I. Allegro vivace.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:45,247 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Franz Schubert; Sir Clifford Curzon, Wiener Oktett\“Trout” Quintet\2. Piano Quintet in A major, D667 _The Trout__ II. Andante.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:45,267 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Franz Schubert; Sir Clifford Curzon, Wiener Oktett\“Trout” Quintet\3. Piano Quintet in A major, D667 _The Trout__ III. Scherzo_ Presto.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:45,292 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Franz Schubert; Sir Clifford Curzon, Wiener Oktett\“Trout” Quintet\4. Piano Quintet in A major, D667 _The Trout__ IV. Theme & Variations_ Andantino.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:45,318 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Franz Schubert; Sir Clifford Curzon, Wiener Oktett\“Trout” Quintet\5. Piano Quintet in A major, D667 _The Trout__ V. Finale_ Allegro giusto.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:46,375 - INFO - Processed 14800 files (cached: 0, new: 14800)...
+2025-07-16 13:47:46,977 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Fryderyk Chopin\Great Composers_ Chopin\11. Etude in A minor, op. 25 no. 11 “Winter Wind”.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:47,007 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Fryderyk Chopin\Great Composers_ Chopin\12. Etude in E major, op. 10 no. 3 “Tristesse”.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:47,308 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Fryderyk Chopin\Great Composers_ Chopin\5. Etude in C minor, op. 10 no. 12 “Revolutionary”.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:47,472 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Fryderyk Chopin\Great Composers_ Chopin\8. Polonaise in A major, op. 40 no. 1 “Military”.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:47:47,786 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Fryderyk Chopin; Claudio Arrau, London Philharmonic Orchestra, Eliahu Inbal\Piano Concerto no. 1_ Variations on «Là ci darem la mano» _ Klavierkonzert Nr. 1_ Variationen über «Là ci darem la mano»\1. Piano Concerto no. 1 in E minor, op. 11_ 1. Allegro maestoso (1).mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\Fryderyk Chopin; Claudio Arrau, London Philharmonic Orchestra, Eliahu Inbal\\Piano Concerto no. 1_ Variations on «Là ci darem la mano» _ Klavierkonzert Nr. 1_ Variationen über «Là ci darem la mano»\\1. Piano Concerto no. 1 in E minor, op. 11_ 1. Allegro maestoso (1).mp3'
+2025-07-16 13:47:47,812 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Fryderyk Chopin; Claudio Arrau, London Philharmonic Orchestra, Eliahu Inbal\Piano Concerto no. 1_ Variations on «Là ci darem la mano» _ Klavierkonzert Nr. 1_ Variationen über «Là ci darem la mano»\1. Piano Concerto no. 1 in E minor, op. 11_ 1. Allegro maestoso.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\Fryderyk Chopin; Claudio Arrau, London Philharmonic Orchestra, Eliahu Inbal\\Piano Concerto no. 1_ Variations on «Là ci darem la mano» _ Klavierkonzert Nr. 1_ Variationen über «Là ci darem la mano»\\1. Piano Concerto no. 1 in E minor, op. 11_ 1. Allegro maestoso.mp3'
+2025-07-16 13:47:47,830 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Fryderyk Chopin; Claudio Arrau, London Philharmonic Orchestra, Eliahu Inbal\Piano Concerto no. 1_ Variations on «Là ci darem la mano» _ Klavierkonzert Nr. 1_ Variationen über «Là ci darem la mano»\2. Piano Concerto no. 1 in E minor, op. 11_ 2. Romance (Larghetto) (1).mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\Fryderyk Chopin; Claudio Arrau, London Philharmonic Orchestra, Eliahu Inbal\\Piano Concerto no. 1_ Variations on «Là ci darem la mano» _ Klavierkonzert Nr. 1_ Variationen über «Là ci darem la mano»\\2. Piano Concerto no. 1 in E minor, op. 11_ 2. Romance (Larghetto) (1).mp3'
+2025-07-16 13:47:47,857 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Fryderyk Chopin; Claudio Arrau, London Philharmonic Orchestra, Eliahu Inbal\Piano Concerto no. 1_ Variations on «Là ci darem la mano» _ Klavierkonzert Nr. 1_ Variationen über «Là ci darem la mano»\2. Piano Concerto no. 1 in E minor, op. 11_ 2. Romance (Larghetto).mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\Fryderyk Chopin; Claudio Arrau, London Philharmonic Orchestra, Eliahu Inbal\\Piano Concerto no. 1_ Variations on «Là ci darem la mano» _ Klavierkonzert Nr. 1_ Variationen über «Là ci darem la mano»\\2. Piano Concerto no. 1 in E minor, op. 11_ 2. Romance (Larghetto).mp3'
+2025-07-16 13:47:47,878 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Fryderyk Chopin; Claudio Arrau, London Philharmonic Orchestra, Eliahu Inbal\Piano Concerto no. 1_ Variations on «Là ci darem la mano» _ Klavierkonzert Nr. 1_ Variationen über «Là ci darem la mano»\3. Piano Concerto no. 1 in E minor, op. 11_ 3. Rondo (Vivace).mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\Fryderyk Chopin; Claudio Arrau, London Philharmonic Orchestra, Eliahu Inbal\\Piano Concerto no. 1_ Variations on «Là ci darem la mano» _ Klavierkonzert Nr. 1_ Variationen über «Là ci darem la mano»\\3. Piano Concerto no. 1 in E minor, op. 11_ 3. Rondo (Vivace).mp3'
+2025-07-16 13:47:50,318 - INFO - Processed 14900 files (cached: 0, new: 14900)...
+2025-07-16 13:47:52,745 - INFO - Processed 15000 files (cached: 0, new: 15000)...
+2025-07-16 13:47:55,660 - INFO - Processed 15100 files (cached: 0, new: 15100)...
+2025-07-16 13:47:58,058 - INFO - Processed 15200 files (cached: 0, new: 15200)...
+2025-07-16 13:48:01,005 - INFO - Processed 15300 files (cached: 0, new: 15300)...
+2025-07-16 13:48:03,021 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\George Benson & Earl Klugh\Collaboration\8. Love Theme From “Romeo & Juliet”.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:48:03,487 - INFO - Processed 15400 files (cached: 0, new: 15400)...
+2025-07-16 13:48:05,009 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\George Gershwin & Columbia Symphony Orchestra\Gershwin_ Rhapsody in Blue & An American in Paris by Leonard Bernstein\1. Rhapsody in Blue.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:48:05,040 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\1. Rhapsody In Blue.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\\1. Rhapsody In Blue.mp3'
+2025-07-16 13:48:05,060 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\10. Appalachian Spring_ Meno Mosso.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\\10. Appalachian Spring_ Meno Mosso.mp3'
+2025-07-16 13:48:05,086 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\11. Appalachian Spring_ Doppio Movimento_ Variations On A Shaker Rhythm.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\\11. Appalachian Spring_ Doppio Movimento_ Variations On A Shaker Rhythm.mp3'
+2025-07-16 13:48:05,101 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\12. Appalachian Spring_ Moderato_ Coda.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\\12. Appalachian Spring_ Moderato_ Coda.mp3'
+2025-07-16 13:48:05,132 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\2. Un Americano En Paris.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\\2. Un Americano En Paris.mp3'
+2025-07-16 13:48:05,157 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\4. Fanfare For The Common Man.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\\4. Fanfare For The Common Man.mp3'
+2025-07-16 13:48:05,181 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\5. Appalachian Spring_ Very Slowly.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\\5. Appalachian Spring_ Very Slowly.mp3'
+2025-07-16 13:48:05,197 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\6. Appalachian Spring_ Allegro.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\\6. Appalachian Spring_ Allegro.mp3'
+2025-07-16 13:48:05,227 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\7. Appalachian Spring_ Moderato_ The Bride And Her Intended.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\\7. Appalachian Spring_ Moderato_ The Bride And Her Intended.mp3'
+2025-07-16 13:48:05,247 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\8. Appalachian Spring_ Fast_ The Revivalist And His Flock.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\\8. Appalachian Spring_ Fast_ The Revivalist And His Flock.mp3'
+2025-07-16 13:48:05,268 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\9. Appalachian Spring_ Allegro_ Solo Dance Of The Bride.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\George Gershwin, Aaron Copland; Lorin Maazel, The Cleveland Orchestra, Zubin Mehta, Los Angeles Philharmonic\\Rhapsody in Blue _ Un Americano en Paris _ Obertura Cubana _ Fanfare for the Common Man _ Appalachian Spring\\9. Appalachian Spring_ Allegro_ Solo Dance Of The Bride.mp3'
+2025-07-16 13:48:05,797 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\George Gershwin; New York Philharmonic, Columbia Symphony Orchestra, Leonard Bernstein\Rhapsody in Blue _ An American in Paris\6. Symphonic Dances from “West Side Story”_ IV. Mambo. Presto.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:48:06,718 - INFO - Processed 15500 files (cached: 0, new: 15500)...
+2025-07-16 13:48:09,310 - INFO - Processed 15600 files (cached: 0, new: 15600)...
+2025-07-16 13:48:11,956 - INFO - Processed 15700 files (cached: 0, new: 15700)...
+2025-07-16 13:48:12,920 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Giacomo Puccini\Arias and Duets\13. Gianni Schicchi_ “O mio babbino caro”.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:48:12,941 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Giacomo Puccini\La bohème\10. La bohème_ Atto IV. “O Mimì, tu più non torni”.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:48:14,759 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Giovanni Gabrieli; The Philadelphia Brass Ensemble, The Chicago Brass Ensemble, The Cleveland Brass Ensemble\The Virtuoso Brass of Three Great Orchestras Performing the Antiphonal Music of Gabrieli\1. Canzon Septimi toni no. 2.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\Giovanni Gabrieli; The Philadelphia Brass Ensemble, The Chicago Brass Ensemble, The Cleveland Brass Ensemble\\The Virtuoso Brass of Three Great Orchestras Performing the Antiphonal Music of Gabrieli\\1. Canzon Septimi toni no. 2.mp3'
+2025-07-16 13:48:14,995 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Gladys Knight & the Pips\Gold\14. Lovin' on Next to Nothing (single version).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:48:15,220 - INFO - Processed 15800 files (cached: 0, new: 15800)...
+2025-07-16 13:48:16,006 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Glen Campbell\I’ll Be Me_ Soundtrack\10. I’m Not Gonna Miss You (single version).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:48:16,655 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Glenn Miller\Glenn Miller\2. Little Brown Jug.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:48:16,678 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Glenn Miller\Glenn Miller\3. Tuxedo Junction.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:48:16,780 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Glenn Miller\In the Mood\11. A Nightingale Sang in Berkeley Square.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:48:16,877 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Glenn Miller\Midnite Jazz & Blues_ Big Band Favourites\12. Danny Boy.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:48:17,886 - INFO - Processed 15900 files (cached: 0, new: 15900)...
+2025-07-16 13:48:21,553 - INFO - Processed 16000 files (cached: 0, new: 16000)...
+2025-07-16 13:48:24,672 - INFO - Processed 16100 files (cached: 0, new: 16100)...
+2025-07-16 13:48:27,710 - INFO - Processed 16200 files (cached: 0, new: 16200)...
+2025-07-16 13:48:30,843 - INFO - Processed 16300 files (cached: 0, new: 16300)...
+2025-07-16 13:48:33,380 - INFO - Processed 16400 files (cached: 0, new: 16400)...
+2025-07-16 13:48:36,593 - INFO - Processed 16500 files (cached: 0, new: 16500)...
+2025-07-16 13:48:39,053 - INFO - Processed 16600 files (cached: 0, new: 16600)...
+2025-07-16 13:48:41,471 - INFO - Processed 16700 files (cached: 0, new: 16700)...
+2025-07-16 13:48:43,916 - INFO - Processed 16800 files (cached: 0, new: 16800)...
+2025-07-16 13:48:46,839 - INFO - Processed 16900 files (cached: 0, new: 16900)...
+2025-07-16 13:48:48,378 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Hector Berlioz, Claude Debussy; Les Musiciens de l’Opéra, Paris, John Randolph Masters, Hungarian State Orchestra, Tibor László\Berlioz_ Symphonie fantastique _ Debussy_ La Mer\4. Symphonie fantastique, op. 14_ IV. March to the Scaffold.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\Hector Berlioz, Claude Debussy; Les Musiciens de l’Opéra, Paris, John Randolph Masters, Hungarian State Orchestra, Tibor László\\Berlioz_ Symphonie fantastique _ Debussy_ La Mer\\4. Symphonie fantastique, op. 14_ IV. March to the Scaffold.mp3'
+2025-07-16 13:48:48,400 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Hector Berlioz; Jon Vickers, Josephine Veasey, Berit Lindholm, Orchestra of the Royal Opera House, Covent Garden and Chorus of the Royal Opera House, Covent Garden, Sir Colin Davis\Les Troyens\1. Les Troyens_ Act IV_ No. 29 Chasse royale et orage - Pantomime (1).mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\Hector Berlioz; Jon Vickers, Josephine Veasey, Berit Lindholm, Orchestra of the Royal Opera House, Covent Garden and Chorus of the Royal Opera House, Covent Garden, Sir Colin Davis\\Les Troyens\\1. Les Troyens_ Act IV_ No. 29 Chasse royale et orage - Pantomime (1).mp3'
+2025-07-16 13:48:48,426 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Hector Berlioz; Jon Vickers, Josephine Veasey, Berit Lindholm, Orchestra of the Royal Opera House, Covent Garden and Chorus of the Royal Opera House, Covent Garden, Sir Colin Davis\Les Troyens\1. Les Troyens_ Act IV_ No. 29 Chasse royale et orage - Pantomime (2).mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\Hector Berlioz; Jon Vickers, Josephine Veasey, Berit Lindholm, Orchestra of the Royal Opera House, Covent Garden and Chorus of the Royal Opera House, Covent Garden, Sir Colin Davis\\Les Troyens\\1. Les Troyens_ Act IV_ No. 29 Chasse royale et orage - Pantomime (2).mp3'
+2025-07-16 13:48:48,447 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Hector Berlioz; Jon Vickers, Josephine Veasey, Berit Lindholm, Orchestra of the Royal Opera House, Covent Garden and Chorus of the Royal Opera House, Covent Garden, Sir Colin Davis\Les Troyens\1. Les Troyens_ Act IV_ No. 29 Chasse royale et orage - Pantomime.mp3: [WinError 3] The system cannot find the path specified: 'C:\\Users\\cayuse\\repaired music\\Hector Berlioz; Jon Vickers, Josephine Veasey, Berit Lindholm, Orchestra of the Royal Opera House, Covent Garden and Chorus of the Royal Opera House, Covent Garden, Sir Colin Davis\\Les Troyens\\1. Les Troyens_ Act IV_ No. 29 Chasse royale et orage - Pantomime.mp3'
+2025-07-16 13:48:49,102 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Hector Berlioz; Ronald Dowd, Wandsworth School Boys’ Choir, London Symphony Orchestra, London Symphony Chorus, Sir Colin Davis\Requiem, op.5 “Grande Messe des Morts”\2. Requiem, op. 5 “Grande Messe des Morts”_ Dies irae – Tuba mirum (1).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:48:49,129 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Hector Berlioz; Ronald Dowd, Wandsworth School Boys’ Choir, London Symphony Orchestra, London Symphony Chorus, Sir Colin Davis\Requiem, op.5 “Grande Messe des Morts”\2. Requiem, op. 5 “Grande Messe des Morts”_ Dies irae – Tuba mirum (2).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:48:49,158 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Hector Berlioz; Ronald Dowd, Wandsworth School Boys’ Choir, London Symphony Orchestra, London Symphony Chorus, Sir Colin Davis\Requiem, op.5 “Grande Messe des Morts”\2. Requiem, op. 5 “Grande Messe des Morts”_ Dies irae – Tuba mirum.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:48:49,756 - INFO - Processed 17000 files (cached: 0, new: 17000)...
+2025-07-16 13:48:52,672 - INFO - Processed 17100 files (cached: 0, new: 17100)...
+2025-07-16 13:48:55,183 - INFO - Processed 17200 files (cached: 0, new: 17200)...
+2025-07-16 13:48:57,923 - INFO - Processed 17300 files (cached: 0, new: 17300)...
+2025-07-16 13:49:02,290 - INFO - Using ffprobe at: C:\Users\cayuse\ffmpeg-2025-07-10-git-82aeee3c19-essentials_build\bin\ffprobe.exe
+2025-07-16 13:49:02,290 - INFO - Database initialized: music_cache.db
+2025-07-16 13:49:02,290 - INFO - Using ffprobe at: C:\Users\cayuse\ffmpeg-2025-07-10-git-82aeee3c19-essentials_build\bin\ffprobe.exe
+2025-07-16 13:49:02,290 - INFO - Database initialized: music_cache.db
+2025-07-16 13:49:02,290 - INFO - Target size: 1.0 GB
+2025-07-16 13:49:02,290 - INFO - Scanning directory: C:\Users\cayuse\repaired music
+2025-07-16 13:49:02,290 - INFO - Using cached metadata when available (use --force-rescan to bypass cache)
+2025-07-16 13:49:02,330 - INFO - Processed 100 files (cached: 100, new: 0)...
+2025-07-16 13:49:02,351 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (1).mp3: 
+2025-07-16 13:49:02,361 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (10).mp3: 
+2025-07-16 13:49:02,373 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (11).mp3: 
+2025-07-16 13:49:02,386 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (12).mp3: 
+2025-07-16 13:49:02,404 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (13).mp3: 
+2025-07-16 13:49:02,414 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (14).mp3: 
+2025-07-16 13:49:02,430 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (15).mp3: 
+2025-07-16 13:49:02,435 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (16).mp3: 
+2025-07-16 13:49:02,447 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (17).mp3: 
+2025-07-16 13:49:02,465 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (18).mp3: 
+2025-07-16 13:49:02,478 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (19).mp3: 
+2025-07-16 13:49:02,485 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (2).mp3: 
+2025-07-16 13:49:02,495 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (20).mp3: 
+2025-07-16 13:49:02,516 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (21).mp3: 
+2025-07-16 13:49:02,529 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (22).mp3: 
+2025-07-16 13:49:02,542 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (23).mp3: 
+2025-07-16 13:49:02,556 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (24).mp3: 
+2025-07-16 13:49:02,566 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (25).mp3: 
+2025-07-16 13:49:02,577 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (26).mp3: 
+2025-07-16 13:49:02,596 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (27).mp3: 
+2025-07-16 13:49:02,607 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (28).mp3: 
+2025-07-16 13:49:02,622 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (29).mp3: 
+2025-07-16 13:49:02,628 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (3).mp3: 
+2025-07-16 13:49:02,639 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (30).mp3: 
+2025-07-16 13:49:02,659 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (31).mp3: 
+2025-07-16 13:49:02,669 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (32).mp3: 
+2025-07-16 13:49:02,685 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (33).mp3: 
+2025-07-16 13:49:02,689 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (34).mp3: 
+2025-07-16 13:49:02,716 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (35).mp3: 
+2025-07-16 13:49:02,729 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (36).mp3: 
+2025-07-16 13:49:02,747 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (37).mp3: 
+2025-07-16 13:49:02,752 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (38).mp3: 
+2025-07-16 13:49:02,772 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (39).mp3: 
+2025-07-16 13:49:02,785 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (4).mp3: 
+2025-07-16 13:49:02,795 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (40).mp3: 
+2025-07-16 13:49:02,813 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (41).mp3: 
+2025-07-16 13:49:02,827 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (42).mp3: 
+2025-07-16 13:49:02,833 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (43).mp3: 
+2025-07-16 13:49:02,843 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (44).mp3: 
+2025-07-16 13:49:02,863 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (45).mp3: 
+2025-07-16 13:49:02,874 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (46).mp3: 
+2025-07-16 13:49:02,890 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (47).mp3: 
+2025-07-16 13:49:02,894 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (48).mp3: 
+2025-07-16 13:49:02,914 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (49).mp3: 
+2025-07-16 13:49:02,924 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (5).mp3: 
+2025-07-16 13:49:02,937 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (50).mp3: 
+2025-07-16 13:49:02,955 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (51).mp3: 
+2025-07-16 13:49:02,968 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (52).mp3: 
+2025-07-16 13:49:02,984 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (53).mp3: 
+2025-07-16 13:49:02,996 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (54).mp3: 
+2025-07-16 13:49:03,006 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (55).mp3: 
+2025-07-16 13:49:03,016 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (56).mp3: 
+2025-07-16 13:49:03,031 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (57).mp3: 
+2025-07-16 13:49:03,047 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (58).mp3: 
+2025-07-16 13:49:03,057 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (59).mp3: 
+2025-07-16 13:49:03,067 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (6).mp3: 
+2025-07-16 13:49:03,087 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (60).mp3: 
+2025-07-16 13:49:03,097 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (61).mp3: 
+2025-07-16 13:49:03,110 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (62).mp3: 
+2025-07-16 13:49:03,128 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (63).mp3: 
+2025-07-16 13:49:03,142 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (7).mp3: 
+2025-07-16 13:49:03,157 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (8).mp3: 
+2025-07-16 13:49:03,168 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ (9).mp3: 
+2025-07-16 13:49:03,190 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_ We Meet Again (Theme).mp3: 
+2025-07-16 13:49:03,209 - WARNING - ffprobe failed for C:\Users\cayuse\repaired music\_.mp3: 
+2025-07-16 13:49:03,259 - INFO - Processed 200 files (cached: 200, new: 0)...
+2025-07-16 13:49:03,290 - INFO - Processed 300 files (cached: 300, new: 0)...
+2025-07-16 13:49:03,322 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\2Pac\Greatest Hits\7. How Do U Want It.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:03,342 - INFO - Processed 400 files (cached: 400, new: 0)...
+2025-07-16 13:49:03,393 - INFO - Processed 500 files (cached: 500, new: 0)...
+2025-07-16 13:49:03,413 - INFO - Processed 600 files (cached: 600, new: 0)...
+2025-07-16 13:49:03,453 - INFO - Processed 700 files (cached: 700, new: 0)...
+2025-07-16 13:49:03,474 - INFO - Processed 800 files (cached: 800, new: 0)...
+2025-07-16 13:49:03,505 - INFO - Processed 900 files (cached: 900, new: 0)...
+2025-07-16 13:49:03,537 - INFO - Processed 1000 files (cached: 1000, new: 0)...
+2025-07-16 13:49:03,564 - INFO - Processed 1100 files (cached: 1100, new: 0)...
+2025-07-16 13:49:03,595 - INFO - Processed 1200 files (cached: 1200, new: 0)...
+2025-07-16 13:49:03,616 - INFO - Processed 1300 files (cached: 1300, new: 0)...
+2025-07-16 13:49:03,647 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Aaron Watson\The Underdog\4. That Look.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:03,687 - INFO - Processed 1400 files (cached: 1400, new: 0)...
+2025-07-16 13:49:03,728 - INFO - Processed 1500 files (cached: 1500, new: 0)...
+2025-07-16 13:49:03,779 - INFO - Processed 1600 files (cached: 1600, new: 0)...
+2025-07-16 13:49:03,809 - INFO - Processed 1700 files (cached: 1700, new: 0)...
+2025-07-16 13:49:03,835 - INFO - Processed 1800 files (cached: 1800, new: 0)...
+2025-07-16 13:49:03,867 - INFO - Processed 1900 files (cached: 1900, new: 0)...
+2025-07-16 13:49:03,884 - INFO - Processed 2000 files (cached: 2000, new: 0)...
+2025-07-16 13:49:03,935 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\1. What’d I Say.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:03,946 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\10. Knock on Wood.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:03,965 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\2. Tupelo.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:03,988 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\3. Opus de Soul.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:03,998 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\4. Baby, What You Want Me to Do.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:04,018 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Albert King, Steve Cropper & Roebuck “Pops” Staples\Jammed Together\6. Homer’s Theme.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:04,030 - INFO - Processed 2100 files (cached: 2100, new: 0)...
+2025-07-16 13:49:04,057 - INFO - Processed 2200 files (cached: 2200, new: 0)...
+2025-07-16 13:49:04,079 - INFO - Processed 2300 files (cached: 2300, new: 0)...
+2025-07-16 13:49:04,110 - INFO - Processed 2400 files (cached: 2400, new: 0)...
+2025-07-16 13:49:04,141 - INFO - Processed 2500 files (cached: 2500, new: 0)...
+2025-07-16 13:49:04,191 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Amanda Miguel\Amanda Miguel\1. Ámame una vez más.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:04,222 - INFO - Processed 2600 files (cached: 2600, new: 0)...
+2025-07-16 13:49:04,276 - INFO - Processed 2700 files (cached: 2700, new: 0)...
+2025-07-16 13:49:04,295 - INFO - Processed 2800 files (cached: 2800, new: 0)...
+2025-07-16 13:49:04,342 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Andy Williams\Andy Williams_ His Greatest Hits and Finest Performances\6. Love Theme From “The Godfather” (Speak Softly Love).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:04,345 - INFO - Processed 2900 files (cached: 2900, new: 0)...
+2025-07-16 13:49:04,396 - INFO - Processed 3000 files (cached: 3000, new: 0)...
+2025-07-16 13:49:04,426 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; Academy of Ancient Music, Christopher Hogwood\L’Estro Armonico _ 6 Flute Concertos, op. 10\24. L'Estro Armonico, op. 3 (Twelve Concertos) Concerto no. 2 in G minor Con Due Violini E Violincello Obligati, RV 578, RV 549 I. Adagio E Spiccato.mp3: [WinError 3] The system cannot find the path specified: "C:\\Users\\cayuse\\repaired music\\Antonio Vivaldi; Academy of Ancient Music, Christopher Hogwood\\L’Estro Armonico _ 6 Flute Concertos, op. 10\\24. L'Estro Armonico, op. 3 (Twelve Concertos) Concerto no. 2 in G minor Con Due Violini E Violincello Obligati, RV 578, RV 549 I. Adagio E Spiccato.mp3"
+2025-07-16 13:49:04,736 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\1. Concerto for Strings in G major, RV 151 “alla rustica”_ I. Presto.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:04,758 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\10. Concerto for 2 Violins and Strings in G major, RV 516_ I. Allegro molto.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:04,775 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\11. Concerto for 2 Violins and Strings in G major, RV 516_ II. Andante (molto).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:04,792 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\12. Concerto for 2 Violins and Strings in G major, RV 516_ III. Allegro.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:04,811 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\13. Concerto for Oboe and Strings in A minor, RV 461_ I. Allegro non molto.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:04,831 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\14. Concerto for Oboe and Strings in A minor, RV 461_ II. Larghetto.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:04,850 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\15. Concerto for Oboe and Strings in A minor, RV 461_ III. (Allegro).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:04,867 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\16. Concerto for 2 Mandolins and Strings in G major, RV 532_ I. Allegro.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:04,883 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\17. Concerto for 2 Mandolins and Strings in G major, RV 532_ II. Andante.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:04,900 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\18. Concerto for 2 Mandolins and Strings in G major, RV 532_ III. Allegro.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:04,915 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\2. Concerto for Strings in G major, RV 151 “alla rustica”_ II. Adagio.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:04,931 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\3. Concerto for Strings in G major, RV 151 “alla rustica”_ III. Allegro.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:05,011 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\7. Concerto in C major “con molti stromenti” RV 558_ I. Allegro molto.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:05,032 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\8. Concerto in C major “con molti stromenti” RV 558_ II. Andante molto.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:05,057 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Antonio Vivaldi; The English Concert, Trevor Pinnock\Concerti “Alla Rustica”\9. Concerto in C major “con molti stromenti” RV 558_ III. Allegro.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:05,089 - INFO - Processed 3100 files (cached: 3100, new: 0)...
+2025-07-16 13:49:05,137 - INFO - Processed 3200 files (cached: 3200, new: 0)...
+2025-07-16 13:49:05,169 - INFO - Processed 3300 files (cached: 3300, new: 0)...
+2025-07-16 13:49:05,200 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Arthur Fiedler\Fiedler_ Greatest Hits\7. Procession of the Nobles from Mlada (1).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:05,216 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Arthur Fiedler\Fiedler_ Greatest Hits\7. Procession of the Nobles from Mlada.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:05,231 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Arthur Fiedler & Boston Pops Orchestra\Play Million-Dollar Memories\1. George M. Cohan Sing-Along Medley_ Give My Regards to Broadway _ Mary's a Grand Old Name _ Nelly Kelly, I Love You _ You're a Grand Old Flag _ You Remind Me of My Mother _ Harrigan _ Yankee Doodle Boy.mp3: [WinError 3] The system cannot find the path specified: "C:\\Users\\cayuse\\repaired music\\Arthur Fiedler & Boston Pops Orchestra\\Play Million-Dollar Memories\\1. George M. Cohan Sing-Along Medley_ Give My Regards to Broadway _ Mary's a Grand Old Name _ Nelly Kelly, I Love You _ You're a Grand Old Flag _ You Remind Me of My Mother _ Harrigan _ Yankee Doodle Boy.mp3"
+2025-07-16 13:49:05,251 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Arthur Fiedler & Boston Pops Orchestra\Play Million-Dollar Memories\7. America Sings Medley_ A Hot Time in the Old Town Tonight _ I've Been Working on the Railroad _ Down by the Old Mill Stream _ In the Good Old Summertime _ Jingle Bells _ When Irish Eyes Are Smiling _ God Bless America.mp3: [WinError 3] The system cannot find the path specified: "C:\\Users\\cayuse\\repaired music\\Arthur Fiedler & Boston Pops Orchestra\\Play Million-Dollar Memories\\7. America Sings Medley_ A Hot Time in the Old Town Tonight _ I've Been Working on the Railroad _ Down by the Old Mill Stream _ In the Good Old Summertime _ Jingle Bells _ When Irish Eyes Are Smiling _ God Bless America.mp3"
+2025-07-16 13:49:05,272 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Arthur Fiedler & Boston Pops Orchestra\Pops Roundup\12. Pops Hoe-Down (Arkansas Traveler, The Devil's Dream, Chicken Reel, Thunder Hornpipe, Paddy Whack (Irish Jig), Pop! Goes the Weasel, Miss McCloud's Reel, Turkey in the Straw, Stop Buck, Soldier's Joy, The Rakes of Mallow, Lamplighter's Hornpipe).mp3: [WinError 3] The system cannot find the path specified: "C:\\Users\\cayuse\\repaired music\\Arthur Fiedler & Boston Pops Orchestra\\Pops Roundup\\12. Pops Hoe-Down (Arkansas Traveler, The Devil's Dream, Chicken Reel, Thunder Hornpipe, Paddy Whack (Irish Jig), Pop! Goes the Weasel, Miss McCloud's Reel, Turkey in the Straw, Stop Buck, Soldier's Joy, The Rakes of Mallow, Lamplighter's Hornpipe).mp3"
+2025-07-16 13:49:05,279 - INFO - Processed 3400 files (cached: 3400, new: 0)...
+2025-07-16 13:49:05,311 - INFO - Processed 3500 files (cached: 3500, new: 0)...
+2025-07-16 13:49:05,358 - INFO - Processed 3600 files (cached: 3600, new: 0)...
+2025-07-16 13:49:05,409 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Azúcar Moreno\Esclava de tu piel\7. Ámame toda la noche.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:05,676 - INFO - Processed 3700 files (cached: 3700, new: 0)...
+2025-07-16 13:49:05,702 - INFO - Processed 3800 files (cached: 3800, new: 0)...
+2025-07-16 13:49:05,740 - INFO - Processed 3900 files (cached: 3900, new: 0)...
+2025-07-16 13:49:05,821 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Baha Men\Move It Like This\5. Best Years of Our Lives.mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:05,881 - WARNING - Error extracting metadata from C:\Users\cayuse\repaired music\Barry Manilow\Because It’s Christmas\5. Excerpt From Händel’s Messiah (“For unto us a child is born…”) _ Because It’s Christmas (For All the Children).mp3: the JSON object must be str, bytes or bytearray, not NoneType
+2025-07-16 13:49:05,882 - INFO - Processed 4000 files (cached: 4000, new: 0)...
+2025-07-16 13:49:05,903 - INFO - Processed 4100 files (cached: 4100, new: 0)...
+2025-07-16 13:49:05,945 - INFO - Processed 4200 files (cached: 4200, new: 0)...
+2025-07-16 13:49:05,988 - INFO - Processed 4300 files (cached: 4300, new: 0)...
+2025-07-16 13:49:06,150 - INFO - Processed 4400 files (cached: 4400, new: 0)...
+2025-07-16 13:50:26,238 - INFO - Using ffprobe at: C:\Users\cayuse\ffmpeg-2025-07-10-git-82aeee3c19-essentials_build\bin\ffprobe.exe
+2025-07-16 13:50:26,239 - INFO - Database initialized: music_cache.db
+2025-07-16 13:50:26,240 - INFO - Using ffprobe at: C:\Users\cayuse\ffmpeg-2025-07-10-git-82aeee3c19-essentials_build\bin\ffprobe.exe
+2025-07-16 13:50:26,243 - INFO - Database initialized: music_cache.db
+2025-07-16 13:50:26,251 - INFO - Target size: 1.0 GB
+2025-07-16 13:50:26,266 - INFO - Cache-only mode: Using only cached metadata
+2025-07-16 13:50:26,665 - INFO - Loaded 17371 files from cache
+2025-07-16 13:50:26,675 - INFO - Found 2351 files matching genre 'country'
+2025-07-16 13:50:26,675 - INFO - Selected 188 files (1022.9 MB)
+2025-07-16 13:50:26,692 - INFO - Copying 188 files to d:\Country_collection
+2025-07-16 13:50:27,002 - INFO - [1/188] Copied: 11. Wormy Dog.mp3 (3.3 MB)
+2025-07-16 13:50:27,573 - INFO - [2/188] Copied: 02. As Long As There's A Bar.mp3 (8.4 MB)
+2025-07-16 13:50:28,187 - INFO - [3/188] Copied: 03. City Country.mp3 (9.0 MB)
+2025-07-16 13:50:28,475 - INFO - [4/188] Copied: 06. Take The Trailer.mp3 (6.6 MB)
+2025-07-16 13:50:28,926 - INFO - [5/188] Copied: 11. Slow Ride.mp3 (6.7 MB)
+2025-07-16 13:50:29,628 - INFO - [6/188] Copied: 12. Lit In The Sticks.mp3 (6.4 MB)
+2025-07-16 13:50:30,068 - INFO - [7/188] Copied: 16. Good Bad Idea.mp3 (6.5 MB)
+2025-07-16 13:50:30,408 - INFO - [8/188] Copied: 17. All The Time.mp3 (7.1 MB)
+2025-07-16 13:50:30,707 - INFO - [9/188] Copied: 18. Home Made.mp3 (7.0 MB)
+2025-07-16 13:50:31,015 - INFO - [10/188] Copied: 18. Water Down The Whiskey.mp3 (7.7 MB)
+2025-07-16 13:50:31,628 - INFO - [11/188] Copied: 04. Emotional Honesty.mp3 (7.5 MB)
+2025-07-16 13:50:31,847 - INFO - [12/188] Copied: 07. Drinkin' Terms.mp3 (6.8 MB)
+2025-07-16 13:50:32,281 - INFO - [13/188] Copied: 09. I Am.mp3 (9.0 MB)
+2025-07-16 13:50:32,602 - INFO - [14/188] Copied: 13. You Feel Like Home.mp3 (7.9 MB)
+2025-07-16 13:50:33,304 - INFO - [15/188] Copied: 6. I Didn't Know My Own Strength (Dance Mix).mp3 (12.3 MB)
+2025-07-16 13:50:33,785 - INFO - [16/188] Copied: 11. Sold (Remix).mp3 (6.0 MB)
+2025-07-16 13:50:33,959 - INFO - [17/188] Copied: 3. I Like The Sound Of That.mp3 (4.7 MB)
+2025-07-16 13:50:34,534 - INFO - [18/188] Copied: 4. Party Crowd (Remix).mp3 (6.8 MB)
+2025-07-16 13:50:34,913 - INFO - [19/188] Copied: 10. Rain Through The Roof.mp3 (8.3 MB)
+2025-07-16 13:50:35,572 - INFO - [20/188] Copied: 7. If It Were Me.mp3 (9.1 MB)
+2025-07-16 13:50:35,932 - INFO - [21/188] Copied: 8. Daytona Nights.mp3 (9.2 MB)
+2025-07-16 13:50:36,239 - INFO - [22/188] Copied: 9. Wild Thing.mp3 (7.4 MB)
+2025-07-16 13:50:36,581 - INFO - [23/188] Copied: 14. The Trouble With Love.mp3 (5.0 MB)
+2025-07-16 13:50:36,763 - INFO - [24/188] Copied: 10. No Yesterday.mp3 (5.1 MB)
+2025-07-16 13:50:37,482 - INFO - [25/188] Copied: 13. One Man Wrecking Crew.mp3 (6.5 MB)
+2025-07-16 13:50:37,702 - INFO - [26/188] Copied: 15. Wacky Weekend Medley.mp3 (7.3 MB)
+2025-07-16 13:50:37,843 - INFO - [27/188] Copied: 13. My Baby's Cookin'.mp3 (5.5 MB)
+2025-07-16 13:50:38,021 - INFO - [28/188] Copied: 7. Grandpa Told Me So.mp3 (5.8 MB)
+2025-07-16 13:50:38,279 - INFO - [29/188] Copied: 16. Fever.mp3 (4.7 MB)
+2025-07-16 13:50:38,494 - INFO - [30/188] Copied: 8. Salt And Water.mp3 (4.6 MB)
+2025-07-16 13:50:38,787 - INFO - [31/188] Copied: 12. 1969.mp3 (5.3 MB)
+2025-07-16 13:50:39,031 - INFO - [32/188] Copied: 16. Letting Go.mp3 (4.3 MB)
+2025-07-16 13:50:39,287 - INFO - [33/188] Copied: 3. Too Much Fun (Dance Remix).mp3 (6.0 MB)
+2025-07-16 13:50:39,593 - INFO - [34/188] Copied: 7. Holdin' On To Something (Dance Remix).mp3 (7.1 MB)
+2025-07-16 13:50:39,849 - INFO - [35/188] Copied: 11. Lipstick Don't Lie.mp3 (5.6 MB)
+2025-07-16 13:50:40,294 - INFO - [36/188] Copied: 14. Country Boy At Heart.mp3 (3.9 MB)
+2025-07-16 13:50:40,559 - INFO - [37/188] Copied: 17. Thump Factor (Club).mp3 (6.1 MB)
+2025-07-16 13:50:40,812 - INFO - [38/188] Copied: 18. Thump Factor (Beat Mix).mp3 (7.1 MB)
+2025-07-16 13:50:41,298 - INFO - [39/188] Copied: 4. Man Overboard.mp3 (6.4 MB)
+2025-07-16 13:50:41,753 - INFO - [40/188] Copied: 10. Don't Fence Me In, Wild At Heart.mp3 (4.6 MB)
+2025-07-16 13:50:42,007 - INFO - [41/188] Copied: 4. 50-50.mp3 (5.5 MB)
+2025-07-16 13:50:42,233 - INFO - [42/188] Copied: 11. Girl Ain't One Of The Boys Anymore.mp3 (4.8 MB)
+2025-07-16 13:50:42,409 - INFO - [43/188] Copied: 3. Fallin' In And Crawlin' Out.mp3 (4.5 MB)
+2025-07-16 13:50:42,679 - INFO - [44/188] Copied: 5. That Was Him (This Is Now).mp3 (6.2 MB)
+2025-07-16 13:50:42,954 - INFO - [45/188] Copied: 15. The Maker Said Take Her.mp3 (4.8 MB)
+2025-07-16 13:50:43,125 - INFO - [46/188] Copied: 5. Bettin' Forever On You.mp3 (4.7 MB)
+2025-07-16 13:50:43,472 - INFO - [47/188] Copied: 7. Rodeo Man (Buckaroo Mix).mp3 (8.0 MB)
+2025-07-16 13:50:43,746 - INFO - [48/188] Copied: 1. Like The Rain.mp3 (6.0 MB)
+2025-07-16 13:50:44,056 - INFO - [49/188] Copied: 10. Goin' Goin' Gone.mp3 (5.8 MB)
+2025-07-16 13:50:44,299 - INFO - [50/188] Copied: 14. Healing Hands.mp3 (5.1 MB)
+2025-07-16 13:50:44,661 - INFO - [51/188] Copied: 17. Convoy Preacher.mp3 (4.9 MB)
+2025-07-16 13:50:44,876 - INFO - [52/188] Copied: 18. It's Still You.mp3 (5.8 MB)
+2025-07-16 13:50:45,133 - INFO - [53/188] Copied: 7. What Will You Do With M-E.mp3 (5.8 MB)
+2025-07-16 13:50:45,395 - INFO - [54/188] Copied: 13. He Looked Right Through Me.mp3 (6.0 MB)
+2025-07-16 13:50:45,679 - INFO - [55/188] Copied: 12. Better Love Next Time.mp3 (5.4 MB)
+2025-07-16 13:50:45,860 - INFO - [56/188] Copied: 16. If Dreams Have Wings.mp3 (4.7 MB)
+2025-07-16 13:50:46,237 - INFO - [57/188] Copied: 17. Howl At The Moon.mp3 (5.4 MB)
+2025-07-16 13:50:46,828 - INFO - [58/188] Copied: 18. Convoy Preacher (Part 1) (Remix).mp3 (5.2 MB)
+2025-07-16 13:50:47,132 - INFO - [59/188] Copied: 19. Wabash.mp3 (4.1 MB)
+2025-07-16 13:50:47,999 - INFO - [60/188] Copied: 8. Love Worth Fighting For.mp3 (4.4 MB)
+2025-07-16 13:50:48,233 - INFO - [61/188] Copied: 13. Still Crazy 'bout You.mp3 (4.3 MB)
+2025-07-16 13:50:48,493 - INFO - [62/188] Copied: 17. He's On The Way Home.mp3 (4.9 MB)
+2025-07-16 13:50:48,756 - INFO - [63/188] Copied: 19. The Next Waltz.mp3 (5.7 MB)
+2025-07-16 13:50:48,909 - INFO - [64/188] Copied: 3. All I Give A Darn About Is You.mp3 (4.1 MB)
+2025-07-16 13:50:49,172 - INFO - [65/188] Copied: 6. She Loves Me.mp3 (4.9 MB)
+2025-07-16 13:50:49,356 - INFO - [66/188] Copied: 9. The Answer Is Yes.mp3 (4.3 MB)
+2025-07-16 13:50:49,616 - INFO - [67/188] Copied: 7. Halfway Up.mp3 (5.6 MB)
+2025-07-16 13:50:49,967 - INFO - [68/188] Copied: 10. Mr. Right Now.mp3 (4.5 MB)
+2025-07-16 13:50:50,258 - INFO - [69/188] Copied: 11. Man In The Mirror.mp3 (5.1 MB)
+2025-07-16 13:50:50,578 - INFO - [70/188] Copied: 13. Morning And Night.mp3 (6.6 MB)
+2025-07-16 13:50:50,838 - INFO - [71/188] Copied: 11. The Secret.mp3 (7.0 MB)
+2025-07-16 13:50:51,116 - INFO - [72/188] Copied: 12. One Night Stand.mp3 (6.5 MB)
+2025-07-16 13:50:51,426 - INFO - [73/188] Copied: 13. Another Man's Sky.mp3 (5.6 MB)
+2025-07-16 13:50:51,935 - INFO - [74/188] Copied: 16. Wonderful Tonight.mp3 (6.7 MB)
+2025-07-16 13:50:52,110 - INFO - [75/188] Copied: 17. Quittin' Time.mp3 (4.7 MB)
+2025-07-16 13:50:52,356 - INFO - [76/188] Copied: 16. Jenny Got A Ring.mp3 (4.9 MB)
+2025-07-16 13:50:52,659 - INFO - [77/188] Copied: 3. Why Wouldn't I Say Goodbye.mp3 (5.8 MB)
+2025-07-16 13:50:52,882 - INFO - [78/188] Copied: 9. Keeping Your Kisses.mp3 (5.9 MB)
+2025-07-16 13:50:53,126 - INFO - [79/188] Copied: 11. Sweet Sweet Woman.mp3 (5.1 MB)
+2025-07-16 13:50:53,302 - INFO - [80/188] Copied: 12. The Buckle.mp3 (4.9 MB)
+2025-07-16 13:50:53,663 - INFO - [81/188] Copied: 13. Wanted, Total Stranger.mp3 (6.7 MB)
+2025-07-16 13:50:53,885 - INFO - [82/188] Copied: 15. I'm Scattered.mp3 (4.7 MB)
+2025-07-16 13:50:54,142 - INFO - [83/188] Copied: 13. Cheap Imitation.mp3 (5.7 MB)
+2025-07-16 13:50:54,391 - INFO - [84/188] Copied: 14. My Greatest Love.mp3 (5.3 MB)
+2025-07-16 13:50:54,582 - INFO - [85/188] Copied: 16. I Got The Girl.mp3 (5.0 MB)
+2025-07-16 13:50:54,810 - INFO - [86/188] Copied: 6. That Just About Covers It.mp3 (4.9 MB)
+2025-07-16 13:50:55,081 - INFO - [87/188] Copied: 9. Six Days On The Road.mp3 (5.0 MB)
+2025-07-16 13:50:55,354 - INFO - [88/188] Copied: 11. Exception To The Rule.mp3 (5.7 MB)
+2025-07-16 13:50:55,547 - INFO - [89/188] Copied: 13. I'm So Sorry.mp3 (5.0 MB)
+2025-07-16 13:50:55,779 - INFO - [90/188] Copied: 14. Guardian Angel.mp3 (4.6 MB)
+2025-07-16 13:50:56,245 - INFO - [91/188] Copied: 16. She Wants To Drive My Truck.mp3 (5.5 MB)
+2025-07-16 13:50:56,765 - INFO - [92/188] Copied: 11. Let Me Take That Ol' Heartache.mp3 (4.3 MB)
+2025-07-16 13:50:56,984 - INFO - [93/188] Copied: 16. Do I Ever Cross Your Mind.mp3 (4.7 MB)
+2025-07-16 13:50:57,235 - INFO - [94/188] Copied: 17. Texas Twist Her.mp3 (6.3 MB)
+2025-07-16 13:50:57,489 - INFO - [95/188] Copied: 18. You Turn My Radio On.mp3 (5.3 MB)
+2025-07-16 13:50:57,698 - INFO - [96/188] Copied: 4. It's Good To Be Me.mp3 (4.1 MB)
+2025-07-16 13:50:57,869 - INFO - [97/188] Copied: 3. She Knows Me By Heart.mp3 (4.3 MB)
+2025-07-16 13:50:58,316 - INFO - [98/188] Copied: 7. Love Travels.mp3 (5.6 MB)
+2025-07-16 13:50:58,459 - INFO - [99/188] Copied: 9. When I Think About You.mp3 (3.1 MB)
+2025-07-16 13:50:58,979 - INFO - [100/188] Copied: 10. When I Could Fly.mp3 (5.7 MB)
+2025-07-16 13:50:59,412 - INFO - [101/188] Copied: 12. There's More Where That Came From.mp3 (4.9 MB)
+2025-07-16 13:50:59,982 - INFO - [102/188] Copied: 14. Heartaches And Misery.mp3 (6.6 MB)
+2025-07-16 13:51:00,236 - INFO - [103/188] Copied: 15. Call Me A Wildfire.mp3 (5.2 MB)
+2025-07-16 13:51:00,492 - INFO - [104/188] Copied: 16. Those Who Couldn't Wait.mp3 (5.7 MB)
+2025-07-16 13:51:00,776 - INFO - [105/188] Copied: 2. Everywhere.mp3 (6.6 MB)
+2025-07-16 13:51:00,985 - INFO - [106/188] Copied: 10. The Wish.mp3 (5.8 MB)
+2025-07-16 13:51:01,281 - INFO - [107/188] Copied: 15. Titanic.mp3 (4.0 MB)
+2025-07-16 13:51:01,555 - INFO - [108/188] Copied: 9. The Next Step.mp3 (5.9 MB)
+2025-07-16 13:51:01,738 - INFO - [109/188] Copied: 14. You Only Come Up When I'm Down.mp3 (3.3 MB)
+2025-07-16 13:51:01,935 - INFO - [110/188] Copied: 15. I Don't Want No Part Of It.mp3 (3.7 MB)
+2025-07-16 13:51:02,178 - INFO - [111/188] Copied: 17. Fairy Tales.mp3 (4.7 MB)
+2025-07-16 13:51:02,423 - INFO - [112/188] Copied: 18. After Death Do Us Part.mp3 (5.6 MB)
+2025-07-16 13:51:02,685 - INFO - [113/188] Copied: 15. Prisoner Of Love.mp3 (5.8 MB)
+2025-07-16 13:51:02,930 - INFO - [114/188] Copied: 16. How Sweet It Is To Be In Love With You.mp3 (5.0 MB)
+2025-07-16 13:51:03,506 - INFO - [115/188] Copied: 9. All That Matters Anymore.mp3 (5.8 MB)
+2025-07-16 13:51:03,648 - INFO - [116/188] Copied: 10. I Hate Your Lousy, Rotten, Stinkin' Guts, But I'm Not Bitter.mp3 (3.1 MB)
+2025-07-16 13:51:03,936 - INFO - [117/188] Copied: 12. Wishin' And Waitin'.mp3 (5.0 MB)
+2025-07-16 13:51:04,141 - INFO - [118/188] Copied: 13. The Truth Is Lyin' Next To You.mp3 (5.4 MB)
+2025-07-16 13:51:04,360 - INFO - [119/188] Copied: 5. My First, Last, One And Only.mp3 (4.6 MB)
+2025-07-16 13:51:04,586 - INFO - [120/188] Copied: 14. Don't Lie In My Arms Tonight.mp3 (4.6 MB)
+2025-07-16 13:51:04,825 - INFO - [121/188] Copied: 16. I'm From The Country (Remix).mp3 (5.3 MB)
+2025-07-16 13:51:04,993 - INFO - [122/188] Copied: 17. Amnesia.mp3 (3.9 MB)
+2025-07-16 13:51:05,187 - INFO - [123/188] Copied: 5. Bad Day To Let You Go.mp3 (5.2 MB)
+2025-07-16 13:51:05,421 - INFO - [124/188] Copied: 10. Wreckin' Ball.mp3 (4.9 MB)
+2025-07-16 13:51:05,939 - INFO - [125/188] Copied: 14. I'm The One.mp3 (4.7 MB)
+2025-07-16 13:51:06,132 - INFO - [126/188] Copied: 17. Looking Up From A Long Way Down (Country Version).mp3 (5.1 MB)
+2025-07-16 13:51:06,369 - INFO - [127/188] Copied: 7. Drivin' My Life Away.mp3 (5.0 MB)
+2025-07-16 13:51:06,845 - INFO - [128/188] Copied: 8. Always Will.mp3 (6.2 MB)
+2025-07-16 13:51:07,097 - INFO - [129/188] Copied: 12. Used To The Pain.mp3 (5.4 MB)
+2025-07-16 13:51:07,307 - INFO - [130/188] Copied: 11. Yippy Ky Yay.mp3 (5.5 MB)
+2025-07-16 13:51:07,563 - INFO - [131/188] Copied: 15. If She Only Knew.mp3 (6.0 MB)
+2025-07-16 13:51:07,817 - INFO - [132/188] Copied: 18. The Healing End.mp3 (5.4 MB)
+2025-07-16 13:51:08,072 - INFO - [133/188] Copied: 19. Almost Jamaica.mp3 (5.6 MB)
+2025-07-16 13:51:08,436 - INFO - [134/188] Copied: 13. Set You Free.mp3 (5.5 MB)
+2025-07-16 13:51:08,749 - INFO - [135/188] Copied: 14. Come Back To Me Blues (Dance Mix).mp3 (5.6 MB)
+2025-07-16 13:51:09,034 - INFO - [136/188] Copied: 18. Leaving On Her Mind.mp3 (6.3 MB)
+2025-07-16 13:51:09,251 - INFO - [137/188] Copied: 14. Ticket Out Of Kansas.mp3 (5.5 MB)
+2025-07-16 13:51:09,481 - INFO - [138/188] Copied: 15. Don't Try To Find Me.mp3 (4.4 MB)
+2025-07-16 13:51:09,668 - INFO - [139/188] Copied: 19. Close Harmony.mp3 (5.1 MB)
+2025-07-16 13:51:09,921 - INFO - [140/188] Copied: 15. Life Goes On.mp3 (5.3 MB)
+2025-07-16 13:51:10,196 - INFO - [141/188] Copied: 15. That Old Country Dance Floor.mp3 (5.8 MB)
+2025-07-16 13:51:10,620 - INFO - [142/188] Copied: 16. It's Your Life.mp3 (5.3 MB)
+2025-07-16 13:51:10,890 - INFO - [143/188] Copied: 6. If A Man Answers.mp3 (4.8 MB)
+2025-07-16 13:51:11,105 - INFO - [144/188] Copied: 7. Baby Ain't Rocking Me Right.mp3 (5.7 MB)
+2025-07-16 13:51:11,330 - INFO - [145/188] Copied: 12. No Easy Goodbye.mp3 (5.0 MB)
+2025-07-16 13:51:11,616 - INFO - [146/188] Copied: 14. Talk The Talk And Walk The Walk.mp3 (4.9 MB)
+2025-07-16 13:51:11,788 - INFO - [147/188] Copied: 16. This Time A Diamond Won't Cut It.mp3 (4.3 MB)
+2025-07-16 13:51:11,976 - INFO - [148/188] Copied: 17. Wrangler Walk.mp3 (5.1 MB)
+2025-07-16 13:51:12,199 - INFO - [149/188] Copied: 18. Every Single Thing.mp3 (4.8 MB)
+2025-07-16 13:51:12,467 - INFO - [150/188] Copied: 12. John Wayne Walking Away.mp3 (5.9 MB)
+2025-07-16 13:51:12,792 - INFO - [151/188] Copied: 16. I Wouldn't Tell You No Lie.mp3 (6.1 MB)
+2025-07-16 13:51:13,038 - INFO - [152/188] Copied: 18. Heaven Only Knows.mp3 (5.1 MB)
+2025-07-16 13:51:13,301 - INFO - [153/188] Copied: 16. Cowboy Cadillac (Dance Mix).mp3 (6.0 MB)
+2025-07-16 13:51:13,529 - INFO - [154/188] Copied: 17. Never In A Million Tears.mp3 (5.0 MB)
+2025-07-16 13:51:14,139 - INFO - [155/188] Copied: 18. Looks Like A Job For A Woman.mp3 (5.5 MB)
+2025-07-16 13:51:14,369 - INFO - [156/188] Copied: 19. Everybody's Free (To Get Sunburned).mp3 (6.0 MB)
+2025-07-16 13:51:14,595 - INFO - [157/188] Copied: 18. Daddy's Dreams.mp3 (4.8 MB)
+2025-07-16 13:51:14,838 - INFO - [158/188] Copied: 8. Unsung Hero.mp3 (5.4 MB)
+2025-07-16 13:51:15,102 - INFO - [159/188] Copied: 11. You Should Go.mp3 (5.3 MB)
+2025-07-16 13:51:15,298 - INFO - [160/188] Copied: 14. Angels Don't Fly.mp3 (4.1 MB)
+2025-07-16 13:51:15,549 - INFO - [161/188] Copied: 7. Are Your Eyes Still Blue.mp3 (5.2 MB)
+2025-07-16 13:51:15,780 - INFO - [162/188] Copied: 15. Baby's Got My Number (Dance Mix).mp3 (5.2 MB)
+2025-07-16 13:51:15,962 - INFO - [163/188] Copied: 6. After A Kiss.mp3 (5.1 MB)
+2025-07-16 13:51:16,198 - INFO - [164/188] Copied: 1. She Thinks My Tractor's Sexy.mp3 (5.0 MB)
+2025-07-16 13:51:16,389 - INFO - [165/188] Copied: 10. That's The Way Love Goes.mp3 (3.6 MB)
+2025-07-16 13:51:16,578 - INFO - [166/188] Copied: 16. Jesse Dunn.mp3 (5.3 MB)
+2025-07-16 13:51:16,881 - INFO - [167/188] Copied: 17. No Reason To Quit.mp3 (5.3 MB)
+2025-07-16 13:51:17,043 - INFO - [168/188] Copied: 10. Bring it On.mp3 (4.9 MB)
+2025-07-16 13:51:17,426 - INFO - [169/188] Copied: 15. Something Real.mp3 (4.0 MB)
+2025-07-16 13:51:17,663 - INFO - [170/188] Copied: 14. My Hometown.mp3 (5.3 MB)
+2025-07-16 13:51:17,875 - INFO - [171/188] Copied: 15. The Fun of Your Love.mp3 (4.9 MB)
+2025-07-16 13:51:18,028 - INFO - [172/188] Copied: 17. Devil's Got Your Name.mp3 (4.0 MB)
+2025-07-16 13:51:18,263 - INFO - [173/188] Copied: 18. Jailer's Daughter.mp3 (4.7 MB)
+2025-07-16 13:51:19,160 - INFO - [174/188] Copied: 19. Rodeo Roundup.mp3 (4.8 MB)
+2025-07-16 13:51:19,340 - INFO - [175/188] Copied: 8. Daddy Won't Sell The Farm.mp3 (5.1 MB)
+2025-07-16 13:51:19,552 - INFO - [176/188] Copied: 12. Heart of Mine.mp3 (4.3 MB)
+2025-07-16 13:51:19,738 - INFO - [177/188] Copied: 8. Just Because She Lives There.mp3 (5.3 MB)
+2025-07-16 13:51:20,222 - INFO - [178/188] Copied: 17. Jesse Dunn.mp3 (5.3 MB)
+2025-07-16 13:51:21,034 - INFO - [179/188] Copied: 11. Asking Too Much.mp3 (4.9 MB)
+2025-07-16 13:51:22,318 - INFO - [180/188] Copied: 13. Work This Out.mp3 (4.4 MB)
+2025-07-16 13:51:22,538 - INFO - [181/188] Copied: 15. The Wrecking' Crew.mp3 (4.3 MB)
+2025-07-16 13:51:22,691 - INFO - [182/188] Copied: 19. Yesterday's News.mp3 (3.8 MB)
+2025-07-16 13:51:22,899 - INFO - [183/188] Copied: 16. Don't Ever Let me Go.mp3 (4.7 MB)
+2025-07-16 13:51:23,058 - INFO - [184/188] Copied: 15. Coming up Short Again.mp3 (4.1 MB)
+2025-07-16 13:51:23,279 - INFO - [185/188] Copied: 17. A Boy Like That.mp3 (4.7 MB)
+2025-07-16 13:51:23,486 - INFO - [186/188] Copied: 6. Fallin' Never Felt so Good.mp3 (4.5 MB)
+2025-07-16 13:51:23,611 - INFO - [187/188] Copied: 7. Self Made Man.mp3 (2.9 MB)
+2025-07-16 13:51:23,895 - INFO - [188/188] Copied: 8. Blue Moon.mp3 (5.2 MB)
+2025-07-16 13:51:23,927 - INFO - Report saved to: d:\Country_collection\collection_report.txt
+2025-07-16 13:51:23,928 - INFO - Collection complete!
+2025-07-16 13:51:23,928 - INFO - Copied 188 files (1022.9 MB)
+2025-07-16 13:51:23,928 - INFO - Destination: d:\Country_collection
+2025-07-16 13:54:45,477 - INFO - Using ffprobe at: C:\Users\cayuse\ffmpeg-2025-07-10-git-82aeee3c19-essentials_build\bin\ffprobe.exe
+2025-07-16 13:54:45,477 - INFO - Database initialized: music_cache.db
+2025-07-16 13:54:45,477 - INFO - Using ffprobe at: C:\Users\cayuse\ffmpeg-2025-07-10-git-82aeee3c19-essentials_build\bin\ffprobe.exe
+2025-07-16 13:54:45,477 - INFO - Database initialized: music_cache.db
+2025-07-16 13:54:45,477 - INFO - Target size: 1.0 GB
+2025-07-16 13:54:45,477 - INFO - Cache-only mode: Using only cached metadata
+2025-07-16 13:54:45,857 - INFO - Loaded 17371 files from cache
+2025-07-16 13:54:45,865 - INFO - Found 2351 files matching genre 'country'
+2025-07-16 13:54:45,865 - INFO - Selected 188 files (1022.9 MB)
+2025-07-16 13:54:45,865 - INFO - Copying 188 files to e:\Country_collection
+2025-07-16 13:55:19,348 - INFO - Using ffprobe at: C:\Users\cayuse\ffmpeg-2025-07-10-git-82aeee3c19-essentials_build\bin\ffprobe.exe
+2025-07-16 13:55:19,357 - INFO - Database initialized: music_cache.db
+2025-07-16 13:55:19,357 - INFO - Using ffprobe at: C:\Users\cayuse\ffmpeg-2025-07-10-git-82aeee3c19-essentials_build\bin\ffprobe.exe
+2025-07-16 13:55:19,357 - INFO - Database initialized: music_cache.db
+2025-07-16 13:55:19,357 - INFO - Target size: 1.0 GB
+2025-07-16 13:55:19,357 - INFO - Cache-only mode: Using only cached metadata
+2025-07-16 13:55:19,751 - INFO - Loaded 17371 files from cache
+2025-07-16 13:55:19,758 - INFO - Found 2351 files matching genre 'country'
+2025-07-16 13:55:19,758 - INFO - Selected 188 files (1022.9 MB)
+2025-07-16 13:55:19,758 - INFO - Copying 188 files to e:\Country_collection
+2025-07-16 13:55:19,962 - INFO - [1/188] Copied: 11. Wormy Dog.mp3 (3.3 MB)
+2025-07-16 13:55:20,455 - INFO - [2/188] Copied: 02. As Long As There's A Bar.mp3 (8.4 MB)
+2025-07-16 13:55:20,971 - INFO - [3/188] Copied: 03. City Country.mp3 (9.0 MB)
+2025-07-16 13:55:21,359 - INFO - [4/188] Copied: 06. Take The Trailer.mp3 (6.6 MB)
+2025-07-16 13:55:21,744 - INFO - [5/188] Copied: 11. Slow Ride.mp3 (6.7 MB)
+2025-07-16 13:55:22,125 - INFO - [6/188] Copied: 12. Lit In The Sticks.mp3 (6.4 MB)
+2025-07-16 13:55:22,511 - INFO - [7/188] Copied: 16. Good Bad Idea.mp3 (6.5 MB)
+2025-07-16 13:55:22,946 - INFO - [8/188] Copied: 17. All The Time.mp3 (7.1 MB)
+2025-07-16 13:55:23,350 - INFO - [9/188] Copied: 18. Home Made.mp3 (7.0 MB)
+2025-07-16 13:55:23,823 - INFO - [10/188] Copied: 18. Water Down The Whiskey.mp3 (7.7 MB)
+2025-07-16 13:55:24,269 - INFO - [11/188] Copied: 04. Emotional Honesty.mp3 (7.5 MB)
+2025-07-16 13:55:24,676 - INFO - [12/188] Copied: 07. Drinkin' Terms.mp3 (6.8 MB)
+2025-07-16 13:55:25,206 - INFO - [13/188] Copied: 09. I Am.mp3 (9.0 MB)
+2025-07-16 13:55:25,663 - INFO - [14/188] Copied: 13. You Feel Like Home.mp3 (7.9 MB)
+2025-07-16 13:55:26,369 - INFO - [15/188] Copied: 6. I Didn't Know My Own Strength (Dance Mix).mp3 (12.3 MB)
+2025-07-16 13:55:26,776 - INFO - [16/188] Copied: 11. Sold (Remix).mp3 (6.0 MB)
+2025-07-16 13:55:27,098 - INFO - [17/188] Copied: 3. I Like The Sound Of That.mp3 (4.7 MB)
+2025-07-16 13:55:27,546 - INFO - [18/188] Copied: 4. Party Crowd (Remix).mp3 (6.8 MB)
+2025-07-16 13:55:28,145 - INFO - [19/188] Copied: 10. Rain Through The Roof.mp3 (8.3 MB)
+2025-07-16 13:55:28,761 - INFO - [20/188] Copied: 7. If It Were Me.mp3 (9.1 MB)
+2025-07-16 13:55:29,398 - INFO - [21/188] Copied: 8. Daytona Nights.mp3 (9.2 MB)
+2025-07-16 13:55:29,870 - INFO - [22/188] Copied: 9. Wild Thing.mp3 (7.4 MB)
+2025-07-16 13:55:30,249 - INFO - [23/188] Copied: 14. The Trouble With Love.mp3 (5.0 MB)
+2025-07-16 13:55:30,589 - INFO - [24/188] Copied: 10. No Yesterday.mp3 (5.1 MB)
+2025-07-16 13:55:31,024 - INFO - [25/188] Copied: 13. One Man Wrecking Crew.mp3 (6.5 MB)
+2025-07-16 13:55:31,485 - INFO - [26/188] Copied: 15. Wacky Weekend Medley.mp3 (7.3 MB)
+2025-07-16 13:55:31,854 - INFO - [27/188] Copied: 13. My Baby's Cookin'.mp3 (5.5 MB)
+2025-07-16 13:55:32,249 - INFO - [28/188] Copied: 7. Grandpa Told Me So.mp3 (5.8 MB)
+2025-07-16 13:55:32,573 - INFO - [29/188] Copied: 16. Fever.mp3 (4.7 MB)
+2025-07-16 13:55:32,897 - INFO - [30/188] Copied: 8. Salt And Water.mp3 (4.6 MB)
+2025-07-16 13:55:33,259 - INFO - [31/188] Copied: 12. 1969.mp3 (5.3 MB)
+2025-07-16 13:55:33,521 - INFO - [32/188] Copied: 16. Letting Go.mp3 (4.3 MB)
+2025-07-16 13:55:33,918 - INFO - [33/188] Copied: 3. Too Much Fun (Dance Remix).mp3 (6.0 MB)
+2025-07-16 13:55:34,508 - INFO - [34/188] Copied: 7. Holdin' On To Something (Dance Remix).mp3 (7.1 MB)
+2025-07-16 13:55:34,899 - INFO - [35/188] Copied: 11. Lipstick Don't Lie.mp3 (5.6 MB)
+2025-07-16 13:55:35,157 - INFO - [36/188] Copied: 14. Country Boy At Heart.mp3 (3.9 MB)
+2025-07-16 13:55:35,604 - INFO - [37/188] Copied: 17. Thump Factor (Club).mp3 (6.1 MB)
+2025-07-16 13:55:36,073 - INFO - [38/188] Copied: 18. Thump Factor (Beat Mix).mp3 (7.1 MB)
+2025-07-16 13:55:36,459 - INFO - [39/188] Copied: 4. Man Overboard.mp3 (6.4 MB)
+2025-07-16 13:55:36,735 - INFO - [40/188] Copied: 10. Don't Fence Me In, Wild At Heart.mp3 (4.6 MB)
+2025-07-16 13:55:37,067 - INFO - [41/188] Copied: 4. 50-50.mp3 (5.5 MB)
+2025-07-16 13:55:37,376 - INFO - [42/188] Copied: 11. Girl Ain't One Of The Boys Anymore.mp3 (4.8 MB)
+2025-07-16 13:55:37,643 - INFO - [43/188] Copied: 3. Fallin' In And Crawlin' Out.mp3 (4.5 MB)
+2025-07-16 13:55:38,019 - INFO - [44/188] Copied: 5. That Was Him (This Is Now).mp3 (6.2 MB)
+2025-07-16 13:55:38,324 - INFO - [45/188] Copied: 15. The Maker Said Take Her.mp3 (4.8 MB)
+2025-07-16 13:55:38,610 - INFO - [46/188] Copied: 5. Bettin' Forever On You.mp3 (4.7 MB)
+2025-07-16 13:55:39,073 - INFO - [47/188] Copied: 7. Rodeo Man (Buckaroo Mix).mp3 (8.0 MB)
+2025-07-16 13:55:39,490 - INFO - [48/188] Copied: 1. Like The Rain.mp3 (6.0 MB)
+2025-07-16 13:55:39,875 - INFO - [49/188] Copied: 10. Goin' Goin' Gone.mp3 (5.8 MB)
+2025-07-16 13:55:40,242 - INFO - [50/188] Copied: 14. Healing Hands.mp3 (5.1 MB)
+2025-07-16 13:55:40,577 - INFO - [51/188] Copied: 17. Convoy Preacher.mp3 (4.9 MB)
+2025-07-16 13:55:40,951 - INFO - [52/188] Copied: 18. It's Still You.mp3 (5.8 MB)
+2025-07-16 13:55:41,348 - INFO - [53/188] Copied: 7. What Will You Do With M-E.mp3 (5.8 MB)
+2025-07-16 13:55:41,748 - INFO - [54/188] Copied: 13. He Looked Right Through Me.mp3 (6.0 MB)
+2025-07-16 13:55:42,111 - INFO - [55/188] Copied: 12. Better Love Next Time.mp3 (5.4 MB)
+2025-07-16 13:55:42,429 - INFO - [56/188] Copied: 16. If Dreams Have Wings.mp3 (4.7 MB)
+2025-07-16 13:55:42,801 - INFO - [57/188] Copied: 17. Howl At The Moon.mp3 (5.4 MB)
+2025-07-16 13:55:43,113 - INFO - [58/188] Copied: 18. Convoy Preacher (Part 1) (Remix).mp3 (5.2 MB)
+2025-07-16 13:55:43,400 - INFO - [59/188] Copied: 19. Wabash.mp3 (4.1 MB)
+2025-07-16 13:55:43,713 - INFO - [60/188] Copied: 8. Love Worth Fighting For.mp3 (4.4 MB)
+2025-07-16 13:55:44,022 - INFO - [61/188] Copied: 13. Still Crazy 'bout You.mp3 (4.3 MB)
+2025-07-16 13:55:44,356 - INFO - [62/188] Copied: 17. He's On The Way Home.mp3 (4.9 MB)
+2025-07-16 13:55:44,700 - INFO - [63/188] Copied: 19. The Next Waltz.mp3 (5.7 MB)
+2025-07-16 13:55:45,002 - INFO - [64/188] Copied: 3. All I Give A Darn About Is You.mp3 (4.1 MB)
+2025-07-16 13:55:45,393 - INFO - [65/188] Copied: 6. She Loves Me.mp3 (4.9 MB)
+2025-07-16 13:55:45,696 - INFO - [66/188] Copied: 9. The Answer Is Yes.mp3 (4.3 MB)
+2025-07-16 13:55:46,130 - INFO - [67/188] Copied: 7. Halfway Up.mp3 (5.6 MB)
+2025-07-16 13:55:46,448 - INFO - [68/188] Copied: 10. Mr. Right Now.mp3 (4.5 MB)
+2025-07-16 13:55:46,827 - INFO - [69/188] Copied: 11. Man In The Mirror.mp3 (5.1 MB)
+2025-07-16 13:55:47,298 - INFO - [70/188] Copied: 13. Morning And Night.mp3 (6.6 MB)
+2025-07-16 13:55:47,846 - INFO - [71/188] Copied: 11. The Secret.mp3 (7.0 MB)
+2025-07-16 13:55:48,273 - INFO - [72/188] Copied: 12. One Night Stand.mp3 (6.5 MB)
+2025-07-16 13:55:48,641 - INFO - [73/188] Copied: 13. Another Man's Sky.mp3 (5.6 MB)
+2025-07-16 13:55:49,080 - INFO - [74/188] Copied: 16. Wonderful Tonight.mp3 (6.7 MB)
+2025-07-16 13:55:49,416 - INFO - [75/188] Copied: 17. Quittin' Time.mp3 (4.7 MB)
+2025-07-16 13:55:49,742 - INFO - [76/188] Copied: 16. Jenny Got A Ring.mp3 (4.9 MB)
+2025-07-16 13:55:50,131 - INFO - [77/188] Copied: 3. Why Wouldn't I Say Goodbye.mp3 (5.8 MB)
+2025-07-16 13:55:50,520 - INFO - [78/188] Copied: 9. Keeping Your Kisses.mp3 (5.9 MB)
+2025-07-16 13:55:50,866 - INFO - [79/188] Copied: 11. Sweet Sweet Woman.mp3 (5.1 MB)
+2025-07-16 13:55:51,192 - INFO - [80/188] Copied: 12. The Buckle.mp3 (4.9 MB)
+2025-07-16 13:55:51,631 - INFO - [81/188] Copied: 13. Wanted, Total Stranger.mp3 (6.7 MB)
+2025-07-16 13:55:51,959 - INFO - [82/188] Copied: 15. I'm Scattered.mp3 (4.7 MB)
+2025-07-16 13:55:52,335 - INFO - [83/188] Copied: 13. Cheap Imitation.mp3 (5.7 MB)
+2025-07-16 13:55:52,760 - INFO - [84/188] Copied: 14. My Greatest Love.mp3 (5.3 MB)
+2025-07-16 13:55:53,122 - INFO - [85/188] Copied: 16. I Got The Girl.mp3 (5.0 MB)
+2025-07-16 13:55:53,489 - INFO - [86/188] Copied: 6. That Just About Covers It.mp3 (4.9 MB)
+2025-07-16 13:55:53,866 - INFO - [87/188] Copied: 9. Six Days On The Road.mp3 (5.0 MB)
+2025-07-16 13:55:54,304 - INFO - [88/188] Copied: 11. Exception To The Rule.mp3 (5.7 MB)
+2025-07-16 13:55:54,725 - INFO - [89/188] Copied: 13. I'm So Sorry.mp3 (5.0 MB)
+2025-07-16 13:55:55,043 - INFO - [90/188] Copied: 14. Guardian Angel.mp3 (4.6 MB)
+2025-07-16 13:55:55,447 - INFO - [91/188] Copied: 16. She Wants To Drive My Truck.mp3 (5.5 MB)
+2025-07-16 13:55:55,771 - INFO - [92/188] Copied: 11. Let Me Take That Ol' Heartache.mp3 (4.3 MB)
+2025-07-16 13:55:56,157 - INFO - [93/188] Copied: 16. Do I Ever Cross Your Mind.mp3 (4.7 MB)
+2025-07-16 13:55:56,600 - INFO - [94/188] Copied: 17. Texas Twist Her.mp3 (6.3 MB)
+2025-07-16 13:55:56,997 - INFO - [95/188] Copied: 18. You Turn My Radio On.mp3 (5.3 MB)
+2025-07-16 13:55:57,295 - INFO - [96/188] Copied: 4. It's Good To Be Me.mp3 (4.1 MB)
+2025-07-16 13:55:57,596 - INFO - [97/188] Copied: 3. She Knows Me By Heart.mp3 (4.3 MB)
+2025-07-16 13:55:57,976 - INFO - [98/188] Copied: 7. Love Travels.mp3 (5.6 MB)
+2025-07-16 13:55:58,170 - INFO - [99/188] Copied: 9. When I Think About You.mp3 (3.1 MB)
+2025-07-16 13:55:58,547 - INFO - [100/188] Copied: 10. When I Could Fly.mp3 (5.7 MB)
+2025-07-16 13:55:58,893 - INFO - [101/188] Copied: 12. There's More Where That Came From.mp3 (4.9 MB)
+2025-07-16 13:55:59,323 - INFO - [102/188] Copied: 14. Heartaches And Misery.mp3 (6.6 MB)
+2025-07-16 13:55:59,672 - INFO - [103/188] Copied: 15. Call Me A Wildfire.mp3 (5.2 MB)
+2025-07-16 13:56:00,050 - INFO - [104/188] Copied: 16. Those Who Couldn't Wait.mp3 (5.7 MB)
+2025-07-16 13:56:00,472 - INFO - [105/188] Copied: 2. Everywhere.mp3 (6.6 MB)
+2025-07-16 13:56:00,857 - INFO - [106/188] Copied: 10. The Wish.mp3 (5.8 MB)
+2025-07-16 13:56:01,133 - INFO - [107/188] Copied: 15. Titanic.mp3 (4.0 MB)
+2025-07-16 13:56:01,485 - INFO - [108/188] Copied: 9. The Next Step.mp3 (5.9 MB)
+2025-07-16 13:56:01,705 - INFO - [109/188] Copied: 14. You Only Come Up When I'm Down.mp3 (3.3 MB)
+2025-07-16 13:56:01,929 - INFO - [110/188] Copied: 15. I Don't Want No Part Of It.mp3 (3.7 MB)
+2025-07-16 13:56:02,219 - INFO - [111/188] Copied: 17. Fairy Tales.mp3 (4.7 MB)
+2025-07-16 13:56:02,564 - INFO - [112/188] Copied: 18. After Death Do Us Part.mp3 (5.6 MB)
+2025-07-16 13:56:02,926 - INFO - [113/188] Copied: 15. Prisoner Of Love.mp3 (5.8 MB)
+2025-07-16 13:56:03,233 - INFO - [114/188] Copied: 16. How Sweet It Is To Be In Love With You.mp3 (5.0 MB)
+2025-07-16 13:56:03,578 - INFO - [115/188] Copied: 9. All That Matters Anymore.mp3 (5.8 MB)
+2025-07-16 13:56:03,780 - INFO - [116/188] Copied: 10. I Hate Your Lousy, Rotten, Stinkin' Guts, But I'm Not Bitter.mp3 (3.1 MB)
+2025-07-16 13:56:04,081 - INFO - [117/188] Copied: 12. Wishin' And Waitin'.mp3 (5.0 MB)
+2025-07-16 13:56:04,429 - INFO - [118/188] Copied: 13. The Truth Is Lyin' Next To You.mp3 (5.4 MB)
+2025-07-16 13:56:04,732 - INFO - [119/188] Copied: 5. My First, Last, One And Only.mp3 (4.6 MB)
+2025-07-16 13:56:05,007 - INFO - [120/188] Copied: 14. Don't Lie In My Arms Tonight.mp3 (4.6 MB)
+2025-07-16 13:56:05,320 - INFO - [121/188] Copied: 16. I'm From The Country (Remix).mp3 (5.3 MB)
+2025-07-16 13:56:05,619 - INFO - [122/188] Copied: 17. Amnesia.mp3 (3.9 MB)
+2025-07-16 13:56:05,968 - INFO - [123/188] Copied: 5. Bad Day To Let You Go.mp3 (5.2 MB)
+2025-07-16 13:56:06,279 - INFO - [124/188] Copied: 10. Wreckin' Ball.mp3 (4.9 MB)
+2025-07-16 13:56:06,603 - INFO - [125/188] Copied: 14. I'm The One.mp3 (4.7 MB)
+2025-07-16 13:56:06,953 - INFO - [126/188] Copied: 17. Looking Up From A Long Way Down (Country Version).mp3 (5.1 MB)
+2025-07-16 13:56:07,296 - INFO - [127/188] Copied: 7. Drivin' My Life Away.mp3 (5.0 MB)
+2025-07-16 13:56:07,703 - INFO - [128/188] Copied: 8. Always Will.mp3 (6.2 MB)
+2025-07-16 13:56:08,059 - INFO - [129/188] Copied: 12. Used To The Pain.mp3 (5.4 MB)
+2025-07-16 13:56:08,426 - INFO - [130/188] Copied: 11. Yippy Ky Yay.mp3 (5.5 MB)
+2025-07-16 13:56:08,815 - INFO - [131/188] Copied: 15. If She Only Knew.mp3 (6.0 MB)
+2025-07-16 13:56:09,185 - INFO - [132/188] Copied: 18. The Healing End.mp3 (5.4 MB)
+2025-07-16 13:56:09,564 - INFO - [133/188] Copied: 19. Almost Jamaica.mp3 (5.6 MB)
+2025-07-16 13:56:09,930 - INFO - [134/188] Copied: 13. Set You Free.mp3 (5.5 MB)
+2025-07-16 13:56:10,303 - INFO - [135/188] Copied: 14. Come Back To Me Blues (Dance Mix).mp3 (5.6 MB)
+2025-07-16 13:56:10,721 - INFO - [136/188] Copied: 18. Leaving On Her Mind.mp3 (6.3 MB)
+2025-07-16 13:56:11,089 - INFO - [137/188] Copied: 14. Ticket Out Of Kansas.mp3 (5.5 MB)
+2025-07-16 13:56:11,358 - INFO - [138/188] Copied: 15. Don't Try To Find Me.mp3 (4.4 MB)
+2025-07-16 13:56:11,706 - INFO - [139/188] Copied: 19. Close Harmony.mp3 (5.1 MB)
+2025-07-16 13:56:12,061 - INFO - [140/188] Copied: 15. Life Goes On.mp3 (5.3 MB)
+2025-07-16 13:56:12,455 - INFO - [141/188] Copied: 15. That Old Country Dance Floor.mp3 (5.8 MB)
+2025-07-16 13:56:12,821 - INFO - [142/188] Copied: 16. It's Your Life.mp3 (5.3 MB)
+2025-07-16 13:56:13,146 - INFO - [143/188] Copied: 6. If A Man Answers.mp3 (4.8 MB)
+2025-07-16 13:56:13,534 - INFO - [144/188] Copied: 7. Baby Ain't Rocking Me Right.mp3 (5.7 MB)
+2025-07-16 13:56:13,874 - INFO - [145/188] Copied: 12. No Easy Goodbye.mp3 (5.0 MB)
+2025-07-16 13:56:14,224 - INFO - [146/188] Copied: 14. Talk The Talk And Walk The Walk.mp3 (4.9 MB)
+2025-07-16 13:56:14,485 - INFO - [147/188] Copied: 16. This Time A Diamond Won't Cut It.mp3 (4.3 MB)
+2025-07-16 13:56:14,848 - INFO - [148/188] Copied: 17. Wrangler Walk.mp3 (5.1 MB)
+2025-07-16 13:56:15,138 - INFO - [149/188] Copied: 18. Every Single Thing.mp3 (4.8 MB)
+2025-07-16 13:56:15,488 - INFO - [150/188] Copied: 12. John Wayne Walking Away.mp3 (5.9 MB)
+2025-07-16 13:56:15,844 - INFO - [151/188] Copied: 16. I Wouldn't Tell You No Lie.mp3 (6.1 MB)
+2025-07-16 13:56:16,153 - INFO - [152/188] Copied: 18. Heaven Only Knows.mp3 (5.1 MB)
+2025-07-16 13:56:16,515 - INFO - [153/188] Copied: 16. Cowboy Cadillac (Dance Mix).mp3 (6.0 MB)
+2025-07-16 13:56:16,815 - INFO - [154/188] Copied: 17. Never In A Million Tears.mp3 (5.0 MB)
+2025-07-16 13:56:17,144 - INFO - [155/188] Copied: 18. Looks Like A Job For A Woman.mp3 (5.5 MB)
+2025-07-16 13:56:17,501 - INFO - [156/188] Copied: 19. Everybody's Free (To Get Sunburned).mp3 (6.0 MB)
+2025-07-16 13:56:17,789 - INFO - [157/188] Copied: 18. Daddy's Dreams.mp3 (4.8 MB)
+2025-07-16 13:56:18,166 - INFO - [158/188] Copied: 8. Unsung Hero.mp3 (5.4 MB)
+2025-07-16 13:56:18,489 - INFO - [159/188] Copied: 11. You Should Go.mp3 (5.3 MB)
+2025-07-16 13:56:18,782 - INFO - [160/188] Copied: 14. Angels Don't Fly.mp3 (4.1 MB)
+2025-07-16 13:56:19,144 - INFO - [161/188] Copied: 7. Are Your Eyes Still Blue.mp3 (5.2 MB)
+2025-07-16 13:56:19,498 - INFO - [162/188] Copied: 15. Baby's Got My Number (Dance Mix).mp3 (5.2 MB)
+2025-07-16 13:56:19,840 - INFO - [163/188] Copied: 6. After A Kiss.mp3 (5.1 MB)
+2025-07-16 13:56:20,181 - INFO - [164/188] Copied: 1. She Thinks My Tractor's Sexy.mp3 (5.0 MB)
+2025-07-16 13:56:20,405 - INFO - [165/188] Copied: 10. That's The Way Love Goes.mp3 (3.6 MB)
+2025-07-16 13:56:20,771 - INFO - [166/188] Copied: 16. Jesse Dunn.mp3 (5.3 MB)
+2025-07-16 13:56:21,125 - INFO - [167/188] Copied: 17. No Reason To Quit.mp3 (5.3 MB)
+2025-07-16 13:56:21,460 - INFO - [168/188] Copied: 10. Bring it On.mp3 (4.9 MB)
+2025-07-16 13:56:21,745 - INFO - [169/188] Copied: 15. Something Real.mp3 (4.0 MB)
+2025-07-16 13:56:22,099 - INFO - [170/188] Copied: 14. My Hometown.mp3 (5.3 MB)
+2025-07-16 13:56:22,397 - INFO - [171/188] Copied: 15. The Fun of Your Love.mp3 (4.9 MB)
+2025-07-16 13:56:22,689 - INFO - [172/188] Copied: 17. Devil's Got Your Name.mp3 (4.0 MB)
+2025-07-16 13:56:23,016 - INFO - [173/188] Copied: 18. Jailer's Daughter.mp3 (4.7 MB)
+2025-07-16 13:56:23,342 - INFO - [174/188] Copied: 19. Rodeo Roundup.mp3 (4.8 MB)
+2025-07-16 13:56:23,710 - INFO - [175/188] Copied: 8. Daddy Won't Sell The Farm.mp3 (5.1 MB)
+2025-07-16 13:56:23,984 - INFO - [176/188] Copied: 12. Heart of Mine.mp3 (4.3 MB)
+2025-07-16 13:56:24,348 - INFO - [177/188] Copied: 8. Just Because She Lives There.mp3 (5.3 MB)
+2025-07-16 13:56:24,726 - INFO - [178/188] Copied: 17. Jesse Dunn.mp3 (5.3 MB)
+2025-07-16 13:56:25,071 - INFO - [179/188] Copied: 11. Asking Too Much.mp3 (4.9 MB)
+2025-07-16 13:56:25,382 - INFO - [180/188] Copied: 13. Work This Out.mp3 (4.4 MB)
+2025-07-16 13:56:25,675 - INFO - [181/188] Copied: 15. The Wrecking' Crew.mp3 (4.3 MB)
+2025-07-16 13:56:25,910 - INFO - [182/188] Copied: 19. Yesterday's News.mp3 (3.8 MB)
+2025-07-16 13:56:26,238 - INFO - [183/188] Copied: 16. Don't Ever Let me Go.mp3 (4.7 MB)
+2025-07-16 13:56:26,528 - INFO - [184/188] Copied: 15. Coming up Short Again.mp3 (4.1 MB)
+2025-07-16 13:56:26,862 - INFO - [185/188] Copied: 17. A Boy Like That.mp3 (4.7 MB)
+2025-07-16 13:56:27,135 - INFO - [186/188] Copied: 6. Fallin' Never Felt so Good.mp3 (4.5 MB)
+2025-07-16 13:56:27,361 - INFO - [187/188] Copied: 7. Self Made Man.mp3 (2.9 MB)
+2025-07-16 13:56:27,676 - INFO - [188/188] Copied: 8. Blue Moon.mp3 (5.2 MB)
+2025-07-16 13:56:27,695 - INFO - Report saved to: e:\Country_collection\collection_report.txt
+2025-07-16 13:56:27,695 - INFO - Collection complete!
+2025-07-16 13:56:27,695 - INFO - Copied 188 files (1022.9 MB)
+2025-07-16 13:56:27,695 - INFO - Destination: e:\Country_collection

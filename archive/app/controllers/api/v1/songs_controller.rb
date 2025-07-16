@@ -270,6 +270,118 @@ class Api::V1::SongsController < ApplicationController
               type: 'text/csv'
   end
 
+  def direct_upload
+    # Generate direct upload URL for Active Storage
+    unless params[:filename] && params[:content_type] && params[:byte_size]
+      render json: {
+        success: false,
+        message: "filename, content_type, and byte_size are required"
+      }, status: :bad_request
+      return
+    end
+
+    begin
+      # Create a blob record for direct upload
+      # In Rails 8, we need to provide a checksum for create_before_direct_upload!
+      # We'll use a placeholder that will be updated when the file is uploaded
+      blob = ActiveStorage::Blob.create_before_direct_upload!(
+        filename: params[:filename],
+        content_type: params[:content_type],
+        byte_size: params[:byte_size].to_i,
+        checksum: params[:checksum] || "placeholder_checksum_#{SecureRandom.hex(8)}"
+      )
+
+      # Return the direct upload data
+      render json: {
+        success: true,
+        direct_upload: {
+          url: blob.service_url_for_direct_upload,
+          headers: blob.service_headers_for_direct_upload,
+          signed_id: blob.signed_id
+        }
+      }
+    rescue => e
+      Rails.logger.error "Direct upload error: #{e.message}"
+      render json: {
+        success: false,
+        message: "Failed to create direct upload: #{e.message}"
+      }, status: :internal_server_error
+    end
+  end
+
+  def create_from_blob
+    # Create a song record from an uploaded blob
+    unless params[:blob_signed_id] && params[:filename]
+      render json: {
+        success: false,
+        message: "blob_signed_id and filename are required"
+      }, status: :bad_request
+      return
+    end
+
+    begin
+      # Find the blob by signed ID
+      blob = ActiveStorage::Blob.find_signed(params[:blob_signed_id])
+      
+      unless blob
+        render json: {
+          success: false,
+          message: "Invalid blob signed ID"
+        }, status: :bad_request
+        return
+      end
+
+      # Extract metadata from parameters or filename
+      metadata_params = params[:metadata] || {}
+      title = metadata_params[:title] || extract_title_from_filename(params[:filename])
+      
+      # Create song record
+      song = Song.new(
+        title: title,
+        processing_status: 'needs_review',
+        user: @current_api_user,
+        original_filename: params[:filename]
+      )
+
+      # Attach the blob to the song
+      song.audio_file.attach(blob)
+
+      if song.save
+        # Apply provided metadata if any
+        apply_provided_metadata(song, metadata_params)
+        
+        # Run post-processing unless explicitly skipped
+        unless params[:skip_post_processing] == 'true'
+          AudioFileProcessingJob.perform_later(song.id)
+        end
+        
+        render json: {
+          success: true,
+          message: "Song created successfully from blob",
+          song: {
+            id: song.id,
+            title: song.title,
+            processing_status: song.processing_status,
+            created_at: song.created_at
+          }
+        }, status: :created
+      else
+        render json: {
+          success: false,
+          message: "Failed to save song",
+          errors: song.errors.full_messages
+        }, status: :unprocessable_entity
+      end
+
+    rescue => e
+      Rails.logger.error "Create from blob error: #{e.message}"
+      render json: {
+        success: false,
+        message: "Failed to create song from blob: #{e.message}"
+      }, status: :internal_server_error
+    end
+  end
+
   private
 
   def authenticate_api_user!
@@ -323,9 +435,11 @@ class Api::V1::SongsController < ApplicationController
     
     audio_types = [
       'audio/mpeg',
+      'audio/mp3',
       'audio/wav',
       'audio/flac',
       'audio/mp4',
+      'audio/x-m4a',
       'audio/ogg',
       'audio/aac'
     ]

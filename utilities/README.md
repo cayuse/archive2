@@ -1,227 +1,377 @@
 # Music Archive Utilities
 
-This directory contains utility scripts for interacting with the Music Archive API.
+This directory contains utilities for bulk importing audio files into the Music Archive Rails application.
 
-## Bulk Upload Script
+## Shared Tracking Module
 
-The `bulk_upload.py` script is a core component for adding large amounts of music to the archive. It supports flexible metadata handling and can extract information from filenames.
+### `import_tracker.py` - Shared Tracking Module
 
-### Features
+A comprehensive SQLite-based tracking system that both upload scripts use for uniform tracking capabilities.
 
-- **Flexible URL Configuration**: Connect to any archive instance
-- **Metadata Extraction**: Automatically extract metadata from filenames
-- **Skip Processing**: Option to skip automatic metadata extraction from audio files
-- **Progress Tracking**: Visual progress bar with file information
-- **Dry Run Mode**: Test uploads without actually uploading
-- **Verbose Output**: Detailed logging for debugging
+**Features:**
+- **Cross-Script Compatibility**: Both upload scripts use the same tracking database
+- **Resume Capability**: Can resume interrupted imports from any script
+- **Detailed Error Tracking**: Comprehensive error reporting and recovery
+- **Performance Monitoring**: Track processing time, file sizes, and upload methods
+- **Flexible Querying**: Rich API for querying job and file statistics
 
-### Usage
+**Usage:**
+```python
+from import_tracker import BulkImportTracker, start_job_with_defaults, resume_from_last_job
 
-```bash
-python3 bulk_upload.py <directory_path> [options]
+# Create tracker
+tracker = BulkImportTracker('import_tracking.db')
+
+# Start job with automatic script detection
+start_job_with_defaults(tracker, len(files))
+
+# Resume from last job
+remaining_files = resume_from_last_job(tracker, all_files)
+
+# Track file processing
+file_id = tracker.record_file_start(filepath)
+tracker.record_file_success(file_id, song_id=song_id)
+# or
+tracker.record_file_failure(file_id, error_msg, error_type)
 ```
 
-### Arguments
+## Upload Scripts
 
-- `directory_path`: Path to directory containing audio files
+### 1. Bulk Upload Script (`bulk_upload.py`)
 
-### Options
+A comprehensive Python script for bulk uploading audio files through the Rails API with robust tracking, resume capabilities, and detailed error reporting.
 
+**Features:**
+- **Rails API Integration**: Uploads through Rails API endpoints
+- **Comprehensive Tracking**: Uses shared SQLite tracking module
+- **Resume Capability**: Can resume interrupted imports from where they left off
+- **Error Reporting**: Detailed error tracking with quick summaries and verbose reports
+- **Batch Processing**: Support for processing files in batches for testing
+- **Graceful Shutdown**: Can be stopped gracefully with 'q' key or Ctrl+C
+- **Progress Monitoring**: Real-time progress with detailed statistics
+
+### 2. Universal Upload Script (`universal_upload.py`)
+
+A cross-platform Python script for bulk uploading audio files with direct filesystem access, bypassing Rails for maximum speed.
+
+**Features:**
+- **Direct Filesystem Access**: Bypasses Rails API for maximum upload speed
+- **Cross-platform Compatibility**: Works across Linux, Mac, Windows
+- **Full Unicode Support**: Handles any Unicode characters, spaces, special characters
+- **Concurrent Uploads**: Configurable concurrent upload limits
+- **Comprehensive Tracking**: Uses shared SQLite tracking module
+- **Resume Capability**: Can resume interrupted imports
+- **Error Reporting**: Detailed error tracking and recovery
+- **Robust Path Handling**: Normalizes paths for any filesystem
+
+## Usage
+
+### Bulk Upload (Rails API)
+```bash
+# Start fresh import
+python3 bulk_upload.py ~/Music --start-over --verbose
+
+# Resume from where it left off
+python3 bulk_upload.py ~/Music --resume
+
+# Test with first 100 files
+python3 bulk_upload.py ~/Music --max-count 100
+
+# Show error summary
+python3 bulk_upload.py ~/Music --show-errors
+```
+
+### Universal Upload (Direct Filesystem)
+```bash
+# Start fresh import with concurrent uploads
+python3 universal_upload.py ~/Music --start-over --concurrent 10 --verbose
+
+# Resume from where it left off
+python3 universal_upload.py ~/Music --resume
+
+# Test with first 100 files
+python3 universal_upload.py ~/Music --max-count 100
+
+# Show error summary
+python3 universal_upload.py ~/Music --show-errors
+```
+
+## Command Line Options
+
+### Mode Options
+- `--start-over`: Start fresh, ignore existing tracking data
+- `--resume`: Resume from last successful import
+- `--show-errors`: Show error summary and exit
+- `--show-errors-verbose`: Show detailed error information and exit
+
+### Processing Limits
+- `--max-count N`: Maximum number of files to process
+- `--continue-from N`: Continue from this offset (for batch processing)
+
+### Tracking Options
+- `--tracking-db PATH`: SQLite database for tracking progress (default: import_tracking.db)
+
+### Authentication Options
 - `--url URL`: Base URL of the archive (default: http://localhost:3000)
 - `--username USERNAME`: Username/email for authentication
 - `--password PASSWORD`: Password for authentication
+
+### Other Options
 - `-d, --dry-run`: Show what would be uploaded without actually uploading
 - `-v, --verbose`: Verbose output
-- `--skip-metadata`: Skip automatic metadata extraction from audio files
-- `--extract-metadata`: Extract metadata from filenames (default: enabled)
-- `-h, --help`: Show help message
+- `--concurrent CONCURRENT`: Number of concurrent uploads (universal_upload.py only)
+- `--limit LIMIT`: Limit upload to first N files (universal_upload.py only)
 
-### Examples
+### Controls
+- Press 'q': Stop gracefully after current upload completes
+- Press Ctrl+C: Stop immediately
 
-#### Basic Upload
+## Tracking Database
+
+Both scripts use a shared SQLite database (`import_tracking.db` by default) to track:
+
+### Import Jobs Table
+- Job ID, start/complete times, status
+- Total files, processed files, failed files
+- Command line used for the import
+- Script name and upload method
+
+### File Imports Table
+- Individual file processing status
+- Error messages, types, and details
+- Processing time, file size, format info
+- Song ID and response status from API
+- Upload method used
+
+## Cross-Script Compatibility
+
+The shared tracking module enables powerful workflows:
+
+### Mixed Upload Strategies
 ```bash
-python3 bulk_upload.py ~/Music --username admin@example.com --password mypass
+# Start with fast direct upload
+python3 universal_upload.py ~/Music --max-count 1000 --concurrent 10
+
+# Switch to Rails API for problematic files
+python3 bulk_upload.py ~/Music --resume --show-errors-verbose
 ```
 
-#### Upload to Remote Archive
+### Resume Across Scripts
+- Both scripts can resume from the same tracking database
+- Upload method is tracked and reported
+- Can switch between scripts mid-import
+
+### Unified Error Reporting
 ```bash
-python3 bulk_upload.py ~/Music --url https://myarchive.com --username admin@example.com --password mypass
+# Check errors from any script
+python3 bulk_upload.py ~/Music --show-errors
+python3 universal_upload.py ~/Music --show-errors
 ```
 
-#### Dry Run with Verbose Output
+## Tracking Utilities
+
+### `track_utils.py` - Tracking Management Script
+
+A utility script for managing and querying the tracking database.
+
+**Commands:**
 ```bash
-python3 bulk_upload.py ~/Music --username admin@example.com --password mypass --dry-run --verbose
+# Show all import jobs
+python3 track_utils.py show-all
+
+# Show details of a specific job
+python3 track_utils.py show-job 1
+
+# Show error summary
+python3 track_utils.py show-errors
+
+# Show detailed error report
+python3 track_utils.py show-verbose 2
+
+# List failed files
+python3 track_utils.py list-failed
+
+# List successful files
+python3 track_utils.py list-success
+
+# Show overall statistics
+python3 track_utils.py stats
+
+# Export job data to JSON
+python3 track_utils.py export 1 --output job_data.json
 ```
 
-#### Skip Audio Metadata Extraction
+## Error Reporting
+
+### Quick Summary
 ```bash
-python3 bulk_upload.py ~/Music --username admin@example.com --password mypass --skip-metadata
+python3 bulk_upload.py ~/Music --show-errors
+```
+Shows error types and counts:
+```
+=== ERROR SUMMARY ===
+UPLOAD_ERROR: 15 files
+HTTP_422: 3 files
+NETWORK_ERROR: 1 files
 ```
 
-### Filename Metadata Extraction
+### Detailed Report
+```bash
+python3 bulk_upload.py ~/Music --show-errors-verbose
+```
+Shows full error details for each failed file.
 
-The script can extract metadata from filenames using common patterns:
+## Resume Logic
 
-#### Supported Patterns
+Both scripts can resume interrupted imports by:
 
-1. **Artist - Album - Track - Title**
-   ```
-   Artist Name - Album Title - 01 - Song Title.mp3
-   ```
+1. **Checking tracking database** for the last job
+2. **Identifying processed files** from previous runs
+3. **Skipping already uploaded files** to avoid duplicates
+4. **Continuing from where it left off**
 
-2. **Artist - Album - Title**
-   ```
-   Artist Name - Album Title - Song Title.mp3
-   ```
+## Batch Processing
 
-3. **Artist - Title**
-   ```
-   Artist Name - Song Title.mp3
-   ```
-
-4. **Just Title**
-   ```
-   Song Title.mp3
-   ```
-
-#### Metadata Mapping
-
-- `artist_name`: Artist name
-- `album_title`: Album title
-- `track_number`: Track number (if present)
-- `title`: Song title
-
-### Processing Options
-
-#### Metadata Extraction from Filenames
-- **Enabled by default**: The script automatically extracts metadata from filenames
-- **Disable**: Use `--no-extract-metadata` to disable this feature
-
-#### Audio File Metadata Extraction
-- **Enabled by default**: The Rails API extracts metadata from audio file tags
-- **Skip**: Use `--skip-metadata` to skip this processing step
-
-#### Processing Status
-
-The API sets processing status based on provided metadata:
-
-- **`completed`**: All metadata provided (artist, album, genre)
-- **`needs_review`**: Partial metadata provided
-- **`processing`**: No metadata provided, will extract from file
-- **`new`**: Skip metadata extraction, minimal processing
-
-### Authentication
-
-The script supports two authentication methods:
-
-1. **Command line arguments**:
-   ```bash
-   python3 bulk_upload.py ~/Music --username admin@example.com --password mypass
-   ```
-
-2. **Interactive prompts**:
-   ```bash
-   python3 bulk_upload.py ~/Music
-   # Username/Email: admin@example.com
-   # Password: ********
-   ```
-
-### Error Handling
-
-The script handles various error conditions:
-
-- **Network errors**: Retry logic and clear error messages
-- **Authentication failures**: Clear feedback on credential issues
-- **File access errors**: Graceful handling of permission issues
-- **API errors**: Detailed error messages from the server
-
-### Dependencies
+For large imports, you can process files in batches:
 
 ```bash
-pip install requests tqdm
+# Process first 1000 files
+python3 bulk_upload.py ~/Music --max-count 1000
+
+# Process next 1000 files
+python3 bulk_upload.py ~/Music --continue-from 1000 --max-count 1000
+
+# Continue with remaining files
+python3 bulk_upload.py ~/Music --continue-from 2000
 ```
 
-### Testing
+## Performance Comparison
 
-Use the test script to verify functionality:
+### Bulk Upload (`bulk_upload.py`)
+- **Speed**: Slower (HTTP uploads through Rails)
+- **Reliability**: High (Rails handles all processing)
+- **Use Case**: When you want Rails to handle metadata extraction and processing
+- **Best For**: Smaller batches, when you need Rails processing
 
+### Universal Upload (`universal_upload.py`)
+- **Speed**: Much faster (direct filesystem access)
+- **Reliability**: High (bypasses Rails bottlenecks)
+- **Use Case**: Large bulk imports where speed is critical
+- **Best For**: 65k+ file imports, when you want maximum speed
+
+## Tag Extractor Scripts
+
+### Standalone Tag Extractor (`standalone_tag_extractor.rb`)
+
+A comprehensive Ruby script for extracting metadata from audio files using both `wahwah` and `ffprobe`.
+
+#### Features
+- Extracts all possible metadata tags
+- Uses `ffprobe` as fallback for comprehensive extraction
+- Handles binary data gracefully
+- Outputs in multiple formats (JSON, grep-friendly)
+- Supports all major audio formats
+
+#### Usage
 ```bash
-python3 test_bulk_upload.py
+ruby standalone_tag_extractor.rb <file_path>
 ```
 
-This will create test files and run dry-run tests to verify the upload process.
+#### Output Formats
+- **JSON**: Complete metadata structure
+- **Grep-friendly**: Simple key-value pairs for easy searching
+- **Binary data handling**: Notes presence of binary data without displaying it
 
-## API Integration
+### Windows Tag Extractor (`windows_tag_extractor.rb`)
 
-The bulk upload script integrates with the Music Archive API:
+Specialized version for Windows environments with WSL compatibility.
 
-### Endpoints Used
+### Storage Tag Extractor (`storage_tag_extractor.rb`)
 
-- `POST /api/v1/auth/login`: Authentication
-- `POST /api/v1/songs/bulk_upload`: File upload with metadata
+Extracts metadata from files already uploaded to Active Storage.
 
-### API Features
+## Upload Method Comparison
 
-- **Flexible Metadata**: Send any combination of metadata parameters
-- **Processing Control**: Skip or enable metadata extraction
-- **Status Tracking**: Monitor processing status of uploaded songs
-- **Error Recovery**: Graceful handling of upload failures
+See `UPLOAD_METHODS_COMPARISON.md` for detailed comparison of different upload approaches and their performance characteristics.
 
-### Response Format
+## API Documentation
 
-```json
-{
-  "success": true,
-  "message": "Song uploaded successfully",
-  "song": {
-    "id": 123,
-    "title": "Song Title",
-    "processing_status": "completed",
-    "created_at": "2025-07-15T14:30:00Z"
-  }
-}
-```
+See `API_DOCUMENTATION.md` for Rails API endpoint documentation.
+
+## Test Scripts
+
+- `test_api.sh`: Test API endpoints
+
+## Requirements
+
+- Python 3.6+
+- Ruby 2.7+ (for tag extractors)
+- ffmpeg/ffprobe (for comprehensive metadata extraction)
+- Rails 8 application running
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Authentication failed**
-   - Check username and password
-   - Verify the user has upload permissions
+1. **Authentication Errors**: Check username/password and API URL
+2. **Network Errors**: Verify Rails server is running and accessible
+3. **File Access Errors**: Ensure script has read permissions for audio files
+4. **WSL File Access**: Use Windows paths or copy files into container
 
-2. **Network errors**
-   - Check the archive URL is correct
-   - Verify network connectivity
+### Error Types
 
-3. **File not found**
-   - Check the directory path exists
-   - Verify file permissions
+- `UPLOAD_ERROR`: General upload failures
+- `HTTP_422`: Invalid file format or metadata issues
+- `NETWORK_ERROR`: Connection problems
+- `AUTHENTICATION_ERROR`: Login/authorization issues
+- `FILE_ACCESS_ERROR`: File system access problems
 
-4. **Upload failures**
-   - Check file format is supported
-   - Verify file is not corrupted
+### Debugging
 
-### Debug Mode
+1. Use `--verbose` for detailed output
+2. Check error reports with `--show-errors-verbose`
+3. Use `--dry-run` to test without uploading
+4. Start with small batches using `--max-count`
 
-Use verbose output to see detailed information:
+## Choosing the Right Script
 
-```bash
-python3 bulk_upload.py ~/Music --username admin@example.com --password mypass --verbose
-```
+### Use `bulk_upload.py` when:
+- You want Rails to handle all metadata extraction
+- You need Rails processing and validation
+- You're doing smaller batches
+- You want maximum reliability over speed
 
-### Dry Run Testing
+### Use `universal_upload.py` when:
+- You need maximum upload speed
+- You're doing large bulk imports (65k+ files)
+- You want to bypass Rails bottlenecks
+- You're doing the initial bulk import
 
-Test uploads without actually uploading:
+For your 65k file import, I recommend starting with `universal_upload.py` for speed, then using `bulk_upload.py` for any files that need Rails processing.
 
-```bash
-python3 bulk_upload.py ~/Music --username admin@example.com --password mypass --dry-run --verbose
-```
+## Benefits of Shared Tracking Module
 
-## Future Enhancements
+### **1. Uniform Tracking**
+- Both scripts use identical tracking logic
+- Consistent error reporting and resume capabilities
+- Same database schema and query interface
 
-- **Batch processing**: Upload multiple files in parallel
-- **Resume functionality**: Continue interrupted uploads
-- **Metadata validation**: Verify extracted metadata accuracy
-- **Progress persistence**: Save upload progress for large batches
-- **Custom metadata**: Allow custom metadata field mapping 
+### **2. Cross-Script Resume**
+- Can start with one script and resume with another
+- Upload method is tracked and reported
+- Seamless switching between upload strategies
+
+### **3. Easier Maintenance**
+- Single source of truth for tracking logic
+- Bug fixes and improvements benefit both scripts
+- Consistent API across all upload tools
+
+### **4. Rich Querying**
+- `track_utils.py` provides comprehensive database management
+- Export capabilities for analysis
+- Statistical reporting across all jobs
+
+### **5. Future Extensibility**
+- Easy to add new upload scripts that use the same tracking
+- Can add new tracking features without modifying upload scripts
+- Modular design allows independent evolution 

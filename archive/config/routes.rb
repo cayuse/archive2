@@ -87,6 +87,8 @@ Rails.application.routes.draw do
           put :bulk_update
           delete :bulk_destroy
           post :bulk_upload
+          post :direct_upload
+          post :create_from_blob
           get :export
         end
       end

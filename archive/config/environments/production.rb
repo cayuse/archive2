@@ -58,6 +58,9 @@ Rails.application.configure do
 
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "musicarchive.com") }
+  
+  # Set default URL options for Active Storage
+  config.active_storage.default_url_options = { host: ENV.fetch("APP_HOST", "musicarchive.com") }
 
   # Configure email delivery for production using SendGrid
   config.action_mailer.delivery_method = :sendgrid_actionmailer
