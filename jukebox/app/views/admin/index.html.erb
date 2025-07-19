@@ -1,0 +1,104 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <h1 class="mb-4">🔧 Admin Dashboard</h1>
+      
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <div class="card">
+            <div class="card-body text-center">
+              <h5 class="card-title">Songs</h5>
+              <h2 class="text-primary"><%= @stats[:total_songs] %></h2>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+          <div class="card">
+            <div class="card-body text-center">
+              <h5 class="card-title">Artists</h5>
+              <h2 class="text-success"><%= @stats[:total_artists] %></h2>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+          <div class="card">
+            <div class="card-body text-center">
+              <h5 class="card-title">Albums</h5>
+              <h2 class="text-info"><%= @stats[:total_albums] %></h2>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+          <div class="card">
+            <div class="card-body text-center">
+              <h5 class="card-title">Genres</h5>
+              <h2 class="text-warning"><%= @stats[:total_genres] %></h2>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+          <div class="card">
+            <div class="card-body text-center">
+              <h5 class="card-title">Cached Songs</h5>
+              <h2 class="text-secondary"><%= @stats[:cached_songs] %></h2>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+          <div class="card">
+            <div class="card-body text-center">
+              <h5 class="card-title">Queue Length</h5>
+              <h2 class="text-danger"><%= @stats[:queue_length] %></h2>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-3 mb-2">
+                  <%= link_to "View Songs", songs_path, class: "btn btn-outline-primary w-100" %>
+                </div>
+                <div class="col-md-3 mb-2">
+                  <%= link_to "View Artists", artists_path, class: "btn btn-outline-success w-100" %>
+                </div>
+                <div class="col-md-3 mb-2">
+                  <%= link_to "View Albums", albums_path, class: "btn btn-outline-info w-100" %>
+                </div>
+                <div class="col-md-3 mb-2">
+                  <%= link_to "Live View", live_path, class: "btn btn-outline-warning w-100" %>
+                </div>
+              </div>
+              
+              <div class="row mt-3">
+                <div class="col-md-3 mb-2">
+                  <%= link_to "System Config", system_path, class: "btn btn-outline-secondary w-100" %>
+                </div>
+                <div class="col-md-3 mb-2">
+                  <%= link_to "Archive Sync", archive_sync_path, class: "btn btn-outline-dark w-100" %>
+                </div>
+                <div class="col-md-3 mb-2">
+                  <%= link_to "Cache Status", cache_path, class: "btn btn-outline-info w-100" %>
+                </div>
+                <div class="col-md-3 mb-2">
+                  <%= link_to "Sync Status", sync_path, class: "btn btn-outline-success w-100" %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

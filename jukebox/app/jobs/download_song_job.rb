@@ -8,7 +8,7 @@ class DownloadSongJob < ApplicationJob
     return if song.cached?
     
     # Create or find cached song record
-    cached_song = CachedSong.find_or_create_by(song_id: song_id) do |cs|
+    cached_song = JukeboxCachedSong.find_or_create_by(song_id: song_id) do |cs|
       cs.status = 'downloading'
       cs.started_at = Time.current
     end

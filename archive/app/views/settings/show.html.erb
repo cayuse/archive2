@@ -46,6 +46,11 @@
                   class: "nav-link #{@current_tab == 'song_types' ? 'active' : ''}",
                   data: { bs_toggle: "tab" } %>
             </li>
+            <li class="nav-item" role="presentation">
+              <%= link_to "Archive Sync", archive_sync_settings_path, 
+                  class: "nav-link #{@current_tab == 'archive_sync' ? 'active' : ''}",
+                  data: { bs_toggle: "tab" } %>
+            </li>
           </ul>
         </div>
         <div class="card-body">
@@ -114,6 +119,22 @@
                             Configure song type categories and metadata (coming soon).
                           </p>
                           <%= link_to "Go to Song Types", song_types_settings_path, class: "btn btn-sm btn-outline-primary" %>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="row mt-3">
+                    <div class="col-md-6">
+                      <div class="card h-100">
+                        <div class="card-body">
+                          <h6 class="theme-text-primary">
+                            <i class="fas fa-sync me-2"></i>Archive Sync
+                          </h6>
+                          <p class="theme-text-secondary small">
+                            Configure archive-to-archive synchronization and master-slave relationships.
+                          </p>
+                          <%= link_to "Go to Archive Sync", archive_sync_settings_path, class: "btn btn-sm btn-outline-primary" %>
                         </div>
                       </div>
                     </div>

@@ -1,0 +1,79 @@
+# Repository-wide ignores for dockercrap project
+
+# OS and editor files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Docker and container files
+.dockerignore
+docker-compose.override.yml
+
+# Backup and archive files
+*.tar
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# Large binary files
+*.mp3
+*.mp4
+*.avi
+*.mov
+*.wav
+*.flac
+*.ogg
+
+# Database dumps
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+
+# Node.js (if any root-level node modules)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ruby
+*.gem
+*.rbc
+/.config
+/coverage/
+/InstalledFiles
+/pkg/
+/spec/reports/
+/spec/examples.txt
+/test/tmp/
+/test/version_tmp/
+/tmp/
+
+# Ignore the large jukebox-dev.tar file that's already in the repo
+jukebox/jukebox-dev.tar 

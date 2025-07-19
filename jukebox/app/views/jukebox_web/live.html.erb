@@ -1,0 +1,184 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <h1 class="mb-4">🎵 Live Jukebox</h1>
+      
+      <!-- Current Song -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-play-circle me-2"></i>
+            Now Playing
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if @current_song %>
+            <div class="row align-items-center">
+              <div class="col-md-8">
+                <h4 class="mb-1"><%= @current_song.title %></h4>
+                <p class="text-muted mb-2">
+                  <i class="fas fa-user me-1"></i>
+                  <%= @current_song.artist&.name || 'Unknown Artist' %>
+                </p>
+                <% if @current_song.album %>
+                  <p class="text-muted mb-0">
+                    <i class="fas fa-compact-disc me-1"></i>
+                    <%= @current_song.album.title %>
+                  </p>
+                <% end %>
+              </div>
+              <div class="col-md-4 text-end">
+                <div class="btn-group" role="group">
+                  <button class="btn btn-outline-primary" onclick="skipSong()">
+                    <i class="fas fa-forward"></i> Skip
+                  </button>
+                  <% if @status[:is_playing] %>
+                    <button class="btn btn-outline-warning" onclick="pausePlayer()">
+                      <i class="fas fa-pause"></i> Pause
+                    </button>
+                  <% else %>
+                    <button class="btn btn-outline-success" onclick="playPlayer()">
+                      <i class="fas fa-play"></i> Play
+                    </button>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <i class="fas fa-music fa-3x text-muted mb-3"></i>
+              <h5 class="text-muted">No song currently playing</h5>
+              <p class="text-muted">Add songs to the queue to start playing</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+      
+      <!-- Upcoming Songs -->
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="fas fa-list me-2"></i>
+            Upcoming Songs
+          </h5>
+          <span class="badge bg-primary"><%= @upcoming_songs.length %> songs</span>
+        </div>
+        <div class="card-body">
+          <% if @upcoming_songs.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;">#</th>
+                    <th>Song</th>
+                    <th>Artist</th>
+                    <th>Album</th>
+                    <th style="width: 100px;">Source</th>
+                    <th style="width: 100px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @upcoming_songs.each_with_index do |item, index| %>
+                    <tr>
+                      <td>
+                        <span class="badge bg-secondary"><%= index + 1 %></span>
+                      </td>
+                      <td>
+                        <strong><%= item[:song].title %></strong>
+                        <% if item[:song].duration %>
+                          <br><small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            <%= format_duration(item[:song].duration) %>
+                          </small>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if item[:song].artist %>
+                          <%= link_to item[:song].artist.name, artist_path(item[:song].artist), class: "text-decoration-none" %>
+                        <% else %>
+                          <span class="text-muted">Unknown Artist</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if item[:song].album %>
+                          <%= link_to item[:song].album.title, album_path(item[:song].album), class: "text-decoration-none" %>
+                        <% else %>
+                          <span class="text-muted">No Album</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if item[:source] == 'queue' %>
+                          <span class="badge bg-success">Queue</span>
+                        <% else %>
+                          <span class="badge bg-info">Random</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if item[:source] == 'queue' %>
+                          <button class="btn btn-sm btn-outline-danger" onclick="removeFromQueue(<%= item[:position] %>)">
+                            <i class="fas fa-times"></i>
+                          </button>
+                        <% else %>
+                          <button class="btn btn-sm btn-outline-primary" onclick="addToQueue(<%= item[:song].id %>)">
+                            <i class="fas fa-plus"></i>
+                          </button>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <i class="fas fa-list fa-3x text-muted mb-3"></i>
+              <h5 class="text-muted">No upcoming songs</h5>
+              <p class="text-muted">Add songs to the queue or configure playlists</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function skipSong() {
+  fetch('/api/jukebox/player/skip', { method: 'POST' })
+    .then(() => location.reload())
+    .catch(error => console.error('Error skipping song:', error));
+}
+
+function playPlayer() {
+  fetch('/api/jukebox/player/play', { method: 'POST' })
+    .then(() => location.reload())
+    .catch(error => console.error('Error playing:', error));
+}
+
+function pausePlayer() {
+  fetch('/api/jukebox/player/pause', { method: 'POST' })
+    .then(() => location.reload())
+    .catch(error => console.error('Error pausing:', error));
+}
+
+function addToQueue(songId) {
+  fetch('/api/jukebox/queue', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ song_id: songId })
+  })
+    .then(() => location.reload())
+    .catch(error => console.error('Error adding to queue:', error));
+}
+
+function removeFromQueue(position) {
+  fetch(`/api/jukebox/queue/${position}`, { method: 'DELETE' })
+    .then(() => location.reload())
+    .catch(error => console.error('Error removing from queue:', error));
+}
+
+// Auto-refresh every 30 seconds
+setInterval(() => {
+  location.reload();
+}, 30000);
+</script> 

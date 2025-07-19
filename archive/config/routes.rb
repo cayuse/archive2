@@ -3,15 +3,31 @@ Rails.application.routes.draw do
   # Note: PowerSync is implemented as a custom service, not as a Rails engine
   # mount PowerSync::Engine => '/powersync'
   
-  # Settings routes (admin only)
+    # Settings routes (admin only)
   resource :settings, only: [:show, :update] do
     collection do
       get :theme
       get :api_keys
       get :song_types
       get :general
+      get :archive_sync
+      post :test_connection
+      post :force_sync
+      post :force_file_sync
+      post :generate_slave_key
+      post :generate_jukebox_key
+      post :perform_initial_sync
     end
   end
+  
+  # Key management routes
+  post '/settings/regenerate_slave_key/:id', to: 'settings#regenerate_slave_key', as: :regenerate_slave_key
+  post '/settings/deactivate_slave_key/:id', to: 'settings#deactivate_slave_key', as: :deactivate_slave_key
+  post '/settings/reactivate_slave_key/:id', to: 'settings#reactivate_slave_key', as: :reactivate_slave_key
+  post '/settings/regenerate_jukebox_key/:id', to: 'settings#regenerate_jukebox_key', as: :regenerate_jukebox_key
+  post '/settings/deactivate_jukebox_key/:id', to: 'settings#deactivate_jukebox_key', as: :deactivate_jukebox_key
+  post '/settings/reactivate_jukebox_key/:id', to: 'settings#reactivate_jukebox_key', as: :reactivate_jukebox_key
+  
   # Authentication routes
   get '/login', to: 'sessions#new', as: :login
   post '/login', to: 'sessions#create'
@@ -83,6 +99,15 @@ Rails.application.routes.draw do
       post '/auth/login', to: 'auth#login'
       post '/auth/logout', to: 'auth#logout'
       get '/auth/verify', to: 'auth#verify'
+      
+      # Archive sync API
+      namespace :sync do
+        get '/changes', to: 'sync#changes'
+        post '/apply', to: 'sync#apply'
+        get '/status', to: 'sync#status'
+        get '/jukebox_status', to: 'sync#jukebox_status'
+        get '/initial_data', to: 'sync#initial_data'
+      end
       
       # Bulk song operations (admin/moderator only)
       resources :songs, only: [:index, :show] do

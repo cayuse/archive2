@@ -1,35 +1,23 @@
 class Artist < ApplicationRecord
   # Associations
-  has_many :songs, dependent: :destroy
-  has_many :albums, through: :songs
-  has_and_belongs_to_many :genres, join_table: :artists_genres
+  has_many :songs, dependent: :nullify
+  has_many :albums, dependent: :nullify
 
-  # Active Storage for artist images
-  has_one_attached :image
-  
   # Validations
-  validates :name, presence: true, uniqueness: true, length: { minimum: 1, maximum: 100 }
-  validates :country, length: { maximum: 50 }, allow_blank: true
-  validates :formed_year, numericality: { 
-    only_integer: true, 
-    greater_than_or_equal_to: 1900, 
-    less_than_or_equal_to: 2030 
-  }, allow_blank: true
-  validates :website, format: { 
-    with: URI::regexp(%w[http https]), 
-    message: "must be a valid URL" 
-  }, allow_blank: true
-  
+  validates :name, presence: true, length: { maximum: 200 }
+  validates :country, length: { maximum: 100 }
+  validates :formed_year, numericality: { only_integer: true, greater_than: 1800, less_than: 2100 }, allow_blank: true
+
   # Scopes
   scope :by_name, -> { order(:name) }
-  scope :by_country, ->(country) { where(country: country) }
-  scope :by_year, ->(year) { where(formed_year: year) }
   scope :recent, -> { order(created_at: :desc) }
-  
+  scope :with_songs, -> { joins(:songs).distinct }
+  scope :with_albums, -> { joins(:albums).distinct }
+
   # Search scopes
   scope :search_by_name, ->(query) { where("name ILIKE ?", "%#{query}%") }
   scope :search_by_country, ->(query) { where("country ILIKE ?", "%#{query}%") }
-  
+
   # Full-text search
   scope :full_text_search, ->(query) {
     return none if query.blank?
@@ -41,25 +29,44 @@ class Artist < ApplicationRecord
       .order("ts_rank(search_vector, #{ts_query}) DESC")
       .limit(50)
   }
-  
+
+  # Sync tracking
+  after_create :track_sync_change
+  after_update :track_sync_change
+  after_destroy :track_sync_change
+
   # Instance methods
   def display_name
     name
   end
-  
-  def image_url_or_default
-    if image.attached?
-      image
-    else
-      image_url.presence || "default_artist.jpg"
-    end
+
+  def song_count
+    songs.count
   end
-  
-  def has_albums?
-    albums.exists?
-  end
-  
+
   def album_count
     albums.count
+  end
+
+  def has_metadata?
+    country.present? || formed_year.present?
+  end
+
+  private
+
+  def track_sync_change
+    return unless SystemSetting.sync_enabled?
+    return if SystemSetting.standalone?  # Don't track in standalone mode
+    
+    change_type = destroyed? ? 'delete' : (previously_new_record? ? 'create' : 'update')
+    
+    SyncChange.create!(
+      table_name: self.class.table_name,
+      record_id: id,
+      change_type: change_type,
+      change_data: destroyed? ? nil : attributes
+    )
+  rescue => e
+    Rails.logger.error "Failed to track sync change for artist #{id}: #{e.message}"
   end
 end 

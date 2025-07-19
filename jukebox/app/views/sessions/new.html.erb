@@ -1,0 +1,33 @@
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+      <div class="card mt-5">
+        <div class="card-header text-center">
+          <h4>🎵 Jukebox Login</h4>
+        </div>
+        <div class="card-body">
+          <%= form_with url: login_path, method: :post, local: true do |form| %>
+            <div class="mb-3">
+              <%= form.label :email, "Email", class: "form-label" %>
+              <%= form.email_field :email, class: "form-control", required: true, autofocus: true %>
+            </div>
+            
+            <div class="mb-3">
+              <%= form.label :password, "Password", class: "form-label" %>
+              <%= form.password_field :password, class: "form-control", required: true %>
+            </div>
+            
+            <div class="d-grid">
+              <%= form.submit "Log In", class: "btn btn-primary" %>
+            </div>
+          <% end %>
+        </div>
+        <div class="card-footer text-center">
+          <small class="text-muted">
+            Default admin: admin@musicarchive.com / admin123
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

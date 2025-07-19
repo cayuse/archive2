@@ -65,7 +65,7 @@ class JukeboxService
     end
     
     # Add to queue
-    queue_item = QueueItem.create!(
+    queue_item = JukeboxQueueItem.create!(
       song_id: song_id,
       position: next_queue_position,
       added_at: Time.current
@@ -82,19 +82,19 @@ class JukeboxService
   
   # Get current queue
   def queue
-    QueueItem.includes(:song).order(:position)
+    JukeboxQueueItem.includes(:song).order(:position)
   end
   
   # Remove song from queue
   def remove_from_queue(position)
-    queue_item = QueueItem.find_by(position: position)
+    queue_item = JukeboxQueueItem.find_by(position: position)
     return false unless queue_item
     
     # Remove from Redis
     @redis.lrem('jukebox:queue', 0, queue_item.song_id.to_s)
     
     # Update positions
-    QueueItem.where('position > ?', position).update_all('position = position - 1')
+    JukeboxQueueItem.where('position > ?', position).update_all('position = position - 1')
     
     queue_item.destroy
     true
@@ -102,18 +102,18 @@ class JukeboxService
   
   # Clear entire queue
   def clear_queue
-    QueueItem.destroy_all
+    JukeboxQueueItem.destroy_all
     @redis.del('jukebox:queue')
   end
   
   # Get random songs from playlists
   def get_random_songs(count = 10)
     # Get all public playlists
-    playlists = Playlist.where(is_public: true)
+    playlists = JukeboxPlaylist.where(is_public: true)
     
     # Get all songs from these playlists
-    song_ids = PlaylistSong.joins(:playlist)
-                           .where(playlists: { is_public: true })
+    song_ids = JukeboxPlaylistSong.joins(:jukebox_playlist)
+                           .where(jukebox_playlists: { is_public: true })
                            .pluck(:song_id)
                            .uniq
     
@@ -203,10 +203,10 @@ class JukeboxService
   
   # Get popular playlists
   def popular_playlists(limit = 10)
-    Playlist.where(is_public: true)
-            .joins(:playlist_songs)
-            .group('playlists.id')
-            .order('COUNT(playlist_songs.id) DESC')
+    JukeboxPlaylist.where(is_public: true)
+            .joins(:jukebox_playlist_songs)
+            .group('jukebox_playlists.id')
+            .order('COUNT(jukebox_playlist_songs.id) DESC')
             .limit(limit)
   end
   
@@ -215,42 +215,7 @@ class JukeboxService
     Song.order(created_at: :desc).limit(limit)
   end
   
-  # Get cached songs
-  def cached_songs
-    Song.joins(:cached_song)
-  end
-  
-  # Get uncached songs
-  def uncached_songs
-    Song.left_joins(:cached_song).where(cached_songs: { id: nil })
-  end
-  
-  # Cache management
-  def cache_song(song_id)
-    DownloadSongJob.perform_later(song_id)
-  end
-  
-  def clear_cache
-    CachedSong.destroy_all
-    FileUtils.rm_rf(Rails.root.join('storage', 'cached_songs'))
-    FileUtils.mkdir_p(Rails.root.join('storage', 'cached_songs'))
-  end
-  
-  # Sync status
-  def sync_status
-    {
-      last_sync: last_sync_time,
-      songs_count: Song.count,
-      artists_count: Artist.count,
-      albums_count: Album.count,
-      genres_count: Genre.count,
-      playlists_count: Playlist.count,
-      users_count: User.count
-    }
-  end
-  
-  private
-  
+  # Get current song
   def current_song
     song_id = @redis.get('jukebox:current_song')
     return nil unless song_id
@@ -267,6 +232,42 @@ class JukeboxService
       cached: song.cached?
     }
   end
+  
+  # Get cached songs
+  def cached_songs
+    Song.joins(:jukebox_cached_song)
+  end
+  
+  # Get uncached songs
+  def uncached_songs
+    Song.left_joins(:jukebox_cached_song).where(jukebox_cached_songs: { id: nil })
+  end
+  
+  # Cache management
+  def cache_song(song_id)
+    DownloadSongJob.perform_later(song_id)
+  end
+  
+  def clear_cache
+    JukeboxCachedSong.destroy_all
+    FileUtils.rm_rf(Rails.root.join('storage', 'cached_songs'))
+    FileUtils.mkdir_p(Rails.root.join('storage', 'cached_songs'))
+  end
+  
+  # Sync status
+  def sync_status
+    {
+      last_sync: last_sync_time,
+      songs_count: Song.count,
+      artists_count: Artist.count,
+      albums_count: Album.count,
+      genres_count: Genre.count,
+      playlists_count: JukeboxPlaylist.count,
+      users_count: User.count
+    }
+  end
+  
+  private
   
   def queue_length
     @redis.llen('jukebox:queue')
@@ -285,7 +286,7 @@ class JukeboxService
   end
   
   def cached_songs_count
-    CachedSong.count
+    JukeboxCachedSong.count
   end
   
   def synced_songs_count
@@ -298,7 +299,7 @@ class JukeboxService
   end
   
   def next_queue_position
-    QueueItem.maximum(:position) || 0
+    JukeboxQueueItem.maximum(:position) || 0
   end
   
   def resume_if_needed

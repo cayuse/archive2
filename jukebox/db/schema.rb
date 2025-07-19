@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_19_050008) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_19_191810) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -73,8 +73,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_19_050008) do
     t.integer "volume", default: 80
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "is_public", default: true, null: false
     t.index ["active"], name: "index_jukebox_playlists_on_active"
     t.index ["archive_playlist_id"], name: "index_jukebox_playlists_on_archive_playlist_id", unique: true
+    t.index ["is_public"], name: "index_jukebox_playlists_on_is_public"
     t.index ["jukebox_enabled"], name: "index_jukebox_playlists_on_jukebox_enabled"
   end
 
@@ -109,12 +111,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_19_050008) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "system_settings", force: :cascade do |t|
+    t.string "key", null: false
+    t.text "value", null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_system_settings_on_key", unique: true
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "name"
     t.string "email"
     t.string "role"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "password_digest"
+    t.string "password_confirmation"
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 

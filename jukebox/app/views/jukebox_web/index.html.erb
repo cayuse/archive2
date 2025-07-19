@@ -1,0 +1,40 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <h1>Welcome to Jukebox</h1>
+      <p>Your music management system is running.</p>
+      
+      <div class="row mt-4">
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Artists</h5>
+              <p class="card-text">Manage your music artists</p>
+              <%= link_to "View Artists", artists_path, class: "btn btn-primary" %>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Songs</h5>
+              <p class="card-text">Browse your music collection</p>
+              <%= link_to "View Songs", songs_path, class: "btn btn-primary" %>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Playlists</h5>
+              <p class="card-text">Manage your playlists</p>
+              <%= link_to "View Playlists", playlists_path, class: "btn btn-primary" %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

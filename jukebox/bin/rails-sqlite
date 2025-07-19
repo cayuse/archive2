@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# Unset PostgreSQL environment variables that interfere with SQLite3
+unset POSTGRES_HOST POSTGRES_USER POSTGRES_PASSWORD POSTGRES_PORT
+
+# Set Rails environment to development if not already set
+export RAILS_ENV=${RAILS_ENV:-development}
+
+# Execute the Rails command
+exec ./bin/rails "$@" 

@@ -1,0 +1,73 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>🎨 Theme Configuration</h1>
+        <%= link_to "← Back to System Config", system_path, class: "btn btn-outline-secondary" %>
+      </div>
+      
+      <div class="row">
+        <div class="col-md-8">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Select Theme</h5>
+            </div>
+            <div class="card-body">
+              <%= form_with url: system_themes_path, method: :post, local: true do |form| %>
+                <div class="mb-3">
+                  <label class="form-label">Current Theme: <strong><%= @current_theme %></strong></label>
+                </div>
+                
+                <div class="mb-3">
+                  <%= form.label :theme, "Choose Theme", class: "form-label" %>
+                  <%= form.select :theme, @available_themes.map { |theme| [theme.titleize, theme] }, 
+                                 { selected: @current_theme }, 
+                                 { class: "form-select" } %>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                  <%= form.submit "Update Theme", class: "btn btn-primary" %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Available Themes</h5>
+            </div>
+            <div class="card-body">
+              <% @available_themes.each do |theme| %>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span><%= theme.titleize %></span>
+                  <% if theme == @current_theme %>
+                    <span class="badge bg-success">Active</span>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          
+          <div class="card mt-3">
+            <div class="card-header">
+              <h5 class="mb-0">Theme Information</h5>
+            </div>
+            <div class="card-body">
+              <p class="card-text">
+                Themes control the visual appearance of the jukebox interface. 
+                Changes take effect immediately.
+              </p>
+              <p class="card-text">
+                <small class="text-muted">
+                  Custom themes can be added by creating theme files in the appropriate directory.
+                </small>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

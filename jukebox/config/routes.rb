@@ -1,10 +1,37 @@
 Rails.application.routes.draw do
+  # Session routes
+  get 'login', to: 'sessions#new'
+  post 'login', to: 'sessions#create'
+  delete 'logout', to: 'sessions#destroy'
+  
+  # System configuration routes (admin only)
+  get 'system', to: 'system_config#index'
+  get 'system/themes', to: 'system_config#themes'
+  get 'system/settings', to: 'system_config#settings'
+  
+  # Archive sync routes (admin only)
+  get 'archive_sync', to: 'archive_sync#index'
+  patch 'archive_sync', to: 'archive_sync#update'
+  post 'archive_sync/test_connection', to: 'archive_sync#test_connection'
+  post 'archive_sync/force_sync', to: 'archive_sync#force_sync'
+  
+  # Admin routes
+  get 'admin', to: 'admin#index'
+  
   # Jukebox web interface routes
+  get 'live', to: 'jukebox_web#live'
   get 'search', to: 'jukebox_web#search'
   get 'browse', to: 'jukebox_web#browse'
   get 'queue', to: 'jukebox_web#queue'
   get 'cache', to: 'jukebox_web#cache'
   get 'sync', to: 'jukebox_web#sync'
+  
+  # Resource routes for main entities
+  resources :artists
+  resources :songs
+  resources :albums
+  resources :genres
+  resources :playlists
   
   # Jukebox API routes
   namespace :api do

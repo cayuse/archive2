@@ -1,9 +1,24 @@
-# This file should ensure the existence of records required to run the application in every environment (production,
-# development, test). The code here should be idempotent so that it can be executed at any point in every environment.
-# The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
-#
-# Example:
-#
-#   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
-#     MovieGenre.find_or_create_by!(name: genre_name)
-#   end
+# Create initial admin user only
+# WARNING: Change this password immediately after first login!
+admin = User.find_or_create_by(email: 'admin@musicarchive.com') do |user|
+  user.name = 'System Administrator'
+  user.password = 'admin123'
+  user.password_confirmation = 'admin123'
+  user.role = 'admin'
+end
+
+puts "Admin user created: #{admin.email}"
+puts "WARNING: Default password is 'admin123' - CHANGE THIS IMMEDIATELY!"
+
+# Initialize system settings
+SystemSetting.set('current_theme', 'default', 'Currently active theme')
+SystemSetting.set('site_name', 'Jukebox', 'Site name displayed in navigation')
+SystemSetting.set('site_description', 'A live music jukebox system', 'Site description for SEO')
+
+puts "System settings initialized"
+puts "Seeding completed!"
+puts ""
+puts "SECURITY REMINDER:"
+puts "- Change the admin password immediately after first login"
+puts "- Create additional users through the web interface"
+puts "- Never commit passwords to version control"

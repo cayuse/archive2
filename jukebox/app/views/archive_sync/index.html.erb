@@ -1,0 +1,282 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <!-- Notice Container -->
+      <div id="notice-container"></div>
+      
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Archive Synchronization</h1>
+        <div>
+          <%= link_to "Back to Admin", admin_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+      
+      <!-- Sync Status -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Sync Status</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <dl class="row">
+                <dt class="col-sm-4">Status:</dt>
+                <dd class="col-sm-8">
+                  <span class="badge bg-<%= @sync_status[:running] ? 'success' : 'danger' %>">
+                    <%= @sync_status[:running] ? 'Running' : 'Stopped' %>
+                  </span>
+                </dd>
+                
+                <dt class="col-sm-4">Last Sync:</dt>
+                <dd class="col-sm-8">
+                  <% if @sync_status[:last_sync] %>
+                    <%= @sync_status[:last_sync].strftime("%Y-%m-%d %H:%M:%S") %>
+                  <% else %>
+                    <span class="text-muted">Never</span>
+                  <% end %>
+                </dd>
+                
+                <dt class="col-sm-4">Sync Count:</dt>
+                <dd class="col-sm-8"><%= @sync_status[:sync_count] %></dd>
+                
+                <dt class="col-sm-4">Error Count:</dt>
+                <dd class="col-sm-8">
+                  <span class="text-<%= @sync_status[:error_count] > 0 ? 'danger' : 'success' %>">
+                    <%= @sync_status[:error_count] %>
+                  </span>
+                </dd>
+              </dl>
+            </div>
+            
+            <div class="col-md-6">
+              <dl class="row">
+                <dt class="col-sm-4">Archive Role:</dt>
+                <dd class="col-sm-8">
+                  <span class="badge bg-<%= @sync_status[:archive_role] == 'master' ? 'primary' : (@sync_status[:archive_role] == 'slave' ? 'info' : 'secondary') %>">
+                    <%= @sync_status[:archive_role]&.titleize %>
+                  </span>
+                </dd>
+                
+                <dt class="col-sm-4">Node ID:</dt>
+                <dd class="col-sm-8"><%= @sync_status[:node_id] %></dd>
+                
+                <dt class="col-sm-4">Master URL:</dt>
+                <dd class="col-sm-8">
+                  <% if @sync_status[:master_url].present? %>
+                    <%= @sync_status[:master_url] %>
+                  <% else %>
+                    <span class="text-muted">Not configured</span>
+                  <% end %>
+                </dd>
+                
+                <dt class="col-sm-4">Sync Enabled:</dt>
+                <dd class="col-sm-8">
+                  <span class="badge bg-<%= @sync_status[:sync_enabled] ? 'success' : 'secondary' %>">
+                    <%= @sync_status[:sync_enabled] ? 'Yes' : 'No' %>
+                  </span>
+                </dd>
+              </dl>
+            </div>
+          </div>
+          
+          <div class="mt-3">
+            <%= link_to "Force Sync Now", archive_sync_force_sync_path, method: :post, class: "btn btn-primary", data: { confirm: "Are you sure you want to force a sync?" } %>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Configuration Form -->
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Archive Configuration</h5>
+        </div>
+        <div class="card-body">
+          <%= form_with url: archive_sync_path, method: :patch, local: true do |form| %>
+            <div class="row">
+              <div class="col-md-6">
+                <h6>Basic Settings</h6>
+                
+                <div class="mb-3">
+                  <%= form.label :archive_role, "Archive Role", class: "form-label" %>
+                  <%= form.select :archive_role, 
+                      options_for_select([
+                        ['Standalone', 'standalone'],
+                        ['Master', 'master'],
+                        ['Slave', 'slave']
+                      ], @system_settings[:archive_role]),
+                      {}, { class: "form-select" } %>
+                  <div class="form-text">Determines the role of this archive in the sync network</div>
+                </div>
+                
+                <div class="mb-3">
+                  <%= form.label :archive_node_id, "Node ID", class: "form-label" %>
+                  <%= form.text_field :archive_node_id, value: @system_settings[:archive_node_id], class: "form-control" %>
+                  <div class="form-text">Unique identifier for this archive node</div>
+                </div>
+                
+                <div class="mb-3">
+                  <%= form.label :master_archive_url, "Master Archive URL", class: "form-label" %>
+                  <%= form.text_field :master_archive_url, value: @system_settings[:master_archive_url], class: "form-control", placeholder: "http://master-archive.example.com" %>
+                  <div class="form-text">URL of the master archive (required for slave nodes)</div>
+                </div>
+                
+                <div class="mb-3">
+                  <button type="button" class="btn btn-outline-info btn-sm" onclick="testConnection()">
+                    <i class="fas fa-plug me-1"></i>Test Connection
+                  </button>
+                  <div id="connection-test-result" class="mt-2"></div>
+                </div>
+              </div>
+              
+              <div class="col-md-6">
+                <h6>Sync Settings</h6>
+                
+                <div class="mb-3">
+                  <div class="form-check">
+                    <%= form.check_box :sync_enabled, { class: "form-check-input" }, "1", "0" %>
+                    <%= form.label :sync_enabled, "Enable Database Sync", class: "form-check-label" %>
+                  </div>
+                  <div class="form-text">Enable PowerSync database synchronization</div>
+                </div>
+                
+                <div class="mb-3">
+                  <%= form.label :sync_interval, "Sync Interval (seconds)", class: "form-label" %>
+                  <%= form.number_field :sync_interval, value: @system_settings[:sync_interval], class: "form-control", min: 60, max: 3600 %>
+                  <div class="form-text">How often to perform sync operations (60-3600 seconds)</div>
+                </div>
+                
+                <div class="mb-3">
+                  <div class="form-check">
+                    <%= form.check_box :rsync_enabled, { class: "form-check-input" }, "1", "0" %>
+                    <%= form.label :rsync_enabled, "Enable File Sync (rsync)", class: "form-check-label" %>
+                  </div>
+                  <div class="form-text">Enable rsync file synchronization</div>
+                </div>
+                
+                <div class="mb-3">
+                  <%= form.label :rsync_source_path, "rsync Source Path", class: "form-label" %>
+                  <%= form.text_field :rsync_source_path, value: @system_settings[:rsync_source_path], class: "form-control" %>
+                  <div class="form-text">Source path for rsync (Active Storage base path)</div>
+                </div>
+                
+                <div class="mb-3">
+                  <%= form.label :rsync_dest_path, "rsync Destination Path", class: "form-label" %>
+                  <%= form.text_field :rsync_dest_path, value: @system_settings[:rsync_dest_path], class: "form-control" %>
+                  <div class="form-text">Destination path for rsync (on slave nodes)</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-4">
+              <%= form.submit "Save Configuration", class: "btn btn-primary" %>
+              <%= link_to "Cancel", admin_path, class: "btn btn-outline-secondary ms-2" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+      
+      <!-- Help Information -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h5 class="mb-0">Configuration Help</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4">
+              <h6>Standalone Mode</h6>
+              <p class="small text-muted">Archive operates independently with no sync to other nodes.</p>
+            </div>
+            
+            <div class="col-md-4">
+              <h6>Master Mode</h6>
+              <p class="small text-muted">Archive acts as the source of truth and pushes changes to slave nodes.</p>
+            </div>
+            
+            <div class="col-md-4">
+              <h6>Slave Mode</h6>
+              <p class="small text-muted">Archive pulls changes from a master archive and maintains a copy.</p>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <div class="alert alert-info">
+            <h6><i class="fas fa-info-circle me-2"></i>Important Notes</h6>
+            <ul class="mb-0">
+              <li>Database sync uses PowerSync for metadata synchronization</li>
+              <li>File sync uses rsync for Active Storage file synchronization</li>
+              <li>Changes to sync settings require a PowerSync restart</li>
+              <li>Ensure proper network connectivity between archive nodes</li>
+              <li>Configure SSH keys for rsync file synchronization</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function testConnection() {
+  const masterUrl = document.getElementById('master_archive_url').value || '<%= @system_settings[:master_archive_url] %>';
+  
+  if (!masterUrl) {
+    showConnectionResult('Please enter a master archive URL first.', 'warning');
+    return;
+  }
+  
+  const resultDiv = document.getElementById('connection-test-result');
+  resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Testing connection...';
+  
+  fetch('/archive_sync/test_connection', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+    },
+    body: JSON.stringify({ master_url: masterUrl })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showConnectionResult(`✅ ${data.message}`, 'success');
+    } else {
+      showConnectionResult(`❌ ${data.error}`, 'danger');
+    }
+  })
+  .catch(error => {
+    showConnectionResult(`❌ Connection test failed: ${error.message}`, 'danger');
+  });
+}
+
+function showConnectionResult(message, type) {
+  const resultDiv = document.getElementById('connection-test-result');
+  const alertClass = type === 'success' ? 'alert-success' : (type === 'warning' ? 'alert-warning' : 'alert-danger');
+  
+  resultDiv.innerHTML = `<div class="alert ${alertClass} alert-sm mb-0">${message}</div>`;
+}
+
+// Notice system functions
+window.showNotice = function(message, type = 'success') {
+  const noticeContainer = document.getElementById('notice-container');
+  if (!noticeContainer) return;
+  
+  const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+  const noticeHtml = `
+    <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+  
+  noticeContainer.innerHTML = noticeHtml;
+  
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    const alert = noticeContainer.querySelector('.alert');
+    if (alert) {
+      alert.remove();
+    }
+  }, 5000);
+};
+</script> 

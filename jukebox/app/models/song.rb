@@ -6,10 +6,10 @@ class Song < ApplicationRecord
   belongs_to :album, optional: true
   belongs_to :genre, optional: true
   
-  has_many :playlist_songs, dependent: :destroy
-  has_many :playlists, through: :playlist_songs
-  has_many :queue_items, dependent: :destroy
-  has_one :cached_song, dependent: :destroy
+  has_many :jukebox_playlist_songs, class_name: 'JukeboxPlaylistSong', dependent: :destroy
+  has_many :jukebox_playlists, through: :jukebox_playlist_songs, source: :jukebox_playlist
+  has_many :jukebox_queue_items, class_name: 'JukeboxQueueItem', dependent: :destroy
+  has_one :jukebox_cached_song, class_name: 'JukeboxCachedSong', dependent: :destroy
   
   validates :title, presence: true
   validates :file_path, presence: true
@@ -28,12 +28,12 @@ class Song < ApplicationRecord
   
   # Check if song is cached locally
   def cached?
-    cached_song.present?
+    jukebox_cached_song.present?
   end
   
   # Get local cache path if available
   def local_path
-    cached_song&.local_path
+    jukebox_cached_song&.local_path
   end
   
   # Format duration for display

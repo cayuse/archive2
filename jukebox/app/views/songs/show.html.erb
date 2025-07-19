@@ -210,14 +210,14 @@
       </div>
       
       <!-- Playlists -->
-      <% if @song.playlists.any? %>
+      <% if @song.jukebox_playlists.any? %>
         <div class="card mt-4">
           <div class="card-header">
             <h5 class="mb-0">Playlists</h5>
           </div>
           <div class="card-body">
             <div class="row">
-              <% @song.playlists.each do |playlist| %>
+              <% @song.jukebox_playlists.each do |playlist| %>
                 <div class="col-md-4 mb-2">
                   <%= playlist.name %>
                 </div>

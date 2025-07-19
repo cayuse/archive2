@@ -21,7 +21,7 @@ class JukeboxPlaylistSong < ApplicationRecord
   def set_position_if_not_set
     return if position.present?
     
-    max_position = jukebox_playlist.playlist_songs.maximum(:position) || 0
+    max_position = jukebox_playlist.jukebox_playlist_songs.maximum(:position) || 0
     self.position = max_position + 1
   end
 end 

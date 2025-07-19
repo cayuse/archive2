@@ -7,7 +7,7 @@
     "ghcr.io/devcontainers/features/git": "latest",
     "ghcr.io/devcontainers/features/github-cli": "latest"
   },
-  "forwardPorts": [3000, 5432],
+  "forwardPorts": [3000, 5432, 6379],
   "customizations": {
     "vscode": {
       "extensions": [
@@ -24,6 +24,9 @@
     "POSTGRES_USER": "postgres",
     "POSTGRES_PASSWORD": "password",
     "POSTGRES_HOST": "db",
-    "POSTGRES_PORT": "5432"
+    "POSTGRES_PORT": "5432",
+    "REDIS_URL": "redis://redis:6379/0",
+    "REDIS_HOST": "redis",
+    "REDIS_PORT": "6379"
   }
 }

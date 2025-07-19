@@ -1,0 +1,82 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>⚙️ Site Settings</h1>
+        <%= link_to "← Back to System Config", system_path, class: "btn btn-outline-secondary" %>
+      </div>
+      
+      <div class="row">
+        <div class="col-md-8">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">General Settings</h5>
+            </div>
+            <div class="card-body">
+              <%= form_with url: system_settings_path, method: :post, local: true do |form| %>
+                <div class="mb-3">
+                  <%= form.label :site_name, "Site Name", class: "form-label" %>
+                  <%= form.text_field :site_name, value: @site_name, class: "form-control", 
+                                     placeholder: "Enter site name" %>
+                  <div class="form-text">
+                    This name appears in the navigation bar and browser title.
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <%= form.label :site_description, "Site Description", class: "form-label" %>
+                  <%= form.text_area :site_description, value: @site_description, 
+                                    class: "form-control", rows: 3,
+                                    placeholder: "Enter site description" %>
+                  <div class="form-text">
+                    This description is used for SEO and appears in search results.
+                  </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                  <%= form.submit "Save Settings", class: "btn btn-primary" %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Current Settings</h5>
+            </div>
+            <div class="card-body">
+              <dl class="row">
+                <dt class="col-sm-4">Site Name:</dt>
+                <dd class="col-sm-8"><%= @site_name %></dd>
+                
+                <dt class="col-sm-4">Description:</dt>
+                <dd class="col-sm-8"><%= @site_description %></dd>
+                
+                <dt class="col-sm-4">Theme:</dt>
+                <dd class="col-sm-8"><%= SystemSetting.current_theme %></dd>
+              </dl>
+            </div>
+          </div>
+          
+          <div class="card mt-3">
+            <div class="card-header">
+              <h5 class="mb-0">Settings Information</h5>
+            </div>
+            <div class="card-body">
+              <p class="card-text">
+                These settings control the basic appearance and information displayed by the jukebox system.
+              </p>
+              <p class="card-text">
+                <small class="text-muted">
+                  Changes to these settings take effect immediately across the entire system.
+                </small>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -69,5 +69,80 @@ class SystemSetting < ApplicationRecord
     def set_site_description(description)
       set('site_description', description, 'Site description for SEO')
     end
+    
+    # Archive sync methods
+    def archive_role
+      get('archive_role', 'standalone')
+    end
+    
+    def master_archive_url
+      get('master_archive_url', '')
+    end
+    
+    def archive_node_id
+      get('archive_node_id', Socket.gethostname)
+    end
+    
+    def sync_enabled?
+      get('sync_enabled', 'false') == 'true'
+    end
+    
+    def sync_interval
+      get('sync_interval', '300').to_i
+    end
+    
+    def rsync_enabled?
+      get('rsync_enabled', 'false') == 'true'
+    end
+    
+    def rsync_source_path
+      get('rsync_source_path', Rails.root.join('storage').to_s)
+    end
+    
+    def rsync_dest_path
+      get('rsync_dest_path', '')
+    end
+    
+    # Check if this is a master archive
+    def master?
+      archive_role == 'master'
+    end
+    
+    # Check if this is a slave archive
+    def slave?
+      archive_role == 'slave'
+    end
+    
+    # Check if this is a standalone archive
+    def standalone?
+      archive_role == 'standalone'
+    end
+
+    # File sync settings
+    def file_sync_enabled?
+      get('file_sync_enabled', 'false') == 'true'
+    end
+
+    def file_sync_in_progress?
+      get('file_sync_in_progress', 'false') == 'true'
+    end
+
+    def last_file_sync_time
+      timestamp = get('last_file_sync_time')
+      timestamp ? Time.parse(timestamp) : nil
+    end
+
+    def file_sync_status
+      get('file_sync_status', 'idle')
+    end
+
+    def slave_hosts
+      hosts = get('slave_hosts')
+      hosts.present? ? hosts.split(',') : []
+    end
+
+    def master_host
+      get('master_host', '')
+    end
   end
 end

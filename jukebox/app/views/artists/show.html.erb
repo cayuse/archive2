@@ -108,7 +108,7 @@
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="addToPlaylistDropdown">
                   <li><h6 class="dropdown-header">Select Playlist</h6></li>
-                  <% current_user.playlists.each do |playlist| %>
+                  <% JukeboxPlaylist.where(is_public: true).each do |playlist| %>
                     <li><a class="dropdown-item playlist-option" href="#" data-playlist-id="<%= playlist.id %>" data-playlist-name="<%= playlist.name %>" onclick="if (typeof addSelectedSongsToPlaylist === 'function') { addSelectedSongsToPlaylist('<%= playlist.id %>', '<%= playlist.name %>'); } else { console.error('addSelectedSongsToPlaylist is not defined'); } return false;"><%= playlist.name %></a></li>
                   <% end %>
                   <li><hr class="dropdown-divider"></li>

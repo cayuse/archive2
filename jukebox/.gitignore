@@ -28,6 +28,14 @@
 !/tmp/storage/
 !/tmp/storage/.keep
 
+# Ignore SQLite database files
+*.sqlite3
+*.sqlite
+db/*.sqlite3
+db/*.sqlite
+storage/*.sqlite3
+storage/*.sqlite
+
 /public/assets
 
 # Ignore master key for decrypting credentials and more.

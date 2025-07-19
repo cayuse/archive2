@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_16_001627) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_19_205308) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -101,6 +101,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_16_001627) do
     t.index ["genre_id"], name: "index_artists_genres_on_genre_id"
   end
 
+  create_table "conflict_logs", force: :cascade do |t|
+    t.string "conflict_type", null: false
+    t.jsonb "master_change"
+    t.jsonb "slave_change"
+    t.string "resolution", null: false
+    t.text "reason"
+    t.datetime "resolved_at", precision: nil, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conflict_type"], name: "index_conflict_logs_on_conflict_type"
+    t.index ["resolved_at"], name: "index_conflict_logs_on_resolved_at"
+  end
+
   create_table "genres", force: :cascade do |t|
     t.string "name", null: false
     t.text "description"
@@ -112,6 +125,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_16_001627) do
     t.index ["name"], name: "index_genres_on_name_gin", opclass: :gin_trgm_ops, using: :gin
     t.index ["search_vector"], name: "index_genres_on_search_vector", using: :gin
     t.check_constraint "color IS NULL OR color::text ~ '^#[0-9A-Fa-f]{6}$'::text", name: "check_valid_hex_color"
+  end
+
+  create_table "jukebox_keys", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "key_hash", null: false
+    t.text "allowed_archives", default: [], array: true
+    t.datetime "last_used_at", precision: nil
+    t.boolean "is_active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key_hash"], name: "index_jukebox_keys_on_key_hash"
   end
 
   create_table "playlists", force: :cascade do |t|
@@ -138,6 +162,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_16_001627) do
     t.index ["playlist_id"], name: "index_playlists_songs_on_playlist_id"
     t.index ["song_id"], name: "index_playlists_songs_on_song_id"
     t.check_constraint "\"position\" IS NULL OR \"position\" > 0", name: "check_positive_position"
+  end
+
+  create_table "slave_keys", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "key_hash", null: false
+    t.string "node_id", null: false
+    t.datetime "last_used_at", precision: nil
+    t.boolean "is_active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key_hash"], name: "index_slave_keys_on_key_hash"
+    t.index ["node_id"], name: "index_slave_keys_on_node_id", unique: true
   end
 
   create_table "songs", force: :cascade do |t|
@@ -171,6 +207,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_16_001627) do
     t.check_constraint "duration IS NULL OR duration > 0", name: "check_positive_duration"
     t.check_constraint "file_size IS NULL OR file_size > 0", name: "check_positive_file_size"
     t.check_constraint "track_number IS NULL OR track_number > 0", name: "check_positive_track_number"
+  end
+
+  create_table "sync_changes", force: :cascade do |t|
+    t.string "table_name", null: false
+    t.integer "record_id", null: false
+    t.string "change_type", null: false
+    t.jsonb "change_data"
+    t.datetime "applied_at", precision: nil
+    t.text "applied_to_slaves", default: [], array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["applied_at"], name: "index_sync_changes_on_applied_at"
+    t.index ["created_at"], name: "index_sync_changes_on_created_at"
+    t.index ["table_name", "record_id", "created_at"], name: "index_sync_changes_on_table_name_and_record_id_and_created_at"
   end
 
   create_table "system_settings", force: :cascade do |t|

@@ -7,10 +7,19 @@ set -e
 
 echo "Starting Rails setup..."
 
-# Install system dependencies
-echo "Installing system dependencies..."
+# Install PostgreSQL development libraries
+echo "Installing PostgreSQL development libraries..."
 sudo apt update
-sudo apt install -y libpq-dev
+sudo apt install -y libpq-dev postgresql-client
+
+# Verify Ruby is available
+echo "Verifying Ruby installation..."
+if ! command -v ruby &> /dev/null; then
+    echo "ERROR: Ruby not found. This should be available in the Rails dev container."
+    exit 1
+fi
+
+echo "Ruby version: $(ruby --version)"
 
 # Change to the Rails application directory
 cd /workspaces/dockercrap/archive

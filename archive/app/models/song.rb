@@ -58,6 +58,11 @@ class Song < ApplicationRecord
   after_create :schedule_processing, if: -> { audio_file.attached? }
   after_update :schedule_processing, if: :should_reschedule_processing?
   before_save :auto_complete_if_ready
+  
+  # Sync tracking
+  after_create :track_sync_change
+  after_update :track_sync_change
+  after_destroy :track_sync_change
 
   # Instance methods
   def display_title
@@ -160,5 +165,49 @@ class Song < ApplicationRecord
     
     temp_file.rewind
     temp_file
+  end
+
+  # File sync handling
+  def audio_file_available?
+    return false unless audio_file.attached?
+    
+    # Check if file exists locally
+    local_path = audio_file.path
+    return true if File.exist?(local_path)
+    
+    # If we're a slave and file sync is in progress, file might be syncing
+    if SystemSetting.slave? && SystemSetting.file_sync_in_progress?
+      Rails.logger.info "Audio file for song #{id} is syncing from master"
+      return false
+    end
+    
+    # File doesn't exist and we're not syncing
+    Rails.logger.warn "Audio file for song #{id} not found locally: #{local_path}"
+    false
+  end
+
+  def audio_file_status
+    return :not_attached unless audio_file.attached?
+    return :syncing if SystemSetting.slave? && SystemSetting.file_sync_in_progress?
+    return :available if audio_file_available?
+    return :missing
+  end
+
+  private
+
+  def track_sync_change
+    return unless SystemSetting.sync_enabled?
+    return if SystemSetting.standalone?  # Don't track in standalone mode
+    
+    change_type = destroyed? ? 'delete' : (previously_new_record? ? 'create' : 'update')
+    
+    SyncChange.create!(
+      table_name: self.class.table_name,
+      record_id: id,
+      change_type: change_type,
+      change_data: destroyed? ? nil : attributes
+    )
+  rescue => e
+    Rails.logger.error "Failed to track sync change for song #{id}: #{e.message}"
   end
 end 
