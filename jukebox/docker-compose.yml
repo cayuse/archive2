@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+  # Redis for Jukebox queue management
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Jukebox Rails application
+  jukebox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jukebox:latest
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      RAILS_ENV: production
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      ARCHIVE_SERVER_URL: ${ARCHIVE_SERVER_URL:-http://localhost:3000}
+      JUKEBOX_CLIENT_ID: ${JUKEBOX_CLIENT_ID:-jukebox-1}
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
+      RAILS_SERVE_STATIC_FILES: true
+      RAILS_LOG_TO_STDOUT: true
+    ports:
+      - "3001:80"
+    volumes:
+      - jukebox_storage:/rails/storage
+      - jukebox_logs:/rails/log
+      - jukebox_cache:/rails/storage/cached_songs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/api/jukebox/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  redis_data:
+  jukebox_storage:
+  jukebox_logs:
+  jukebox_cache: 

@@ -13,10 +13,11 @@ gem "rails", "~> 8.0.2"
 gem "propshaft", "~> 0.8.0"
 
 # Use sqlite3 as the database for Active Record
-gem "sqlite3", "~> 1.4"
+gem "sqlite3", "~> 2.1"
 
 # PowerSync client for syncing with archive
-gem "powersync-client", "~> 0.1"
+# Note: This is a custom implementation, not a public gem
+# gem "powersync-client", "~> 0.1"
 
 # Use Active Storage for file attachments
 gem "image_processing", "~> 1.2"

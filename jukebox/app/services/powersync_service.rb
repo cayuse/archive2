@@ -89,7 +89,7 @@ class PowerSyncService
       
       begin
         perform_sync
-        sleep PowerSync::Client.config.sync_settings[:interval]
+        sleep 30  # Default sync interval
       rescue => e
         Rails.logger.error "PowerSync error: #{e.message}"
         increment_error_count
