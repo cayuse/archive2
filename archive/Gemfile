@@ -16,6 +16,9 @@ gem "webrick", platforms: [:ruby]
 # Database
 gem "pg", "~> 1.1"
 
+# PowerSync for real-time database synchronization
+gem "powersync-rails", "~> 0.1"
+
 # Authentication
 gem "bcrypt", "~> 3.1.7"
 

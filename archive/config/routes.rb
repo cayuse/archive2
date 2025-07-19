@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  # PowerSync routes for jukebox synchronization
+  mount PowerSync::Engine => '/powersync'
+  
   # Settings routes (admin only)
   resource :settings, only: [:show, :update] do
     collection do

@@ -1,0 +1,274 @@
+<div class="jukebox-status">
+  <h2>🎵 Jukebox Status</h2>
+  
+  <div class="status-card">
+    <div class="status-indicator <%= @status[:system_state] %>">
+      <span class="status-text"><%= @status[:system_state].titleize %></span>
+    </div>
+    
+    <% if @status[:system_message].present? %>
+      <div class="status-message">
+        <%= @status[:system_message] %>
+      </div>
+    <% end %>
+    
+    <div class="status-details">
+      <div class="detail-item">
+        <strong>Queue:</strong> <%= @status[:queue_length] %> songs
+      </div>
+      <div class="detail-item">
+        <strong>Random Pool:</strong> <%= @status[:random_pool_size] %> songs
+      </div>
+      <div class="detail-item">
+        <strong>Playing:</strong> <%= @status[:is_playing] ? 'Yes' : 'No' %>
+      </div>
+    </div>
+    
+    <% if @status[:current_song].present? %>
+      <div class="current-song">
+        <h3>Now Playing</h3>
+        <div class="song-info">
+          <strong><%= @status[:current_song]['title'] %></strong><br>
+          by <%= @status[:current_song]['artist'] %><br>
+          from <%= @status[:current_song]['album'] %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  
+  <div class="control-panel">
+    <h3>Controls</h3>
+    
+    <div class="control-buttons">
+      <% if @status[:can_resume] %>
+        <%= button_to "▶️ Resume", api_jukebox_control_path, 
+            method: :post, 
+            params: { action: 'play' },
+            class: "btn btn-success",
+            data: { confirm: "Resume playback?" } %>
+      <% elsif @status[:has_content] && !@status[:is_playing] %>
+        <%= button_to "▶️ Play", api_jukebox_control_path, 
+            method: :post, 
+            params: { action: 'play' },
+            class: "btn btn-primary" %>
+      <% end %>
+      
+      <% if @status[:is_playing] %>
+        <%= button_to "⏸️ Pause", api_jukebox_control_path, 
+            method: :post, 
+            params: { action: 'pause' },
+            class: "btn btn-warning" %>
+        
+        <%= button_to "⏹️ Stop", api_jukebox_control_path, 
+            method: :post, 
+            params: { action: 'stop' },
+            class: "btn btn-danger" %>
+        
+        <%= button_to "⏭️ Next", api_jukebox_control_path, 
+            method: :post, 
+            params: { action: 'next' },
+            class: "btn btn-info" %>
+      <% end %>
+    </div>
+    
+    <% if @status[:needs_setup] %>
+      <div class="setup-warning">
+        <h4>⚠️ Setup Required</h4>
+        <p><%= @status[:system_message] %></p>
+        <p>Please configure playlists in the admin interface.</p>
+      </div>
+    <% elsif !@status[:has_content] %>
+      <div class="no-content-warning">
+        <h4>🎵 No Content Available</h4>
+        <p>The jukebox is paused because no songs are available.</p>
+        <p>Add songs to the queue or enable playlists to start playing.</p>
+      </div>
+    <% end %>
+  </div>
+  
+  <div class="queue-section">
+    <h3>Current Queue</h3>
+    <% if @queue.any? %>
+      <div class="queue-list">
+        <% @queue.each_with_index do |item, index| %>
+          <div class="queue-item">
+            <span class="queue-position"><%= index + 1 %></span>
+            <span class="song-title"><%= item[:title] %></span>
+            <span class="song-artist"><%= item[:artist] %></span>
+            <% if item[:user_name].present? %>
+              <span class="requested-by">(requested by <%= item[:user_name] %>)</span>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p>No songs in queue</p>
+    <% end %>
+  </div>
+</div>
+
+<style>
+.jukebox-status {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.status-card {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.status-indicator {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.status-indicator.playing {
+  background: #28a745;
+  color: white;
+}
+
+.status-indicator.paused {
+  background: #ffc107;
+  color: #212529;
+}
+
+.status-indicator.no_playlists,
+.status-indicator.no_songs {
+  background: #dc3545;
+  color: white;
+}
+
+.status-indicator.starting {
+  background: #17a2b8;
+  color: white;
+}
+
+.status-message {
+  background: #e9ecef;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.status-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.detail-item {
+  background: white;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.current-song {
+  background: white;
+  padding: 15px;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.song-info {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.control-panel {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.control-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-success { background: #28a745; color: white; }
+.btn-primary { background: #007bff; color: white; }
+.btn-warning { background: #ffc107; color: #212529; }
+.btn-danger { background: #dc3545; color: white; }
+.btn-info { background: #17a2b8; color: white; }
+
+.setup-warning,
+.no-content-warning {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 4px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.queue-section {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.queue-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.queue-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.queue-position {
+  background: #007bff;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.song-title {
+  font-weight: bold;
+  flex: 1;
+}
+
+.song-artist {
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.requested-by {
+  color: #28a745;
+  font-size: 12px;
+  font-style: italic;
+}
+</style> 

@@ -12,8 +12,11 @@ gem "rails", "~> 8.0.2"
 # The original asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft", "~> 0.8.0"
 
-# Use postgresql as the database for Active Record
-gem "pg", "~> 1.1"
+# Use sqlite3 as the database for Active Record
+gem "sqlite3", "~> 1.4"
+
+# PowerSync client for syncing with archive
+gem "powersync-client", "~> 0.1"
 
 # Use Active Storage for file attachments
 gem "image_processing", "~> 1.2"
@@ -32,6 +35,12 @@ gem "redis", ">= 4.0.1"
 
 # Use Kaminari for pagination
 gem "kaminari"
+
+# HTTP client for downloading songs
+gem "http"
+
+# Background job processing
+gem "solid_queue"
 
 # Use Pundit for authorization
 gem "pundit"

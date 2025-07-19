@@ -1,41 +1,54 @@
 Rails.application.routes.draw do
-  # Settings routes (admin only)
-  resource :settings, only: [:show, :update] do
-    collection do
-      get :theme
-      get :api_keys
-      get :song_types
-      get :general
-    end
-  end
+  # Jukebox web interface routes
+  get 'search', to: 'jukebox_web#search'
+  get 'browse', to: 'jukebox_web#browse'
+  get 'queue', to: 'jukebox_web#queue'
+  get 'cache', to: 'jukebox_web#cache'
+  get 'sync', to: 'jukebox_web#sync'
   
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
-
-  # Songs management
-  resources :songs, only: [:index, :show] do
-    collection do
-      get :search
-    end
-  end
-
-  # Artists management
-  resources :artists, only: [:index, :show] do
-    collection do
-      get :search
-    end
-  end
-
-  # Albums management
-  resources :albums, only: [:index, :show] do
-    collection do
-      get :search
-    end
-  end
-
-  # Genres management
-  resources :genres, only: [:index, :show] do
-    collection do
-      get :search
+  # Jukebox API routes
+  namespace :api do
+    namespace :jukebox do
+      # System status and health
+      get 'status', to: 'jukebox#status'
+      get 'health', to: 'jukebox#health'
+      
+      # Sync management
+      get 'sync', to: 'jukebox#sync_status'
+      post 'sync/force', to: 'jukebox#force_sync'
+      
+      # Queue management
+      get 'queue', to: 'jukebox#queue'
+      post 'queue', to: 'jukebox#add_to_queue'
+      delete 'queue', to: 'jukebox#clear_queue'
+      delete 'queue/:position', to: 'jukebox#remove_from_queue'
+      
+      # Player control
+      post 'player/play', to: 'jukebox#play'
+      post 'player/pause', to: 'jukebox#pause'
+      post 'player/skip', to: 'jukebox#skip'
+      post 'player/volume', to: 'jukebox#set_volume'
+      
+      # Search functionality
+      get 'search/songs', to: 'jukebox#search_songs'
+      get 'search/artists', to: 'jukebox#search_artists'
+      get 'search/albums', to: 'jukebox#search_albums'
+      get 'search/genres', to: 'jukebox#search_genres'
+      
+      # Browse by category
+      get 'songs/by_artist/:artist', to: 'jukebox#songs_by_artist'
+      get 'songs/by_album/:album', to: 'jukebox#songs_by_album'
+      get 'songs/by_genre/:genre', to: 'jukebox#songs_by_genre'
+      get 'songs/by_year/:year', to: 'jukebox#songs_by_year'
+      
+      # Playlists and recent content
+      get 'playlists/popular', to: 'jukebox#popular_playlists'
+      get 'songs/recent', to: 'jukebox#recent_songs'
+      
+      # Cache management
+      get 'cache/status', to: 'jukebox#cache_status'
+      post 'cache/song/:song_id', to: 'jukebox#cache_song'
+      delete 'cache', to: 'jukebox#clear_cache'
     end
   end
 
@@ -44,5 +57,5 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
   # Defines the root path route ("/")
-  root "songs#index"
+  root "jukebox_web#index"
 end

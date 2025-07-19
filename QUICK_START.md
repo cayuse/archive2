@@ -1,14 +1,65 @@
 # Quick Start Guide - User Management System
 
+## 🎯 Quick Setup (Recommended)
+For the fastest setup, use the automated script from the project root:
+```bash
+./setup.sh
+```
+This script will guide you through Docker or local setup options.
+
 ## 🚀 Getting Started
 
-### 1. Start the Application
+### Option 1: Using Docker Compose (Recommended)
 ```bash
-# Using Docker Compose (recommended)
+# Start everything with Docker (includes database setup)
 docker-compose up
+```
 
-# Or using Rails directly
+### Option 2: Local Development Setup
+```bash
+# 1. Navigate to the Rails app directory
 cd archive
+
+# 2. Set up Rails credentials (if not already done)
+EDITOR=vi bin/rails credentials:edit
+# Save and exit the editor when it opens
+
+# 3. Make scripts executable
+chmod +x bin/*
+
+# 4. Run the complete setup script
+./bin/setup-dev
+# This includes: bundle install, migrations, seeding, and more
+
+# 5. Start the server
+bin/rails server
+```
+
+### Option 3: Manual Setup (if setup script fails)
+```bash
+cd archive
+
+# Install dependencies
+bundle install
+
+# Set up Active Storage
+bin/rails active_storage:install
+
+# Set up Pundit authorization
+bin/rails pundit:install
+
+# Set up JavaScript and Turbo
+bin/rails importmap:install
+bin/importmap pin @hotwired/turbo-rails
+
+# Create and migrate database
+bin/rails db:create
+bin/rails db:migrate
+
+# Seed database with admin user
+bin/rails db:seed
+
+# Start the server
 bin/rails server
 ```
 
@@ -136,20 +187,30 @@ user.user?      # => false
    - Run `bin/rails db:seed` to create admin user
    - Check database connection
 
-2. **Email not opening in browser**
+2. **Database connection errors**
+   - Ensure PostgreSQL is running
+   - Run `bin/rails db:create` to create databases
+   - Run `bin/rails db:migrate` to apply all migrations
+   - Run `bin/rails db:seed` to create initial data
+
+3. **Email not opening in browser**
    - Verify `letter_opener` gem is installed
    - Check `config/environments/development.rb` configuration
 
-3. **Permission denied errors**
+4. **Permission denied errors**
    - Ensure user has appropriate role
    - Check Pundit policies are loaded
 
-4. **Database errors**
-   - Run `bin/rails db:migrate` to ensure all migrations are applied
-   - Run `bin/rails db:seed` to create initial data
+5. **Migration errors**
+   - Run `bin/rails db:migrate:status` to check migration status
+   - Run `bin/rails db:migrate` to apply pending migrations
+   - If issues persist, try `bin/rails db:reset` (⚠️ destroys all data)
 
 ### Debug Commands
 ```bash
+# Check application status (from archive directory)
+./check_status.sh
+
 # Check database status
 bin/rails db:migrate:status
 
@@ -159,6 +220,10 @@ tail -f log/development.log
 # Test email delivery
 bin/rails console
 UserMailer.welcome_email(User.first, "test123").deliver_now
+
+# Check if admin user exists
+bin/rails console
+User.find_by(email: 'admin@musicarchive.com')
 ```
 
 ## 📚 Next Steps

@@ -4,7 +4,14 @@ A Rails 8.0 music archive application with Docker and Dev Container support, fea
 
 ## Development Setup
 
-### Option 1: Using Dev Container (Recommended)
+### Option 1: Automated Setup Script (Recommended)
+```bash
+# Run the automated setup script from the project root
+./setup.sh
+```
+This script will guide you through Docker or local development setup.
+
+### Option 2: Using Dev Container (Recommended)
 
 1. **Open in Dev Container**: 
    - Open this project in VS Code
