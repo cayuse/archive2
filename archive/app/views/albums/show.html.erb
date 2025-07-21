@@ -52,10 +52,12 @@
                       <span class="badge bg-primary"><%= @album.songs.count %></span>
                     </dd>
                     
-                    <dt class="col-sm-4">Artists:</dt>
+                    <dt class="col-sm-4">Artist:</dt>
                     <dd class="col-sm-8">
-                      <% @album.artists.limit(3).each do |artist| %>
-                        <span class="badge bg-info"><%= artist.name %></span>
+                      <% if @album.artist.present? %>
+                        <span class="badge bg-info"><%= @album.artist.name %></span>
+                      <% else %>
+                        <span class="theme-text-muted">Not set</span>
                       <% end %>
                     </dd>
                     
@@ -84,8 +86,8 @@
                 <dt class="col-sm-6">Total Songs:</dt>
                 <dd class="col-sm-6"><%= @album.songs.count %></dd>
                 
-                <dt class="col-sm-6">Artists:</dt>
-                <dd class="col-sm-6"><%= @album.artists.count %></dd>
+                <dt class="col-sm-6">Artist:</dt>
+                <dd class="col-sm-6"><%= @album.artist.present? ? @album.artist.name : 'Not set' %></dd>
                 
                 <dt class="col-sm-6">Created:</dt>
                 <dd class="col-sm-6"><%= @album.created_at.strftime("%Y-%m-%d") %></dd>

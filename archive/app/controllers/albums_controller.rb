@@ -4,7 +4,7 @@ class AlbumsController < ApplicationController
   
   def index
     @albums = policy_scope(Album)
-                  .includes(:songs, :artists)
+                  .includes(:songs, :artist)
                   .order(:title)
                   .page(params[:page])
                   .per(params[:per_page] || 20)

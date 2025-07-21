@@ -1,0 +1,209 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 theme-text-primary"><%= @theme.display_name %></h1>
+        <div>
+          <%= link_to "Back to Theme Manager", manage_themes_settings_path, class: "btn btn-outline-secondary" %>
+          <%= link_to "Edit Theme", edit_manage_theme_settings_path(@theme), class: "btn btn-primary ms-2" %>
+        </div>
+      </div>
+
+      <% if notice %>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <%= notice %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      <% end %>
+
+      <div class="row">
+        <div class="col-md-8">
+          <!-- Theme Information -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h5 class="mb-0 theme-text-primary">Theme Information</h5>
+            </div>
+            <div class="card-body theme-card-content">
+              <dl class="row">
+                <dt class="col-sm-4 theme-text-primary">Name:</dt>
+                <dd class="col-sm-8 theme-text-primary"><%= @theme.name %></dd>
+                
+                <dt class="col-sm-4 theme-text-primary">Display Name:</dt>
+                <dd class="col-sm-8 theme-text-primary"><%= @theme.display_name %></dd>
+                
+                <dt class="col-sm-4 theme-text-primary">Version:</dt>
+                <dd class="col-sm-8 theme-text-primary"><%= @theme.version %></dd>
+                
+                <dt class="col-sm-4 theme-text-primary">Status:</dt>
+                <dd class="col-sm-8">
+                  <% if @theme.is_default %>
+                    <span class="badge bg-primary">Default</span>
+                  <% elsif @theme.is_active %>
+                    <span class="badge bg-success">Active</span>
+                  <% else %>
+                    <span class="badge bg-secondary">Inactive</span>
+                  <% end %>
+                </dd>
+                
+                <% if @theme.description.present? %>
+                  <dt class="col-sm-4 theme-text-primary">Description:</dt>
+                  <dd class="col-sm-8 theme-text-muted"><%= @theme.description %></dd>
+                <% end %>
+              </dl>
+            </div>
+          </div>
+
+          <!-- CSS Variables Preview -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h5 class="mb-0 theme-text-primary">CSS Variables</h5>
+            </div>
+            <div class="card-body theme-card-content">
+              <% if @theme.css_variables.any? %>
+                <div class="row">
+                  <% @theme.css_variables.each do |variable, value| %>
+                    <div class="col-md-6 mb-3">
+                      <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                          <strong class="theme-text-primary"><%= variable %></strong>
+                          <br>
+                          <small class="theme-text-muted"><%= value %></small>
+                        </div>
+                        <div class="ms-2">
+                          <div class="color-preview" style="width: 30px; height: 30px; background-color: <%= value %>; border: 1px solid var(--border-color); border-radius: 4px;"></div>
+                        </div>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+              <% else %>
+                <p class="theme-text-muted">No CSS variables defined.</p>
+              <% end %>
+            </div>
+          </div>
+
+          <!-- Theme Information -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h5 class="mb-0 theme-text-primary">Theme Information</h5>
+            </div>
+            <div class="card-body theme-card-content">
+              <dl class="row">
+                <dt class="col-sm-4 theme-text-primary">Name:</dt>
+                <dd class="col-sm-8 theme-text-primary"><%= @theme.name %></dd>
+                
+                <dt class="col-sm-4 theme-text-primary">Display Name:</dt>
+                <dd class="col-sm-8 theme-text-primary"><%= @theme.display_name %></dd>
+                
+                <dt class="col-sm-4 theme-text-primary">Version:</dt>
+                <dd class="col-sm-8 theme-text-primary"><%= @theme.version %></dd>
+                
+                <dt class="col-sm-4 theme-text-primary">Status:</dt>
+                <dd class="col-sm-8 theme-text-primary">
+                  <% if @theme.is_default %>
+                    <span class="badge bg-primary">Default</span>
+                  <% end %>
+                  <% if @theme.is_active %>
+                    <span class="badge bg-success">Active</span>
+                  <% else %>
+                    <span class="badge bg-secondary">Inactive</span>
+                  <% end %>
+                </dd>
+                
+                <dt class="col-sm-4 theme-text-primary">Description:</dt>
+                <dd class="col-sm-8 theme-text-primary"><%= @theme.description || 'No description provided' %></dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <!-- Theme Assets -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h5 class="mb-0 theme-text-primary">Theme Assets</h5>
+            </div>
+            <div class="card-body theme-card-content">
+              <div class="mb-3">
+                <h6 class="theme-text-primary">Icons (<%= @theme.icons.count %>)</h6>
+                <% if @theme.icons.any? %>
+                  <div class="d-flex flex-wrap gap-2 mb-2">
+                    <% @theme.icons.limit(6).each do |icon| %>
+                      <div class="text-center">
+                        <%= image_tag "/themes/#{@theme.name}/assets/icon/#{icon.filename}", 
+                            class: 'img-fluid', 
+                            style: 'width: 32px; height: 32px; border: 1px solid var(--border-color); border-radius: 4px; padding: 2px;' %>
+                        <small class="d-block theme-text-muted"><%= icon.filename %></small>
+                      </div>
+                    <% end %>
+                  </div>
+                  <% if @theme.icons.count > 6 %>
+                    <small class="theme-text-muted">+<%= @theme.icons.count - 6 %> more icons</small>
+                  <% end %>
+                <% else %>
+                  <p class="theme-text-muted small">No icons uploaded.</p>
+                <% end %>
+              </div>
+
+              <div class="mb-3">
+                <h6 class="theme-text-primary">Images (<%= @theme.images.count %>)</h6>
+                <% if @theme.images.any? %>
+                  <div class="d-flex flex-wrap gap-2 mb-2">
+                    <% @theme.images.limit(3).each do |image| %>
+                      <div class="text-center">
+                        <%= image_tag "/themes/#{@theme.name}/assets/image/#{image.filename}", 
+                            class: 'img-fluid', 
+                            style: 'width: 64px; height: 64px; object-fit: cover; border: 1px solid var(--border-color); border-radius: 4px;' %>
+                        <small class="d-block theme-text-muted"><%= image.filename %></small>
+                      </div>
+                    <% end %>
+                  </div>
+                  <% if @theme.images.count > 3 %>
+                    <small class="theme-text-muted">+<%= @theme.images.count - 3 %> more images</small>
+                  <% end %>
+                <% else %>
+                  <p class="theme-text-muted small">No images uploaded.</p>
+                <% end %>
+              </div>
+
+              <div class="mb-3">
+                <h6 class="theme-text-primary">Logos (<%= @theme.logos.count %>)</h6>
+                <% if @theme.logos.any? %>
+                  <div class="d-flex flex-wrap gap-2">
+                    <% @theme.logos.each do |logo| %>
+                      <div class="text-center">
+                        <%= image_tag "/themes/#{@theme.name}/assets/logo/#{logo.filename}", 
+                            class: 'img-fluid', 
+                            style: 'max-width: 100px; max-height: 60px; border: 1px solid var(--border-color); border-radius: 4px; padding: 4px;' %>
+                        <small class="d-block theme-text-muted"><%= logo.filename %></small>
+                      </div>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <p class="theme-text-muted small">No logos uploaded.</p>
+                <% end %>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0 theme-text-primary">Actions</h5>
+            </div>
+            <div class="card-body theme-card-content">
+              <div class="d-grid gap-2">
+                <%= link_to "Edit Theme", edit_manage_theme_settings_path(@theme), class: "btn btn-primary" %>
+                                  <%= link_to "Duplicate Theme", duplicate_manage_theme_settings_path(@theme), data: { method: :post, confirm: "Create a copy of this theme?" }, class: "btn btn-outline-info" %>
+                  <%= link_to "Export Theme", export_manage_theme_settings_path(@theme), class: "btn btn-outline-success" %>
+                  <% unless @theme.is_default %>
+                    <%= link_to "Delete Theme", manage_theme_settings_path(@theme), data: { method: :delete, confirm: "Are you sure? This cannot be undone." }, class: "btn btn-outline-danger" %>
+                  <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

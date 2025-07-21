@@ -1,0 +1,14 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Create New Theme</h1>
+        <div>
+          <%= link_to "Back to Themes", manage_themes_settings_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+
+      <%= render 'settings/themes/form', theme: @theme %>
+    </div>
+  </div>
+</div> 

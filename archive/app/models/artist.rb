@@ -2,6 +2,7 @@ class Artist < ApplicationRecord
   # Associations
   has_many :songs, dependent: :nullify
   has_many :albums, dependent: :nullify
+  has_and_belongs_to_many :genres, join_table: :artists_genres
 
   # Validations
   validates :name, presence: true, length: { maximum: 200 }

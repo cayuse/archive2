@@ -1,90 +1,29 @@
 class SettingsController < ApplicationController
-  before_action :require_admin
-  before_action :set_current_tab
+  before_action :authenticate_user!
+  before_action :ensure_admin, except: [:index]
 
-  def show
-    # Show the main settings page with navigation
-    @current_tab = 'index'
+  def index
+    @themes = Theme.by_display_name
+    @current_theme = Theme.current
   end
 
-  def theme
-    @available_themes = SystemSetting.available_themes
-    @current_theme = SystemSetting.current_theme
-  end
-
-  def api_keys
-    # Stub for API keys management
-  end
-
-  def song_types
-    # Stub for song types management
-  end
-
-  def general
-    @site_name = SystemSetting.site_name
-    @site_description = SystemSetting.site_description
-  end
-
-  def update
-    case params[:tab]
-    when 'theme'
-      update_theme_settings
-    when 'general'
-      update_general_settings
-    when 'api_keys'
-      update_api_keys
-    when 'song_types'
-      update_song_types
-    else
-      flash[:error] = "Invalid settings tab"
-    end
-
-    redirect_back(fallback_location: settings_path)
+  def activate_theme
+    theme = Theme.find(params[:id])
+    
+    # Deactivate all themes
+    Theme.update_all(is_active: false)
+    
+    # Activate the selected theme
+    theme.update!(is_active: true)
+    
+    redirect_to settings_path, notice: "Theme '#{theme.display_name}' activated successfully!"
   end
 
   private
 
-  def require_admin
+  def ensure_admin
     unless current_user&.admin?
-      flash[:error] = "Access denied. Admin privileges required."
-      redirect_to root_path
+      redirect_to root_path, alert: "Access denied. Admin privileges required."
     end
-  end
-
-  def set_current_tab
-    @current_tab = action_name
-  end
-
-  def update_theme_settings
-    theme_name = params[:theme]
-    available_themes = SystemSetting.available_themes
-    if theme_name.present? && available_themes.include?(theme_name)
-      SystemSetting.set_current_theme(theme_name)
-      flash[:success] = "Theme updated to #{theme_name}"
-    else
-      flash[:error] = "Invalid theme selected"
-    end
-  end
-
-  def update_general_settings
-    if params[:site_name].present?
-      SystemSetting.set_site_name(params[:site_name])
-    end
-    
-    if params[:site_description].present?
-      SystemSetting.set_site_description(params[:site_description])
-    end
-
-    flash[:success] = "General settings updated"
-  end
-
-  def update_api_keys
-    # Stub for API keys update
-    flash[:info] = "API keys management coming soon"
-  end
-
-  def update_song_types
-    # Stub for song types update
-    flash[:info] = "Song types management coming soon"
   end
 end

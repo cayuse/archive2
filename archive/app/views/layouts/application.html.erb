@@ -21,14 +21,15 @@
     <link rel="apple-touch-icon" href="/icon.png">
 
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
-    <%= stylesheet_link_tag theme_css_path, media: "all", "data-turbo-track": "reload", "data-theme": current_theme %>
+    <!-- Dynamic Theme CSS - Loaded from database -->
+    <link rel="stylesheet" href="<%= theme_css_path %>" media="all" data-theme="<%= current_theme %>">
     <%= javascript_importmap_tags %>
     <script type="module">
       import "htmx.org"
     </script>
   </head>
 
-  <body>
+  <body data-theme="<%= current_theme %>">
     <nav class="navbar navbar-expand-lg navbar-dark">
       <div class="container-fluid">
         <!-- Logo and Brand -->

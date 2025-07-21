@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_19_205308) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_20_235426) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -53,6 +53,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_19_205308) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.tsvector "search_vector"
+    t.bigint "artist_id"
+    t.index ["artist_id"], name: "index_albums_on_artist_id"
     t.index ["release_date"], name: "index_albums_on_release_date"
     t.index ["search_vector"], name: "index_albums_on_search_vector", using: :gin
     t.index ["title"], name: "index_albums_on_title"
@@ -229,16 +231,57 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_19_205308) do
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "theme_id"
+    t.index ["theme_id"], name: "index_system_settings_on_theme_id"
+  end
+
+  create_table "theme_assets", force: :cascade do |t|
+    t.bigint "theme_id", null: false
+    t.string "asset_type", null: false
+    t.string "filename", null: false
+    t.string "display_name", null: false
+    t.text "description"
+    t.binary "file_data", null: false
+    t.string "content_type", null: false
+    t.string "checksum", null: false
+    t.integer "file_size", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["theme_id", "asset_type", "filename"], name: "index_theme_assets_on_theme_id_and_asset_type_and_filename", unique: true
+    t.index ["theme_id"], name: "index_theme_assets_on_theme_id"
   end
 
   create_table "themes", force: :cascade do |t|
-    t.string "name"
-    t.string "display_name"
+    t.string "name", null: false
+    t.string "display_name", null: false
     t.text "description"
-    t.boolean "active"
-    t.text "config"
+    t.string "version", default: "1.0.0"
+    t.boolean "is_active", default: true
+    t.boolean "is_default", default: false
+    t.string "primary_bg", default: "#0f0f23"
+    t.string "secondary_bg", default: "#1a1a2e"
+    t.string "accent_color", default: "#4f46e5"
+    t.string "accent_hover", default: "#6366f1"
+    t.string "accent_active", default: "#3730a3"
+    t.string "text_primary", default: "#f8fafc"
+    t.string "text_secondary", default: "#cbd5e1"
+    t.string "text_muted", default: "#64748b"
+    t.string "text_inverse", default: "#ffffff"
+    t.string "border_color", default: "#334155"
+    t.string "shadow_color", default: "rgba(0, 0, 0, 0.1)"
+    t.string "overlay_color", default: "rgba(0, 0, 0, 0.5)"
+    t.string "success_color", default: "#10b981"
+    t.string "warning_color", default: "#f59e0b"
+    t.string "danger_color", default: "#ef4444"
+    t.string "button_bg", default: "#374151"
+    t.string "button_hover", default: "#4b5563"
+    t.string "button_active", default: "#1f2937"
+    t.string "highlight_color", default: "#3b82f6"
+    t.string "link_color", default: "#60a5fa"
+    t.string "link_hover", default: "#93c5fd"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_themes_on_name", unique: true
   end
 
   create_table "users", force: :cascade do |t|
@@ -255,6 +298,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_19_205308) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "albums", "artists"
   add_foreign_key "albums_genres", "albums"
   add_foreign_key "albums_genres", "genres"
   add_foreign_key "artists_genres", "artists"
@@ -266,4 +310,5 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_19_205308) do
   add_foreign_key "songs", "artists"
   add_foreign_key "songs", "genres"
   add_foreign_key "songs", "users"
+  add_foreign_key "theme_assets", "themes", on_delete: :cascade
 end

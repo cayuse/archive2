@@ -3,12 +3,10 @@
     <%= link_to album.title, album_path(album), class: "album-title text-decoration-none" %>
   </td>
   <td>
-    <% unique_artists = album.artists.uniq %>
-    <% unique_artists.first(3).each do |artist| %>
-      <span class="badge bg-info album-artist"><%= artist.name %></span>
-    <% end %>
-    <% if unique_artists.count > 3 %>
-      <span class="album-artist-more">+<%= unique_artists.count - 3 %> more</span>
+    <% if album.artist.present? %>
+      <span class="badge bg-info album-artist"><%= album.artist.name %></span>
+    <% else %>
+      <span class="album-artist">-</span>
     <% end %>
   </td>
   <td>

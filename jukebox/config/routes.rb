@@ -9,6 +9,14 @@ Rails.application.routes.draw do
   get 'system/themes', to: 'system_config#themes'
   get 'system/settings', to: 'system_config#settings'
   
+  # Theme routes
+  get 'themes/:theme.css', to: 'themes#css'
+  get 'themes/:theme/assets/:asset_type/:filename', to: 'themes#asset'
+  
+  # Settings routes
+  get 'settings', to: 'settings#index'
+  post 'settings/themes/:id/activate', to: 'settings#activate_theme', as: :activate_theme_settings
+  
   # Archive sync routes (admin only)
   get 'archive_sync', to: 'archive_sync#index'
   patch 'archive_sync', to: 'archive_sync#update'

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_19_191810) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_21_000205) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -120,6 +120,55 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_19_191810) do
     t.index ["key"], name: "index_system_settings_on_key", unique: true
   end
 
+  create_table "theme_assets", force: :cascade do |t|
+    t.integer "theme_id", null: false
+    t.string "asset_type", null: false
+    t.string "filename", null: false
+    t.string "display_name", null: false
+    t.text "description"
+    t.string "url"
+    t.integer "size"
+    t.string "mime_type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["theme_id", "asset_type", "filename"], name: "index_theme_assets_on_theme_id_and_asset_type_and_filename", unique: true
+    t.index ["theme_id"], name: "index_theme_assets_on_theme_id"
+  end
+
+  create_table "themes", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "display_name", null: false
+    t.text "description"
+    t.string "primary_color"
+    t.string "secondary_color"
+    t.string "accent_color"
+    t.string "background_color"
+    t.string "surface_color"
+    t.string "text_color"
+    t.string "text_muted_color"
+    t.string "border_color"
+    t.string "success_color"
+    t.string "warning_color"
+    t.string "error_color"
+    t.string "info_color"
+    t.string "link_color"
+    t.string "link_hover_color"
+    t.string "button_primary_bg"
+    t.string "button_primary_text"
+    t.string "button_secondary_bg"
+    t.string "button_secondary_text"
+    t.string "card_bg"
+    t.string "card_border"
+    t.string "navbar_bg"
+    t.boolean "is_default", default: false
+    t.boolean "is_active", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["is_active"], name: "index_themes_on_is_active"
+    t.index ["is_default"], name: "index_themes_on_is_default"
+    t.index ["name"], name: "index_themes_on_name", unique: true
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "name"
     t.string "email"
@@ -134,4 +183,5 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_19_191810) do
   add_foreign_key "jukebox_cached_songs", "songs", on_delete: :cascade
   add_foreign_key "jukebox_playlist_songs", "jukebox_playlists", on_delete: :cascade
   add_foreign_key "jukebox_queue_items", "users", on_delete: :nullify
+  add_foreign_key "theme_assets", "themes"
 end

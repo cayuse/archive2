@@ -1,0 +1,319 @@
+<%= form_with model: theme, 
+              url: theme.new_record? ? manage_themes_settings_path : manage_theme_settings_path(theme),
+              method: theme.new_record? ? :post : :patch,
+              local: true, 
+              class: "theme-form" do |form| %>
+  <% if theme.errors.any? %>
+    <div class="alert alert-danger">
+      <h4><%= pluralize(theme.errors.count, "error") %> prohibited this theme from being saved:</h4>
+      <ul>
+        <% theme.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <!-- Basic Information -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">Basic Information</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <%= form.label :name, "Theme Name", class: "form-label" %>
+            <%= form.text_field :name, class: "form-control", placeholder: "e.g., dark-theme" %>
+            <small class="text-muted">Lowercase, no spaces, use hyphens or underscores</small>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <%= form.label :display_name, "Display Name", class: "form-label" %>
+            <%= form.text_field :display_name, class: "form-control", placeholder: "e.g., Dark Theme" %>
+          </div>
+        </div>
+      </div>
+      <div class="mb-3">
+        <%= form.label :description, "Description", class: "form-label" %>
+        <%= form.text_area :description, class: "form-control", rows: 2 %>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-check">
+            <%= form.check_box :is_active, class: "form-check-input" %>
+            <%= form.label :is_active, "Active", class: "form-check-label" %>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-check">
+            <%= form.check_box :is_default, class: "form-check-input" %>
+            <%= form.label :is_default, "Default Theme", class: "form-check-label" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Color Palette -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">Color Palette</h5>
+      <small class="text-muted">Define the 21 colors for your theme</small>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <!-- Primary Colors -->
+        <div class="col-md-6">
+          <h6 class="text-primary mb-3">Primary Colors</h6>
+          
+          <div class="mb-3">
+            <label class="form-label">Primary Background</label>
+            <div class="d-flex">
+              <%= form.text_field :primary_bg, class: "form-control me-2", placeholder: "#0f0f23" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.primary_bg %>" 
+                     onchange="document.getElementById('theme_primary_bg').value = this.value">
+            </div>
+            <small class="text-muted">Main page background color</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Secondary Background</label>
+            <div class="d-flex">
+              <%= form.text_field :secondary_bg, class: "form-control me-2", placeholder: "#1a1a2e" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.secondary_bg %>" 
+                     onchange="document.getElementById('theme_secondary_bg').value = this.value">
+            </div>
+            <small class="text-muted">Cards, panels, and secondary elements</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Accent Color</label>
+            <div class="d-flex">
+              <%= form.text_field :accent_color, class: "form-control me-2", placeholder: "#4f46e5" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.accent_color %>" 
+                     onchange="document.getElementById('theme_accent_color').value = this.value">
+            </div>
+            <small class="text-muted">Primary buttons, links, and highlights</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Accent Hover</label>
+            <div class="d-flex">
+              <%= form.text_field :accent_hover, class: "form-control me-2", placeholder: "#6366f1" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.accent_hover %>" 
+                     onchange="document.getElementById('theme_accent_hover').value = this.value">
+            </div>
+            <small class="text-muted">Hover state for accent elements</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Accent Active</label>
+            <div class="d-flex">
+              <%= form.text_field :accent_active, class: "form-control me-2", placeholder: "#3730a3" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.accent_active %>" 
+                     onchange="document.getElementById('theme_accent_active').value = this.value">
+            </div>
+            <small class="text-muted">Active/pressed state for accent elements</small>
+          </div>
+        </div>
+
+        <!-- Text Colors -->
+        <div class="col-md-6">
+          <h6 class="text-primary mb-3">Text Colors</h6>
+          
+          <div class="mb-3">
+            <label class="form-label">Primary Text</label>
+            <div class="d-flex">
+              <%= form.text_field :text_primary, class: "form-control me-2", placeholder: "#f8fafc" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.text_primary %>" 
+                     onchange="document.getElementById('theme_text_primary').value = this.value">
+            </div>
+            <small class="text-muted">Main text color for headings and content</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Secondary Text</label>
+            <div class="d-flex">
+              <%= form.text_field :text_secondary, class: "form-control me-2", placeholder: "#cbd5e1" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.text_secondary %>" 
+                     onchange="document.getElementById('theme_text_secondary').value = this.value">
+            </div>
+            <small class="text-muted">Secondary text, labels, and descriptions</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Muted Text</label>
+            <div class="d-flex">
+              <%= form.text_field :text_muted, class: "form-control me-2", placeholder: "#64748b" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.text_muted %>" 
+                     onchange="document.getElementById('theme_text_muted').value = this.value">
+            </div>
+            <small class="text-muted">Subtle text, timestamps, and metadata</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Inverse Text</label>
+            <div class="d-flex">
+              <%= form.text_field :text_inverse, class: "form-control me-2", placeholder: "#ffffff" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.text_inverse %>" 
+                     onchange="document.getElementById('theme_text_inverse').value = this.value">
+            </div>
+            <small class="text-muted">Text on dark backgrounds (buttons, badges)</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- More colors in next row -->
+      <div class="row mt-4">
+        <!-- UI Colors -->
+        <div class="col-md-6">
+          <h6 class="text-primary mb-3">UI Elements</h6>
+          
+          <div class="mb-3">
+            <label class="form-label">Border Color</label>
+            <div class="d-flex">
+              <%= form.text_field :border_color, class: "form-control me-2", placeholder: "#334155" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.border_color %>" 
+                     onchange="document.getElementById('theme_border_color').value = this.value">
+            </div>
+            <small class="text-muted">Borders, dividers, and separators</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Success Color</label>
+            <div class="d-flex">
+              <%= form.text_field :success_color, class: "form-control me-2", placeholder: "#10b981" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.success_color %>" 
+                     onchange="document.getElementById('theme_success_color').value = this.value">
+            </div>
+            <small class="text-muted">Success states, confirmations, and positive feedback</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Warning Color</label>
+            <div class="d-flex">
+              <%= form.text_field :warning_color, class: "form-control me-2", placeholder: "#f59e0b" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.warning_color %>" 
+                     onchange="document.getElementById('theme_warning_color').value = this.value">
+            </div>
+            <small class="text-muted">Warnings, alerts, and caution states</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Danger Color</label>
+            <div class="d-flex">
+              <%= form.text_field :danger_color, class: "form-control me-2", placeholder: "#ef4444" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.danger_color %>" 
+                     onchange="document.getElementById('theme_danger_color').value = this.value">
+            </div>
+            <small class="text-muted">Errors, deletions, and critical actions</small>
+          </div>
+        </div>
+
+        <!-- Interactive Colors -->
+        <div class="col-md-6">
+          <h6 class="text-primary mb-3">Interactive Elements</h6>
+          
+          <div class="mb-3">
+            <label class="form-label">Button Background</label>
+            <div class="d-flex">
+              <%= form.text_field :button_bg, class: "form-control me-2", placeholder: "#374151" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.button_bg %>" 
+                     onchange="document.getElementById('theme_button_bg').value = this.value">
+            </div>
+            <small class="text-muted">Secondary button backgrounds</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Button Hover</label>
+            <div class="d-flex">
+              <%= form.text_field :button_hover, class: "form-control me-2", placeholder: "#4b5563" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.button_hover %>" 
+                     onchange="document.getElementById('theme_button_hover').value = this.value">
+            </div>
+            <small class="text-muted">Hover state for secondary buttons</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Highlight Color</label>
+            <div class="d-flex">
+              <%= form.text_field :highlight_color, class: "form-control me-2", placeholder: "#3b82f6" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.highlight_color %>" 
+                     onchange="document.getElementById('theme_highlight_color').value = this.value">
+            </div>
+            <small class="text-muted">Selection highlights and focus states</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Link Color</label>
+            <div class="d-flex">
+              <%= form.text_field :link_color, class: "form-control me-2", placeholder: "#60a5fa" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.link_color %>" 
+                     onchange="document.getElementById('theme_link_color').value = this.value">
+            </div>
+            <small class="text-muted">Standard link color</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Link Hover</label>
+            <div class="d-flex">
+              <%= form.text_field :link_hover, class: "form-control me-2", placeholder: "#93c5fd" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.link_hover %>" 
+                     onchange="document.getElementById('theme_link_hover').value = this.value">
+            </div>
+            <small class="text-muted">Hover state for links</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Special Colors -->
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <h6 class="text-primary mb-3">Special Colors</h6>
+          
+          <div class="mb-3">
+            <label class="form-label">Shadow Color</label>
+            <div class="d-flex">
+              <%= form.text_field :shadow_color, class: "form-control me-2", placeholder: "rgba(0, 0, 0, 0.1)" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.shadow_color %>" 
+                     onchange="document.getElementById('theme_shadow_color').value = this.value">
+            </div>
+            <small class="text-muted">Shadows and depth effects (supports rgba)</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Overlay Color</label>
+            <div class="d-flex">
+              <%= form.text_field :overlay_color, class: "form-control me-2", placeholder: "rgba(0, 0, 0, 0.5)" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.overlay_color %>" 
+                     onchange="document.getElementById('theme_overlay_color').value = this.value">
+            </div>
+            <small class="text-muted">Modal overlays and backdrop (supports rgba)</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Button Active</label>
+            <div class="d-flex">
+              <%= form.text_field :button_active, class: "form-control me-2", placeholder: "#1f2937" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.button_active %>" 
+                     onchange="document.getElementById('theme_button_active').value = this.value">
+            </div>
+            <small class="text-muted">Active/pressed state for secondary buttons</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Actions -->
+  <div class="d-flex justify-content-between">
+    <div>
+      <%= link_to "Cancel", manage_themes_settings_path, class: "btn btn-outline-secondary" %>
+    </div>
+    <div>
+      <%= form.submit theme.new_record? ? "Create Theme" : "Update Theme", class: "btn btn-primary" %>
+    </div>
+  </div>
+<% end %> 

@@ -3,10 +3,13 @@ Rails.application.routes.draw do
   # Note: PowerSync is implemented as a custom service, not as a Rails engine
   # mount PowerSync::Engine => '/powersync'
   
-    # Settings routes (admin only)
+  # Theme routes (public access for assets, admin for management)
+  get '/themes/:theme.css', to: 'themes#css', as: :theme_css
+  get '/themes/:theme/assets/:asset_type/:filename', to: 'themes#asset', as: :theme_asset
+  
+  # Settings routes (admin only)
   resource :settings, only: [:show, :update] do
     collection do
-      get :theme
       get :api_keys
       get :song_types
       get :general
@@ -18,6 +21,20 @@ Rails.application.routes.draw do
       post :generate_jukebox_key
       post :perform_initial_sync
     end
+    
+    # Theme management routes
+    get 'themes', to: 'settings#themes', as: :manage_themes
+    get 'themes/new', to: 'settings#new_theme', as: :new_manage_theme
+    post 'themes', to: 'settings#create_theme'
+    get 'themes/:id', to: 'settings#show_theme', as: :manage_theme
+    get 'themes/:id/edit', to: 'settings#edit_theme', as: :edit_manage_theme
+    patch 'themes/:id', to: 'settings#update_theme'
+    put 'themes/:id', to: 'settings#update_theme'
+    delete 'themes/:id', to: 'settings#destroy_theme'
+    get 'themes/:id/export', to: 'settings#export_theme', as: :export_manage_theme
+    get 'themes/:id/preview', to: 'settings#preview_theme', as: :preview_manage_theme
+    post 'themes/:id/duplicate', to: 'settings#duplicate_theme', as: :duplicate_manage_theme
+    post 'themes/:id/switch', to: 'settings#switch_theme', as: :switch_theme
   end
   
   # Key management routes

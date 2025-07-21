@@ -1,0 +1,153 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Theme Management</h1>
+        <div>
+          <%= link_to "Back to Settings", settings_path, class: "btn btn-outline-secondary" %>
+          <%= link_to "Create New Theme", new_manage_theme_settings_path, class: "btn btn-primary ms-2" %>
+        </div>
+      </div>
+
+      <% if notice %>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <%= notice %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      <% end %>
+
+      <% if alert %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <%= alert %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      <% end %>
+
+      <!-- Active Theme Card -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Active Theme</h5>
+        </div>
+        <div class="card-body">
+          <% current_theme = Theme.current %>
+          <% if current_theme %>
+            <div class="row">
+              <div class="col-md-8">
+                <h6 class="mb-2"><%= current_theme.display_name %></h6>
+                <p class="text-muted mb-2"><%= current_theme.description %></p>
+                <div class="d-flex gap-2">
+                  <span class="badge bg-success">Active</span>
+                  <% if current_theme.is_default %>
+                    <span class="badge bg-primary">Default</span>
+                  <% end %>
+                  <span class="badge bg-info"><%= current_theme.theme_assets.count %> assets</span>
+                </div>
+              </div>
+              <div class="col-md-4 text-end">
+                <div class="btn-group" role="group">
+                  <%= link_to "View", manage_theme_settings_path(current_theme), class: "btn btn-outline-primary btn-sm" %>
+                  <%= link_to "Edit", edit_manage_theme_settings_path(current_theme), class: "btn btn-outline-secondary btn-sm" %>
+                  <%= button_to "Duplicate", duplicate_manage_theme_settings_path(current_theme), 
+                      method: :post, 
+                      data: { confirm: "Create a copy of this theme?" }, 
+                      class: "btn btn-outline-info btn-sm",
+                      form: { style: "display: inline;" } %>
+                </div>
+              </div>
+            </div>
+          <% else %>
+            <p class="text-muted mb-0">No theme is currently active.</p>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- All Themes List -->
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">All Themes</h5>
+        </div>
+        <div class="card-body">
+          <% if @themes.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Theme</th>
+                    <th>Status</th>
+                    <th>Assets</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @themes.each do |theme| %>
+                    <tr>
+                      <td>
+                        <div>
+                          <strong><%= theme.display_name %></strong>
+                          <br>
+                          <small class="text-muted"><%= theme.name %></small>
+                          <% if theme.description.present? %>
+                            <br>
+                            <small class="text-muted"><%= theme.description %></small>
+                          <% end %>
+                        </div>
+                      </td>
+                      <td>
+                        <% if theme.is_default %>
+                          <span class="badge bg-primary">Default</span>
+                        <% elsif theme.is_active %>
+                          <span class="badge bg-success">Active</span>
+                        <% else %>
+                          <span class="badge bg-secondary">Inactive</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <small class="text-muted">
+                          <%= theme.theme_assets.count %> total
+                          <br>
+                          <%= theme.icons.count %> icons, 
+                          <%= theme.images.count %> images, 
+                          <%= theme.logos.count %> logos
+                        </small>
+                      </td>
+                      <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                          <%= link_to "View", manage_theme_settings_path(theme), class: "btn btn-outline-primary" %>
+                          <%= link_to "Edit", edit_manage_theme_settings_path(theme), class: "btn btn-outline-secondary" %>
+                          <%= button_to "Duplicate", duplicate_manage_theme_settings_path(theme), 
+                              method: :post, 
+                              data: { confirm: "Create a copy of this theme?" }, 
+                              class: "btn btn-outline-info btn-sm",
+                              form: { style: "display: inline;" } %>
+                          <% if !theme.is_active %>
+                            <%= button_to "Activate", switch_theme_settings_path(theme), 
+                                method: :post, 
+                                data: { confirm: "Switch to #{theme.display_name}?" }, 
+                                class: "btn btn-outline-success btn-sm",
+                                form: { style: "display: inline;" } %>
+                          <% end %>
+                          <% unless theme.is_default %>
+                            <%= button_to "Delete", manage_theme_settings_path(theme), 
+                                method: :delete, 
+                                data: { confirm: "Are you sure? This cannot be undone." }, 
+                                class: "btn btn-outline-danger btn-sm",
+                                form: { style: "display: inline;" } %>
+                          <% end %>
+                        </div>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <p class="text-muted">No themes found. Create your first theme to get started.</p>
+              <%= link_to "Create New Theme", new_manage_theme_settings_path, class: "btn btn-primary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 
