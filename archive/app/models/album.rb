@@ -8,18 +8,17 @@ class Album < ApplicationRecord
   has_one_attached :cover_image
 
   # Validations
-  validates :name, presence: true, length: { maximum: 200 }
-  validates :release_year, numericality: { only_integer: true, greater_than: 1800, less_than: 2100 }, allow_blank: true
+  validates :title, presence: true, length: { maximum: 200 }
   validates :total_tracks, numericality: { only_integer: true, greater_than: 0 }, allow_blank: true
   validates :duration, numericality: { only_integer: true, greater_than: 0 }, allow_blank: true
 
   # Scopes
-  scope :by_name, -> { order(:name) }
+  scope :by_title, -> { order(:title) }
   scope :recent, -> { order(created_at: :desc) }
   scope :with_songs, -> { joins(:songs).distinct }
 
   # Search scopes
-  scope :search_by_name, ->(query) { where("name ILIKE ?", "%#{query}%") }
+  scope :search_by_title, ->(query) { where("title ILIKE ?", "%#{query}%") }
   scope :search_by_artist, ->(query) { joins(:artist).where("artists.name ILIKE ?", "%#{query}%") }
 
   # Full-text search
@@ -40,8 +39,8 @@ class Album < ApplicationRecord
   after_destroy :track_sync_change
 
   # Instance methods
-  def display_name
-    name
+  def display_title
+    title
   end
 
   def song_count

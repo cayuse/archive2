@@ -89,6 +89,7 @@ import locale
 import datetime
 import json
 import traceback
+import subprocess
 from urllib.parse import urljoin, quote
 from pathlib import Path, PurePath
 import logging
@@ -165,14 +166,10 @@ def normalize_path(path):
         return str(path)
 
 def is_audio_file(filepath):
-    """Check if file is an audio file with robust path handling."""
+    """Check if file is an audio file."""
     try:
-        # Normalize the filepath
-        normalized_path = normalize_path(filepath)
-        path_obj = Path(normalized_path)
-        
         # Get extension in a case-insensitive way
-        suffix = path_obj.suffix.lower()
+        suffix = Path(filepath).suffix.lower()
         
         # Comprehensive list of audio file extensions
         audio_extensions = {
@@ -189,45 +186,76 @@ def is_audio_file(filepath):
 def find_audio_files(directory, limit=None):
     """Find all audio files in directory recursively with robust error handling."""
     try:
-        # Normalize the directory path
-        normalized_dir = normalize_path(directory)
-        dir_path = Path(normalized_dir)
+        logger.info(f"Scanning directory: {directory}")
         
-        if not dir_path.exists():
-            logger.error(f"Directory does not exist: {normalized_dir}")
-            return
+        # Remove trailing slash for consistency
+        clean_directory = directory.rstrip('/')
         
-        if not dir_path.is_dir():
-            logger.error(f"Path is not a directory: {normalized_dir}")
-            return
+        logger.info(f"Using find command to scan: {clean_directory}")
         
-        logger.info(f"Scanning directory: {normalized_dir}")
-        
-        count = 0
-        # Walk through directory with error handling
-        for root, dirs, files in os.walk(normalized_dir):
-            try:
-                for file in files:
-                    try:
-                        filepath = os.path.join(root, file)
-                        if is_audio_file(filepath):
-                            yield filepath
-                            count += 1
-                            
-                            # Stop if we've reached the limit
-                            if limit and count >= limit:
-                                logger.info(f"Reached limit of {limit} files, stopping scan")
-                                return
-                                
-                    except Exception as e:
-                        logger.warning(f"Error processing file {file}: {e}")
-                        continue
-            except Exception as e:
-                logger.warning(f"Error reading directory {root}: {e}")
-                continue
+        # Use find command as fallback when os.walk fails
+        try:
+            # Build find command to locate audio files with better error handling
+            find_cmd = [
+                'find', clean_directory, 
+                '-type', 'f',
+                '(', '-iname', '*.mp3',
+                '-o', '-iname', '*.m4a', 
+                '-o', '-iname', '*.flac',
+                '-o', '-iname', '*.wav',
+                '-o', '-iname', '*.ogg', ')',
+                '-print0'  # Use null-terminated output to handle special characters
+            ]
+            
+            logger.info(f"Running command: {' '.join(find_cmd)}")
+            
+            # Run find command with binary output to handle null bytes
+            result = subprocess.run(
+                find_cmd,
+                capture_output=True,
+                text=False,  # Use binary mode
+                timeout=300  # 5 minute timeout
+            )
+            
+            if result.returncode != 0:
+                logger.error(f"Find command failed: {result.stderr.decode('utf-8', errors='replace')}")
+                return
+            
+            # Process null-terminated output
+            output = result.stdout.decode('utf-8', errors='replace')
+            files = output.split('\0')
+            
+            logger.info(f"Find command found {len(files)} potential audio files")
+            
+            count = 0
+            for filepath in files:
+                if not filepath.strip():
+                    continue
+                    
+                logger.info(f"Checking file: {filepath}")
                 
+                if is_audio_file(filepath):
+                    logger.info(f"Confirmed audio file: {filepath}")
+                    yield filepath
+                    count += 1
+                    
+                    # Stop if we've reached the limit
+                    if limit and count >= limit:
+                        logger.info(f"Reached limit of {limit} files, stopping scan")
+                        return
+            
+            logger.info(f"Scan complete: {len(files)} total files, {count} audio files found")
+            
+        except subprocess.TimeoutExpired:
+            logger.error("Find command timed out")
+            return
+        except Exception as e:
+            logger.error(f"Find command failed: {e}")
+            return
+         
     except Exception as e:
         logger.error(f"Error scanning directory {directory}: {e}")
+        return
 
 def format_size(bytes_size):
     """Format file size in human readable format."""
@@ -331,46 +359,16 @@ def setup_graceful_shutdown():
     global shutdown_requested
     
     def signal_handler(signum, frame):
-        print("\n\n⚠️  Shutdown requested. Finishing current upload and stopping gracefully...")
+        print("\n\n⚠️  Shutdown requested. Stopping immediately...")
         global shutdown_requested
         shutdown_requested = True
-    
-    def keyboard_listener():
-        """Listen for 'q' key press in a separate thread."""
-        global shutdown_requested
-        while not shutdown_requested:
-            try:
-                # Non-blocking input check
-                if sys.platform == "win32":
-                    import msvcrt
-                    if msvcrt.kbhit():
-                        key = msvcrt.getch().decode('utf-8').lower()
-                        if key == 'q':
-                            print("\n\n⚠️  'q' pressed. Finishing current upload and stopping gracefully...")
-                            shutdown_requested = True
-                            break
-                else:
-                    # Unix-like systems
-                    import select
-                    if select.select([sys.stdin], [], [], 0.1)[0]:
-                        key = sys.stdin.read(1).lower()
-                        if key == 'q':
-                            print("\n\n⚠️  'q' pressed. Finishing current upload and stopping gracefully...")
-                            shutdown_requested = True
-                            break
-            except:
-                pass
-            time.sleep(0.1)
+        sys.exit(0)
     
     # Setup signal handlers for Ctrl+C
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
-    # Start keyboard listener thread
-    keyboard_thread = threading.Thread(target=keyboard_listener, daemon=True)
-    keyboard_thread.start()
-    
-    return keyboard_thread
+    return None
 
 def authenticate(api_url, username, password):
     """Authenticate with the API and return the API token."""
@@ -478,6 +476,8 @@ def main():
     # Mode flags
     parser.add_argument('--start-over', action='store_true', 
                        help='Start fresh, ignore existing tracking data')
+    parser.add_argument('--clear-db', action='store_true',
+                       help='Clear the tracking database and start fresh (same as --start-over)')
     parser.add_argument('--resume', action='store_true',
                        help='Resume from last successful import')
     parser.add_argument('--show-errors', action='store_true',
@@ -490,6 +490,8 @@ def main():
                        help='Maximum number of files to process')
     parser.add_argument('--continue-from', type=int,
                        help='Continue from this offset (for batch processing)')
+    parser.add_argument('--batch-size', type=int,
+                       help='Process next N unprocessed files (for repeated batch processing)')
     
     # Source and tracking
     parser.add_argument("directory", help="Directory to scan for audio files")
@@ -521,8 +523,17 @@ def main():
         tracker.show_errors_verbose()
         return
 
+    # Handle clear-db mode (no authentication needed)
+    if args.clear_db:
+        if os.path.exists(args.tracking_db):
+            os.remove(args.tracking_db)
+            print("🗑️  Cleared tracking database")
+        else:
+            print("📝 No tracking database found to clear")
+        return
+
     # Setup graceful shutdown handlers
-    keyboard_thread = setup_graceful_shutdown()
+    setup_graceful_shutdown()
 
     if not os.path.isdir(args.directory):
         print(f"Error: Directory does not exist: {args.directory}")
@@ -556,8 +567,30 @@ def main():
     
     print("✓ Authentication successful!")
 
-    # Find audio files
-    audio_files = list(find_audio_files(args.directory, args.limit))
+    # Find audio files - FAST MODE: scan only what we need
+    if args.batch_size:
+        # For batch processing, scan all files and filter for unprocessed ones
+        print(f"🔍 Scanning for {args.batch_size} unprocessed files...")
+        processed_files = set(tracker.get_processed_files('all'))
+        
+        # Get all files and filter for unprocessed ones
+        all_files = list(find_audio_files(args.directory))
+        unprocessed_files = [f for f in all_files if f not in processed_files]
+        
+        # Take the next batch_size files
+        audio_files = unprocessed_files[:args.batch_size]
+        
+        print(f"📊 Found {len(processed_files)} already processed files")
+        print(f"📊 Found {len(unprocessed_files)} unprocessed files")
+        print(f"📦 Processing next batch of {len(audio_files)} files")
+        
+        if len(audio_files) == 0:
+            print("No more unprocessed files found.")
+            sys.exit(0)
+    else:
+        # For regular processing, use the limit if specified
+        audio_files = list(find_audio_files(args.directory, args.limit))
+    
     total = len(audio_files)
     if total == 0:
         print("No audio files found.")
@@ -566,7 +599,7 @@ def main():
     print(f"Found {total} audio files in {args.directory}")
     
     # Handle resume logic
-    if args.start_over:
+    if args.start_over or args.clear_db:
         # Clear tracking data and start fresh
         if os.path.exists(args.tracking_db):
             os.remove(args.tracking_db)
@@ -586,12 +619,39 @@ def main():
         audio_files = audio_files[:args.max_count]
         print(f"📊 Limited to {args.max_count} files: {len(audio_files)} files")
     
+    # Handle batch processing
+    if args.batch_size:
+        print(f"🎯 Processing up to {args.batch_size} new files...")
+        
+        # Collect files to process
+        files_to_process = []
+        files_checked = 0
+        
+        for filepath in find_audio_files(args.directory, limit=None):
+            files_checked += 1
+            
+            # Check if file is already processed using inode tracking
+            if tracker.is_file_processed(filepath):
+                continue  # Skip already processed files
+            
+            # File is not processed, add it to our list
+            files_to_process.append(filepath)
+            
+            # Stop when we have enough files
+            if len(files_to_process) >= args.batch_size:
+                break
+        
+        print(f"📊 Checked {files_checked} files")
+        print(f"📊 Found {len(files_to_process)} new files to process")
+        
+        audio_files = files_to_process
+    
     if len(audio_files) == 0:
         print("No files to process.")
         sys.exit(0)
     
-    # Start job using the shared module
-    start_job_with_defaults(tracker, len(audio_files))
+    # Don't start a new job - use global tracking instead
+    # start_job_with_defaults(tracker, len(audio_files))
     
     if args.dry_run:
         print("DRY RUN MODE - No files will be uploaded")
@@ -618,15 +678,22 @@ def main():
         # Record file starts for this batch
         file_ids = {}
         start_times = {}
+        files_to_process = []
         for filepath in batch:
+            # Create tracking record for this file
             file_id = tracker.record_file_start(filepath)
             file_ids[filepath] = file_id
             start_times[filepath] = datetime.datetime.now()
+            files_to_process.append(filepath)
+        
+        if not files_to_process:
+            print("All files in this batch were already processed, skipping batch")
+            continue
         
         try:
             # Upload batch concurrently
             results = asyncio.run(upload_files_concurrent(
-                batch, 
+                files_to_process, 
                 args.url, 
                 api_key, 
                 args.concurrent, 

@@ -1,82 +1,132 @@
 #!/bin/bash
 
 # Rails setup script for devcontainer
-# This script handles all the Rails initialization steps
+# This script handles all the Rails initialization steps with improved error handling
 
 set -e
 
 echo "Starting Rails setup..."
 
-# Install PostgreSQL development libraries
-echo "Installing PostgreSQL development libraries..."
-sudo apt update
-sudo apt install -y libpq-dev postgresql-client
+# Function to log with timestamp
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
 
-# Verify Ruby is available
-echo "Verifying Ruby installation..."
-if ! command -v ruby &> /dev/null; then
-    echo "ERROR: Ruby not found. This should be available in the Rails dev container."
+# Function to handle errors gracefully
+handle_error() {
+    log "ERROR: $1"
+    log "Setup failed. Check the logs above for details."
     exit 1
+}
+
+# Install PostgreSQL development libraries
+log "Installing PostgreSQL development libraries..."
+sudo apt update || handle_error "Failed to update package list"
+sudo apt install -y libpq-dev postgresql-client || handle_error "Failed to install PostgreSQL dependencies"
+
+# Verify Ruby is available and check version
+log "Verifying Ruby installation..."
+if ! command -v ruby &> /dev/null; then
+    handle_error "Ruby not found. This should be available in the Rails dev container."
 fi
 
-echo "Ruby version: $(ruby --version)"
+RUBY_VERSION=$(ruby --version | cut -d' ' -f2)
+log "Ruby version: $RUBY_VERSION"
 
 # Change to the Rails application directory
-cd /workspaces/dockercrap/archive
+cd /workspaces/dockercrap/archive || handle_error "Failed to change to Rails directory"
 
 # Run gem setup script
-echo "Setting up gems..."
-ruby setup_gems.rb
+log "Setting up gems..."
+if [ -f "setup_gems.rb" ]; then
+    ruby setup_gems.rb || handle_error "Failed to run gem setup script"
+else
+    log "setup_gems.rb not found, skipping gem setup"
+fi
 
-# Install gems
-echo "Installing gems..."
-# Clear gem cache and try multiple approaches
-rm -rf ~/.cache/gem/specs || true
-rm -rf vendor/bundle || true
+# Install gems using a simpler approach
+log "Installing gems..."
+# Clear any existing bundle config
+rm -rf ~/.bundle || true
+rm -rf .bundle || true
 
-# Try bundle install with retries
-for i in {1..3}; do
-  echo "Attempt $i: Installing gems..."
-  if bundle install --retry=3; then
-    echo "Gems installed successfully"
-    break
-  else
-    echo "Bundle install failed, trying to update gem sources..."
-    gem sources --clear-all
-    gem sources -a https://rubygems.org/
-    if [ $i -eq 3 ]; then
-      echo "Failed to install gems after 3 attempts"
-      exit 1
-    fi
-  fi
-done
+# Set bundle environment
+export BUNDLE_PATH="/usr/local/bundle"
+export BUNDLE_APP_CONFIG="/usr/local/bundle"
+
+# Try bundle install with a simpler approach
+log "Installing gems with bundle..."
+if bundle install --retry=3; then
+    log "Gems installed successfully"
+else
+    log "Bundle install failed, trying alternative approach..."
+    # Try installing gems directly
+    gem install bundler
+    bundle install --retry=3 || handle_error "Failed to install gems"
+fi
+
+# Verify bundle installation
+log "Verifying bundle installation..."
+if ! bundle check; then
+    handle_error "Bundle check failed after installation"
+fi
 
 # Install Active Storage
-echo "Installing Active Storage..."
-bin/rails active_storage:install
+log "Installing Active Storage..."
+if [ -f "bin/rails" ]; then
+    bin/rails active_storage:install || log "Active Storage installation failed (may already be installed)"
+else
+    log "Rails binary not found, skipping Active Storage installation"
+fi
 
 # Create database (ignore errors if it already exists)
-echo "Creating database..."
-bin/rails db:create || true
+log "Creating database..."
+if [ -f "bin/rails" ]; then
+    bin/rails db:create || log "Database creation failed (may already exist)"
+else
+    log "Rails binary not found, skipping database creation"
+fi
 
 # Run migrations
-echo "Running migrations..."
-bin/rails db:migrate
+log "Running migrations..."
+if [ -f "bin/rails" ]; then
+    bin/rails db:migrate || handle_error "Database migration failed"
+else
+    log "Rails binary not found, skipping migrations"
+fi
 
 # Install Pundit
-echo "Installing Pundit..."
-bin/rails generate pundit:install
+log "Installing Pundit..."
+if [ -f "bin/rails" ]; then
+    bin/rails generate pundit:install || log "Pundit installation failed (may already be installed)"
+else
+    log "Rails binary not found, skipping Pundit installation"
+fi
 
 # Install Importmap
-echo "Installing Importmap..."
-bin/rails importmap:install
+log "Installing Importmap..."
+if [ -f "bin/rails" ]; then
+    bin/rails importmap:install || log "Importmap installation failed (may already be installed)"
+else
+    log "Rails binary not found, skipping Importmap installation"
+fi
 
 # Pin Turbo Rails
-echo "Pinning Turbo Rails..."
-bin/importmap pin @hotwired/turbo-rails
+log "Pinning Turbo Rails..."
+if [ -f "bin/importmap" ]; then
+    bin/importmap pin @hotwired/turbo-rails || log "Turbo Rails pinning failed"
+else
+    log "Importmap binary not found, skipping Turbo Rails pinning"
+fi
 
 # Seed database
-echo "Seeding database..."
-bin/rails db:seed
+log "Seeding database..."
+if [ -f "bin/rails" ]; then
+    bin/rails db:seed || log "Database seeding failed (may not be required)"
+else
+    log "Rails binary not found, skipping database seeding"
+fi
 
-echo "Rails setup completed successfully!" 
+log "Rails setup completed successfully!"
+log "Ruby version: $RUBY_VERSION"
+log "Bundle path: $BUNDLE_PATH" 

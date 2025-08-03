@@ -4,7 +4,7 @@ source "https://rubygems.org"
 
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby "3.3.8"
+ruby "3.2.5"
 
 # Rails is the core web application framework
 gem "rails", "~> 8.0.2"
@@ -12,8 +12,8 @@ gem "rails", "~> 8.0.2"
 # The original asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft", "~> 0.8.0"
 
-# Use sqlite3 as the database for Active Record
-gem "sqlite3", "~> 2.1"
+# Use PostgreSQL as the database for Active Record (matching archive)
+gem "pg", "~> 1.5"
 
 # PowerSync client for syncing with archive
 # Note: This is a custom implementation, not a public gem
@@ -55,6 +55,8 @@ gem "bootsnap", require: false
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri mingw x64_mingw ]
+  gem "brakeman", require: false
+  gem "rubocop", require: false
 end
 
 group :development do

@@ -79,6 +79,7 @@ class BulkImportTracker:
                 id INTEGER PRIMARY KEY,
                 job_id INTEGER,
                 file_path TEXT,
+                file_id_key TEXT,
                 status TEXT,
                 error_message TEXT,
                 error_type TEXT,
@@ -96,6 +97,13 @@ class BulkImportTracker:
                 upload_method TEXT
             )
         ''')
+        
+        # Add file_id_key column if it doesn't exist (for existing databases)
+        try:
+            cursor.execute('ALTER TABLE file_imports ADD COLUMN file_id_key TEXT')
+        except sqlite3.OperationalError:
+            # Column already exists
+            pass
         
         # Create indexes for better performance
         cursor.execute('''
@@ -152,13 +160,49 @@ class BulkImportTracker:
             file_path: Full path to the file being processed
             
         Returns:
-            File import ID for tracking this specific file
+            File import ID for tracking this specific file, or -1 if already processed
         """
+        # Ensure connection exists
+        if self.conn is None:
+            self.conn = sqlite3.connect(self.db_path)
+            
         cursor = self.conn.cursor()
+        
+        # Get unique file identifier (inode + device)
+        try:
+            stat = os.stat(file_path)
+            file_id_key = f"{stat.st_dev}:{stat.st_ino}"
+        except OSError:
+            # Fallback to path if stat fails
+            file_id_key = file_path
+        
+        # Check if file was already processed successfully by unique ID - NEVER REPROCESS
         cursor.execute('''
-            INSERT INTO file_imports (job_id, file_path, status, created_at)
-            VALUES (?, ?, 'processing', ?)
-        ''', (self.job_id, file_path, datetime.datetime.now()))
+            SELECT id FROM file_imports 
+            WHERE file_id_key = ? AND status = 'success'
+        ''', (file_id_key,))
+        
+        existing = cursor.fetchone()
+        if existing:
+            # File was already successfully processed - SKIP IT
+            return -1
+        
+        # Check if file is currently being processed
+        cursor.execute('''
+            SELECT id FROM file_imports 
+            WHERE file_id_key = ? AND status = 'processing'
+        ''', (file_id_key,))
+        
+        existing = cursor.fetchone()
+        if existing:
+            # File is already being processed, return existing ID
+            return existing[0]
+        
+        # Create new record with unique file identifier
+        cursor.execute('''
+            INSERT INTO file_imports (job_id, file_path, file_id_key, status, created_at)
+            VALUES (?, ?, ?, 'processing', ?)
+        ''', (self.job_id or 0, file_path, file_id_key, datetime.datetime.now()))
         return cursor.lastrowid
     
     def record_file_success(self, file_id: int, metadata_extracted: bool = True, 
@@ -181,6 +225,10 @@ class BulkImportTracker:
             response_status: HTTP response status
             upload_method: Method used for upload
         """
+        # Ensure connection exists
+        if self.conn is None:
+            self.conn = sqlite3.connect(self.db_path)
+            
         cursor = self.conn.cursor()
         cursor.execute('''
             UPDATE file_imports 
@@ -192,11 +240,13 @@ class BulkImportTracker:
               file_size, duration, format_type, processing_time, song_id, response_status, 
               upload_method, file_id))
         
-        cursor.execute('''
-            UPDATE import_jobs 
-            SET processed_files = processed_files + 1
-            WHERE id = ?
-        ''', (self.job_id,))
+        # Only update job stats if we have a valid job_id
+        if self.job_id:
+            cursor.execute('''
+                UPDATE import_jobs 
+                SET processed_files = processed_files + 1
+                WHERE id = ?
+            ''', (self.job_id,))
         
         self.conn.commit()
     
@@ -213,6 +263,10 @@ class BulkImportTracker:
             error_details: Detailed error information (stack trace, etc.)
             upload_method: Method used for upload
         """
+        # Ensure connection exists
+        if self.conn is None:
+            self.conn = sqlite3.connect(self.db_path)
+            
         cursor = self.conn.cursor()
         cursor.execute('''
             UPDATE file_imports 
@@ -221,11 +275,13 @@ class BulkImportTracker:
             WHERE id = ?
         ''', (error_message, error_type, error_details, datetime.datetime.now(), upload_method, file_id))
         
-        cursor.execute('''
-            UPDATE import_jobs 
-            SET failed_files = failed_files + 1
-            WHERE id = ?
-        ''', (self.job_id,))
+        # Only update job stats if we have a valid job_id
+        if self.job_id:
+            cursor.execute('''
+                UPDATE import_jobs 
+                SET failed_files = failed_files + 1
+                WHERE id = ?
+            ''', (self.job_id,))
         
         self.conn.commit()
     
@@ -250,20 +306,61 @@ class BulkImportTracker:
         Get list of already processed files.
         
         Args:
-            job_id: Job ID to check (uses current job if None)
+            job_id: Job ID to check (uses current job if None, or ALL jobs if job_id is 'all')
             
         Returns:
             List of file paths that were successfully processed
         """
+        # If no connection exists, return empty list (no files processed yet)
+        if self.conn is None:
+            return []
+            
         cursor = self.conn.cursor()
-        if job_id is None:
-            job_id = self.job_id
+        
+        # If job_id is 'all' or None, get all processed files from all jobs
+        if job_id is None or job_id == 'all':
+            cursor.execute('''
+                SELECT file_path FROM file_imports 
+                WHERE status = 'success'
+            ''')
+        else:
+            cursor.execute('''
+                SELECT file_path FROM file_imports 
+                WHERE job_id = ? AND status = 'success'
+            ''', (job_id,))
+            
+        return [row[0] for row in cursor.fetchall()]
+    
+    def is_file_processed(self, file_path: str) -> bool:
+        """
+        Check if a specific file has been processed by its unique identifier.
+        
+        Args:
+            file_path: Full path to the file
+            
+        Returns:
+            True if file was successfully processed, False otherwise
+        """
+        # Ensure connection exists
+        if self.conn is None:
+            self.conn = sqlite3.connect(self.db_path)
+            
+        cursor = self.conn.cursor()
+        
+        # Get unique file identifier (inode + device)
+        try:
+            stat = os.stat(file_path)
+            file_id_key = f"{stat.st_dev}:{stat.st_ino}"
+        except OSError:
+            # Fallback to path if stat fails
+            file_id_key = file_path
         
         cursor.execute('''
-            SELECT file_path FROM file_imports 
-            WHERE job_id = ? AND status = 'success'
-        ''', (job_id,))
-        return [row[0] for row in cursor.fetchall()]
+            SELECT id FROM file_imports 
+            WHERE file_id_key = ? AND status = 'success'
+        ''', (file_id_key,))
+        
+        return cursor.fetchone() is not None
     
     def get_failed_files(self, job_id: Optional[int] = None) -> List[Tuple[str, str, str]]:
         """
@@ -275,6 +372,10 @@ class BulkImportTracker:
         Returns:
             List of tuples (file_path, error_message, error_type)
         """
+        # If no connection exists, return empty list
+        if self.conn is None:
+            return []
+            
         cursor = self.conn.cursor()
         if job_id is None:
             job_id = self.job_id
@@ -295,6 +396,10 @@ class BulkImportTracker:
         Returns:
             Tuple of (total, success, failed, processing)
         """
+        # If no connection exists, return zeros
+        if self.conn is None:
+            return (0, 0, 0, 0)
+            
         cursor = self.conn.cursor()
         if job_id is None:
             job_id = self.job_id

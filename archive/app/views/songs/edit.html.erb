@@ -150,7 +150,7 @@
                          name="q"
                          class="form-control" 
                          placeholder="Start typing to search albums..."
-                         value="<%= @song.album&.display_title %>"
+                         value="<%= @song.album&.title %>"
                          hx-get="/albums/search"
                          hx-trigger="keyup changed delay:300ms"
                          hx-target="#album_results"
@@ -164,7 +164,7 @@
                   <div id="selected_album_display" class="mt-2">
                     <% if @song.album %>
                       <div class="alert alert-info">
-                        <strong>Selected:</strong> <%= @song.album.display_title %>
+                        <strong>Selected:</strong> <%= @song.album.title %>
                       </div>
                     <% end %>
                   </div>

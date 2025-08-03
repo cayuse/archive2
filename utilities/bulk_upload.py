@@ -89,13 +89,55 @@ def is_audio_file(filepath):
     return ext in SUPPORTED_EXTENSIONS
 
 
-def find_audio_files(directory):
-    """Find all audio files in directory recursively."""
-    for root, _, files in os.walk(directory):
-        for file in files:
-            filepath = os.path.join(root, file)
-            if is_audio_file(filepath):
-                yield filepath
+def find_audio_files(directory, limit=None):
+    """Find all audio files in directory recursively with robust error handling."""
+    count = 0
+    
+    # Use a more robust approach for WSL file system issues
+    try:
+        # First try the normal os.walk approach
+        for root, _, files in os.walk(directory):
+            try:
+                for file in files:
+                    try:
+                        filepath = os.path.join(root, file)
+                        if is_audio_file(filepath):
+                            yield filepath
+                            count += 1
+                            if limit and count >= limit:
+                                return
+                    except (OSError, IOError) as e:
+                        print(f"Warning: Error processing file {file}: {e}")
+                        continue
+            except (OSError, IOError) as e:
+                print(f"Warning: Error reading directory {root}: {e}")
+                continue
+                
+    except (OSError, IOError) as e:
+        print(f"os.walk failed, trying alternative approach: {e}")
+        
+        # Fallback: use simple Python file walking with error handling
+        try:
+            print(f"Using Python file walking for {directory}")
+            for root, dirs, files in os.walk(directory):
+                try:
+                    for file in files:
+                        try:
+                            filepath = os.path.join(root, file)
+                            if is_audio_file(filepath):
+                                yield filepath
+                                count += 1
+                                if limit and count >= limit:
+                                    return
+                        except (OSError, IOError) as e:
+                            print(f"Warning: Error processing file {file}: {e}")
+                            continue
+                except (OSError, IOError) as e:
+                    print(f"Warning: Error reading directory {root}: {e}")
+                    continue
+                    
+        except Exception as walk_error:
+            print(f"Python file walking also failed: {walk_error}")
 
 
 def format_size(bytes_size):
@@ -112,46 +154,16 @@ def setup_graceful_shutdown():
     global shutdown_requested
     
     def signal_handler(signum, frame):
-        print("\n\n⚠️  Shutdown requested. Finishing current upload and stopping gracefully...")
+        print("\n\n⚠️  Shutdown requested. Stopping immediately...")
         global shutdown_requested
         shutdown_requested = True
-    
-    def keyboard_listener():
-        """Listen for 'q' key press in a separate thread."""
-        global shutdown_requested
-        while not shutdown_requested:
-            try:
-                # Non-blocking input check
-                if sys.platform == "win32":
-                    import msvcrt
-                    if msvcrt.kbhit():
-                        key = msvcrt.getch().decode('utf-8').lower()
-                        if key == 'q':
-                            print("\n\n⚠️  'q' pressed. Finishing current upload and stopping gracefully...")
-                            shutdown_requested = True
-                            break
-                else:
-                    # Unix-like systems
-                    import select
-                    if select.select([sys.stdin], [], [], 0.1)[0]:
-                        key = sys.stdin.read(1).lower()
-                        if key == 'q':
-                            print("\n\n⚠️  'q' pressed. Finishing current upload and stopping gracefully...")
-                            shutdown_requested = True
-                            break
-            except:
-                pass
-            time.sleep(0.1)
+        sys.exit(0)
     
     # Setup signal handlers for Ctrl+C
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
-    # Start keyboard listener thread
-    keyboard_thread = threading.Thread(target=keyboard_listener, daemon=True)
-    keyboard_thread.start()
-    
-    return keyboard_thread
+    return None
 
 
 def authenticate(api_url, username, password):
@@ -220,6 +232,8 @@ def main():
     # Mode flags
     parser.add_argument('--start-over', action='store_true', 
                        help='Start fresh, ignore existing tracking data')
+    parser.add_argument('--clear-db', action='store_true',
+                       help='Clear the tracking database and start fresh (same as --start-over)')
     parser.add_argument('--resume', action='store_true',
                        help='Resume from last successful import')
     parser.add_argument('--show-errors', action='store_true',
@@ -232,6 +246,8 @@ def main():
                        help='Maximum number of files to process')
     parser.add_argument('--continue-from', type=int,
                        help='Continue from this offset (for batch processing)')
+    parser.add_argument('--batch-size', type=int,
+                       help='Process next N unprocessed files (for repeated batch processing)')
     
     # Source and tracking
     parser.add_argument("directory", help="Directory to scan for audio files")
@@ -261,8 +277,17 @@ def main():
         tracker.show_errors_verbose()
         return
 
+    # Handle clear-db mode (no authentication needed)
+    if args.clear_db:
+        if os.path.exists(args.tracking_db):
+            os.remove(args.tracking_db)
+            print("🗑️  Cleared tracking database")
+        else:
+            print("📝 No tracking database found to clear")
+        return
+
     # Setup graceful shutdown handlers
-    keyboard_thread = setup_graceful_shutdown()
+    setup_graceful_shutdown()
 
     if not os.path.isdir(args.directory):
         print(f"Error: Directory does not exist: {args.directory}")
@@ -296,8 +321,30 @@ def main():
     
     print("✓ Authentication successful!")
 
-    # Find audio files
-    audio_files = list(find_audio_files(args.directory))
+    # Find audio files - FAST MODE: scan only what we need
+    if args.batch_size:
+        # For batch processing, scan all files and filter for unprocessed ones
+        print(f"🔍 Scanning for {args.batch_size} unprocessed files...")
+        processed_files = set(tracker.get_processed_files('all'))
+        
+        # Get all files and filter for unprocessed ones
+        all_files = list(find_audio_files(args.directory))
+        unprocessed_files = [f for f in all_files if f not in processed_files]
+        
+        # Take the next batch_size files
+        audio_files = unprocessed_files[:args.batch_size]
+        
+        print(f"📊 Found {len(processed_files)} already processed files")
+        print(f"📊 Found {len(unprocessed_files)} unprocessed files")
+        print(f"📦 Processing next batch of {len(audio_files)} files")
+        
+        if len(audio_files) == 0:
+            print("No more unprocessed files found.")
+            sys.exit(0)
+    else:
+        # For regular processing, use the limit if specified
+        audio_files = list(find_audio_files(args.directory, args.max_count))
+    
     total = len(audio_files)
     if total == 0:
         print("No audio files found.")
@@ -306,7 +353,7 @@ def main():
     print(f"Found {total} audio files in {args.directory}")
     
     # Handle resume logic
-    if args.start_over:
+    if args.start_over or args.clear_db:
         # Clear tracking data and start fresh
         if os.path.exists(args.tracking_db):
             os.remove(args.tracking_db)
@@ -326,12 +373,29 @@ def main():
         audio_files = audio_files[:args.max_count]
         print(f"📊 Limited to {args.max_count} files: {len(audio_files)} files")
     
+    # Handle batch processing
+    if args.batch_size:
+        # Get list of already processed files from ALL jobs
+        processed_files = set(tracker.get_processed_files('all'))
+        
+        # Filter out already processed files
+        unprocessed_files = [f for f in audio_files if f not in processed_files]
+        
+        print(f"📊 Found {len(processed_files)} already processed files")
+        print(f"📊 Found {len(unprocessed_files)} unprocessed files")
+        
+        # Take only the next batch_size files
+        batch_files = unprocessed_files[:args.batch_size]
+        print(f"📦 Processing next batch of {len(batch_files)} files")
+        
+        audio_files = batch_files
+    
     if len(audio_files) == 0:
         print("No files to process.")
         sys.exit(0)
     
-    # Start job using the shared module
-    start_job_with_defaults(tracker, len(audio_files))
+    # Don't start a new job - use global tracking instead
+    # start_job_with_defaults(tracker, len(audio_files))
     
     if args.dry_run:
         print("DRY RUN MODE - No files will be uploaded")
@@ -352,8 +416,12 @@ def main():
             bar.set_postfix(file=os.path.basename(filepath))
             
             # Record file start
-            start_time = datetime.datetime.now()
             file_id = tracker.record_file_start(filepath)
+            if file_id == -1:
+                # File already processed, skip it
+                print(f"⏭️  Skipping already processed: {os.path.basename(filepath)}")
+                continue
+            start_time = datetime.datetime.now()
             
             try:
                 # Upload file

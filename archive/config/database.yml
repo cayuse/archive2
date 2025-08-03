@@ -24,7 +24,7 @@ development:
   database: archive_development
   username: <%= ENV.fetch("POSTGRES_USER", "postgres") %>
   password: <%= ENV.fetch("POSTGRES_PASSWORD", "password") %>
-  host: <%= ENV.fetch("POSTGRES_HOST", "db") %>
+  host: <%= ENV.fetch("POSTGRES_HOST", "localhost") %>
   port: <%= ENV.fetch("POSTGRES_PORT", 5432) %>
 
 # Warning: The database defined as "test" will be erased and
@@ -35,7 +35,7 @@ test:
   database: archive_test
   username: <%= ENV.fetch("POSTGRES_USER", "postgres") %>
   password: <%= ENV.fetch("POSTGRES_PASSWORD", "password") %>
-  host: <%= ENV.fetch("POSTGRES_HOST", "db") %>
+  host: <%= ENV.fetch("POSTGRES_HOST", "localhost") %>
   port: <%= ENV.fetch("POSTGRES_PORT", 5432) %>
 
 # As with config/credentials.yml, you never want to store sensitive information,
