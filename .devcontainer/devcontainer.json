@@ -1,13 +1,17 @@
 {
-  "name": "Rails Archive App",
+  "name": "Rails 8 (Ruby 3.4) Dev",
   "dockerComposeFile": "docker-compose.yml",
   "service": "app",
-  "workspaceFolder": "/workspaces/dockercrap/archive",
-  "features": {
-    "ghcr.io/devcontainers/features/git": "latest",
-    "ghcr.io/devcontainers/features/github-cli": "latest"
-  },
+  "workspaceFolder": "/workspaces/app",
+  "remoteUser": "vscode",
   "forwardPorts": [3000, 5432, 6379],
+  "containerEnv": {
+    "PGHOST": "db",
+    "PGUSER": "postgres",
+    "PGPASSWORD": "password",
+    "PGDATABASE": "archive_development",
+    "REDIS_URL": "redis://redis:6379/0"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
@@ -18,15 +22,6 @@
         "ms-azuretools.vscode-docker"
       ]
     }
-  },
-  "remoteUser": "vscode",
-  "remoteEnv": {
-    "POSTGRES_USER": "postgres",
-    "POSTGRES_PASSWORD": "password",
-    "POSTGRES_HOST": "db",
-    "POSTGRES_PORT": "5432",
-    "REDIS_URL": "redis://redis:6379/0",
-    "REDIS_HOST": "redis",
-    "REDIS_PORT": "6379"
   }
 }
+
