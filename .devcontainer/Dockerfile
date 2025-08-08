@@ -1,26 +1,34 @@
-FROM mcr.microsoft.com/devcontainers/ruby:3.4
+FROM ruby:3.2.3-bookworm
 
+# Ensure we are root during build
 USER root
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    sudo \
-    build-essential \
-    libpq-dev \
-    postgresql-client \
-    pkg-config \
-    libssl-dev \
-    zlib1g-dev \
-    libreadline-dev \
-    git curl ca-certificates \
- && rm -rf /var/lib/apt/lists/*
 
-RUN id -u vscode >/dev/null 2>&1 || ( \
-      groupadd --gid 1000 vscode && \
-      useradd  --uid 1000 --gid 1000 --shell /bin/bash --create-home vscode )
+# Install OS dependencies
+RUN apt-get update -qq && \
+    apt-get install -y \
+      imagemagick \
+      libvips \
+      libpq-dev \
+      libxml2-dev \
+      libxslt1-dev \
+      libffi-dev \
+      shared-mime-info \
+      curl \
+      build-essential \
+      sudo && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode \
- && chmod 0440 /etc/sudoers.d/vscode
+# Create the vscode user and allow passwordless sudo
+RUN groupadd -g 1000 vscode && \
+    useradd -m -u 1000 -g 1000 -s /bin/bash vscode && \
+    echo 'vscode ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/vscode && \
+    chmod 0440 /etc/sudoers.d/vscode
 
-WORKDIR /workspaces/app
+# Install Bundler
+RUN gem install bundler
+
+# Set working directory
+WORKDIR /workspace
+
+# Use non-root user for runtime
 USER vscode
-CMD ["sleep", "infinity"]
-

@@ -1,27 +1,18 @@
 {
-  "name": "Rails 8 (Ruby 3.4) Dev",
+  "name": "Rails Dev Container",
   "dockerComposeFile": "docker-compose.yml",
-  "service": "app",
-  "workspaceFolder": "/workspaces/app",
+  "service": "dev",
+  "workspaceFolder": "/workspace",
   "remoteUser": "vscode",
   "forwardPorts": [3000, 5432, 6379],
-  "containerEnv": {
-    "PGHOST": "db",
-    "PGUSER": "postgres",
-    "PGPASSWORD": "password",
-    "PGDATABASE": "archive_development",
-    "REDIS_URL": "redis://redis:6379/0"
-  },
+  "features": {},
   "customizations": {
     "vscode": {
       "extensions": [
-        "rebornix.ruby",
-        "castwide.ruby-debug",
-        "wingrunr21.vscode-ruby",
-        "ms-vscode.vscode-json",
+        "rebornix.Ruby",
+        "castwide.solargraph",
         "ms-azuretools.vscode-docker"
       ]
     }
   }
 }
-
