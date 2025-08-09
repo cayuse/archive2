@@ -44,8 +44,8 @@ class EnhanceThemesAndAddThemeAssets < ActiveRecord::Migration[8.0]
       t.timestamps
     end
     
-    # Add theme reference to system settings if it doesn't exist
-    unless column_exists?(:system_settings, :theme_id)
+    # Add theme reference to system settings if table/column state allows
+    if table_exists?(:system_settings) && !column_exists?(:system_settings, :theme_id)
       add_reference :system_settings, :theme, foreign_key: true, null: true
     end
   end

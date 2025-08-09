@@ -34,8 +34,8 @@ class EnsureDefaultThemeExists < ActiveRecord::Migration[8.0]
       )
     end
     
-    # Update system setting to use database theme
-    SystemSetting.set('current_theme', 'default', 'Currently active theme')
+    # Update system setting to use database theme (guard for fresh DB)
+    SystemSetting.set('current_theme', 'default', 'Currently active theme') if table_exists?(:system_settings)
   end
 
   def down

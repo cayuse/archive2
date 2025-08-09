@@ -1,7 +1,9 @@
-FROM ruby:3.2.3-bookworm
+FROM ruby:latest
 
 # Ensure we are root during build
 USER root
+ENV BUNDLE_PATH=/usr/local/bundle
+ENV BUNDLE_APP_CONFIG=/usr/local/bundle
 
 # Install OS dependencies
 RUN apt-get update -qq && \

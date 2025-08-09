@@ -5,7 +5,7 @@ class CleanupOldThemeTables < ActiveRecord::Migration[8.0]
     drop_table :theme_settings if table_exists?(:theme_settings)
     
     # Remove theme references from system_settings
-    if column_exists?(:system_settings, :current_theme_id)
+    if table_exists?(:system_settings) && column_exists?(:system_settings, :theme_id)
       remove_reference :system_settings, :theme, foreign_key: true
     end
     

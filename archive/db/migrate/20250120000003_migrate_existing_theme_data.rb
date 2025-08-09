@@ -75,12 +75,14 @@ class MigrateExistingThemeData < ActiveRecord::Migration[8.0]
       create_default_logo(default_theme)
     end
     
-    # Set current theme in system settings
-    current_theme_name = SystemSetting.get('current_theme', 'default')
-    current_theme = Theme.find_by(name: current_theme_name) || Theme.default.first
-    
-    if current_theme
-      SystemSetting.set('current_theme', current_theme.name, 'Currently active theme')
+    # Set current theme in system settings (only if table exists on this environment)
+    if table_exists?(:system_settings)
+      current_theme_name = SystemSetting.get('current_theme', 'default')
+      current_theme = Theme.find_by(name: current_theme_name) || Theme.default.first
+      
+      if current_theme
+        SystemSetting.set('current_theme', current_theme.name, 'Currently active theme')
+      end
     end
     
     # Re-enable callbacks after migration
