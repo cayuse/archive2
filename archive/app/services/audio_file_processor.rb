@@ -1,21 +1,24 @@
+require 'open3'
+
 class AudioFileProcessor
-  def initialize(file_path, content_type, file_size)
+  def initialize(file_path, content_type, file_size, original_filename: nil)
     @file_path = file_path
     @content_type = content_type
     @file_size = file_size
-    @filename = File.basename(file_path)
+    # Prefer the original uploaded filename for parsing; fall back to temp file name
+    @filename = (original_filename.presence || File.basename(file_path)).to_s
   end
 
   def process
-    # Try to extract metadata from ID3 tags first
-    metadata = extract_metadata_from_tags
-    
-    # If no metadata found in tags, fall back to filename parsing
+    # Try to extract metadata using ffprobe first
+    metadata = extract_metadata_with_ffprobe
+
+    # If no metadata found, fall back to filename parsing
     if metadata[:title].blank? && metadata[:artist].blank?
       filename_metadata = extract_metadata_from_filename
       metadata.merge!(filename_metadata)
     end
-    
+
     metadata
   rescue => e
     Rails.logger.error "AudioFileProcessor failed: #{e.message}"
@@ -24,10 +27,7 @@ class AudioFileProcessor
 
   private
 
-  def extract_metadata_from_tags
-    require 'wahwah'
-    
-    # Basic file information
+  def extract_metadata_with_ffprobe
     file_info = {
       file_format: extract_file_format,
       file_size: @file_size,
@@ -38,64 +38,41 @@ class AudioFileProcessor
       track_number: nil,
       duration: nil
     }
-    
-    # Only try to read tags for supported formats
-    return file_info unless supported_format_for_tags?
-    
-    Rails.logger.info "Attempting to extract metadata from #{@filename} (format: #{extract_file_format})"
-    
+
     begin
-      tag = WahWah.open(@file_path)
-      
-      # Log what we're trying to extract
-      Rails.logger.info "WahWah tag object: #{tag.inspect}"
-      Rails.logger.info "Available methods: #{tag.methods.grep(/title|artist|album|genre|track|duration/)}"
-      
-      # For m4a files, WahWah might have limited support
-      if extract_file_format == 'm4a'
-        Rails.logger.info "Processing M4A file - WahWah support may be limited"
+      # Ask ffprobe for format tags and stream info in JSON
+      cmd = [
+        'ffprobe', '-v', 'error',
+        '-show_entries', 'format=duration:format_tags=title,artist,album,genre,track',
+        '-of', 'json',
+        @file_path
+      ]
+      stdout, stderr, status = Open3.capture3(*cmd)
+      unless status.success?
+        Rails.logger.warn "ffprobe failed for #{@filename}: #{stderr}"
+        return file_info
       end
-      
-      file_info[:title] = tag.title unless tag.title.nil?
-      file_info[:artist] = tag.artist unless tag.artist.nil?
-      file_info[:album] = tag.album unless tag.album.nil?
-      file_info[:genre] = tag.genre unless tag.genre.nil?
-      file_info[:track_number] = tag.track.to_i if tag.track
-      file_info[:duration] = tag.duration.to_i if tag.duration
-      
-      # Log extracted values
-      Rails.logger.info "Extracted metadata: #{file_info.inspect}"
-      
-      # Clean up any empty strings
-      file_info.each do |key, value|
-        file_info[key] = nil if value.is_a?(String) && value.strip == ''
+      data = JSON.parse(stdout) rescue {}
+      tags = (data.dig('format', 'tags') || {})
+      duration = data.dig('format', 'duration')
+
+      file_info[:title] = clean_string(tags['title']) if tags['title']
+      file_info[:artist] = clean_string(tags['artist']) if tags['artist']
+      file_info[:album] = clean_string(tags['album']) if tags['album']
+      file_info[:genre] = clean_string(tags['genre']) if tags['genre']
+      if tags['track']
+        file_info[:track_number] = tags['track'].to_s.split('/').first.to_i
       end
-      
-      # For m4a files, if we didn't get any metadata, try alternative approach
-      if extract_file_format == 'm4a' && file_info[:title].blank? && file_info[:artist].blank?
-        Rails.logger.info "M4A file has no metadata - will fall back to filename parsing"
-      end
+      file_info[:duration] = duration.to_f.round if duration
+
+      file_info
     rescue => e
-      # Log error in production
-      Rails.logger.warn "Failed to read ID3 tags from #{@filename}: #{e.message}"
-      Rails.logger.warn "Error backtrace: #{e.backtrace.first(5).join("\n")}"
-      
-      # For m4a files, this might be expected due to WahWah limitations
-      if extract_file_format == 'm4a'
-        Rails.logger.info "M4A metadata extraction failed - this may be normal for WahWah"
-      end
+      Rails.logger.warn "ffprobe metadata extraction error for #{@filename}: #{e.message}"
+      file_info
     end
-    
-    file_info
   end
 
-  def supported_format_for_tags?
-    # WahWah supports MP3, FLAC, OGG, M4A, WAV
-    # Note: M4A support might be limited in WahWah
-    supported = %w[mp3 flac ogg m4a wav].include?(extract_file_format)
-    Rails.logger.info "Format #{extract_file_format} supported for tags: #{supported}"
-    supported
-  end
+  # WahWah support removed; ffprobe handles metadata
 
   def extract_metadata_from_filename
     # Extract basic file information
@@ -142,8 +119,12 @@ class AudioFileProcessor
   end
 
   def parse_filename(filename)
-    # Remove file extension
+    # Remove file extension and normalize common separators/leading track numbers
     name = filename.gsub(/\.[^.]*$/, '')
+    # Strip leading track numbers like "01 - ", "101-", "01_"
+    name = name.sub(/^\d+\s*[-_.]\s*/, '')
+    # Replace underscores with spaces for better parsing
+    name = name.tr('_', ' ').strip
     
     # Common filename patterns
     patterns = [
@@ -163,19 +144,19 @@ class AudioFileProcessor
       if match = name.match(pattern)
         case pattern.source
         when /Artist.*Album.*Track.*Title/
-          metadata[:artist] = match[1]
-          metadata[:album] = match[2]
+          metadata[:artist] = clean_string(match[1])
+          metadata[:album] = clean_string(match[2])
           metadata[:track_number] = match[3].to_i
-          metadata[:title] = match[4]
+          metadata[:title] = clean_string(match[4])
         when /Artist.*Album.*Title/
-          metadata[:artist] = match[1]
-          metadata[:album] = match[2]
-          metadata[:title] = match[3]
+          metadata[:artist] = clean_string(match[1])
+          metadata[:album] = clean_string(match[2])
+          metadata[:title] = clean_string(match[3])
         when /Artist.*Title/
-          metadata[:artist] = match[1]
-          metadata[:title] = match[2]
+          metadata[:artist] = clean_string(match[1])
+          metadata[:title] = clean_string(match[2])
         when /Just title/
-          metadata[:title] = match[1]
+          metadata[:title] = clean_string(match[1])
         end
         break
       end

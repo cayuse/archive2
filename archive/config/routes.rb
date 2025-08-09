@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  # Sidekiq Web UI (optional). Protect with basic auth if exposed.
+  # require "sidekiq/web"
+  # mount Sidekiq::Web => "/sidekiq"
   # PowerSync routes for jukebox synchronization
   # Note: PowerSync is implemented as a custom service, not as a Rails engine
   # mount PowerSync::Engine => '/powersync'

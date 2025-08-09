@@ -59,6 +59,10 @@ class SongsController < ApplicationController
     end
     
     if @song.save
+      if Rails.env.development? && @song.audio_file.attached?
+        Rails.logger.info "[Dev] Inline processing for song #{@song.id} via SongsController#create"
+        AudioFileProcessingJob.perform_now(@song.id)
+      end
       redirect_to edit_song_path(@song), notice: 'Song uploaded successfully. Please review the extracted metadata.'
     else
       render :new, status: :unprocessable_entity

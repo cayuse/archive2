@@ -55,8 +55,11 @@ class Song < ApplicationRecord
   }
 
   # Callbacks
-  after_create :schedule_processing, if: -> { audio_file.attached? }
-  after_update :schedule_processing, if: :should_reschedule_processing?
+  # In development we process inline on the controller; keep background jobs for production
+  if Rails.env.production?
+    after_commit :schedule_processing, on: :create
+    after_commit :schedule_processing, on: :update, if: :should_reschedule_processing?
+  end
   before_save :auto_complete_if_ready
   
   # Sync tracking
@@ -119,7 +122,8 @@ class Song < ApplicationRecord
     processor = AudioFileProcessor.new(
       temp_file.path,
       audio_file.content_type,
-      audio_file.byte_size
+      audio_file.byte_size,
+      original_filename: original_filename
     )
     
     metadata = processor.process
@@ -150,7 +154,12 @@ class Song < ApplicationRecord
   end
 
   def should_reschedule_processing?
-    audio_file.attached? && (processing_status.blank? || (processing_failed? && processing_error.blank?))
+    audio_file.attached? && (
+      processing_status.blank? ||
+      processing_pending? ||
+      needs_review? ||
+      (processing_failed? && processing_error.blank?)
+    )
   end
 
   def download_audio_file

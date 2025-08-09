@@ -1,6 +1,17 @@
 version: '3.9'
 
 services:
+  # Redis for background jobs and ActionCable
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   # PostgreSQL database for Archive
   db:
     image: postgres:15
@@ -29,6 +40,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       RAILS_ENV: production
       POSTGRES_USER: postgres
@@ -36,6 +49,8 @@ services:
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-password}@db:5432/archive_production
+      # Use Redis service hostname inside Docker network
+      REDIS_URL: redis://redis:6379/1
       RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
       RAILS_SERVE_STATIC_FILES: true
       RAILS_LOG_TO_STDOUT: true
@@ -50,7 +65,35 @@ services:
       timeout: 10s
       retries: 3
 
+  # Sidekiq worker for Archive app
+  sidekiq:
+    image: archive:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      archive:
+        condition: service_started
+    environment:
+      RAILS_ENV: production
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-password}@db:5432/archive_production
+      REDIS_URL: redis://redis:6379/1
+      # Allow overriding a distinct Redis DB for Sidekiq if desired
+      SIDEKIQ_REDIS_URL: ${SIDEKIQ_REDIS_URL:-}
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
+      RAILS_LOG_TO_STDOUT: true
+    volumes:
+      - archive_logs:/rails/log
+    command: bundle exec sidekiq -C config/sidekiq.yml
+
 volumes:
   pgdata:
   archive_storage:
-  archive_logs: 
+  archive_logs:
+  redis_data:

@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-ruby "3.4.5"
+ruby "3.2.5"
 
 # Rails framework
 gem "rails", "~> 8.0.2"
@@ -28,8 +28,7 @@ gem "pundit"
 # File uploads
 gem "image_processing", "~> 1.2"
 
-# Audio metadata reading
-gem "wahwah", "~> 1.6"
+# Audio metadata reading handled via ffprobe (ffmpeg); no Ruby gem needed
 
 # Background job processing for large file uploads
 gem "sidekiq", "~> 7.0"

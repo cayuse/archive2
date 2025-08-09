@@ -33,6 +33,13 @@ class UploadController < ApplicationController
     
     if @song.save
       Rails.logger.info "Song saved with ID: #{@song.id}, processing_status: #{@song.processing_status}"
+
+      # In development, process metadata immediately in-app
+      if Rails.env.development? && @song.audio_file.attached?
+        Rails.logger.info "[Dev] Inline processing for song #{@song.id}"
+        AudioFileProcessingJob.perform_now(@song.id)
+      end
+
       redirect_to edit_song_path(@song), notice: 'File uploaded successfully. Please review the extracted metadata.'
     else
       Rails.logger.error "Failed to save song: #{@song.errors.full_messages.join(', ')}"

@@ -2,7 +2,8 @@ class AudioFileProcessingJob < ApplicationJob
   queue_as :default
 
   def perform(song_id)
-    song = Song.find(song_id)
+    song = Song.find_by(id: song_id)
+    return unless song
     
     # Skip if no audio file attached
     return unless song.audio_file.attached?

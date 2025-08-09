@@ -22,6 +22,8 @@ Thumbs.db
 *.log
 *.tmp
 *.temp
+__pycache__/
+utilities/__pycache__/
 
 # Environment files
 .env

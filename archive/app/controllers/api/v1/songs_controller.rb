@@ -78,7 +78,11 @@ class Api::V1::SongsController < ApplicationController
         
         # Always run post-processing unless explicitly skipped
         unless params[:skip_post_processing] == 'true'
-          AudioFileProcessingJob.perform_later(song.id)
+          if Rails.env.development?
+            AudioFileProcessingJob.perform_now(song.id)
+          else
+            AudioFileProcessingJob.perform_later(song.id)
+          end
         end
         
         render json: {
@@ -352,7 +356,11 @@ class Api::V1::SongsController < ApplicationController
         
         # Run post-processing unless explicitly skipped
         unless params[:skip_post_processing] == 'true'
-          AudioFileProcessingJob.perform_later(song.id)
+          if Rails.env.development?
+            AudioFileProcessingJob.perform_now(song.id)
+          else
+            AudioFileProcessingJob.perform_later(song.id)
+          end
         end
         
         render json: {
