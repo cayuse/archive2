@@ -7,11 +7,7 @@
       <!-- Page Header -->
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Songs</h1>
-        <% if policy(Song.new).upload_audio? %>
-          <%= link_to upload_path, class: "btn btn-primary" do %>
-            <i class="fas fa-plus me-2"></i>Upload Song
-          <% end %>
-        <% end %>
+
       </div>
       
       <!-- Search Bar -->
@@ -46,7 +42,7 @@
                   <th>Album</th>
                   <th>Genre</th>
                   <th>Duration</th>
-                  <th>Created</th>
+                  
                   <th>Play</th>
                 </tr>
               </thead>
@@ -102,6 +98,29 @@ window.showNotice = function(message, type = 'success') {
 
 
 function initializeSearch() {
+  // Delegate click on song titles to add to queue
+  document.addEventListener('click', function(e) {
+    const link = e.target.closest('.queue-link');
+    if (link) {
+      e.preventDefault();
+      const songId = link.dataset.songId;
+      fetch('/api/jukebox/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ song_id: songId })
+      }).then(r => r.json())
+        .then(json => {
+          if (json.success) {
+            showNotice('Added to queue');
+          } else {
+            showNotice(json.message || 'Failed to add to queue', 'danger');
+          }
+        }).catch(err => {
+          console.error(err);
+          showNotice('Error adding to queue', 'danger');
+        });
+    }
+  });
   console.log('Initializing search functionality');
   
   let searchTimeout;

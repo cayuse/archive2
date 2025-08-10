@@ -1,0 +1,20 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <h1 class="h3 mb-3">Random Source Playlists</h1>
+      <p class="text-muted">Select one or more Archive playlists to serve as the random pool sources.</p>
+      <%= form_with url: system_random_sources_path, method: :post do %>
+        <div class="mb-3">
+          <% @all_playlists.each do |pl| %>
+            <div class="form-check">
+              <%= check_box_tag 'playlist_ids[]', pl.id, @selected_ids.include?(pl.id), class: 'form-check-input', id: "pl_#{pl.id}" %>
+              <label class="form-check-label" for="pl_<%= pl.id %>"><%= pl.display_name %> (<%= pl.song_count %> songs)</label>
+            </div>
+          <% end %>
+        </div>
+        <%= submit_tag 'Save Selection', class: 'btn btn-primary' %>
+      <% end %>
+    </div>
+  </div>
+</div>
+

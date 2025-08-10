@@ -15,9 +15,10 @@
 /* Bootstrap CSS */
 @import url('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css');
 
-/* Custom styles for jukebox */
+/* Custom styles for jukebox - defer to theme variables */
 body {
-  background-color: #f8f9fa;
+  background-color: var(--primary-bg);
+  color: var(--text-primary);
 }
 
 .navbar-brand {
@@ -25,13 +26,15 @@ body {
 }
 
 .card {
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  border: none;
+  background-color: var(--secondary-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
+  box-shadow: var(--shadow-sm);
 }
 
 .table {
-  background-color: white;
+  background-color: var(--secondary-bg);
+  color: var(--text-primary);
   border-radius: 8px;
   overflow: hidden;
 }

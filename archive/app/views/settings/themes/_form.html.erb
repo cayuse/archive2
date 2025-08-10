@@ -134,6 +134,16 @@
           </div>
 
           <div class="mb-3">
+            <label class="form-label">Heading Text</label>
+            <div class="d-flex">
+              <%= form.text_field :heading_color, class: "form-control me-2", placeholder: "(defaults to Primary Text)" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.heading_color || theme.text_primary %>" 
+                     onchange="document.getElementById('theme_heading_color').value = this.value">
+            </div>
+            <small class="text-muted">Overrides color for h1–h6 headings</small>
+          </div>
+
+          <div class="mb-3">
             <label class="form-label">Secondary Text</label>
             <div class="d-flex">
               <%= form.text_field :text_secondary, class: "form-control me-2", placeholder: "#cbd5e1" %>
@@ -161,6 +171,16 @@
                      onchange="document.getElementById('theme_text_inverse').value = this.value">
             </div>
             <small class="text-muted">Text on dark backgrounds (buttons, badges)</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Card Header Text</label>
+            <div class="d-flex">
+              <%= form.text_field :card_header_text, class: "form-control me-2", placeholder: "(defaults to Primary Text)" %>
+              <input type="color" class="form-control form-control-color" value="<%= theme.card_header_text || theme.text_primary %>" 
+                     onchange="document.getElementById('theme_card_header_text').value = this.value">
+            </div>
+            <small class="text-muted">Title text color inside card headers</small>
           </div>
         </div>
       </div>

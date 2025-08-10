@@ -61,4 +61,50 @@ class SystemSetting < ApplicationRecord
   def self.standalone?
     archive_role == 'standalone'
   end
+
+  # --- Theme and site settings ---
+  def self.current_theme
+    get('current_theme', 'default')
+  end
+
+  def self.set_current_theme(theme)
+    set('current_theme', theme)
+  end
+
+  def self.available_themes
+    themes_root = Rails.root.join('app', 'assets', 'themes')
+    return [] unless Dir.exist?(themes_root)
+    Dir.children(themes_root)
+      .select { |entry| File.directory?(File.join(themes_root, entry)) }
+      .sort
+  rescue => e
+    Rails.logger.warn("Failed to list available themes: #{e.message}")
+    []
+  end
+
+  def self.site_name
+    get('site_name', 'Jukebox')
+  end
+
+  def self.site_description
+    get('site_description', 'A live music jukebox system')
+  end
+
+  # Jukebox playback settings
+  def self.min_random_queue_size
+    get('min_random_queue_size', '7').to_i
+  end
+
+  def self.recently_played_window
+    get('recently_played_window', '10').to_i
+  end
+
+  # Queue auto-refill controls
+  def self.min_queue_length
+    get('min_queue_length', '5').to_i
+  end
+
+  def self.refill_queue_to
+    get('refill_queue_to', '10').to_i
+  end
 end

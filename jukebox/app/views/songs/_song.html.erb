@@ -10,7 +10,7 @@
   
   <td>
     <% if song.title.present? %>
-      <%= link_to song.title, song_path(song), class: "song-title text-decoration-none fw-medium" %>
+      <%= link_to song.title, "#", class: "song-title text-decoration-none fw-medium queue-link", data: { song_id: song.id } %>
     <% else %>
       <span class="song-title">No title</span>
     <% end %>
@@ -18,7 +18,7 @@
   
   <td>
     <% if song.artist.present? %>
-      <span class="song-artist"><%= song.artist.name %></span>
+      <span class="song-artist"><%= link_to song.artist.name, artist_path(song.artist), class: "text-decoration-none" %></span>
     <% else %>
       <span class="song-artist">No artist</span>
     <% end %>
@@ -26,7 +26,7 @@
   
   <td>
     <% if song.album.present? %>
-      <span class="song-album"><%= song.album.title %></span>
+      <span class="song-album"><%= link_to song.album.title, album_path(song.album), class: "text-decoration-none" %></span>
     <% else %>
       <span class="song-album">No album</span>
     <% end %>
@@ -104,7 +104,7 @@
     <% end %>
   </td>
   
-  <td><span class="song-date"><%= song.created_at.strftime("%Y-%m-%d") %></span></td>
+  <!-- Created column removed per Jukebox UX -->
   
   <td>
     <!-- Audio Player -->
@@ -116,7 +116,7 @@
         </audio>
       </div>
     <% else %>
-      <span class="song-error">No audio</span>
+      <%= button_to 'Add to Queue', api_jukebox_queue_path, method: :post, params: { song_id: song.id }, class: 'btn btn-sm btn-outline-primary' %>
     <% end %>
   </td>
   

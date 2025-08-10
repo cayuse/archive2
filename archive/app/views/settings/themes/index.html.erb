@@ -93,10 +93,10 @@
                         </div>
                       </td>
                       <td>
-                        <% if theme.is_default %>
-                          <span class="badge bg-primary">Default</span>
-                        <% elsif theme.is_active %>
+                        <% if theme == current_theme %>
                           <span class="badge bg-success">Active</span>
+                        <% elsif theme.is_default %>
+                          <span class="badge bg-primary">Default</span>
                         <% else %>
                           <span class="badge bg-secondary">Inactive</span>
                         <% end %>
@@ -119,10 +119,10 @@
                               data: { confirm: "Create a copy of this theme?" }, 
                               class: "btn btn-outline-info btn-sm",
                               form: { style: "display: inline;" } %>
-                          <% if !theme.is_active %>
-                            <%= button_to "Activate", switch_theme_settings_path(theme), 
+                          <% if theme != current_theme %>
+                            <%= button_to "Make Active", switch_theme_settings_path(theme), 
                                 method: :post, 
-                                data: { confirm: "Switch to #{theme.display_name}?" }, 
+                                data: { confirm: "Make '#{theme.display_name}' the active theme?" }, 
                                 class: "btn btn-outline-success btn-sm",
                                 form: { style: "display: inline;" } %>
                           <% end %>

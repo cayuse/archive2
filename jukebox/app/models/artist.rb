@@ -1,4 +1,5 @@
 class Artist < ApplicationRecord
+  include ReadonlyRecord
   # This model represents artists synced from the archive
   # It's read-only from the jukebox perspective
   

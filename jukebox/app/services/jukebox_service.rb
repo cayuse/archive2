@@ -1,3 +1,6 @@
+require 'singleton'
+require 'json'
+require 'time'
 class JukeboxService
   include Singleton
   
@@ -17,7 +20,7 @@ class JukeboxService
       random_pool_size: random_pool_size,
       is_playing: playing?,
       volume: volume,
-      cached_songs_count: cached_songs_count,
+      cached_songs_count: 0,
       synced_songs_count: synced_songs_count,
       last_sync: last_sync_time
     }
@@ -56,33 +59,31 @@ class JukeboxService
   end
   
   # Add song to queue
-  def add_to_queue(song_id)
+  # Inserts a manual queue item and does NOT trigger play/skip. Player will naturally advance.
+  def add_to_queue(song_id, priority: 'tail')
     song = Song.find(song_id)
-    
-    # Check if song is cached, if not, queue it for download
-    unless song.cached?
-      DownloadSongJob.perform_later(song_id)
+
+    # Determine insert position relative to existing positions
+    if priority == 'head'
+      # Put before the current minimum position
+      min_pos = JukeboxQueueItem.minimum(:position)
+      insert_pos = min_pos.nil? ? 0 : (min_pos - 1)
+    else
+      insert_pos = next_queue_position
     end
-    
-    # Add to queue
-    queue_item = JukeboxQueueItem.create!(
+
+    # Persist manual queue item using status '0' (manual)
+    JukeboxQueueItem.create!(
       song_id: song_id,
-      position: next_queue_position,
-      added_at: Time.current
+      position: insert_pos,
+      status: '0'
     )
-    
-    # Update Redis
-    @redis.lpush('jukebox:queue', song_id.to_s)
-    
-    # Resume playback if paused
-    resume_if_needed
-    
-    queue_item
   end
   
   # Get current queue
   def queue
-    JukeboxQueueItem.includes(:song).order(:position)
+    # Manual first, then random, each by position
+    JukeboxQueueItem.includes(:song).ordered_for_playback
   end
   
   # Remove song from queue
@@ -108,60 +109,65 @@ class JukeboxService
   
   # Get random songs from playlists
   def get_random_songs(count = 10)
-    # Get all public playlists
-    playlists = JukeboxPlaylist.where(is_public: true)
-    
-    # Get all songs from these playlists
-    song_ids = JukeboxPlaylistSong.joins(:jukebox_playlist)
-                           .where(jukebox_playlists: { is_public: true })
-                           .pluck(:song_id)
-                           .uniq
-    
-    # Return random selection
-    Song.where(id: song_ids).order('RANDOM()').limit(count)
+    selected_ids = JukeboxSelectedPlaylist.pluck(:playlist_id)
+    if selected_ids.empty?
+      return ArchiveSong.completed.order('RANDOM()').limit(count)
+    end
+    song_ids = PlaylistsSong.where(playlist_id: selected_ids).pluck(:song_id).uniq
+    ArchiveSong.where(id: song_ids).order('RANDOM()').limit(count)
   end
   
-  # Refill random pool
+  # Refill random pool (list semantics for Python player)
   def refill_random_pool
     songs = get_random_songs(20)
     songs.each do |song|
-      @redis.sadd('jukebox:random_pool', song.id.to_s)
+      payload = {
+        id: song.id,
+        title: song.title,
+        artist: song.artist,
+        album: song.album,
+        duration: song.duration,
+        cached_path: resolve_local_audio_path(song),
+        stream_url: generate_stream_url(song)
+      }
+      @redis.rpush('jukebox:random_pool', payload.to_json)
     end
   end
   
-  # Get next random song
+  # Get next random song (if Rails needs to consume it directly)
   def next_random_song
-    song_id = @redis.spop('jukebox:random_pool')
-    return nil unless song_id
+    raw = @redis.rpop('jukebox:random_pool')
+    return nil unless raw
+    data = JSON.parse(raw) rescue nil
+    return nil unless data && data['id']
     
     # Refill pool if getting low
-    if @redis.scard('jukebox:random_pool') < 5
+    if @redis.llen('jukebox:random_pool') < 5
       refill_random_pool
     end
     
-    Song.find(song_id)
+    Song.find_by(id: data['id'])
   end
   
-  # Player control commands
+  # Player control commands (queue JSON commands for Python player)
   def play
-    @redis.set('jukebox:command', 'play')
-    @redis.expire('jukebox:command', 10)
+    send_command('play')
   end
   
   def pause
-    @redis.set('jukebox:command', 'pause')
-    @redis.expire('jukebox:command', 10)
+    send_command('pause')
   end
   
   def skip
-    @redis.set('jukebox:command', 'skip')
-    @redis.expire('jukebox:command', 10)
+    send_command('next')
   end
   
   def set_volume(level)
-    @redis.set('jukebox:volume', level.to_i)
-    @redis.set('jukebox:command', 'volume')
-    @redis.expire('jukebox:command', 10)
+    send_command('volume', volume: level.to_i)
+  end
+  
+  def set_crossfade(duration)
+    send_command('crossfade', duration: duration.to_i)
   end
   
   # Search functionality using synced data
@@ -217,41 +223,38 @@ class JukeboxService
   
   # Get current song
   def current_song
-    song_id = @redis.get('jukebox:current_song')
-    return nil unless song_id
+    raw = @redis.get('jukebox:current_song')
+    return nil unless raw
     
-    song = Song.find_by(id: song_id)
-    return nil unless song
-    
-    {
-      id: song.id,
-      title: song.title,
-      artist: song.artist,
-      album: song.album,
-      duration: song.duration,
-      cached: song.cached?
-    }
+    # Prefer JSON payload from player; fall back to ID string
+    song_id = begin
+      data = JSON.parse(raw)
+      data['id']
+    rescue JSON::ParserError
+      raw.to_i
+    end
+    return nil if song_id.nil? || song_id == 0
+
+    ArchiveSong.includes(:artist, :album).find_by(id: song_id)
   end
   
   # Get cached songs
   def cached_songs
-    Song.joins(:jukebox_cached_song)
+    Song.all
   end
   
   # Get uncached songs
   def uncached_songs
-    Song.left_joins(:jukebox_cached_song).where(jukebox_cached_songs: { id: nil })
+    Song.none
   end
   
   # Cache management
   def cache_song(song_id)
-    DownloadSongJob.perform_later(song_id)
+    # No-op: jukebox has full local copy
   end
   
   def clear_cache
-    JukeboxCachedSong.destroy_all
-    FileUtils.rm_rf(Rails.root.join('storage', 'cached_songs'))
-    FileUtils.mkdir_p(Rails.root.join('storage', 'cached_songs'))
+    # No-op: jukebox has full local copy
   end
   
   # Sync status
@@ -274,11 +277,18 @@ class JukeboxService
   end
   
   def random_pool_size
-    @redis.scard('jukebox:random_pool')
+    @redis.llen('jukebox:random_pool')
   end
   
   def playing?
-    @redis.get('jukebox:status') == 'playing'
+    raw = @redis.get('jukebox:status')
+    return false unless raw
+    begin
+      data = JSON.parse(raw)
+      data['state'] == 'playing'
+    rescue JSON::ParserError
+      raw == 'playing'
+    end
   end
   
   def volume
@@ -299,7 +309,7 @@ class JukeboxService
   end
   
   def next_queue_position
-    JukeboxQueueItem.maximum(:position) || 0
+    (JukeboxQueueItem.maximum(:position) || -1) + 1
   end
   
   def resume_if_needed
@@ -307,5 +317,48 @@ class JukeboxService
     if queue_length > 0 && !playing?
       play
     end
+  end
+
+  def send_command(action, payload = {})
+    cmd = { action: action }.merge(payload)
+    @redis.rpush('jukebox:commands', cmd.to_json)
+  end
+
+  # Handle requests from player (e.g., random pool refill)
+  def handle_player_requests
+    loop do
+      raw = @redis.lpop('jukebox:requests')
+      break unless raw
+      data = JSON.parse(raw) rescue {}
+      case data['action']
+      when 'refill_random_pool'
+        refill_random_pool
+      end
+    end
+  end
+
+  # Attempt to resolve local disk path of the Active Storage blob for a song
+  def resolve_local_audio_path(song)
+    return nil unless song.respond_to?(:audio_file) && song.audio_file.attached?
+    blob = song.audio_file.blob
+    return nil unless blob
+    service = ActiveStorage::Blob.service
+    # Try to use Disk service path_for if available
+    if service.respond_to?(:path_for, true)
+      begin
+        return service.send(:path_for, blob.key)
+      rescue
+        # fall through to manual
+      end
+    end
+    # Manual path using configured storage root
+    root = ENV.fetch('ARCHIVE_STORAGE_ROOT', Rails.root.join('storage').to_s)
+    File.join(root.to_s, blob.key[0..1], blob.key[2..3], blob.key)
+  end
+
+  def generate_stream_url(song)
+    return nil unless song.respond_to?(:audio_file) && song.audio_file.attached?
+    host = ENV.fetch('JUKEBOX_PUBLIC_URL', 'http://localhost:3001')
+    Rails.application.routes.url_helpers.rails_blob_url(song.audio_file, host: host)
   end
 end 

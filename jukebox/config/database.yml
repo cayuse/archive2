@@ -11,11 +11,25 @@ default: &default
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
 
 development:
-  <<: *default
-  database: jukebox_development
-  username: postgres
-  password: password
-  host: localhost
+  primary:
+    <<: *default
+    database: <%= ENV.fetch("ARCHIVE_DB_NAME", "archive_development") %>
+    username: <%= ENV.fetch("ARCHIVE_DB_USER", "postgres") %>
+    password: <%= ENV.fetch("ARCHIVE_DB_PASSWORD", "password") %>
+    host: <%= ENV.fetch("ARCHIVE_DB_HOST", "localhost") %>
+    port: <%= ENV.fetch("ARCHIVE_DB_PORT", 5432) %>
+
+  # Secondary connection used by Archive* models
+  archive:
+    <<: *default
+    database: <%= ENV.fetch("ARCHIVE_DB_NAME", "archive_development") %>
+    username: <%= ENV.fetch("ARCHIVE_DB_USER", "postgres") %>
+    password: <%= ENV.fetch("ARCHIVE_DB_PASSWORD", "password") %>
+    host: <%= ENV.fetch("ARCHIVE_DB_HOST", "localhost") %>
+    port: <%= ENV.fetch("ARCHIVE_DB_PORT", 5432) %>
+    replica: true
+
+# Note: top-level 'archive' section removed; use development.archive above
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".

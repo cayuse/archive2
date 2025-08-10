@@ -103,10 +103,8 @@ class SettingsController < ApplicationController
   def switch_theme
     theme = Theme.find(params[:id])
     if theme
-      # Deactivate all other themes
-      Theme.update_all(is_active: false)
-      # Activate the selected theme
-      theme.update(is_active: true)
+      # Set the global current theme in settings for single-source truth
+      SystemSetting.set_current_theme(theme.name)
       redirect_to manage_themes_settings_path, notice: "Theme '#{theme.display_name}' is now active"
     else
       redirect_to manage_themes_settings_path, alert: "Theme not found"
@@ -195,7 +193,8 @@ class SettingsController < ApplicationController
       :text_primary, :text_secondary, :text_muted, :text_inverse,
       :border_color, :shadow_color, :overlay_color, :success_color,
       :warning_color, :danger_color, :button_bg, :button_hover, :button_active,
-      :highlight_color, :link_color, :link_hover
+      :highlight_color, :link_color, :link_hover,
+      :heading_color, :card_header_text
     )
   end
 

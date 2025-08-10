@@ -22,6 +22,9 @@
   --highlight-color: #3b82f6;
   --link-color: #60a5fa;
   --link-hover: #93c5fd;
+  /* New theme-exposed text vars */
+  --heading-color: var(--text-primary);
+  --card-header-text: var(--text-primary);
 }
 
 /* Fallback for when no theme is set */
@@ -48,6 +51,9 @@
   --highlight-color: #3b82f6;
   --link-color: #60a5fa;
   --link-hover: #93c5fd;
+  /* New theme-exposed text vars */
+  --heading-color: var(--text-primary);
+  --card-header-text: var(--text-primary);
 }
 
 /* Spacing and Layout Variables (Static) */
@@ -73,6 +79,24 @@
 .theme-text-secondary { color: var(--text-secondary) !important; }
 .theme-text-muted { color: var(--text-muted) !important; }
 .theme-text-inverse { color: var(--text-inverse) !important; }
+/* Map common utility classes to theme colors */
+.text-muted { color: var(--text-muted) !important; }
+.text-secondary { color: var(--text-secondary) !important; }
+.text-primary { color: var(--text-primary) !important; }
+.text-success { color: var(--success-color) !important; }
+.text-warning { color: var(--warning-color) !important; }
+.text-danger  { color: var(--danger-color) !important; }
+
+/* Link utilities */
+.btn-link { color: var(--link-color); }
+.btn-link:hover, .btn-link:focus { color: var(--link-hover); }
+
+/* Navbar links */
+.navbar .nav-link, .navbar .navbar-brand { color: var(--text-primary) !important; }
+.navbar .nav-link:hover, .navbar .nav-link:focus { color: var(--link-hover) !important; }
+
+/* Global heading color controlled by theme */
+h1, h2, h3, h4, h5, h6 { color: var(--heading-color); }
 
 .theme-bg-primary { background-color: var(--primary-bg) !important; }
 .theme-bg-secondary { background-color: var(--secondary-bg) !important; }
@@ -130,6 +154,7 @@
 .card-header {
   background-color: var(--primary-bg);
   border-bottom: 1px solid var(--border-color);
+  color: var(--card-header-text);
 }
 
 /* Form controls */

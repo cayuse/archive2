@@ -3,6 +3,7 @@ class ArchiveSong < ApplicationRecord
   self.table_name = 'songs'
   
   # Active Storage attachment
+  # Note: blobs were attached in Archive under record_type 'Song', so attachment access is via Song model in controllers where needed
   has_one_attached :audio_file
   
   # Read-only access
@@ -11,9 +12,9 @@ class ArchiveSong < ApplicationRecord
   end
   
   # Relationships to other archive models
-  belongs_to :artist, class_name: 'ArchiveArtist', foreign_key: 'artist_id'
-  belongs_to :album, class_name: 'ArchiveAlbum', foreign_key: 'album_id'
-  belongs_to :genre, class_name: 'ArchiveGenre', foreign_key: 'genre_id'
+  belongs_to :artist, class_name: 'ArchiveArtist', foreign_key: 'artist_id', optional: true
+  belongs_to :album, class_name: 'ArchiveAlbum', foreign_key: 'album_id', optional: true
+  belongs_to :genre, class_name: 'ArchiveGenre', foreign_key: 'genre_id', optional: true
   belongs_to :user, class_name: 'ArchiveUser', foreign_key: 'user_id'
   
   # Scopes for searching

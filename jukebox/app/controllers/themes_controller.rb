@@ -1,6 +1,6 @@
 class ThemesController < ApplicationController
   # No authentication required for theme assets - they're public
-  skip_before_action :authenticate_user!
+  skip_before_action :authenticate_user!, raise: false
   
   def css
     theme = Theme.find_by(name: params[:theme])

@@ -4,9 +4,10 @@ class JukeboxPlaylistSong < ApplicationRecord
   # Relationships
   belongs_to :jukebox_playlist, class_name: 'JukeboxPlaylist'
   belongs_to :archive_song, class_name: 'ArchiveSong', foreign_key: 'song_id'
+  belongs_to :song, class_name: 'Song', foreign_key: 'song_id'
   
   # Validations
-  validates :playlist_id, presence: true
+  validates :jukebox_playlist_id, presence: true
   validates :song_id, presence: true
   validates :position, presence: true, numericality: { only_integer: true, greater_than: 0 }
   

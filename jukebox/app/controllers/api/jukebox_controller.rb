@@ -16,7 +16,7 @@ class Api::JukeboxController < ApplicationController
     song_id = params[:song_id]
     user = current_user if respond_to?(:current_user)
     
-    if @jukebox_service.add_to_queue(song_id, user)
+    if @jukebox_service.add_to_queue(song_id)
       render json: { success: true, message: 'Song added to queue' }
     else
       render json: { success: false, message: 'Failed to add song to queue' }, status: :unprocessable_entity

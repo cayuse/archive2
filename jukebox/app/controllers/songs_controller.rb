@@ -1,14 +1,14 @@
 class SongsController < ApplicationController
   def index
-    @songs = ArchiveSong.completed
-                        .includes(:artist, :album, :genre)
-                        .recent
-                        .page(params[:page])
-                        .per(params[:per_page] || 20)
+    @songs = Song.completed
+                  .includes(:artist, :album, :genre)
+                  .recent
+                  .page(params[:page])
+                  .per(params[:per_page] || 20)
   end
 
   def show
-    @song = ArchiveSong.includes(:artist, :album, :genre).find_by!(id: params[:id])
+    @song = Song.includes(:artist, :album, :genre).find_by!(id: params[:id])
   end
 
   def search
@@ -16,12 +16,12 @@ class SongsController < ApplicationController
     page = params[:page]&.to_i || 1
     per_page = 20
     
-    @songs = ArchiveSong.completed
-                        .includes(:artist, :album, :genre)
-                        .recent
+    @songs = Song.completed
+                  .includes(:artist, :album, :genre)
+                  .recent
     
     if query.present?
-      @songs = @songs.search_by_title(query)
+      @songs = @songs.search(query)
     end
     
     @songs = @songs.page(page).per(per_page)

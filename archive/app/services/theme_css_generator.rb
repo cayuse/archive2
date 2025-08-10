@@ -19,7 +19,8 @@ class ThemeCssGenerator
   private
   
   def generate_css_variables
-    variables = @theme.css_variables.map do |var, value|
+    # include extended variables (heading colors etc.)
+    variables = (@theme.respond_to?(:css_variables_with_extras) ? @theme.css_variables_with_extras : @theme.css_variables).map do |var, value|
       "  #{var}: #{value};"
     end.join("\n")
     
@@ -74,6 +75,10 @@ class ThemeCssGenerator
         background-color: var(--primary-bg);
         color: var(--text-primary);
       }
+
+      /* Heading and card header text via theme */
+      h1, h2, h3, h4, h5, h6 { color: var(--heading-color); }
+      .card-header { color: var(--card-header-text); }
       
       .card {
         background-color: var(--secondary-bg);

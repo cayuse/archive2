@@ -31,6 +31,11 @@ Rails.application.configure do
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 
+  # Disable role-based DB selector to avoid 'reading' role errors in shared-DB setup
+  # config.active_record.database_selector = { delay: 2.seconds }
+  # config.active_record.database_resolver = ActiveRecord::Middleware::DatabaseSelector::Resolver
+  # config.active_record.database_resolver_context = ActiveRecord::Middleware::DatabaseSelector::Resolver::Session
+
   # Don't care if the mailer can't send.
   config.action_mailer.raise_delivery_errors = false
 

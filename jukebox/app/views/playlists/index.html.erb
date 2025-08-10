@@ -1,0 +1,26 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <h1 class="h3 mb-3">Playlists</h1>
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Songs</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @playlists.each do |pl| %>
+            <tr>
+              <td><%= link_to pl.display_name, playlist_path(pl) %></td>
+              <td><%= pl.song_count %></td>
+              <td><%= pl.public? ? 'Public' : 'Private' %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+

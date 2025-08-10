@@ -4,7 +4,9 @@ test:
 
 local:
   service: Disk
-  root: <%= Rails.root.join("storage") %>
+  # NOTE: Shared-DB mode: point to Archive's Active Storage root so both apps see the same files.
+  # Adjust ARCHIVE_STORAGE_ROOT via env if Archive is on another host or mount.
+  root: <%= Pathname.new(ENV.fetch('ARCHIVE_STORAGE_ROOT', '/home/cayuse/dockercrap/archive/storage')) %>
 
 # Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:

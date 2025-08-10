@@ -6,7 +6,8 @@ Rails.application.routes.draw do
   
   # System configuration routes (admin only)
   get 'system', to: 'system_config#index'
-  get 'system/themes', to: 'system_config#themes'
+  get  'system/themes', to: 'system_config#themes'
+  post 'system/themes', to: 'system_config#themes'
   get 'system/settings', to: 'system_config#settings'
   
   # Theme routes
@@ -36,10 +37,18 @@ Rails.application.routes.draw do
   
   # Resource routes for main entities
   resources :artists
-  resources :songs
+  resources :songs do
+    collection do
+      get :search
+    end
+  end
   resources :albums
   resources :genres
   resources :playlists
+
+  # Admin: configure random source playlists
+  get 'system/random_sources', to: 'system_config#random_sources'
+  post 'system/random_sources', to: 'system_config#random_sources'
   
   # Jukebox API routes
   namespace :api do
@@ -63,6 +72,10 @@ Rails.application.routes.draw do
       post 'player/pause', to: 'jukebox#pause'
       post 'player/skip', to: 'jukebox#skip'
       post 'player/volume', to: 'jukebox#set_volume'
+      # Stable stream URL for MPD
+      get  'player/stream/:id', to: 'jukebox#stream'
+      # Next song for player (queue-aware)
+      get  'player/next', to: 'jukebox#next_song'
       
       # Search functionality
       get 'search/songs', to: 'jukebox#search_songs'
@@ -92,5 +105,5 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
   # Defines the root path route ("/")
-  root "jukebox_web#index"
+  root "jukebox_web#live"
 end

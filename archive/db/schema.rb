@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_20_235426) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_10_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -129,6 +129,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_20_235426) do
     t.check_constraint "color IS NULL OR color::text ~ '^#[0-9A-Fa-f]{6}$'::text", name: "check_valid_hex_color"
   end
 
+  create_table "jukebox_cached_songs", force: :cascade do |t|
+    t.bigint "song_id", null: false
+    t.string "local_path"
+    t.string "original_path"
+    t.bigint "file_size"
+    t.string "status", default: "downloading"
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.text "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["local_path"], name: "index_jukebox_cached_songs_on_local_path"
+    t.index ["song_id"], name: "index_jukebox_cached_songs_on_song_id", unique: true
+    t.index ["status"], name: "index_jukebox_cached_songs_on_status"
+  end
+
   create_table "jukebox_keys", force: :cascade do |t|
     t.string "name", null: false
     t.string "key_hash", null: false
@@ -138,6 +154,66 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_20_235426) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["key_hash"], name: "index_jukebox_keys_on_key_hash"
+  end
+
+  create_table "jukebox_played_songs", force: :cascade do |t|
+    t.bigint "song_id", null: false
+    t.datetime "played_at", null: false
+    t.string "source", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["played_at"], name: "index_jukebox_played_songs_on_played_at"
+    t.index ["song_id"], name: "index_jukebox_played_songs_on_song_id"
+  end
+
+  create_table "jukebox_playlist_songs", force: :cascade do |t|
+    t.bigint "jukebox_playlist_id", null: false
+    t.bigint "song_id", null: false
+    t.integer "position", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["jukebox_playlist_id", "position"], name: "idx_on_jukebox_playlist_id_position_a388ebf6a3"
+    t.index ["jukebox_playlist_id", "song_id"], name: "idx_on_jukebox_playlist_id_song_id_0a93278e5c", unique: true
+    t.index ["jukebox_playlist_id"], name: "index_jukebox_playlist_songs_on_jukebox_playlist_id"
+    t.index ["song_id"], name: "index_jukebox_playlist_songs_on_song_id"
+  end
+
+  create_table "jukebox_playlists", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "archive_playlist_id", null: false
+    t.boolean "active", default: true
+    t.boolean "jukebox_enabled", default: false
+    t.integer "crossfade_duration", default: 0
+    t.integer "volume", default: 80
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "is_public", default: true, null: false
+    t.index ["active"], name: "index_jukebox_playlists_on_active"
+    t.index ["archive_playlist_id"], name: "index_jukebox_playlists_on_archive_playlist_id", unique: true
+    t.index ["is_public"], name: "index_jukebox_playlists_on_is_public"
+    t.index ["jukebox_enabled"], name: "index_jukebox_playlists_on_jukebox_enabled"
+  end
+
+  create_table "jukebox_queue_items", force: :cascade do |t|
+    t.bigint "song_id", null: false
+    t.bigint "user_id"
+    t.integer "position", null: false
+    t.string "status", default: "pending"
+    t.datetime "played_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["position"], name: "index_jukebox_queue_items_on_position"
+    t.index ["song_id"], name: "index_jukebox_queue_items_on_song_id"
+    t.index ["status", "position"], name: "index_jukebox_queue_items_on_status_and_position"
+    t.index ["status"], name: "index_jukebox_queue_items_on_status"
+    t.index ["user_id"], name: "index_jukebox_queue_items_on_user_id"
+  end
+
+  create_table "jukebox_selected_playlists", force: :cascade do |t|
+    t.bigint "playlist_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["playlist_id"], name: "index_jukebox_selected_playlists_on_playlist_id", unique: true
   end
 
   create_table "playlists", force: :cascade do |t|
@@ -232,6 +308,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_20_235426) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "theme_id"
+    t.index ["key"], name: "index_system_settings_on_key", unique: true
     t.index ["theme_id"], name: "index_system_settings_on_theme_id"
   end
 
@@ -281,6 +358,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_20_235426) do
     t.string "link_hover", default: "#93c5fd"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "heading_color"
+    t.string "card_header_text"
     t.index ["name"], name: "index_themes_on_name", unique: true
   end
 
@@ -303,6 +382,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_20_235426) do
   add_foreign_key "albums_genres", "genres"
   add_foreign_key "artists_genres", "artists"
   add_foreign_key "artists_genres", "genres"
+  add_foreign_key "jukebox_cached_songs", "songs", on_delete: :cascade
+  add_foreign_key "jukebox_playlist_songs", "jukebox_playlists", on_delete: :cascade
+  add_foreign_key "jukebox_queue_items", "users", on_delete: :nullify
   add_foreign_key "playlists", "users"
   add_foreign_key "playlists_songs", "playlists"
   add_foreign_key "playlists_songs", "songs"

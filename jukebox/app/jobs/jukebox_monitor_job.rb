@@ -2,7 +2,7 @@ class JukeboxMonitorJob < ApplicationJob
   queue_as :default
   
   def perform
-    jukebox_service = JukeboxService.new
+    jukebox_service = JukeboxService.instance
     
     Rails.logger.info "Starting Jukebox Monitor Job"
     
@@ -12,13 +12,11 @@ class JukeboxMonitorJob < ApplicationJob
         jukebox_service.handle_player_requests
         
         # Check system health periodically
-        health = jukebox_service.get_system_health
+        health = jukebox_service.health
         
         unless health[:healthy]
           Rails.logger.warn "Jukebox system health issues detected:"
-          health[:recommendations].each do |rec|
-            Rails.logger.warn "  - #{rec[:message]} (#{rec[:priority]} priority)"
-          end
+          health[:recommendations].each { |rec| Rails.logger.warn("  - #{rec}") }
         end
         
         # Sleep for a bit before next check

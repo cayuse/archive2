@@ -6,8 +6,8 @@ class JukeboxCachedSong < ApplicationRecord
   
   # Validations
   validates :song_id, presence: true, uniqueness: true
-  validates :file_path, presence: true
-  validates :file_size, presence: true, numericality: { greater_than: 0 }
+  validates :local_path, presence: true, if: :completed?
+  validates :file_size, presence: true, numericality: { greater_than: 0 }, if: :completed?
   validates :status, inclusion: { in: %w[downloading completed failed] }
   
   # Scopes
@@ -21,11 +21,12 @@ class JukeboxCachedSong < ApplicationRecord
   
   # File management
   def file_exists?
-    File.exist?(file_path) && File.size(file_path) == file_size
+    return false unless local_path.present? && file_size.present?
+    File.exist?(local_path) && File.size(local_path) == file_size
   end
   
   def delete_file
-    File.delete(file_path) if File.exist?(file_path)
+    File.delete(local_path) if local_path.present? && File.exist?(local_path)
     destroy
   end
   
@@ -39,14 +40,15 @@ class JukeboxCachedSong < ApplicationRecord
   
   def self.find_or_create_for_song(song)
     find_or_create_by(song_id: song.id) do |cached_song|
-      cached_song.file_path = generate_file_path(song)
+      cached_song.local_path = generate_file_path(song).to_s
       cached_song.status = 'downloading'
     end
   end
   
   def self.generate_file_path(song)
     ensure_cache_directory
-    extension = File.extname(song.audio_file.filename.to_s) || '.mp3'
+    extension = File.extname(song.audio_file.filename.to_s)
+    extension = '.mp3' if extension.blank?
     filename = "#{song.id}_#{song.title.parameterize}#{extension}"
     cache_directory.join(filename)
   end
@@ -55,7 +57,7 @@ class JukeboxCachedSong < ApplicationRecord
     update!(
       status: 'completed',
       downloaded_at: Time.current,
-      file_size: File.size(file_path)
+      file_size: File.size(local_path)
     )
   end
   
@@ -67,5 +69,9 @@ class JukeboxCachedSong < ApplicationRecord
   
   def set_default_status
     self.status ||= 'downloading'
+  end
+
+  def completed?
+    status == 'completed'
   end
 end 

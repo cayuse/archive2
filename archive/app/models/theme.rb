@@ -27,7 +27,8 @@ class Theme < ApplicationRecord
   # include PowerSync::Model
   
   def self.current
-    active.first || default.first || first
+    name = SystemSetting.current_theme
+    Theme.find_by(name: name) || default.first || first
   end
   
   def css_variables
@@ -54,6 +55,14 @@ class Theme < ApplicationRecord
       '--link-color' => link_color,
       '--link-hover' => link_hover
     }
+  end
+
+  def css_variables_with_extras
+    base = css_variables
+    base.merge(
+      '--heading-color' => (heading_color.presence || text_primary),
+      '--card-header-text' => (card_header_text.presence || text_primary)
+    )
   end
   
   def generate_css

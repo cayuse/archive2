@@ -1,3 +1,5 @@
+SystemSetting.set('min_queue_length', '5', 'Minimum queue length before auto-refill')
+SystemSetting.set('refill_queue_to', '10', 'Target queue length after auto-refill')
 # Create initial admin user only
 # WARNING: Change this password immediately after first login!
 admin = User.find_or_create_by(email: 'admin@musicarchive.com') do |user|

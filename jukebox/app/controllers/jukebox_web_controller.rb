@@ -3,8 +3,9 @@ class JukeboxWebController < ApplicationController
   
   # GET /live
   def live
-    @current_song = @jukebox_service.current_song
-    @queue_items = @jukebox_service.queue.limit(10)
+    # Now playing is the last song added to the played list
+    @current_song = JukeboxPlayedSong.order(played_at: :desc).includes(song: [:artist, :album]).first&.song
+    @queue_items = JukeboxQueueItem.ordered_for_playback.includes(:song).limit(10)
     @status = @jukebox_service.status
     @upcoming_songs = get_upcoming_songs
   end
@@ -70,21 +71,12 @@ class JukeboxWebController < ApplicationController
   end
   
   def get_upcoming_songs
-    upcoming = []
-    
-    # Add queued songs first (they take precedence)
-    queue_songs = @jukebox_service.queue.includes(:song).limit(10)
-    upcoming.concat(queue_songs.map { |item| { song: item.song, source: 'queue', position: item.position } })
-    
-    # If we don't have 10 songs yet, add from random pool
-    if upcoming.length < 10
-      remaining_count = 10 - upcoming.length
-      random_songs = @jukebox_service.get_random_songs(remaining_count)
-      random_songs.each_with_index do |song, index|
-        upcoming << { song: song, source: 'random', position: upcoming.length + index + 1 }
-      end
+    # Upcoming is exactly the unified queue (manual first, then random), capped to 10
+    queue_items = JukeboxQueueItem.ordered_for_playback.includes(:song).limit(10)
+    queue_items.map do |item|
+      # Status: '0' => manual (queue), '1' => random
+      src = (item.status.to_s == '1') ? 'random' : 'queue'
+      { song: item.song, source: src, position: item.position }
     end
-    
-    upcoming.first(10)
   end
 end 

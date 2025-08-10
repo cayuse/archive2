@@ -49,7 +49,7 @@ h6 { font-size: 1rem; }
 
 /* Utility classes that work across themes */
 .text-white { color: white !important; }
-.text-light { color: #f8fafc !important; }
+.text-light { color: var(--text-primary) !important; }
 
 /* Loading Spinner */
 .loading-spinner {
@@ -83,15 +83,15 @@ h6 { font-size: 1rem; }
 .list-group-item-action {
   cursor: pointer;
   border: none;
-  border-bottom: 1px solid #334155;
-  background: #16213e;
-  color: #cbd5e1;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--secondary-bg);
+  color: var(--text-secondary);
   transition: all 0.2s ease;
 }
 
 .list-group-item-action:hover {
-  background: #4f46e5;
-  color: #f8fafc;
+  background: var(--accent-color);
+  color: var(--text-inverse);
   transform: translateX(5px);
 }
 
@@ -103,9 +103,9 @@ h6 { font-size: 1rem; }
 #album_results, #genre_results, #artist_results {
   max-height: 200px;
   overflow-y: auto;
-  border: 1px solid #334155;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: #16213e;
+  background: var(--secondary-bg);
   z-index: 1000;
   position: relative;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -218,7 +218,7 @@ h6 { font-size: 1rem; }
 /* Enhanced Navigation Styling */
 .navbar {
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid var(--border-color);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   padding: 0.75rem 0;
   position: sticky;
@@ -248,12 +248,12 @@ h6 { font-size: 1rem; }
 
 .completed-count {
   font-weight: 600;
-  color: #4f46e5;
+  color: var(--accent-color);
 }
 
 .stats-label {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -276,7 +276,7 @@ h6 { font-size: 1rem; }
 .nav-btn {
   background: transparent;
   border: 1px solid transparent;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   padding: 0.5rem 1rem;
   border-radius: 8px;
   font-weight: 500;
@@ -288,16 +288,16 @@ h6 { font-size: 1rem; }
 
 .nav-btn:hover {
   background: rgba(79, 70, 229, 0.1);
-  border-color: #4f46e5;
-  color: #f8fafc;
+  border-color: var(--accent-color);
+  color: var(--text-primary);
   transform: translateY(-1px);
   text-decoration: none;
 }
 
 .nav-btn.active {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white !important;
-  border-color: #4f46e5;
+  color: var(--text-inverse) !important;
+  border-color: var(--accent-color);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
@@ -319,7 +319,7 @@ h6 { font-size: 1rem; }
 
 .user-name {
   font-weight: 500;
-  color: #f8fafc;
+  color: var(--text-primary);
   font-size: 0.875rem;
 }
 
@@ -350,7 +350,7 @@ h6 { font-size: 1rem; }
 .user-dropdown-btn {
   background: transparent;
   border: none;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   padding: 0.25rem;
   border-radius: 4px;
   transition: all 0.2s ease;
@@ -358,14 +358,14 @@ h6 { font-size: 1rem; }
 
 .user-dropdown-btn:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
+  color: var(--text-primary);
 }
 
 /* Dropdown Menu Styling */
 .dropdown-menu {
   border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  border: 1px solid #334155;
+  box-shadow: 0 20px 25px -5px var(--shadow-color), 0 10px 10px -5px var(--shadow-color);
+  border: 1px solid var(--border-color);
   backdrop-filter: blur(10px);
 }
 
@@ -377,8 +377,8 @@ h6 { font-size: 1rem; }
 }
 
 .dropdown-item:hover {
-  background: #4f46e5;
-  color: white;
+  background: var(--accent-color);
+  color: var(--text-inverse);
   transform: translateX(5px);
 }
 
@@ -387,7 +387,7 @@ h6 { font-size: 1rem; }
 }
 
 .dropdown-divider {
-  border-color: #334155;
+  border-color: var(--border-color);
   margin: 0.5rem 0;
 }
 

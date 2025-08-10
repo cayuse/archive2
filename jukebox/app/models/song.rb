@@ -1,4 +1,6 @@
 class Song < ApplicationRecord
+  include ReadonlyRecord
+  has_one_attached :audio_file
   # This model represents songs synced from the archive
   # It's read-only from the jukebox perspective
   
@@ -15,15 +17,23 @@ class Song < ApplicationRecord
   validates :file_path, presence: true
   
   # Scopes for common queries
+  scope :recent, -> { order(created_at: :desc) }
+  scope :completed, -> { where(processing_status: 'completed') }
   scope :by_artist, ->(artist_name) { where(artist: artist_name) }
   scope :by_album, ->(album_title) { where(album: album_title) }
   scope :by_genre, ->(genre_name) { where(genre: genre_name) }
   scope :by_year, ->(year) { where(year: year) }
   
-  # Search functionality
+  # Search functionality across title and associated names
   def self.search(query)
-    where("title ILIKE ? OR artist ILIKE ? OR album ILIKE ?", 
-          "%#{query}%", "%#{query}%", "%#{query}%")
+    return all if query.blank?
+    sanitized = "%#{ActiveRecord::Base.sanitize_sql_like(query)}%"
+    left_outer_joins(:artist, :album, :genre)
+      .where(
+        "songs.title ILIKE :q OR artists.name ILIKE :q OR albums.title ILIKE :q OR genres.name ILIKE :q",
+        q: sanitized
+      )
+      .distinct
   end
   
   # Check if song is cached locally

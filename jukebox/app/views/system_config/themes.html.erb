@@ -20,9 +20,10 @@
                 
                 <div class="mb-3">
                   <%= form.label :theme, "Choose Theme", class: "form-label" %>
-                  <%= form.select :theme, @available_themes.map { |theme| [theme.titleize, theme] }, 
-                                 { selected: @current_theme }, 
-                                 { class: "form-select" } %>
+                  <%= form.select :theme,
+                        @available_themes.map { |t| [t.display_name, t.name] },
+                        { selected: @current_theme },
+                        { class: "form-select" } %>
                 </div>
                 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
@@ -41,8 +42,8 @@
             <div class="card-body">
               <% @available_themes.each do |theme| %>
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                  <span><%= theme.titleize %></span>
-                  <% if theme == @current_theme %>
+                  <span><%= theme.display_name %></span>
+                  <% if theme.name == @current_theme %>
                     <span class="badge bg-success">Active</span>
                   <% end %>
                 </div>

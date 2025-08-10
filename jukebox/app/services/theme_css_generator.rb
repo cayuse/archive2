@@ -4,7 +4,7 @@ class ThemeCssGenerator
   end
 
   def self.generate_all_themes
-    Theme.active.map { |theme| generate_for_theme(theme) }
+    Theme.all.map { |theme| generate_for_theme(theme) }
   end
 
   def initialize(theme)
@@ -32,11 +32,6 @@ class ThemeCssGenerator
       /* Generated Theme CSS - Database-Driven Variables */
       [data-theme="#{@theme.name}"] {
       #{variables}
-      }
-
-      /* Fallback for when no theme is set */
-      :root {
-      /* Use default theme colors as fallback */
       }
     CSS
 

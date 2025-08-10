@@ -1,6 +1,5 @@
 class AddIsPublicToJukeboxPlaylists < ActiveRecord::Migration[8.0]
   def change
-    add_column :jukebox_playlists, :is_public, :boolean, default: true, null: false
-    add_index :jukebox_playlists, :is_public
+    # intentionally empty in shared-db setup; see db/migrate_jukebox_only/
   end
 end

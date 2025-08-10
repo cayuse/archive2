@@ -1,132 +1,16 @@
-/* Base theme styles for jukebox */
-body {
-  background-color: var(--background-color, #ffffff);
-  color: var(--text-color, #333333);
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.navbar {
-  background-color: var(--navbar-bg, #343a40) !important;
-  transition: background-color 0.3s ease;
-}
-
-.navbar-brand {
-  color: var(--text-color, #ffffff) !important;
-}
-
-.nav-link {
-  color: var(--text-color, #ffffff) !important;
-}
-
-.nav-link:hover {
-  color: var(--link-hover-color, #ffffff) !important;
-}
-
-.card {
-  background-color: var(--card-bg, #ffffff);
-  border-color: var(--card-border, #dee2e6);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
-}
-
-.btn-primary {
-  background-color: var(--button-primary-bg, #007bff);
-  border-color: var(--button-primary-bg, #007bff);
-  color: var(--button-primary-text, #ffffff);
-}
-
-.btn-primary:hover {
-  background-color: var(--link-hover-color, #0056b3);
-  border-color: var(--link-hover-color, #0056b3);
-}
-
-.btn-secondary {
-  background-color: var(--button-secondary-bg, #6c757d);
-  border-color: var(--button-secondary-bg, #6c757d);
-  color: var(--button-secondary-text, #ffffff);
-}
-
-.text-muted {
-  color: var(--text-muted-color, #6c757d) !important;
-}
-
-.border {
-  border-color: var(--border-color, #dee2e6) !important;
-}
-
-.alert-success {
-  background-color: var(--success-color, #d4edda);
-  border-color: var(--success-color, #c3e6cb);
-  color: var(--text-color, #155724);
-}
-
-.alert-danger {
-  background-color: var(--error-color, #f8d7da);
-  border-color: var(--error-color, #f5c6cb);
-  color: var(--text-color, #721c24);
-}
-
-.alert-warning {
-  background-color: var(--warning-color, #fff3cd);
-  border-color: var(--warning-color, #ffeaa7);
-  color: var(--text-color, #856404);
-}
-
-.alert-info {
-  background-color: var(--info-color, #d1ecf1);
-  border-color: var(--info-color, #bee5eb);
-  color: var(--text-color, #0c5460);
-}
-
-.badge.bg-primary {
-  background-color: var(--primary-color, #007bff) !important;
-}
-
-.badge.bg-secondary {
-  background-color: var(--secondary-color, #6c757d) !important;
-}
-
-.badge.bg-success {
-  background-color: var(--success-color, #28a745) !important;
-}
-
-.badge.bg-warning {
-  background-color: var(--warning-color, #ffc107) !important;
-  color: var(--text-color, #212529) !important;
-}
-
-.badge.bg-danger {
-  background-color: var(--error-color, #dc3545) !important;
-}
-
-.badge.bg-info {
-  background-color: var(--info-color, #17a2b8) !important;
-}
-
-/* Jukebox specific styles */
-.song-list-table {
-  background-color: var(--surface-color, #f8f9fa);
-}
-
-.song-list-table th {
-  background-color: var(--card-bg, #ffffff);
-  border-color: var(--border-color, #dee2e6);
-  color: var(--text-color, #212529);
-}
-
-.song-list-table td {
-  border-color: var(--border-color, #dee2e6);
-  color: var(--text-color, #212529);
-}
-
-.user-profile-container {
-  color: var(--text-color, #ffffff);
-}
-
-.user-name {
-  color: var(--text-color, #ffffff);
-}
-
-/* Theme transition effects */
-* {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-} 
+/* Align with Archive theme variable names */
+body { background-color: var(--primary-bg); color: var(--text-primary); }
+.navbar { background: linear-gradient(135deg, var(--primary-bg) 0%, var(--secondary-bg) 100%); box-shadow: var(--shadow-md); }
+.card { background-color: var(--secondary-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.card-header { background-color: var(--primary-bg); border-bottom: 1px solid var(--border-color); color: var(--card-header-text); }
+.form-control, .form-select { background-color: var(--primary-bg); border: 1px solid var(--border-color); color: var(--text-primary); }
+.form-control:focus, .form-select:focus { background-color: var(--primary-bg); border-color: var(--accent-color); color: var(--text-primary); box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25); }
+.btn-primary { background-color: var(--accent-color); border-color: var(--accent-color); color: var(--text-inverse); }
+.btn-primary:hover { background-color: var(--accent-hover); border-color: var(--accent-hover); color: var(--text-inverse); }
+.badge-success { background-color: var(--success-color); color: var(--text-inverse); }
+.badge-danger { background-color: var(--danger-color); color: var(--text-inverse); }
+.badge-warning { background-color: var(--warning-color); color: var(--text-inverse); }
+.badge-info { background-color: var(--highlight-color); color: var(--text-inverse); }
+.table { background-color: var(--secondary-bg); color: var(--text-primary); }
+.table th { background-color: var(--primary-bg); border-color: var(--border-color); color: var(--text-primary); }
+.table td { border-color: var(--border-color); }

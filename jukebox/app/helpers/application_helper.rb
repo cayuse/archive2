@@ -10,26 +10,20 @@ module ApplicationHelper
 
   # Theme helpers
   def current_theme
-    @current_theme ||= Theme.current
-    @current_theme&.name || 'default'
+    Theme.current&.name || 'default'
   end
 
   def theme_css_path
     theme = Theme.current
-    return '/assets/application.css' unless theme
-    
-    # Add cache busting parameter
-    "/themes/#{theme.name}.css?v=#{theme.updated_at.to_i}"
+    cache_buster = theme&.updated_at&.to_i || Time.current.to_i
+    "/themes/#{current_theme}.css?v=#{cache_buster}"
   end
 
   def theme_logo_path
     theme = Theme.current
-    return '/icon.png' unless theme
-    
-    logo = theme.logos.first
-    return '/icon.png' unless logo&.file&.attached?
-    
-    "/themes/#{theme.name}/assets/logo/#{logo.filename}"
+    logo = theme&.logos&.first
+    return '/icon.png' unless logo
+    "/themes/#{current_theme}/assets/logo/#{logo.filename}"
   end
 
   def theme_asset_path(theme_name, asset_type, filename)

@@ -16,16 +16,25 @@ import redis
 import requests
 from mpd import MPDClient, ConnectionError, CommandError
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('/var/log/jukebox_player.log'),
-        logging.StreamHandler()
-    ]
-)
+# Configure logging (fallback if /var/log is not writable)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+_handlers = [logging.StreamHandler()]
+_log_file = os.environ.get('JUKEBOX_LOG_FILE', '/var/log/jukebox_player.log')
+try:
+    _fh = logging.FileHandler(_log_file)
+except Exception:
+    try:
+        _fh = logging.FileHandler(str(Path.home() / 'jukebox_player.log'))
+    except Exception:
+        _fh = None
+if _fh:
+    _fh.setFormatter(_formatter)
+    _handlers.append(_fh)
+for _h in _handlers:
+    _h.setFormatter(_formatter)
+    logger.addHandler(_h)
 
 class JukeboxPlayer:
     """Main jukebox player controller"""
@@ -41,6 +50,9 @@ class JukeboxPlayer:
         self.current_song = None
         self.is_playing = False
         self.shutdown_event = threading.Event()
+        self.selection_lock = threading.Lock()
+        # Desired player state: 'playing' | 'paused' | 'stopped'
+        self.desired_state = self._load_desired_state()
         
         # Initialize MPD connection
         self.connect_mpd()
@@ -56,15 +68,17 @@ class JukeboxPlayer:
         
         # Default configuration
         return {
-            'mpd_host': 'localhost',
-            'mpd_port': 6600,
-            'mpd_password': None,
-            'redis_host': 'localhost',
-            'redis_port': 6379,
-            'redis_db': 0,
-            'jukebox_api_url': 'http://localhost:3001/api',
+            'mpd_host': os.environ.get('MPD_HOST', 'localhost'),
+            'mpd_port': int(os.environ.get('MPD_PORT', '6600')),
+            'mpd_password': os.environ.get('MPD_PASSWORD') or None,
+            'redis_host': os.environ.get('REDIS_HOST', 'localhost'),
+            'redis_port': int(os.environ.get('REDIS_PORT', '6379')),
+            'redis_db': int(os.environ.get('REDIS_DB', '0')),
+            'jukebox_api_url': os.environ.get('JUKEBOX_API_URL', 'http://localhost:3001/api'),
             'cache_directory': '/var/lib/jukebox/cache',
-            'crossfade_duration': 3,
+            'crossfade_duration': 6,
+            'prequeue_margin': 3,  # seconds before crossfade to request next
+            'prequeue_enabled': False,
             'volume': 80,
             'retry_attempts': 3,
             'retry_delay': 5
@@ -85,6 +99,14 @@ class JukeboxPlayer:
             # Configure MPD settings
             self.mpd_client.crossfade(self.config['crossfade_duration'])
             self.mpd_client.setvol(self.config['volume'])
+            # Ensure MPD does not loop old items; consume removes played items
+            try:
+                self.mpd_client.repeat(0)
+                self.mpd_client.random(0)
+                self.mpd_client.single(0)
+                self.mpd_client.consume(1)
+            except Exception:
+                pass
             
             logger.info("Connected to MPD successfully")
             
@@ -101,45 +123,46 @@ class JukeboxPlayer:
         
         time.sleep(1)
         self.connect_mpd()
+
+    def _load_desired_state(self) -> str:
+        try:
+            raw = self.redis_client.get('jukebox:desired_state')
+            state = raw.decode('utf-8') if raw else 'playing'
+            if state not in ('playing', 'paused', 'stopped'):
+                state = 'playing'
+            logger.info(f"Desired state: {state}")
+            return state
+        except Exception:
+            return 'playing'
+
+    def _save_desired_state(self):
+        try:
+            self.redis_client.set('jukebox:desired_state', self.desired_state)
+        except Exception:
+            pass
     
     def get_next_song(self) -> Optional[Dict]:
-        """Get the next song to play from queue or random pool"""
+        """Ask Rails for the next song to play; Rails consumes queue and applies logic."""
         try:
-            # Check user queue first (FIFO)
-            queue_data = self.redis_client.lpop('jukebox:queue')
-            if queue_data:
-                song_data = json.loads(queue_data)
-                logger.info(f"Playing queued song: {song_data.get('title', 'Unknown')}")
+            url = f"{self.config['jukebox_api_url']}/jukebox/player/next"
+            resp = requests.get(url, timeout=5)
+            if resp.status_code == 200:
+                song_data = resp.json()
+                logger.info(f"Next song: {song_data.get('title', 'Unknown')} (id={song_data.get('id')}) stream={song_data.get('stream_url')}")
                 return song_data
-            
-            # Fall back to random song from active playlists
-            random_song = self.redis_client.rpop('jukebox:random_pool')
-            if random_song:
-                song_data = json.loads(random_song)
-                logger.info(f"Playing random song: {song_data.get('title', 'Unknown')}")
-                return song_data
-            
-            # No songs available - try to refill random pool
-            logger.warning("No songs available in queue or random pool")
-            self.request_random_pool_refill()
-            
-            return None
-            
+            elif resp.status_code == 204:
+                logger.info("No next song available")
+                return None
+            else:
+                logger.error(f"Next song request failed: {resp.status_code}")
+                return None
         except Exception as e:
-            logger.error(f"Error getting next song: {e}")
+            logger.error(f"Error requesting next song: {e}")
             return None
     
     def request_random_pool_refill(self):
-        """Request the Rails app to refill the random pool"""
-        try:
-            # Send a refill request to Redis
-            self.redis_client.rpush('jukebox:requests', json.dumps({
-                'action': 'refill_random_pool',
-                'timestamp': time.time()
-            }))
-            logger.info("Requested random pool refill")
-        except Exception as e:
-            logger.error(f"Failed to request random pool refill: {e}")
+        """Deprecated with next-song API; no-op."""
+        return
     
     def check_system_status(self) -> Dict:
         """Check the current system status"""
@@ -166,15 +189,8 @@ class JukeboxPlayer:
             return {'error': str(e)}
     
     def ensure_song_cached(self, song_data: Dict) -> bool:
-        """Ensure song is cached locally before playing"""
-        song_id = song_data.get('id')
-        file_path = song_data.get('cached_path')
-        
-        if not file_path or not os.path.exists(file_path):
-            logger.warning(f"Song {song_id} not cached, attempting to download")
-            return self.download_song(song_data)
-        
-        return True
+        """We always use stream_url (preferred) or local cached_path if exists."""
+        return bool(song_data.get('stream_url') or (song_data.get('cached_path') and os.path.exists(song_data.get('cached_path'))))
     
     def download_song(self, song_data: Dict) -> bool:
         """Download song from archive to local cache"""
@@ -190,9 +206,20 @@ class JukeboxPlayer:
             response = requests.get(download_url, stream=True)
             response.raise_for_status()
             
-            # Determine file extension
-            content_type = response.headers.get('content-type', 'audio/mpeg')
-            extension = '.mp3' if 'mpeg' in content_type else '.wav'
+            # Determine file extension from content type
+            content_type = response.headers.get('content-type', 'application/octet-stream')
+            if 'flac' in content_type:
+                extension = '.flac'
+            elif 'mpeg' in content_type or 'mp3' in content_type:
+                extension = '.mp3'
+            elif 'wav' in content_type:
+                extension = '.wav'
+            elif 'ogg' in content_type:
+                extension = '.ogg'
+            elif 'm4a' in content_type or 'aac' in content_type or 'mp4' in content_type:
+                extension = '.m4a'
+            else:
+                extension = ''
             
             file_path = cache_dir / f"{song_id}{extension}"
             
@@ -213,51 +240,100 @@ class JukeboxPlayer:
             logger.error(f"Failed to download song {song_id}: {e}")
             return False
     
-    def play_song(self, song_data: Dict):
-        """Play a song using MPD"""
+    def play_song(self, song_data: Dict, force_play: bool = False):
+        """Play a song using MPD (supports local path or HTTP URL). If force_play is True, clear and play immediately."""
         try:
-            if not self.ensure_song_cached(song_data):
-                logger.error(f"Cannot play song {song_data.get('id')} - not cached")
-                return False
-            
+            # Determine source: prefer cached local path, fallback to HTTP stream URL
             file_path = song_data.get('cached_path')
-            
-            # Clear current playlist and add new song
-            self.mpd_client.clear()
-            self.mpd_client.add(file_path)
-            self.mpd_client.play()
-            
+            stream_url = song_data.get('stream_url')
+            source = None
+            if file_path and os.path.exists(file_path):
+                source = file_path
+            elif stream_url:
+                source = stream_url
+            else:
+                logger.error(f"No playable source for song {song_data.get('id')}")
+                return False
+
+            # If nothing queued, add and play; otherwise add only (for crossfade)
+            status = self.mpd_client.status()
+            playlist_length = int(status.get('playlistlength', '0')) if status else 0
+            logger.info(f"MPD add source: {source}")
+            if force_play:
+                self.mpd_client.clear()
+                self.mpd_client.add(source)
+                self.mpd_client.play()
+                logger.info("MPD play issued (force)")
+            else:
+                if playlist_length == 0:
+                    self.mpd_client.clear()
+                    self.mpd_client.add(source)
+                    self.mpd_client.play()
+                    logger.info("MPD play issued")
+                else:
+                    self.mpd_client.add(source)
+
             self.current_song = song_data
             self.is_playing = True
-            
+
             # Notify Rails app about current song
             self.redis_client.set('jukebox:current_song', json.dumps(song_data))
-            
-            logger.info(f"Now playing: {song_data.get('title', 'Unknown')}")
+
+            display_source = file_path if (file_path and os.path.exists(file_path)) else stream_url
+            logger.info(f"Now playing: {song_data.get('title', 'Unknown')} -> {display_source}")
             return True
-            
         except Exception as e:
             logger.error(f"Error playing song: {e}")
             return False
+
+    def fetch_and_play_next(self, force_play: bool = True):
+        """Fetch next song from Rails (triggers refill if needed) and play it, serialized to avoid races."""
+        if not self.selection_lock.acquire(blocking=False):
+            return
+        try:
+            if self.desired_state != 'playing':
+                logger.info(f"Not fetching next; desired_state={self.desired_state}")
+                return
+            next_song = self.get_next_song()
+            if next_song:
+                self.play_song(next_song, force_play=force_play)
+            else:
+                logger.warning("No next song available to play")
+        finally:
+            self.selection_lock.release()
     
     def handle_mpd_events(self):
         """Handle MPD events and state changes"""
         try:
             status = self.mpd_client.status()
-            
-            if status.get('state') == 'stop' and self.is_playing:
-                # Song finished, get next song
-                logger.info("Song finished, getting next song")
+            if not status:
+                return
+            state = status.get('state')
+            elapsed = float(status.get('elapsed', '0') or 0)
+            duration = float(status.get('duration', '0') or 0)
+            if not duration and status.get('time'):
+                # sometimes time is like '12:180'
+                try:
+                    parts = status.get('time').split(':')
+                    elapsed = float(parts[0])
+                    duration = float(parts[1])
+                except Exception:
+                    pass
+            remaining = max(0.0, duration - elapsed) if duration else 0.0
+            playlist_length = int(status.get('playlistlength', '0') or 0)
+
+            # If stopped, fetch next immediately
+            if state == 'stop':
                 self.is_playing = False
                 self.current_song = None
-                
-                next_song = self.get_next_song()
-                if next_song:
-                    self.play_song(next_song)
-                else:
-                    # No more songs available - pause the player
-                    logger.info("No more songs available - pausing player")
-                    self.pause_player()
+                if self.desired_state == 'playing':
+                    self.fetch_and_play_next(force_play=True)
+                return
+
+            # Pre-queue next track when approaching crossfade threshold
+            threshold = float(self.config.get('crossfade_duration', 6)) + float(self.config.get('prequeue_margin', 3))
+            if self.desired_state == 'playing' and state == 'play' and playlist_length <= 1 and remaining and remaining <= threshold:
+                self.fetch_and_play_next(force_play=False)
             
         except Exception as e:
             logger.error(f"Error handling MPD events: {e}")
@@ -319,22 +395,32 @@ class JukeboxPlayer:
             
             if action == 'play':
                 # Check if we have content before playing
-                if self.resume_player():
-                    self.mpd_client.play()
-                    self.is_playing = True
-                else:
-                    logger.warning("Cannot play - no content available")
+                self.desired_state = 'playing'
+                self._save_desired_state()
+                self.fetch_and_play_next(force_play=True)
                 
             elif action == 'pause':
-                self.mpd_client.pause()
+                self.desired_state = 'paused'
+                self._save_desired_state()
+                self.mpd_client.pause(1)
                 self.is_playing = False
                 
             elif action == 'stop':
+                self.desired_state = 'stopped'
+                self._save_desired_state()
                 self.mpd_client.stop()
                 self.is_playing = False
                 
             elif action == 'next':
-                self.mpd_client.next()
+                # Consume the next song from Rails (triggers refill if needed) and play it immediately
+                try:
+                    self.mpd_client.stop()
+                except Exception:
+                    pass
+                if self.desired_state == 'playing':
+                    self.fetch_and_play_next(force_play=True)
+                else:
+                    logger.info(f"Skip ignored; desired_state={self.desired_state}")
                 
             elif action == 'previous':
                 self.mpd_client.previous()
@@ -379,6 +465,7 @@ class JukeboxPlayer:
     def run(self):
         """Main run loop"""
         logger.info("Starting Jukebox Player")
+        logger.info(f"Using API base: {self.config.get('jukebox_api_url')}")
         
         # Initialize system status
         self.redis_client.set('jukebox:status', json.dumps({
@@ -387,25 +474,16 @@ class JukeboxPlayer:
         }))
         
         try:
+            # Kick off playback if nothing is playing
+            try:
+                status = self.mpd_client.status()
+                if self.desired_state == 'playing' and (not status or status.get('state') in (None, 'stop', 'paused')):
+                    self.fetch_and_play_next(force_play=True)
+            except Exception as e:
+                logger.warning(f"Startup check failed: {e}")
             while not self.shutdown_event.is_set():
-                # Check if we need to start playing
-                if not self.is_playing and not self.current_song:
-                    next_song = self.get_next_song()
-                    if next_song:
-                        self.play_song(next_song)
-                        # Update status to playing
-                        self.redis_client.set('jukebox:status', json.dumps({
-                            'state': 'playing',
-                            'timestamp': time.time()
-                        }))
-                    else:
-                        # No content available - pause and wait for user interaction
-                        logger.info("No content available - pausing player")
-                        self.pause_player()
-                        # Wait for user interaction (check every 10 seconds)
-                        time.sleep(10)
-                else:
-                    time.sleep(1)
+                # Light idle; MPD monitors handle prequeue/advance
+                time.sleep(1)
                 
         except KeyboardInterrupt:
             logger.info("Shutdown requested")
