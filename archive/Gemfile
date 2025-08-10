@@ -45,8 +45,7 @@ gem "json", "~> 2.6"
 # Pagination
 gem "kaminari", "~> 1.2"
 
-# Email delivery
-gem "sendgrid-ruby", "~> 6.0"
+# Email delivery - using direct SMTP
 
 # Development and test gems
 group :development, :test do

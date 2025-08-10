@@ -57,6 +57,15 @@ services:
       # Storage configuration
       STORAGE_ROOT: ${STORAGE_ROOT:-/rails/storage}
       ACTIVE_STORAGE_SERVICE: ${ACTIVE_STORAGE_SERVICE:-local}
+      # SMTP configuration for email delivery
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_DOMAIN: ${SMTP_DOMAIN:-${APP_HOST:-musicarchive.com}}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_AUTHENTICATION: ${SMTP_AUTHENTICATION:-plain}
+      SMTP_ENABLE_STARTTLS: ${SMTP_ENABLE_STARTTLS:-true}
+      APP_HOST: ${APP_HOST:-musicarchive.com}
     ports:
       - "3000:80"
     volumes:
@@ -93,6 +102,15 @@ services:
       RAILS_LOG_TO_STDOUT: true
       STORAGE_ROOT: ${STORAGE_ROOT:-/rails/storage}
       ACTIVE_STORAGE_SERVICE: ${ACTIVE_STORAGE_SERVICE:-local}
+      # SMTP configuration for email delivery
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_DOMAIN: ${SMTP_DOMAIN:-${APP_HOST:-musicarchive.com}}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_AUTHENTICATION: ${SMTP_AUTHENTICATION:-plain}
+      SMTP_ENABLE_STARTTLS: ${SMTP_ENABLE_STARTTLS:-true}
+      APP_HOST: ${APP_HOST:-musicarchive.com}
     volumes:
       - archive_logs:/rails/log
       - ${HOST_STORAGE_PATH:-./storage}:/rails/storage:ro

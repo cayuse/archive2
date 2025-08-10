@@ -18,7 +18,7 @@
 - ✅ **User Authentication** (login/logout)
 - ✅ **Role-Based Access Control** (User, Moderator, Admin)
 - ✅ **User Management** (admin can create/edit/delete users)
-- ✅ **Welcome Email System** with SendGrid integration
+- ✅ **Welcome Email System** with SMTP integration
 - ✅ **Profile Management** (users can edit their own profile)
 - ✅ **Session Management** with secure authentication
 
@@ -192,7 +192,7 @@
 - **Framework**: Rails 8.0.2 with Ruby 3.3.8
 - **Database**: PostgreSQL with proper indexing
 - **Frontend**: Bootstrap 5 + HTMX + Turbo
-- **Email**: SendGrid integration
+- **Email**: SMTP integration
 - **Storage**: Active Storage with local disk
 - **Deployment**: Docker container ready
 

@@ -1,11 +1,11 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-one:
-  key: MyString
-  value: MyText
-  description: MyText
+current_theme:
+  key: current_theme
+  value: test-theme
+  description: Current active theme name
 
-two:
-  key: MyString
-  value: MyText
-  description: MyText
+app_name:
+  key: app_name
+  value: Music Archive
+  description: Application name

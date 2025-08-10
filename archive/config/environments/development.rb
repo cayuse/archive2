@@ -46,7 +46,7 @@ Rails.application.configure do
   # Configure Active Storage service URL generation
   Rails.application.routes.default_url_options = { host: "localhost", port: 3000 }
 
-  # Use letter_opener for email preview in development
+  # Use letter_opener for email preview in development (can be changed to :smtp for testing)
   config.action_mailer.delivery_method = :letter_opener
   config.action_mailer.perform_deliveries = true
 

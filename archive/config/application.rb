@@ -7,7 +7,6 @@ require "rails/all"
 Bundler.require(*Rails.groups)
 
 # Load custom delivery methods
-require_relative "../lib/sendgrid_actionmailer_delivery_method"
 
 module Archive
   class Application < Rails::Application

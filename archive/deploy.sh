@@ -45,7 +45,7 @@ if ! command -v docker >/dev/null 2>&1; then
     exit 1
 fi
 
-if ! command -v docker-compose >/dev/null 2>&1; then
+if ! docker compose version >/dev/null 2>&1; then
     print_error "Docker Compose is required but not installed"
     exit 1
 fi
@@ -63,6 +63,34 @@ fi
 if [ -z "$POSTGRES_PASSWORD" ]; then
     print_warning "POSTGRES_PASSWORD not set, using default 'password'"
     export POSTGRES_PASSWORD=password
+fi
+
+# Optional: Set SMTP configuration for email delivery
+if [ -z "$SMTP_HOST" ]; then
+    print_warning "SMTP_HOST not set, using default 'localhost'"
+    export SMTP_HOST=localhost
+fi
+
+if [ -z "$SMTP_PORT" ]; then
+    print_warning "SMTP_PORT not set, using default '587'"
+    export SMTP_PORT=587
+fi
+
+if [ -z "$SMTP_DOMAIN" ]; then
+    if [ -n "$APP_HOST" ]; then
+        export SMTP_DOMAIN="$APP_HOST"
+        print_status "Using APP_HOST as SMTP_DOMAIN: $SMTP_DOMAIN"
+    else
+        print_warning "SMTP_DOMAIN not set, using default 'musicarchive.com'"
+        export SMTP_DOMAIN=musicarchive.com
+    fi
+fi
+
+# Note: SMTP_USERNAME and SMTP_PASSWORD are optional (for unauthenticated SMTP)
+if [ -n "$SMTP_USERNAME" ] && [ -n "$SMTP_PASSWORD" ]; then
+    print_status "SMTP authentication enabled with username: $SMTP_USERNAME"
+else
+    print_warning "SMTP authentication not configured - using unauthenticated SMTP"
 fi
 
 # Optional: Set storage paths
@@ -91,7 +119,7 @@ fi
 
 # Build and start services
 print_status "Building and starting Archive services..."
-docker-compose up -d --build
+docker compose up -d --build
 
 # Wait for services to be ready
 print_status "Waiting for services to be ready..."
@@ -101,7 +129,7 @@ sleep 30
 if curl -f http://localhost:3000/up > /dev/null 2>&1; then
     print_success "Archive is running successfully"
 else
-    print_error "Archive is not responding. Check logs with: docker-compose logs"
+    print_error "Archive is not responding. Check logs with: docker compose logs"
     exit 1
 fi
 
@@ -153,6 +181,6 @@ echo ""
 print_warning "IMPORTANT: Change the default admin password immediately!"
 echo ""
 print_status "Useful commands:"
-echo "- View logs: docker-compose logs -f"
-echo "- Stop services: docker-compose down"
-echo "- Update: git pull && docker-compose up -d --build" 
+echo "- View logs: docker compose logs -f"
+echo "- Stop services: docker compose down"
+echo "- Update: git pull && docker compose up -d --build" 

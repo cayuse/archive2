@@ -62,15 +62,21 @@ Rails.application.configure do
   # Set default URL options for Active Storage
   config.active_storage.default_url_options = { host: ENV.fetch("APP_HOST", "musicarchive.com") }
 
-  # Configure email delivery for production using SendGrid
-  config.action_mailer.delivery_method = :sendgrid_actionmailer
+  # Configure email delivery for production using SMTP
+  config.action_mailer.delivery_method = :smtp
   config.action_mailer.perform_deliveries = true
   config.action_mailer.raise_delivery_errors = true
 
-  # SendGrid configuration
-  config.action_mailer.sendgrid_actionmailer_settings = {
-    api_key: ENV.fetch("SENDGRID_API_KEY"),
-    raise_delivery_errors: true
+  # SMTP configuration for direct email delivery
+  config.action_mailer.smtp_settings = {
+    address: ENV.fetch("SMTP_HOST", "localhost"),
+    port: ENV.fetch("SMTP_PORT", "587").to_i,
+    domain: ENV.fetch("SMTP_DOMAIN", ENV.fetch("APP_HOST", "musicarchive.com")),
+    user_name: ENV.fetch("SMTP_USERNAME", nil),
+    password: ENV.fetch("SMTP_PASSWORD", nil),
+    authentication: ENV.fetch("SMTP_AUTHENTICATION", "plain"),
+    enable_starttls_auto: ENV.fetch("SMTP_ENABLE_STARTTLS", "true") == "true",
+    openssl_verify_mode: ENV.fetch("SMTP_OPENSSL_VERIFY_MODE", "none")
   }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to

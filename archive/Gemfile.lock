@@ -301,15 +301,12 @@ GEM
     ruby-vips (2.2.4)
       ffi (~> 1.12)
       logger
-    ruby_http_client (3.5.5)
     rubyzip (3.0.1)
     securerandom (0.4.1)
     selenium-webdriver (4.1.0)
       childprocess (>= 0.5, < 5.0)
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2)
-    sendgrid-ruby (6.7.0)
-      ruby_http_client (~> 3.4)
     sidekiq (7.3.9)
       base64
       connection_pool (>= 2.3.0)
@@ -386,7 +383,6 @@ DEPENDENCIES
   rails (~> 8.0.2)
   rubocop
   selenium-webdriver
-  sendgrid-ruby (~> 6.0)
   sidekiq (~> 7.0)
   sprockets-rails
   turbo-rails

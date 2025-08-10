@@ -1,15 +1,61 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
-  display_name: MyString
-  description: MyText
-  active: false
-  config: MyText
+  name: test-theme
+  display_name: Test Theme
+  description: A test theme for testing
+  is_active: false
+  is_default: false
+  primary_bg: "#ffffff"
+  secondary_bg: "#f8f9fa"
+  accent_color: "#0d6efd"
+  accent_hover: "#0b5ed7"
+  accent_active: "#0a58ca"
+  text_primary: "#212529"
+  text_secondary: "#6c757d"
+  text_muted: "#6c757d"
+  text_inverse: "#ffffff"
+  border_color: "#dee2e6"
+  shadow_color: "rgba(0,0,0,0.1)"
+  overlay_color: "rgba(0,0,0,0.5)"
+  success_color: "#198754"
+  warning_color: "#ffc107"
+  danger_color: "#dc3545"
+  button_bg: "#0d6efd"
+  button_hover: "#0b5ed7"
+  button_active: "#0a58ca"
+  highlight_color: "#fff3cd"
+  link_color: "#0d6efd"
+  link_hover: "#0a58ca"
+  heading_color: "#212529"
+  card_header_text: "#212529"
 
 two:
-  name: MyString
-  display_name: MyString
-  description: MyText
-  active: false
-  config: MyText
+  name: another-theme
+  display_name: Another Theme
+  description: Another test theme
+  is_active: false
+  is_default: false
+  primary_bg: "#f8f9fa"
+  secondary_bg: "#ffffff"
+  accent_color: "#6f42c1"
+  accent_hover: "#5a32a3"
+  accent_active: "#4c2889"
+  text_primary: "#212529"
+  text_secondary: "#6c757d"
+  text_muted: "#6c757d"
+  text_inverse: "#ffffff"
+  border_color: "#dee2e6"
+  shadow_color: "rgba(0,0,0,0.1)"
+  overlay_color: "rgba(0,0,0,0.5)"
+  success_color: "#198754"
+  warning_color: "#ffc107"
+  danger_color: "#dc3545"
+  button_bg: "#6f42c1"
+  button_hover: "#5a32a3"
+  button_active: "#4c2889"
+  highlight_color: "#fff3cd"
+  link_color: "#6f42c1"
+  link_hover: "#4c2889"
+  heading_color: "#212529"
+  card_header_text: "#212529"

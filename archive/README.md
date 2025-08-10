@@ -196,30 +196,44 @@ This project is licensed under the MIT License.
 - **Development**: Uses `letter_opener` to preview emails in browser
 - **Production**: Configure SMTP settings as needed
 
-## Environment Variables for Email Delivery (SendGrid)
+## Environment Variables for Email Delivery (SMTP)
 
-To enable email delivery via SendGrid in production, set the following environment variables:
+To enable email delivery via SMTP in production, set the following environment variables:
 
-| Variable            | Purpose                                 | Example Value                |
-|---------------------|-----------------------------------------|------------------------------|
-| SENDGRID_API_KEY    | SendGrid API key for email delivery     | SG.xxxxxxxx                  |
-| APP_HOST            | Hostname for links in emails            | musicarchive.com             |
-| RAILS_MASTER_KEY    | Rails credentials decryption key        | (from config/master.key)     |
-| DATABASE_URL        | Database connection string (optional)   | postgres://...               |
+| Variable                    | Purpose                                 | Example Value                |
+|-----------------------------|-----------------------------------------|------------------------------|
+| SMTP_HOST                  | SMTP server hostname                    | smtp.gmail.com               |
+| SMTP_PORT                  | SMTP server port                        | 587                         |
+| SMTP_DOMAIN                | Domain for SMTP authentication          | yourdomain.com              |
+| SMTP_USERNAME              | SMTP username (if authentication needed)| user@yourdomain.com         |
+| SMTP_PASSWORD              | SMTP password (if authentication needed)| your-password               |
+| SMTP_AUTHENTICATION        | SMTP authentication method              | plain, login, or cram_md5   |
+| SMTP_ENABLE_STARTTLS       | Enable STARTTLS                          | true                        |
+| APP_HOST                   | Hostname for links in emails            | musicarchive.com             |
+| RAILS_MASTER_KEY           | Rails credentials decryption key        | (from config/master.key)     |
+| DATABASE_URL               | Database connection string (optional)   | postgres://...               |
 
 ### How to Set Environment Variables
 
 **Docker Compose:**
 ```yaml
 environment:
-  SENDGRID_API_KEY: your-real-sendgrid-api-key
+  SMTP_HOST: smtp.gmail.com
+  SMTP_PORT: 587
+  SMTP_DOMAIN: yourdomain.com
+  SMTP_USERNAME: user@yourdomain.com
+  SMTP_PASSWORD: your-password
   APP_HOST: yourdomain.com
   RAILS_MASTER_KEY: your-rails-master-key
 ```
 
 **Linux/Unix Shell:**
 ```bash
-export SENDGRID_API_KEY=your-real-sendgrid-api-key
+export SMTP_HOST=smtp.gmail.com
+export SMTP_PORT=587
+export SMTP_DOMAIN=yourdomain.com
+export SMTP_USERNAME=user@yourdomain.com
+export SMTP_PASSWORD=your-password
 export APP_HOST=yourdomain.com
 export RAILS_MASTER_KEY=your-rails-master-key
 ```

@@ -8,14 +8,15 @@
 # For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
-ARG RUBY_VERSION=3.3.8
-FROM ghcr.io/rails/devcontainer/images/ruby:3.3.8 AS base
+ARG RUBY_VERSION=3.2.5
+FROM ruby:3.2.5-slim AS base
 
 # Rails app lives here
 WORKDIR /rails
 
 # Install base packages and PostgreSQL client libraries
-RUN apt-get update -qq && \
+RUN mkdir -p /var/lib/apt/lists/partial && \
+    apt-get update -qq && \
     apt-get install --no-install-recommends -y curl libjemalloc2 libvips sqlite3 libpq-dev postgresql-client ffmpeg && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
@@ -29,7 +30,8 @@ ENV RAILS_ENV="production" \
 FROM base AS build
 
 # Install packages needed to build gems
-RUN apt-get update -qq && \
+RUN mkdir -p /var/lib/apt/lists/partial && \
+    apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential git libyaml-dev pkg-config && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
@@ -46,7 +48,7 @@ COPY . .
 RUN bundle exec bootsnap precompile app/ lib/
 
 # Precompiling assets for production without requiring secret RAILS_MASTER_KEY
-RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
+        RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
 # Install Active Storage dependencies (image processing, vips, etc.)
 # Already handled by libvips and image_processing gem in Gemfile
