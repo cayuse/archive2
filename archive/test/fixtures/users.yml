@@ -1,4 +1,5 @@
 admin:
+  name: Admin User
   email: admin@musicarchive.com
   password_digest: <%= BCrypt::Password.create('admin123') %>
   role: 2
@@ -6,6 +7,7 @@ admin:
   updated_at: <%= Time.current %>
 
 moderator:
+  name: Moderator User
   email: moderator@musicarchive.com
   password_digest: <%= BCrypt::Password.create('moderator123') %>
   role: 1
@@ -13,6 +15,7 @@ moderator:
   updated_at: <%= Time.current %>
 
 user:
+  name: Regular User
   email: user@musicarchive.com
   password_digest: <%= BCrypt::Password.create('user123') %>
   role: 0
