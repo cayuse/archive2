@@ -1,20 +1,6 @@
 version: '3.9'
 
 services:
-  # Redis for Jukebox queue management
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   # Jukebox Rails application
   jukebox:
     build:
@@ -22,33 +8,101 @@ services:
       dockerfile: Dockerfile
     image: jukebox:latest
     restart: unless-stopped
-    depends_on:
-      redis:
-        condition: service_healthy
     environment:
       RAILS_ENV: production
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_DB: 0
+      # Connect to Archive's PostgreSQL database
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_HOST: ${ARCHIVE_DB_HOST:-localhost}
+      POSTGRES_PORT: ${ARCHIVE_DB_PORT:-5432}
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-password}@${ARCHIVE_DB_HOST:-localhost}:${ARCHIVE_DB_PORT:-5432}/archive_production
+      # Connect to Archive's Redis
+      REDIS_HOST: ${ARCHIVE_REDIS_HOST:-localhost}
+      REDIS_PORT: ${ARCHIVE_REDIS_PORT:-6379}
+      REDIS_DB: 1
+      REDIS_URL: redis://${ARCHIVE_REDIS_HOST:-localhost}:${ARCHIVE_REDIS_PORT:-6379}/1
+      # Archive server URL for API calls
       ARCHIVE_SERVER_URL: ${ARCHIVE_SERVER_URL:-http://localhost:3000}
       JUKEBOX_CLIENT_ID: ${JUKEBOX_CLIENT_ID:-jukebox-1}
       RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
       RAILS_SERVE_STATIC_FILES: true
       RAILS_LOG_TO_STDOUT: true
+      # Storage configuration - use Archive's storage
+      STORAGE_ROOT: ${ARCHIVE_STORAGE_PATH:-/rails/storage}
+      ACTIVE_STORAGE_SERVICE: ${ACTIVE_STORAGE_SERVICE:-local}
     ports:
       - "3001:80"
     volumes:
-      - jukebox_storage:/rails/storage
       - jukebox_logs:/rails/log
-      - jukebox_cache:/rails/storage/cached_songs
+      # Mount Archive's storage directory
+      - ${ARCHIVE_STORAGE_PATH:-../archive/storage}:/rails/storage:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/api/jukebox/health"]
       interval: 30s
       timeout: 10s
       retries: 3
 
+  # MPD (Music Player Daemon) for audio playback
+  mpd:
+    image: mpd:latest
+    restart: unless-stopped
+    ports:
+      - "6600:6600"
+    volumes:
+      - mpd_data:/var/lib/mpd
+      - mpd_playlists:/var/lib/mpd/playlists
+      # Mount Archive's storage for music files
+      - ${ARCHIVE_STORAGE_PATH:-../archive/storage}:/music:ro
+    environment:
+      MPD_HOST: 0.0.0.0
+      MPD_PORT: 6600
+    command: >
+      sh -c "
+        echo 'music_directory \"/music\"' >> /etc/mpd.conf &&
+        echo 'playlist_directory \"/var/lib/mpd/playlists\"' >> /etc/mpd.conf &&
+        echo 'db_file \"/var/lib/mpd/mpd.db\"' >> /etc/mpd.conf &&
+        echo 'log_file \"/var/lib/mpd/mpd.log\"' >> /etc/mpd.conf &&
+        echo 'pid_file \"/var/lib/mpd/mpd.pid\"' >> /etc/mpd.conf &&
+        echo 'state_file \"/var/lib/mpd/mpdstate\"' >> /etc/mpd.conf &&
+        echo 'user \"mpd\"' >> /etc/mpd.conf &&
+        echo 'bind_to_address \"0.0.0.0\"' >> /etc/mpd.conf &&
+        echo 'port \"6600\"' >> /etc/mpd.conf &&
+        echo 'auto_update \"yes\"' >> /etc/mpd.conf &&
+        echo 'follow_outside_symlinks \"yes\"' >> /etc/mpd.conf &&
+        echo 'follow_inside_symlinks \"yes\"' >> /etc/mpd.conf &&
+        mpd --no-daemon --stdout --verbose
+      "
+
+  # Python Jukebox Player
+  jukebox-player:
+    build:
+      context: ./audio_player
+      dockerfile: Dockerfile
+    image: jukebox-player:latest
+    restart: unless-stopped
+    depends_on:
+      mpd:
+        condition: service_started
+      jukebox:
+        condition: service_healthy
+    environment:
+      MPD_HOST: mpd
+      MPD_PORT: 6600
+      REDIS_HOST: ${ARCHIVE_REDIS_HOST:-localhost}
+      REDIS_PORT: ${ARCHIVE_REDIS_PORT:-6379}
+      REDIS_DB: 1
+      JUKEBOX_API_URL: http://jukebox:3001/api
+      JUKEBOX_LOG_FILE: /var/log/jukebox_player.log
+    volumes:
+      - jukebox_player_logs:/var/log
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "player.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
-  redis_data:
-  jukebox_storage:
   jukebox_logs:
-  jukebox_cache: 
+  mpd_data:
+  mpd_playlists:
+  jukebox_player_logs: 

@@ -65,6 +65,30 @@ if [ -z "$POSTGRES_PASSWORD" ]; then
     export POSTGRES_PASSWORD=password
 fi
 
+# Optional: Set storage paths
+if [ -z "$HOST_STORAGE_PATH" ]; then
+    print_warning "HOST_STORAGE_PATH not set, using default './storage'"
+    export HOST_STORAGE_PATH="./storage"
+fi
+
+# Create storage directory if it doesn't exist
+if [ ! -d "$HOST_STORAGE_PATH" ]; then
+    print_status "Creating storage directory: $HOST_STORAGE_PATH"
+    mkdir -p "$HOST_STORAGE_PATH"
+fi
+
+# Optional: Set PostgreSQL data directory
+if [ -z "$POSTGRES_DATA_PATH" ]; then
+    print_warning "POSTGRES_DATA_PATH not set, using default './postgres_data'"
+    export POSTGRES_DATA_PATH="./postgres_data"
+fi
+
+# Create PostgreSQL data directory if it doesn't exist
+if [ ! -d "$POSTGRES_DATA_PATH" ]; then
+    print_status "Creating PostgreSQL data directory: $POSTGRES_DATA_PATH"
+    mkdir -p "$POSTGRES_DATA_PATH"
+fi
+
 # Build and start services
 print_status "Building and starting Archive services..."
 docker-compose up -d --build

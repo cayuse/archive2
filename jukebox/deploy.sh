@@ -59,12 +59,41 @@ if [ -z "$RAILS_MASTER_KEY" ]; then
     exit 1
 fi
 
+# Check for Archive dependencies
+print_status "Checking Archive dependencies..."
+
+# Check if Archive is running
+if ! curl -f http://localhost:3000/up > /dev/null 2>&1; then
+    print_error "Archive is not running on localhost:3000"
+    print_status "Please deploy Archive first: cd ../archive && ./deploy.sh"
+    exit 1
+fi
+
+print_success "Archive is running and accessible"
+
 # Check for Archive server URL
 if [ -z "$ARCHIVE_SERVER_URL" ]; then
     print_warning "ARCHIVE_SERVER_URL not set, using default http://localhost:3000"
-    print_status "Set it with: export ARCHIVE_SERVER_URL=http://your-archive-server.com"
     export ARCHIVE_SERVER_URL=http://localhost:3000
 fi
+
+# Check for Archive database connection
+if [ -z "$POSTGRES_PASSWORD" ]; then
+    print_warning "POSTGRES_PASSWORD not set, using default 'password'"
+    export POSTGRES_PASSWORD=password
+fi
+
+# Set Archive service connection details
+export ARCHIVE_DB_HOST=localhost
+export ARCHIVE_DB_PORT=5432
+export ARCHIVE_REDIS_HOST=localhost
+export ARCHIVE_REDIS_PORT=6379
+export ARCHIVE_STORAGE_PATH="../archive/storage"
+
+print_status "Using Archive services:"
+print_status "  Database: $ARCHIVE_DB_HOST:$ARCHIVE_DB_PORT"
+print_status "  Redis: $ARCHIVE_REDIS_HOST:$ARCHIVE_REDIS_PORT"
+print_status "  Storage: $ARCHIVE_STORAGE_PATH"
 
 # Build and start services
 print_status "Building and starting Jukebox services..."
