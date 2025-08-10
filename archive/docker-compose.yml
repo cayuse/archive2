@@ -1,4 +1,4 @@
-version: '3.9'
+ 
 
 services:
   # Redis for background jobs and ActionCable
@@ -22,7 +22,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: archive_production
     volumes:
-      - ${POSTGRES_DATA_PATH:-./postgres_data}:/var/lib/postgresql/data
+      - ${POSTGRES_DATA_PATH}:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
@@ -54,6 +54,15 @@ services:
       RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
       RAILS_SERVE_STATIC_FILES: true
       RAILS_LOG_TO_STDOUT: true
+      # URL/host configuration
+      APP_HOST: ${APP_HOST:-${HOSTNAME:-localhost}}
+      APP_PROTOCOL: ${APP_PROTOCOL:-http}
+      FORCE_SSL: ${FORCE_SSL:-false}
+      ASSUME_SSL: ${ASSUME_SSL:-false}
+      FORGERY_ORIGIN_CHECK: ${FORGERY_ORIGIN_CHECK:-false}
+      ALLOW_ALL_HOSTS: ${ALLOW_ALL_HOSTS:-true}
+      INLINE_AUDIO_PROCESSING: ${INLINE_AUDIO_PROCESSING:-true}
+      USE_SIDEKIQ: ${USE_SIDEKIQ:-false}
       # Storage configuration
       STORAGE_ROOT: ${STORAGE_ROOT:-/rails/storage}
       ACTIVE_STORAGE_SERVICE: ${ACTIVE_STORAGE_SERVICE:-local}
@@ -65,59 +74,19 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       SMTP_AUTHENTICATION: ${SMTP_AUTHENTICATION:-plain}
       SMTP_ENABLE_STARTTLS: ${SMTP_ENABLE_STARTTLS:-true}
-      APP_HOST: ${APP_HOST:-musicarchive.com}
     ports:
-      - "3000:80"
+      - "${ARCHIVE_PORT:-3000}:3000"
     volumes:
-      - archive_storage:/rails/storage
       - archive_logs:/rails/log
-      # Mount host storage directory if specified
-      - ${HOST_STORAGE_PATH:-./storage}:/rails/storage:ro
+      # Mount host storage directory (must be an absolute host path)
+      - ${HOST_STORAGE_PATH}:/rails/storage
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/up"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/up"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # Sidekiq worker for Archive app
-  sidekiq:
-    image: archive:latest
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      archive:
-        condition: service_started
-    environment:
-      RAILS_ENV: production
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
-      POSTGRES_HOST: db
-      POSTGRES_PORT: 5432
-      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-password}@db:5432/archive_production
-      REDIS_URL: redis://redis:6379/1
-      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
-      RAILS_LOG_TO_STDOUT: true
-      STORAGE_ROOT: ${STORAGE_ROOT:-/rails/storage}
-      ACTIVE_STORAGE_SERVICE: ${ACTIVE_STORAGE_SERVICE:-local}
-      # SMTP configuration for email delivery
-      SMTP_HOST: ${SMTP_HOST:-localhost}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_DOMAIN: ${SMTP_DOMAIN:-${APP_HOST:-musicarchive.com}}
-      SMTP_USERNAME: ${SMTP_USERNAME}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
-      SMTP_AUTHENTICATION: ${SMTP_AUTHENTICATION:-plain}
-      SMTP_ENABLE_STARTTLS: ${SMTP_ENABLE_STARTTLS:-true}
-      APP_HOST: ${APP_HOST:-musicarchive.com}
-    volumes:
-      - archive_logs:/rails/log
-      - ${HOST_STORAGE_PATH:-./storage}:/rails/storage:ro
-    command: bundle exec sidekiq -C config/sidekiq.yml
-
 volumes:
   pgdata:
-  archive_storage:
   archive_logs:
   redis_data:

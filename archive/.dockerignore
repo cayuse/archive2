@@ -46,6 +46,11 @@
 # Ignore development files
 /.devcontainer
 
+# Ignore data directories
+/postgres_data/
+/storage/
+/tmp/postgres_data/
+
 # Ignore Docker-related files
 /.dockerignore
 /Dockerfile*

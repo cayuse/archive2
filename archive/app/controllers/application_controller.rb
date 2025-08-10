@@ -16,6 +16,13 @@ class ApplicationController < ActionController::Base
   def authenticate_user!
     redirect_to login_path unless current_user
   end
+
+  # Default no-op API auth callback so controllers can safely skip it
+  # Specific API controllers may override this with real token auth
+  protected
+  def authenticate_api_user!
+    # no-op by default
+  end
   
   helper_method :current_user
   

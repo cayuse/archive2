@@ -93,6 +93,68 @@ Both applications use Docker containers with Apache2 as a reverse proxy.
 
 ## Deployment Options
 
+### Networking and SSL modes
+
+- Direct port (testing/dev): Access the app at http://SERVER_IP:3000 without a reverse proxy.
+  - Recommended env for testing with an IP and HTTP:
+    ```bash
+export RAILS_MASTER_KEY=...               # required
+export POSTGRES_PASSWORD=...              # required
+export HOST_STORAGE_PATH=/abs/path/storage
+export POSTGRES_DATA_PATH=/abs/path/pg
+export ARCHIVE_PORT=3000                  # host port → container 3000
+export APP_HOST=SERVER_IP                 # e.g. 192.168.1.201
+export APP_PROTOCOL=http
+export FORCE_SSL=false
+export ASSUME_SSL=false
+export FORGERY_ORIGIN_CHECK=false         # disable strict CSRF origin for IP testing
+export ALLOW_ALL_HOSTS=true               # accept any Host header during testing
+docker compose up -d --build
+    ```
+
+- Reverse proxy (production): Keep the container listening on 3000 and front it with Apache/Nginx on 80/443, terminating TLS.
+  - Recommended env for production behind TLS:
+    ```bash
+export ARCHIVE_PORT=80                    # optional; only if you also publish host 80 → container 3000
+export APP_HOST=archive.yourdomain.com
+export APP_PROTOCOL=https
+export FORCE_SSL=true
+export ASSUME_SSL=true
+export FORGERY_ORIGIN_CHECK=true
+export ALLOW_ALL_HOSTS=false
+docker compose up -d --build
+    ```
+  - See Apache/Nginx examples below; point the proxy to http://127.0.0.1:3000.
+
+### Database persistence and first-time setup
+
+- Persistence:
+  - `POSTGRES_DATA_PATH` is the on-host directory for PostgreSQL data.
+  - `HOST_STORAGE_PATH` is the on-host directory for file storage.
+- First-time DB init:
+  - The `archive/deploy.sh` script checks if the DB is initialized (via `schema_migrations`). If empty, it runs `rails db:prepare` and, when `AUTO_SEED=true`, `rails db:seed`.
+  - Force a re-run if needed:
+    ```bash
+export FORCE_DB_SETUP=true   # override the check
+export AUTO_SEED=true        # optional
+./deploy.sh --production
+    ```
+
+### Port mapping options
+
+- Default container port: 3000 (non-root inside the container).
+- Host port can be changed via `ARCHIVE_PORT` (e.g., 80 for convenience):
+  ```bash
+export ARCHIVE_PORT=80
+docker compose up -d --build
+  ```
+
+### Security notes for production
+
+- Do not expose PostgreSQL or Redis publicly. In Compose, either remove the `ports:` block or bind to localhost only (e.g., `127.0.0.1:5432:5432`).
+- Prefer a reverse proxy on 80/443 with TLS termination. Keep the Rails container on 3000.
+- Remove the `version:` line from `docker-compose.yml` to silence Compose v2 warnings.
+
 ### Option 1: Deploy Archive Only
 ```bash
 cd archive

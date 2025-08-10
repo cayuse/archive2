@@ -31,6 +31,20 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Check deployment type
+if [ "$1" = "--production" ] || [ "$1" = "-p" ]; then
+    export DEPLOYMENT_TYPE="production"
+    print_status "Production deployment mode enabled"
+elif [ "$1" = "--development" ] || [ "$1" = "-d" ]; then
+    export DEPLOYMENT_TYPE="development"
+    print_status "Development deployment mode enabled"
+else
+    export DEPLOYMENT_TYPE="development"
+    print_warning "No deployment type specified, defaulting to development mode"
+    print_status "Use --production or -p for production deployment on port 80"
+    print_status "Use --development or -d for development deployment on port 3000"
+fi
+
 # Check if running as root
 if [[ $EUID -eq 0 ]]; then
    print_error "This script should not be run as root"
@@ -65,6 +79,17 @@ if [ -z "$POSTGRES_PASSWORD" ]; then
     export POSTGRES_PASSWORD=password
 fi
 
+# Optional: Set Archive port (default: 3000 for dev, 80 for production)
+if [ -z "$ARCHIVE_PORT" ]; then
+    if [ "$DEPLOYMENT_TYPE" = "production" ]; then
+        export ARCHIVE_PORT=80
+        print_status "Production deployment: Archive will run on port 80"
+    else
+        export ARCHIVE_PORT=3000
+        print_warning "Development deployment: Archive will run on port 3000"
+    fi
+fi
+
 # Optional: Set SMTP configuration for email delivery
 if [ -z "$SMTP_HOST" ]; then
     print_warning "SMTP_HOST not set, using default 'localhost'"
@@ -93,25 +118,29 @@ else
     print_warning "SMTP authentication not configured - using unauthenticated SMTP"
 fi
 
-# Optional: Set storage paths
+# Required: storage path must be provided (absolute path)
 if [ -z "$HOST_STORAGE_PATH" ]; then
-    print_warning "HOST_STORAGE_PATH not set, using default './storage'"
-    export HOST_STORAGE_PATH="./storage"
+    print_error "HOST_STORAGE_PATH not set. Please export an absolute path for storage."
+    exit 1
 fi
-
-# Create storage directory if it doesn't exist
+case "$HOST_STORAGE_PATH" in
+    /*) : ;; # absolute
+    *) print_error "HOST_STORAGE_PATH must be an absolute path (e.g., /home/shared/psql_storage)"; exit 1;;
+esac
 if [ ! -d "$HOST_STORAGE_PATH" ]; then
     print_status "Creating storage directory: $HOST_STORAGE_PATH"
     mkdir -p "$HOST_STORAGE_PATH"
 fi
 
-# Optional: Set PostgreSQL data directory
+# Required: PostgreSQL data path must be provided (absolute path)
 if [ -z "$POSTGRES_DATA_PATH" ]; then
-    print_warning "POSTGRES_DATA_PATH not set, using default './postgres_data'"
-    export POSTGRES_DATA_PATH="./postgres_data"
+    print_error "POSTGRES_DATA_PATH not set. Please export an absolute path for Postgres data."
+    exit 1
 fi
-
-# Create PostgreSQL data directory if it doesn't exist
+case "$POSTGRES_DATA_PATH" in
+    /*) : ;; # absolute
+    *) print_error "POSTGRES_DATA_PATH must be an absolute path (e.g., /home/shared/psql_data)"; exit 1;;
+esac
 if [ ! -d "$POSTGRES_DATA_PATH" ]; then
     print_status "Creating PostgreSQL data directory: $POSTGRES_DATA_PATH"
     mkdir -p "$POSTGRES_DATA_PATH"
@@ -121,12 +150,26 @@ fi
 print_status "Building and starting Archive services..."
 docker compose up -d --build
 
+# One-time database setup on first deploy when persistent DB is empty
+print_status "Checking database initialization status..."
+DB_READY=$(docker compose exec -T db bash -lc "psql -U postgres -d archive_production -Atc \"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='schema_migrations');\"") || DB_READY="f"
+
+if [ "${FORCE_DB_SETUP:-false}" = "true" ] || [ "$DB_READY" != "t" ]; then
+  print_status "Running database setup (create/migrate${AUTO_SEED:+/seed})"
+  docker compose exec -T archive bash -lc './bin/rails db:prepare'
+  if [ "${AUTO_SEED:-false}" = "true" ]; then
+    docker compose exec -T archive bash -lc './bin/rails db:seed || true'
+  fi
+else
+  print_status "Database already initialized. Skipping setup. (Set FORCE_DB_SETUP=true to override)"
+fi
+
 # Wait for services to be ready
 print_status "Waiting for services to be ready..."
 sleep 30
 
-# Check if archive is responding
-if curl -f http://localhost:3000/up > /dev/null 2>&1; then
+# Check if archive is responding on host port
+if curl -f http://localhost:${ARCHIVE_PORT}/up > /dev/null 2>&1; then
     print_success "Archive is running successfully"
 else
     print_error "Archive is not responding. Check logs with: docker compose logs"
@@ -153,7 +196,10 @@ sudo a2enmod expires
 
 # Copy Apache2 configuration
 print_status "Installing Apache2 configuration..."
-sudo cp apache2-archive.conf /etc/apache2/sites-available/archive.conf
+# Replace the port placeholder in the Apache config
+sed "s/\${ARCHIVE_PORT:-3000}/$ARCHIVE_PORT/g" apache2-archive.conf > /tmp/archive.conf
+sudo cp /tmp/archive.conf /etc/apache2/sites-available/archive.conf
+rm /tmp/archive.conf
 
 # Enable the site
 sudo a2ensite archive

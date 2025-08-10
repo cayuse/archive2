@@ -34,9 +34,9 @@ class UploadController < ApplicationController
     if @song.save
       Rails.logger.info "Song saved with ID: #{@song.id}, processing_status: #{@song.processing_status}"
 
-      # In development, process metadata immediately in-app
-      if Rails.env.development? && @song.audio_file.attached?
-        Rails.logger.info "[Dev] Inline processing for song #{@song.id}"
+      # Inline processing when enabled
+      if Rails.configuration.x.inline_audio_processing && @song.audio_file.attached?
+        Rails.logger.info "[Inline] Processing song #{@song.id}"
         AudioFileProcessingJob.perform_now(@song.id)
       end
 

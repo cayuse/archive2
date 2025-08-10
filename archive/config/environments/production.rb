@@ -24,11 +24,9 @@ Rails.application.configure do
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 
-  # Assume all access to the app is happening through a SSL-terminating reverse proxy.
-  config.assume_ssl = true
-
-  # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  config.force_ssl = true
+  # SSL behavior is configurable for testing vs. production
+  config.assume_ssl = ENV.fetch("ASSUME_SSL", "false") == "true"
+  config.force_ssl  = ENV.fetch("FORCE_SSL",  "false") == "true"
 
   # Skip http-to-https redirect for the default health check endpoint.
   # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
@@ -49,18 +47,21 @@ Rails.application.configure do
   # Replace the default in-process memory cache store with a durable alternative.
   # config.cache_store = :mem_cache_store
 
-  # Use Sidekiq for background jobs
-  config.active_job.queue_adapter = :sidekiq
+  # Background jobs: use Sidekiq when enabled, otherwise run inline (synchronous)
+  use_sidekiq = ENV.fetch("USE_SIDEKIQ", "false") == "true"
+  config.active_job.queue_adapter = use_sidekiq ? :sidekiq : :inline
 
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   # config.action_mailer.raise_delivery_errors = false
 
-  # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "musicarchive.com") }
+  # Set host and protocol used in generated URLs (mailer, Active Storage, etc.)
+  app_host = ENV.fetch("APP_HOST", "musicarchive.com")
+  app_proto = ENV.fetch("APP_PROTOCOL", config.force_ssl || config.assume_ssl ? "https" : "http")
+  config.action_mailer.default_url_options = { host: app_host, protocol: app_proto }
   
   # Set default URL options for Active Storage
-  config.active_storage.default_url_options = { host: ENV.fetch("APP_HOST", "musicarchive.com") }
+  config.active_storage.default_url_options = { host: app_host, protocol: app_proto }
 
   # Configure email delivery for production using SMTP
   config.action_mailer.delivery_method = :smtp
@@ -89,11 +90,18 @@ Rails.application.configure do
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [ :id ]
 
-  # Enable DNS rebinding protection and other `Host` header attacks.
-  # config.hosts = [
-  #   "example.com",     # Allow requests from example.com
-  #   /.*\.example\.com/ # Allow requests from subdomains like `www.example.com`
-  # ]
+  # Host authorization: allow all hosts when explicitly enabled for testing
+  if ENV.fetch("ALLOW_ALL_HOSTS", "false") == "true"
+    config.hosts.clear
+  else
+    # Allow configured host and common local hosts
+    config.hosts << app_host rescue nil
+    config.hosts << "localhost"
+    config.hosts << "127.0.0.1"
+  end
+
+  # CSRF origin check: can be disabled for IP/HTTP testing (not recommended long-term)
+  config.action_controller.forgery_protection_origin_check = ENV.fetch("FORGERY_ORIGIN_CHECK", "true") == "true"
   #
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }

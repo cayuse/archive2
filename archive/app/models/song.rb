@@ -55,8 +55,8 @@ class Song < ApplicationRecord
   }
 
   # Callbacks
-  # In development we process inline on the controller; keep background jobs for production
-  if Rails.env.production?
+  # When inline processing is enabled, do not enqueue background jobs from the model
+  unless Rails.configuration.x.inline_audio_processing
     after_commit :schedule_processing, on: :create
     after_commit :schedule_processing, on: :update, if: :should_reschedule_processing?
   end

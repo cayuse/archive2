@@ -76,9 +76,9 @@ class Api::V1::SongsController < ApplicationController
         # Apply provided metadata if any (takes precedence over tags)
         apply_provided_metadata(song, metadata_params)
         
-        # Always run post-processing unless explicitly skipped
+        # Process inline when enabled to ensure sequential consistency; otherwise enqueue
         unless params[:skip_post_processing] == 'true'
-          if Rails.env.development?
+          if Rails.configuration.x.inline_audio_processing
             AudioFileProcessingJob.perform_now(song.id)
           else
             AudioFileProcessingJob.perform_later(song.id)
@@ -354,9 +354,9 @@ class Api::V1::SongsController < ApplicationController
         # Apply provided metadata if any
         apply_provided_metadata(song, metadata_params)
         
-        # Run post-processing unless explicitly skipped
+        # Process inline when enabled to ensure sequential consistency; otherwise enqueue
         unless params[:skip_post_processing] == 'true'
-          if Rails.env.development?
+          if Rails.configuration.x.inline_audio_processing
             AudioFileProcessingJob.perform_now(song.id)
           else
             AudioFileProcessingJob.perform_later(song.id)

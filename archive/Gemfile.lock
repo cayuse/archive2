@@ -307,12 +307,6 @@ GEM
       childprocess (>= 0.5, < 5.0)
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2)
-    sidekiq (7.3.9)
-      base64
-      connection_pool (>= 2.3.0)
-      logger
-      rack (>= 2.2.4)
-      redis-client (>= 0.22.2)
     sprockets (4.2.2)
       concurrent-ruby (~> 1.0)
       logger
@@ -383,7 +377,6 @@ DEPENDENCIES
   rails (~> 8.0.2)
   rubocop
   selenium-webdriver
-  sidekiq (~> 7.0)
   sprockets-rails
   turbo-rails
   web-console

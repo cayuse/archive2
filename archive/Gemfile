@@ -30,8 +30,6 @@ gem "image_processing", "~> 1.2"
 
 # Audio metadata reading handled via ffprobe (ffmpeg); no Ruby gem needed
 
-# Background job processing for large file uploads
-gem "sidekiq", "~> 7.0"
 
 # HTTP client for external API calls
 gem "httparty", "~> 0.21.0"
