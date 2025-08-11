@@ -8,14 +8,15 @@
 # For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
-ARG RUBY_VERSION=3.3.8
-FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
+ARG RUBY_VERSION=3.2.5
+FROM ruby:3.2.5-slim AS base
 
 # Rails app lives here
 WORKDIR /rails
 
 # Install base packages
-RUN apt-get update -qq && \
+RUN mkdir -p /var/lib/apt/lists/partial && \
+    apt-get update -qq && \
     apt-get install --no-install-recommends -y curl libjemalloc2 libvips && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
@@ -29,7 +30,8 @@ ENV RAILS_ENV="production" \
 FROM base AS build
 
 # Install packages needed to build gems
-RUN apt-get update -qq && \
+RUN mkdir -p /var/lib/apt/lists/partial && \
+    apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential git libyaml-dev pkg-config && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
@@ -67,6 +69,6 @@ USER 1000:1000
 # Entrypoint prepares the database.
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
-# Start server via Thruster by default, this can be overwritten at runtime
-EXPOSE 80
-CMD ["./bin/thrust", "./bin/rails", "server"]
+# Start server; listen on 3001 (non-privileged)
+EXPOSE 3001
+CMD ["./bin/rails", "server", "-b", "0.0.0.0", "-p", "3001"]

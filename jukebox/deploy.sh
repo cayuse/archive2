@@ -45,7 +45,7 @@ if ! command -v docker >/dev/null 2>&1; then
     exit 1
 fi
 
-if ! command -v docker-compose >/dev/null 2>&1; then
+if ! docker compose version >/dev/null 2>&1; then
     print_error "Docker Compose is required but not installed"
     exit 1
 fi
@@ -62,8 +62,8 @@ fi
 # Check for Archive dependencies
 print_status "Checking Archive dependencies..."
 
-# Check if Archive is running
-if ! curl -f http://localhost:3000/up > /dev/null 2>&1; then
+# Check if Archive is running (host)
+if ! curl -f ${ARCHIVE_SERVER_URL:-http://localhost:3000}/up > /dev/null 2>&1; then
     print_error "Archive is not running on localhost:3000"
     print_status "Please deploy Archive first: cd ../archive && ./deploy.sh"
     exit 1
@@ -71,33 +71,38 @@ fi
 
 print_success "Archive is running and accessible"
 
-# Check for Archive server URL
-if [ -z "$ARCHIVE_SERVER_URL" ]; then
-    print_warning "ARCHIVE_SERVER_URL not set, using default http://localhost:3000"
-    export ARCHIVE_SERVER_URL=http://localhost:3000
-fi
+ARCHIVE_SERVER_URL=${ARCHIVE_SERVER_URL:-http://localhost:3000}
 
-# Check for Archive database connection
 if [ -z "$POSTGRES_PASSWORD" ]; then
-    print_warning "POSTGRES_PASSWORD not set, using default 'password'"
-    export POSTGRES_PASSWORD=password
+    print_error "POSTGRES_PASSWORD not set"
+    exit 1
 fi
 
 # Set Archive service connection details
-export ARCHIVE_DB_HOST=localhost
-export ARCHIVE_DB_PORT=5432
-export ARCHIVE_REDIS_HOST=localhost
-export ARCHIVE_REDIS_PORT=6379
-export ARCHIVE_STORAGE_PATH="../archive/storage"
+# Prefer Archive's compose network service names; fallback to localhost if not joined
+export ARCHIVE_DB_HOST=${ARCHIVE_DB_HOST:-db}
+export ARCHIVE_DB_PORT=${ARCHIVE_DB_PORT:-5432}
+export ARCHIVE_REDIS_HOST=${ARCHIVE_REDIS_HOST:-redis}
+export ARCHIVE_REDIS_PORT=${ARCHIVE_REDIS_PORT:-6379}
+
+# Require absolute storage path (shared var from Archive)
+if [ -z "$HOST_STORAGE_PATH" ]; then
+  print_error "HOST_STORAGE_PATH not set. Export the same path used by Archive."
+  exit 1
+fi
+case "$HOST_STORAGE_PATH" in
+  /*) : ;;
+  *) print_error "HOST_STORAGE_PATH must be an absolute path"; exit 1;;
+esac
 
 print_status "Using Archive services:"
 print_status "  Database: $ARCHIVE_DB_HOST:$ARCHIVE_DB_PORT"
 print_status "  Redis: $ARCHIVE_REDIS_HOST:$ARCHIVE_REDIS_PORT"
-print_status "  Storage: $ARCHIVE_STORAGE_PATH"
+print_status "  Storage: $HOST_STORAGE_PATH"
 
 # Build and start services
 print_status "Building and starting Jukebox services..."
-docker-compose up -d --build
+docker compose up -d --build
 
 # Wait for services to be ready
 print_status "Waiting for services to be ready..."
@@ -107,7 +112,7 @@ sleep 30
 if curl -f http://localhost:3001/api/jukebox/health > /dev/null 2>&1; then
     print_success "Jukebox is running successfully"
 else
-    print_error "Jukebox is not responding. Check logs with: docker-compose logs"
+    print_error "Jukebox is not responding. Check logs with: docker compose logs"
     exit 1
 fi
 
@@ -157,7 +162,7 @@ echo "3. Access your jukebox at: http://jukebox.yourdomain.com"
 echo "4. Ensure Archive server is accessible at: $ARCHIVE_SERVER_URL"
 echo ""
 print_status "Useful commands:"
-echo "- View logs: docker-compose logs -f"
-echo "- Stop services: docker-compose down"
-echo "- Update: git pull && docker-compose up -d --build"
+echo "- View logs: docker compose logs -f"
+echo "- Stop services: docker compose down"
+echo "- Update: git pull && docker compose up -d --build"
 echo "- Check sync status: curl http://localhost:3001/api/jukebox/sync" 
