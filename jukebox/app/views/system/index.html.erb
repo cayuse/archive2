@@ -1,0 +1,22 @@
+<div class="system-controller">
+  <h1>Jukebox Controller</h1>
+  <p>Status: <strong><%= @status['state'] %></strong></p>
+  <% if @current_song %>
+    <p>Now Playing: <%= @current_song['title'] %></p>
+  <% end %>
+  <div class="controls">
+    <%= button_to 'Play', system_play_path, method: :post, class: 'btn' %>
+    <%= button_to 'Pause', system_pause_path, method: :post, class: 'btn' %>
+    <%= button_to 'Stop', system_stop_path, method: :post, class: 'btn' %>
+    <%= button_to 'Skip', system_next_path, method: :post, class: 'btn' %>
+  </div>
+</div>
+
+<style>
+.system-controller { max-width: 560px; margin: 2rem auto; font-family: system-ui, sans-serif; }
+.controls { display: flex; gap: 0.5rem; margin-top: 1rem; }
+.btn { padding: 0.6rem 1rem; background: #333; color: #fff; border-radius: 6px; border: none; cursor: pointer; }
+.btn:hover { background: #555; }
+</style>
+
+

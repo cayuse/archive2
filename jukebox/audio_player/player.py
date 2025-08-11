@@ -71,6 +71,7 @@ class JukeboxPlayer:
             'mpd_host': os.environ.get('MPD_HOST', 'localhost'),
             'mpd_port': int(os.environ.get('MPD_PORT', '6600')),
             'mpd_password': os.environ.get('MPD_PASSWORD') or None,
+            'mpd_socket': os.environ.get('MPD_SOCKET') or None,
             'redis_host': os.environ.get('REDIS_HOST', 'localhost'),
             'redis_port': int(os.environ.get('REDIS_PORT', '6379')),
             'redis_db': int(os.environ.get('REDIS_DB', '0')),
@@ -88,17 +89,40 @@ class JukeboxPlayer:
         """Connect to MPD daemon"""
         try:
             self.mpd_client = MPDClient()
-            self.mpd_client.connect(
-                self.config['mpd_host'],
-                self.config['mpd_port']
-            )
+            # Prefer Unix socket if provided
+            mpd_socket = self.config.get('mpd_socket')
+            if mpd_socket:
+                self.mpd_client.connect(mpd_socket, None)
+            else:
+                self.mpd_client.connect(
+                    self.config['mpd_host'],
+                    self.config['mpd_port']
+                )
             
             if self.config.get('mpd_password'):
                 self.mpd_client.password(self.config['mpd_password'])
-            
-            # Configure MPD settings
-            self.mpd_client.crossfade(self.config['crossfade_duration'])
-            self.mpd_client.setvol(self.config['volume'])
+
+            # Ensure at least one output is enabled
+            try:
+                outs = self.mpd_client.outputs()
+                for o in outs or []:
+                    if o.get('outputenabled') == '0':
+                        try:
+                            self.mpd_client.enableoutput(int(o.get('outputid', 0)))
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+
+            # Configure MPD settings (best-effort)
+            try:
+                self.mpd_client.crossfade(self.config['crossfade_duration'])
+            except Exception:
+                pass
+            try:
+                self.mpd_client.setvol(self.config['volume'])
+            except Exception as e:
+                logger.error(f"Failed to set volume: {e}")
             # Ensure MPD does not loop old items; consume removes played items
             try:
                 self.mpd_client.repeat(0)
@@ -394,10 +418,18 @@ class JukeboxPlayer:
             logger.info(f"Received command: {action}")
             
             if action == 'play':
-                # Check if we have content before playing
+                # Resume if paused; else start next track
                 self.desired_state = 'playing'
                 self._save_desired_state()
-                self.fetch_and_play_next(force_play=True)
+                try:
+                    status = self.mpd_client.status()
+                    if status and status.get('state') == 'pause':
+                        self.mpd_client.pause(0)  # resume
+                        self.is_playing = True
+                    else:
+                        self.fetch_and_play_next(force_play=True)
+                except Exception:
+                    self.fetch_and_play_next(force_play=True)
                 
             elif action == 'pause':
                 self.desired_state = 'paused'

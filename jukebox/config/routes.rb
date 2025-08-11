@@ -1,4 +1,10 @@
 Rails.application.routes.draw do
+  # Jukebox controller UI
+  get  '/system/player',   to: 'system#index', as: :system_player
+  post '/system/play',     to: 'system#play',  as: :system_play
+  post '/system/pause',    to: 'system#pause', as: :system_pause
+  post '/system/stop',     to: 'system#stop',  as: :system_stop
+  post '/system/next',     to: 'system#next',  as: :system_next
   # Session routes
   get 'login', to: 'sessions#new'
   post 'login', to: 'sessions#create'

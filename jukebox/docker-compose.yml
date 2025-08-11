@@ -16,6 +16,8 @@ services:
       ASSUME_SSL: ${ASSUME_SSL:-false}
       FORGERY_ORIGIN_CHECK: ${FORGERY_ORIGIN_CHECK:-false}
       ALLOW_ALL_HOSTS: ${ALLOW_ALL_HOSTS:-true}
+      # Active Storage root for Archive blobs mounted at /rails/storage
+      ARCHIVE_STORAGE_ROOT: ${ARCHIVE_STORAGE_ROOT:-/rails/storage}
       # Connect to Archive's PostgreSQL database
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -67,6 +69,8 @@ services:
     environment:
       MPD_HOST: ${MPD_HOST:-host.docker.internal}
       MPD_PORT: 6600
+      MPD_SOCKET: ${MPD_SOCKET}
+      MPD_PASSWORD: ${MPD_PASSWORD}
       REDIS_HOST: ${ARCHIVE_REDIS_HOST:-redis}
       REDIS_PORT: ${ARCHIVE_REDIS_PORT:-6379}
       REDIS_DB: 1
@@ -74,6 +78,7 @@ services:
       JUKEBOX_LOG_FILE: /var/log/jukebox_player.log
     volumes:
       - jukebox_player_logs:/var/log
+      - /run/mpd:/run/mpd:ro
     healthcheck:
       test: ["CMD", "pgrep", "-f", "player.py"]
       interval: 30s
