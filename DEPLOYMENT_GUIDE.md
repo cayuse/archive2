@@ -179,6 +179,8 @@ export POSTGRES_DATA_PATH=/path/to/your/postgres/data
 cd ../jukebox
 export RAILS_MASTER_KEY=your_master_key_here
 export POSTGRES_PASSWORD=your_secure_password
+export ARCHIVE_STORAGE_PATH=/abs/path/to/archive/storage   # must be absolute
+export ARCHIVE_SERVER_URL=http://localhost:3000            # or your archive URL
 ./deploy.sh
 ```
 
@@ -248,20 +250,102 @@ export ARCHIVE_STORAGE_PATH=/path/to/shared/storage
   - Dependencies: Database, Redis, Archive app
 
 ### Jukebox Services
-- **jukebox** (Rails app): `ruby:3.3.8-slim`
+- **jukebox** (Rails app): `ruby:3.2.5-slim`
   - Ports: 3001 (Rails)
-  - Dependencies: Archive's PostgreSQL, Redis, storage
-  - Volumes: Logs, Archive storage (read-only)
+  - Dependencies: Archive's PostgreSQL (db), Redis (redis), Archive app (archive)
+  - Volumes: Logs, Archive storage (read-only, absolute path)
 
-- **mpd** (Music Player Daemon): `mpd:latest`
-  - Ports: 6600 (MPD)
-  - Purpose: Audio playback and playlist management
-  - Volumes: MPD data, playlists, Archive storage (read-only)
+- Host MPD (preferred): install `mpd` on the host and expose 6600 locally. No MPD container.
 
 - **jukebox-player** (Python controller): `python:3.11-slim`
   - Purpose: Controls MPD, manages queue, communicates with Jukebox API
-  - Dependencies: MPD, Jukebox Rails app
+  - Dependencies: Host MPD (localhost:6600), Jukebox Rails app
   - Volumes: Logs
+
+### Host MPD setup (required for Jukebox)
+
+1) Install MPD on the host:
+   ```bash
+   sudo apt update && sudo apt install -y mpd mpc
+   ```
+2) Configure MPD to listen and use Archive storage (recommended: Unix socket):
+   - Edit `/etc/mpd.conf` and set:
+     - For Unix socket (preferred inside Docker):
+       - `bind_to_address "/run/mpd/socket"`
+       - `umask "0000"`  (or manage permissions via group/ACL instead)
+     - For TCP fallback (optional):
+       - `bind_to_address "127.0.0.1"`
+       - `port "6600"`
+     - `music_directory "/abs/path/to/archive/storage"` (same as `ARCHIVE_STORAGE_PATH`)
+     - Ensure `playlist_directory`, `db_file`, `state_file`, `log_file` are writable by MPD.
+   - Optional password:
+     - Add `password "yourpass@read,add,control,admin"`
+
+   Example audio output blocks (pick one that matches your system):
+   ```
+   audio_output {
+     type  "alsa"
+     name  "ALSA Default"
+     device "default"
+     mixer_type "software"
+     enabled "yes"
+   }
+   # or PulseAudio
+   audio_output {
+     type  "pulse"
+     name  "PulseAudio"
+     mixer_type "software"
+     enabled "yes"
+   }
+   ```
+3) Permissions:
+   - MPD runs as `mpd` user by default; ensure it has read access to your music directory:
+     ```bash
+     sudo usermod -a -G $(stat -c %G /abs/path/to/archive/storage) mpd
+     sudo setfacl -R -m g:mpd:rx /abs/path/to/archive/storage
+     ```
+   - No special Docker groups are required for control: the python controller talks to MPD over TCP (6600) using `host.docker.internal`.
+4) Restart MPD:
+   ```bash
+   sudo systemctl restart mpd
+   sudo systemctl status mpd --no-pager
+   mpc update
+   ```
+
+5) Verify and enable outputs (if muted/disabled):
+   ```bash
+   # For TCP host
+   mpc -h 127.0.0.1 -p 6600 outputs
+   # For Unix socket
+   mpc -h /run/mpd/socket outputs
+   # Enable first output if disabled
+   mpc -h /run/mpd/socket enable 1
+   mpc -h /run/mpd/socket volume 80
+   ```
+
+### Docker-to-host MPD connectivity
+- Option A (Unix socket, recommended):
+  - Ensure MPD writes socket at `/run/mpd/socket` and is world/group readable
+  - Compose mounts `/run/mpd:/run/mpd:ro` and sets `MPD_SOCKET=/run/mpd/socket`
+- Option B (TCP):
+  - Ensure MPD listens on 127.0.0.1:6600 and compose has `extra_hosts: host.docker.internal:host-gateway`
+  - Player uses `MPD_HOST=host.docker.internal`, `MPD_PORT=6600`, and optional `MPD_PASSWORD`
+
+### Reusing Archive env flags for Jukebox (IP testing)
+- The same flags used for Archive are supported by Jukebox:
+  - `APP_HOST`, `APP_PROTOCOL`, `FORCE_SSL`, `ASSUME_SSL`, `FORGERY_ORIGIN_CHECK`, `ALLOW_ALL_HOSTS`.
+- Example (HTTP/IP testing):
+  ```bash
+  export APP_HOST=192.168.1.201
+  export APP_PROTOCOL=http
+  export FORCE_SSL=false ASSUME_SSL=false FORGERY_ORIGIN_CHECK=false ALLOW_ALL_HOSTS=true
+  # MPD (choose one)
+  export MPD_SOCKET=/run/mpd/socket                   # if using Unix socket
+  # or
+  export MPD_HOST=host.docker.internal MPD_PORT=6600  # TCP fallback
+  # optional
+  export MPD_PASSWORD=yourpass
+  ```
 
 ## Apache2 Configuration
 
@@ -344,17 +428,29 @@ sudo tail -f /var/log/apache2/archive_error.log
 sudo tail -f /var/log/apache2/jukebox_error.log
 ```
 
-### Updates
+### Updates and restarts
 ```bash
-# Archive update
+# Archive update (rebuild image and recreate container)
 cd archive
 git pull
-docker-compose up -d --build
+docker compose up -d --build
 
-# Jukebox update
-cd jukebox
+# Jukebox update (rebuild image and recreate containers)
+cd ../jukebox
 git pull
-docker-compose up -d --build
+docker compose up -d --build
+
+# Service-specific rebuilds
+docker compose build archive && docker compose up -d archive
+docker compose build jukebox && docker compose up -d jukebox
+docker compose build jukebox-player && docker compose up -d jukebox-player
+
+# Restart without rebuild (config/env change only)
+docker compose restart archive
+docker compose restart jukebox jukebox-player
+
+# Force a clean rebuild (ignore cache)
+docker compose build --no-cache jukebox && docker compose up -d jukebox
 ```
 
 ### Backup
