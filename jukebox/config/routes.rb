@@ -5,6 +5,9 @@ Rails.application.routes.draw do
   post '/system/pause',    to: 'system#pause', as: :system_pause
   post '/system/stop',     to: 'system#stop',  as: :system_stop
   post '/system/next',     to: 'system#next',  as: :system_next
+  post '/system/volume_up', to: 'system#volume_up', as: :system_volume_up
+  post '/system/volume_down', to: 'system#volume_down', as: :system_volume_down
+  post '/system/set_volume', to: 'system#set_volume', as: :system_set_volume
   # Session routes
   get 'login', to: 'sessions#new'
   post 'login', to: 'sessions#create'
@@ -103,6 +106,16 @@ Rails.application.routes.draw do
       get 'cache/status', to: 'jukebox#cache_status'
       post 'cache/song/:song_id', to: 'jukebox#cache_song'
       delete 'cache', to: 'jukebox#clear_cache'
+    end
+    
+    # Player API - direct communication with Python player
+    namespace :player do
+      get 'status', to: 'player#status'
+      match 'volume', to: 'player#volume', via: [:get, :post]
+      get 'current_song', to: 'player#current_song'
+      get 'progress', to: 'player#progress'
+      get 'queue', to: 'player#queue'
+      get 'health', to: 'player#health'
     end
   end
 

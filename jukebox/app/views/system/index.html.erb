@@ -1,22 +1,473 @@
 <div class="system-controller">
   <h1>Jukebox Controller</h1>
-  <p>Status: <strong><%= @status['state'] %></strong></p>
+  
+  <!-- Connection Status -->
+  <div class="connection-status <%= @is_connected ? 'connected' : 'disconnected' %>">
+    <span class="status-indicator"></span>
+    Status: <strong><%= @player_state %></strong>
+    <% if @is_connected %>
+      <span class="connection-badge">Connected to MPD</span>
+    <% else %>
+      <span class="connection-badge">Using Redis Fallback</span>
+    <% end %>
+  </div>
+  
+  <!-- Current Song Display -->
   <% if @current_song %>
-    <p>Now Playing: <%= @current_song['title'] %></p>
+    <div class="current-song">
+      <h3>Now Playing</h3>
+      <div class="song-info">
+        <div class="song-title"><%= @current_song['title'] %></div>
+        <div class="song-artist"><%= @current_song['artist'] %></div>
+        <div class="song-album"><%= @current_song['album'] %></div>
+      </div>
+      
+      <!-- Progress Bar -->
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+        </div>
+        <div class="time-display">
+          <span id="elapsed-time">0:00</span>
+          <span id="total-time">0:00</span>
+        </div>
+      </div>
+    </div>
   <% end %>
+  
+  <div class="volume-controls">
+    <h3>Volume Control</h3>
+    <div class="volume-display">
+      <span class="volume-label">Current Volume:</span>
+      <span class="volume-value" id="current-volume"><%= @current_volume %>%</span>
+    </div>
+    <div class="volume-buttons">
+      <%= button_to '🔊 +10', system_volume_up_path, method: :post, class: 'btn btn-volume' %>
+      <%= button_to '🔉 -10', system_volume_down_path, method: :post, class: 'btn btn-volume' %>
+    </div>
+    <div class="volume-slider">
+      <div class="volume-form">
+        <label for="volume">Set Volume:</label>
+        <input type="range" id="volume" name="volume" min="0" max="100" value="<%= @current_volume %>" class="volume-range">
+        <span class="volume-display-value"><%= @current_volume %>%</span>
+        <form action="<%= system_set_volume_path %>" method="post" style="display: inline;">
+          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+          <input type="hidden" id="volume-param" name="volume" value="<%= @current_volume %>">
+          <button type="submit" class="btn btn-set-volume">Set Volume</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
   <div class="controls">
-    <%= button_to 'Play', system_play_path, method: :post, class: 'btn' %>
-    <%= button_to 'Pause', system_pause_path, method: :post, class: 'btn' %>
-    <%= button_to 'Stop', system_stop_path, method: :post, class: 'btn' %>
-    <%= button_to 'Skip', system_next_path, method: :post, class: 'btn' %>
+    <h3>Playback Controls</h3>
+    <%= button_to '▶️ Play', system_play_path, method: :post, class: 'btn btn-play' %>
+    <%= button_to '⏸️ Pause', system_pause_path, method: :post, class: 'btn btn-pause' %>
+    <%= button_to '⏹️ Stop', system_stop_path, method: :post, class: 'btn btn-stop' %>
+    <%= button_to '⏭️ Skip', system_next_path, method: :post, class: 'btn btn-skip' %>
+  </div>
+  
+  <!-- Real-time Status Display -->
+  <div class="status-display">
+    <h3>Real-time Status</h3>
+    <div class="status-grid">
+      <div class="status-item">
+        <span class="status-label">Volume:</span>
+        <span class="status-value" id="status-volume"><%= @current_volume %>%</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">State:</span>
+        <span class="status-value" id="status-state"><%= @player_state %></span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Connected:</span>
+        <span class="status-value" id="status-connected"><%= @is_connected ? 'Yes' : 'No' %></span>
+      </div>
+    </div>
   </div>
 </div>
 
 <style>
-.system-controller { max-width: 560px; margin: 2rem auto; font-family: system-ui, sans-serif; }
-.controls { display: flex; gap: 0.5rem; margin-top: 1rem; }
-.btn { padding: 0.6rem 1rem; background: #333; color: #fff; border-radius: 6px; border: none; cursor: pointer; }
-.btn:hover { background: #555; }
+.system-controller { 
+  max-width: 800px; 
+  margin: 2rem auto; 
+  font-family: system-ui, sans-serif; 
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.connection-status.connected {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.connection-status.disconnected {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.connection-badge {
+  margin-left: auto;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  font-size: 0.8em;
+}
+
+.current-song {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  border: 1px solid #e9ecef;
+}
+
+.song-info {
+  margin-bottom: 1rem;
+}
+
+.song-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #495057;
+  margin-bottom: 0.25rem;
+}
+
+.song-artist {
+  color: #6c757d;
+  margin-bottom: 0.25rem;
+}
+
+.song-album {
+  color: #6c757d;
+  font-size: 0.9em;
+}
+
+.progress-container {
+  margin-top: 1rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #007bff;
+  transition: width 0.3s ease;
+}
+
+.time-display {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9em;
+  color: #6c757d;
+}
+
+.volume-controls, .controls, .status-display { 
+  background: #f8f9fa; 
+  padding: 1.5rem; 
+  border-radius: 8px; 
+  margin: 1rem 0; 
+  border: 1px solid #e9ecef;
+}
+
+.volume-controls h3, .controls h3, .status-display h3 {
+  margin-top: 0;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+  padding-bottom: 0.5rem;
+}
+
+.volume-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.volume-label {
+  font-weight: 500;
+  color: #495057;
+}
+
+.volume-value {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #007bff;
+}
+
+.volume-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.volume-slider {
+  background: white;
+  padding: 1rem;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.volume-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.volume-range {
+  flex: 1;
+  min-width: 150px;
+}
+
+.volume-display-value {
+  font-weight: bold;
+  color: #007bff;
+  min-width: 40px;
+}
+
+.controls { 
+  display: flex; 
+  gap: 0.5rem; 
+  margin-top: 1rem; 
+  flex-wrap: wrap;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.status-label {
+  font-weight: 500;
+  color: #495057;
+}
+
+.status-value {
+  font-weight: bold;
+  color: #007bff;
+}
+
+.btn { 
+  padding: 0.6rem 1rem; 
+  background: #333; 
+  color: #fff; 
+  border-radius: 6px; 
+  border: none; 
+  cursor: pointer; 
+  text-decoration: none;
+  font-size: 0.9em;
+}
+
+.btn:hover { 
+  background: #555; 
+}
+
+.btn-volume {
+  background: #28a745;
+  min-width: 80px;
+}
+
+.btn-volume:hover {
+  background: #218838;
+}
+
+.btn-play {
+  background: #007bff;
+}
+
+.btn-play:hover {
+  background: #0056b3;
+}
+
+.btn-pause {
+  background: #ffc107;
+  color: #212529;
+}
+
+.btn-pause:hover {
+  background: #e0a800;
+}
+
+.btn-stop {
+  background: #dc3545;
+}
+
+.btn-stop:hover {
+  background: #c82333;
+}
+
+.btn-skip {
+  background: #6f42c1;
+}
+
+.btn-skip:hover {
+  background: #5a32a3;
+}
+
+.btn-set-volume {
+  background: #17a2b8;
+  min-width: 60px;
+}
+
+.btn-set-volume:hover {
+  background: #138496;
+}
+
+@media (max-width: 600px) {
+  .volume-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .volume-range {
+    min-width: auto;
+  }
+  
+  .controls {
+    justify-content: center;
+  }
+  
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const volumeRange = document.getElementById('volume');
+  const volumeDisplay = document.querySelector('.volume-display-value');
+  const volumeParam = document.getElementById('volume-param');
+  
+  if (volumeRange && volumeDisplay && volumeParam) {
+    volumeRange.addEventListener('input', function() {
+      const newVolume = this.value;
+      volumeDisplay.textContent = newVolume + '%';
+      volumeParam.value = newVolume;
+    });
+  }
+  
+  // Real-time updates
+  let updateInterval;
+  
+  function startRealTimeUpdates() {
+    updateInterval = setInterval(updatePlayerStatus, 1000);
+  }
+  
+  function stopRealTimeUpdates() {
+    if (updateInterval) {
+      clearInterval(updateInterval);
+    }
+  }
+  
+  async function updatePlayerStatus() {
+    try {
+      const response = await fetch('/api/player/status');
+      if (response.ok) {
+        const data = await response.json();
+        updateStatusDisplay(data);
+      }
+    } catch (error) {
+      console.error('Error updating player status:', error);
+    }
+  }
+  
+  function updateStatusDisplay(data) {
+    // Update volume
+    const currentVolume = document.getElementById('current-volume');
+    const statusVolume = document.getElementById('status-volume');
+    if (currentVolume && data.volume !== undefined) {
+      currentVolume.textContent = data.volume + '%';
+    }
+    if (statusVolume && data.volume !== undefined) {
+      statusVolume.textContent = data.volume + '%';
+    }
+    
+    // Update state
+    const statusState = document.getElementById('status-state');
+    if (statusState && data.state) {
+      statusState.textContent = data.state;
+    }
+    
+    // Update connection status
+    const statusConnected = document.getElementById('status-connected');
+    if (statusConnected && data.connected !== undefined) {
+      statusConnected.textContent = data.connected ? 'Yes' : 'No';
+    }
+    
+    // Update progress bar
+    if (data.current_song && data.progress !== undefined) {
+      const progressFill = document.getElementById('progress-fill');
+      if (progressFill) {
+        progressFill.style.width = data.progress + '%';
+      }
+      
+      // Update time display
+      const elapsedTime = document.getElementById('elapsed-time');
+      const totalTime = document.getElementById('total-time');
+      if (elapsedTime && data.elapsed !== undefined) {
+        elapsedTime.textContent = formatTime(data.elapsed);
+      }
+      if (totalTime && data.duration !== undefined) {
+        totalTime.textContent = formatTime(data.duration);
+      }
+    }
+  }
+  
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+  
+  // Start real-time updates
+  startRealTimeUpdates();
+  
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', function() {
+    stopRealTimeUpdates();
+  });
+});
+</script>
 
 

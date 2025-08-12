@@ -23,6 +23,10 @@ RUN mkdir -p /var/log
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
+ENV HTTP_PORT=5000
+
+# Expose HTTP API port
+EXPOSE 5000
 
 # Run the player
 CMD ["python", "player.py"]

@@ -2,6 +2,7 @@
 """
 Music Player Controller for Jukebox System
 Uses MPD (Music Player Daemon) for rock-solid audio playback
+Now includes HTTP API for real-time state queries
 """
 
 import os
@@ -15,6 +16,8 @@ from typing import Optional, Dict, List
 import redis
 import requests
 from mpd import MPDClient, ConnectionError, CommandError
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 # Configure logging (fallback if /var/log is not writable)
 logger = logging.getLogger(__name__)
@@ -36,8 +39,12 @@ for _h in _handlers:
     _h.setFormatter(_formatter)
     logger.addHandler(_h)
 
+# Initialize Flask app
+app = Flask(__name__)
+CORS(app)  # Enable CORS for web interface
+
 class JukeboxPlayer:
-    """Main jukebox player controller"""
+    """Main jukebox player controller with HTTP API"""
     
     def __init__(self, config_path: str = None):
         self.config = self.load_config(config_path)
@@ -71,7 +78,7 @@ class JukeboxPlayer:
             'mpd_host': os.environ.get('MPD_HOST', 'localhost'),
             'mpd_port': int(os.environ.get('MPD_PORT', '6600')),
             'mpd_password': os.environ.get('MPD_PASSWORD') or None,
-            'mpd_socket': os.environ.get('MPD_SOCKET') or None,
+            'mpd_socket': os.environ.get('MPD_SOCKATE') or None,
             'redis_host': os.environ.get('REDIS_HOST', 'localhost'),
             'redis_port': int(os.environ.get('REDIS_PORT', '6379')),
             'redis_db': int(os.environ.get('REDIS_DB', '0')),
@@ -82,7 +89,8 @@ class JukeboxPlayer:
             'prequeue_enabled': False,
             'volume': 80,
             'retry_attempts': 3,
-            'retry_delay': 5
+            'retry_delay': 5,
+            'http_port': int(os.environ.get('HTTP_PORT', '5000'))
         }
     
     def connect_mpd(self):
@@ -121,6 +129,8 @@ class JukeboxPlayer:
                 pass
             try:
                 self.mpd_client.setvol(self.config['volume'])
+                # Report initial volume to Redis
+                self._report_volume(self.config['volume'])
             except Exception as e:
                 logger.error(f"Failed to set volume: {e}")
             # Ensure MPD does not loop old items; consume removes played items
@@ -164,6 +174,199 @@ class JukeboxPlayer:
             self.redis_client.set('jukebox:desired_state', self.desired_state)
         except Exception:
             pass
+    
+    def _report_volume(self, volume: int):
+        """Report current volume to Redis for web interface"""
+        try:
+            self.redis_client.set('jukebox:current_volume', volume)
+            logger.info(f"Volume set to {volume}%")
+        except Exception as e:
+            logger.error(f"Failed to report volume to Redis: {e}")
+    
+    # HTTP API Endpoints
+    def get_player_status(self) -> Dict:
+        """Get comprehensive player status"""
+        try:
+            if not self.mpd_client:
+                return {'error': 'MPD not connected', 'connected': False}
+            
+            status = self.mpd_client.status()
+            if not status:
+                return {'error': 'No MPD status', 'connected': True}
+            
+            # Get current song info
+            current_song_info = None
+            if status.get('state') == 'play':
+                try:
+                    current = self.mpd_client.currentsong()
+                    if current:
+                        current_song_info = {
+                            'title': current.get('title', 'Unknown'),
+                            'artist': current.get('artist', 'Unknown'),
+                            'album': current.get('album', 'Unknown'),
+                            'duration': int(current.get('duration', 0)),
+                            'file': current.get('file', ''),
+                            'id': current.get('id', '')
+                        }
+                except Exception as e:
+                    logger.error(f"Error getting current song: {e}")
+            
+            # Calculate progress
+            elapsed = float(status.get('elapsed', '0') or 0)
+            duration = float(status.get('duration', '0') or 0)
+            progress = (elapsed / duration * 100) if duration > 0 else 0
+            
+            return {
+                'connected': True,
+                'state': status.get('state', 'unknown'),
+                'volume': int(status.get('volume', '0') or 0),
+                'elapsed': elapsed,
+                'duration': duration,
+                'progress': round(progress, 1),
+                'remaining': max(0, duration - elapsed),
+                'current_song': current_song_info,
+                'playlist_length': int(status.get('playlistlength', '0') or 0),
+                'repeat': status.get('repeat') == '1',
+                'random': status.get('random') == '1',
+                'single': status.get('single') == '1',
+                'consume': status.get('consume') == '1',
+                'crossfade': int(status.get('xfade', '0') or 0),
+                'timestamp': time.time()
+            }
+        except Exception as e:
+            logger.error(f"Error getting player status: {e}")
+            return {'error': str(e), 'connected': False}
+    
+    def get_volume(self) -> Dict:
+        """Get current volume"""
+        try:
+            if not self.mpd_client:
+                return {'error': 'MPD not connected'}
+            
+            status = self.mpd_client.status()
+            volume = int(status.get('volume', '0') or 0) if status else 0
+            
+            return {
+                'volume': volume,
+                'timestamp': time.time()
+            }
+        except Exception as e:
+            logger.error(f"Error getting volume: {e}")
+            return {'error': str(e)}
+    
+    def set_volume(self, volume: int) -> Dict:
+        """Set volume and return new volume"""
+        try:
+            if not self.mpd_client:
+                return {'error': 'MPD not connected'}
+            
+            # Clamp volume to 0-100
+            volume = max(0, min(100, volume))
+            
+            # Set volume in MPD
+            self.mpd_client.setvol(volume)
+            
+            # Report to Redis
+            self._report_volume(volume)
+            
+            return {
+                'volume': volume,
+                'success': True,
+                'timestamp': time.time()
+            }
+        except Exception as e:
+            logger.error(f"Error setting volume: {e}")
+            return {'error': str(e)}
+    
+    def get_current_song(self) -> Dict:
+        """Get detailed current song information"""
+        try:
+            if not self.mpd_client:
+                return {'error': 'MPD not connected'}
+            
+            status = self.mpd_client.status()
+            if not status or status.get('state') != 'play':
+                return {'error': 'No song currently playing'}
+            
+            current = self.mpd_client.currentsong()
+            if not current:
+                return {'error': 'Could not get current song info'}
+            
+            elapsed = float(status.get('elapsed', '0') or 0)
+            duration = float(status.get('duration', '0') or 0)
+            
+            return {
+                'title': current.get('title', 'Unknown'),
+                'artist': current.get('artist', 'Unknown'),
+                'album': current.get('album', 'Unknown'),
+                'duration': duration,
+                'elapsed': elapsed,
+                'remaining': max(0, duration - elapsed),
+                'progress': round((elapsed / duration * 100) if duration > 0 else 0, 1),
+                'file': current.get('file', ''),
+                'id': current.get('id', ''),
+                'timestamp': time.time()
+            }
+        except Exception as e:
+            logger.error(f"Error getting current song: {e}")
+            return {'error': str(e)}
+    
+    def get_progress(self) -> Dict:
+        """Get current playback progress"""
+        try:
+            if not self.mpd_client:
+                return {'error': 'MPD not connected'}
+            
+            status = self.mpd_client.status()
+            if not status:
+                return {'error': 'No MPD status'}
+            
+            elapsed = float(status.get('elapsed', '0') or 0)
+            duration = float(status.get('duration', '0') or 0)
+            progress = (elapsed / duration * 100) if duration > 0 else 0
+            
+            return {
+                'elapsed': elapsed,
+                'duration': duration,
+                'remaining': max(0, duration - elapsed),
+                'progress': round(progress, 1),
+                'state': status.get('state', 'unknown'),
+                'timestamp': time.time()
+            }
+        except Exception as e:
+            logger.error(f"Error getting progress: {e}")
+            return {'error': str(e)}
+    
+    def get_queue(self) -> Dict:
+        """Get current playlist/queue"""
+        try:
+            if not self.mpd_client:
+                return {'error': 'MPD not connected'}
+            
+            playlist = self.mpd_client.playlistinfo()
+            if not playlist:
+                return {'queue': [], 'length': 0}
+            
+            queue = []
+            for item in playlist:
+                queue.append({
+                    'id': item.get('id', ''),
+                    'title': item.get('title', 'Unknown'),
+                    'artist': item.get('artist', 'Unknown'),
+                    'album': item.get('album', 'Unknown'),
+                    'duration': int(item.get('duration', 0)),
+                    'file': item.get('file', ''),
+                    'pos': int(item.get('pos', 0))
+                })
+            
+            return {
+                'queue': queue,
+                'length': len(queue),
+                'timestamp': time.time()
+            }
+        except Exception as e:
+            logger.error(f"Error getting queue: {e}")
+            return {'error': str(e)}
     
     def get_next_song(self) -> Optional[Dict]:
         """Ask Rails for the next song to play; Rails consumes queue and applies logic."""
@@ -346,6 +549,17 @@ class JukeboxPlayer:
             remaining = max(0.0, duration - elapsed) if duration else 0.0
             playlist_length = int(status.get('playlistlength', '0') or 0)
 
+            # Check and report volume changes
+            try:
+                current_volume = int(status.get('volume', '0') or 0)
+                stored_volume = self.redis_client.get('jukebox:current_volume')
+                stored_volume = int(stored_volume) if stored_volume else None
+                
+                if stored_volume is None or stored_volume != current_volume:
+                    self._report_volume(current_volume)
+            except Exception:
+                pass
+
             # If stopped, fetch next immediately
             if state == 'stop':
                 self.is_playing = False
@@ -460,6 +674,7 @@ class JukeboxPlayer:
             elif action == 'volume':
                 volume = command.get('volume', 80)
                 self.mpd_client.setvol(volume)
+                self._report_volume(volume)
                 
             elif action == 'crossfade':
                 duration = command.get('duration', 3)
@@ -541,4 +756,93 @@ class JukeboxPlayer:
 if __name__ == "__main__":
     config_path = sys.argv[1] if len(sys.argv) > 1 else None
     player = JukeboxPlayer(config_path)
-    player.run() 
+    
+    # Start Flask server in a separate thread
+    def run_flask():
+        try:
+            port = player.config.get('http_port', 5000)
+            logger.info(f"Starting Flask API server on port {port}")
+            app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+        except Exception as e:
+            logger.error(f"Flask server error: {e}")
+    
+    flask_thread = threading.Thread(target=run_flask, daemon=True)
+    flask_thread.start()
+    
+    # Run the main player
+    player.run()
+
+# Flask Route Handlers
+@app.route('/api/player/status')
+def api_player_status():
+    """Get comprehensive player status"""
+    if 'player' not in globals():
+        return jsonify({'error': 'Player not initialized'}), 500
+    return jsonify(player.get_player_status())
+
+@app.route('/api/player/volume')
+def api_player_volume():
+    """Get or set volume"""
+    if 'player' not in globals():
+        return jsonify({'error': 'Player not initialized'}), 500
+    
+    if request.method == 'GET':
+        return jsonify(player.get_volume())
+    elif request.method == 'POST':
+        try:
+            data = request.get_json()
+            volume = int(data.get('volume', 80))
+            result = player.set_volume(volume)
+            return jsonify(result)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 400
+
+@app.route('/api/player/current_song')
+def api_current_song():
+    """Get current song information"""
+    if 'player' not in globals():
+        return jsonify({'error': 'Player not initialized'}), 500
+    return jsonify(player.get_current_song())
+
+@app.route('/api/player/progress')
+def api_progress():
+    """Get playback progress"""
+    if 'player' not in globals():
+        return jsonify({'error': 'Player not initialized'}), 500
+    return jsonify(player.get_progress())
+
+@app.route('/api/player/queue')
+def api_queue():
+    """Get current playlist/queue"""
+    if 'player' not in globals():
+        return jsonify({'error': 'Player not initialized'}), 500
+    return jsonify(player.get_queue())
+
+@app.route('/api/player/health')
+def api_health():
+    """Health check endpoint"""
+    if 'player' not in globals():
+        return jsonify({'status': 'error', 'message': 'Player not initialized'}), 500
+    
+    try:
+        # Check MPD connection
+        status = player.get_player_status()
+        if status.get('connected', False):
+            return jsonify({
+                'status': 'healthy',
+                'mpd_connected': True,
+                'timestamp': time.time()
+            })
+        else:
+            return jsonify({
+                'status': 'unhealthy',
+                'mpd_connected': False,
+                'error': status.get('error', 'Unknown error'),
+                'timestamp': time.time()
+            })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'timestamp': time.time()
+        }), 500 
