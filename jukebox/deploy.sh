@@ -59,19 +59,8 @@ if [ -z "$RAILS_MASTER_KEY" ]; then
     exit 1
 fi
 
-# Check for Archive dependencies
-print_status "Checking Archive dependencies..."
-
-# Check if Archive is running (host)
-if ! curl -f ${ARCHIVE_SERVER_URL:-http://localhost:3000}/up > /dev/null 2>&1; then
-    print_error "Archive is not running on localhost:3000"
-    print_status "Please deploy Archive first: cd ../archive && ./deploy.sh"
-    exit 1
-fi
-
-print_success "Archive is running and accessible"
-
-ARCHIVE_SERVER_URL=${ARCHIVE_SERVER_URL:-http://localhost:3000}
+# Check for Archive dependencies (network only)
+print_status "Assuming Archive DB/Redis are reachable on the shared docker network (db/redis)."
 
 if [ -z "$POSTGRES_PASSWORD" ]; then
     print_error "POSTGRES_PASSWORD not set"
@@ -159,7 +148,7 @@ print_status "Next steps:"
 echo "1. Update your DNS to point jukebox.yourdomain.com to this server"
 echo "2. Configure SSL certificates for HTTPS"
 echo "3. Access your jukebox at: http://jukebox.yourdomain.com"
-echo "4. Ensure Archive server is accessible at: $ARCHIVE_SERVER_URL"
+echo "4. Ensure Archive services (db/redis) are reachable on the shared docker network"
 echo ""
 print_status "Useful commands:"
 echo "- View logs: docker compose logs -f"

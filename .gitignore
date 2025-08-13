@@ -1,3 +1,4 @@
+.env.local
 # Repository-wide ignores for dockercrap project
 
 # OS and editor files

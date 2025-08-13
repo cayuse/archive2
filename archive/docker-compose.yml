@@ -33,6 +33,7 @@ services:
 
   # Archive Rails application
   archive:
+    # All configuration is provided via environment variables (no env files)
     build:
       context: .
       dockerfile: Dockerfile

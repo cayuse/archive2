@@ -1,4 +1,13 @@
 Rails.application.routes.draw do
+  # API proxy to Python player HTTP API (controller: Api::PlayerController)
+  namespace :api do
+    get   'player/status',        to: 'player#status'
+    match 'player/volume',        to: 'player#volume', via: [:get, :post]
+    get   'player/current_song',  to: 'player#current_song'
+    get   'player/progress',      to: 'player#progress'
+    get   'player/queue',         to: 'player#queue'
+    get   'player/health',        to: 'player#health'
+  end
   # Jukebox controller UI
   get  '/system/player',   to: 'system#index', as: :system_player
   post '/system/play',     to: 'system#play',  as: :system_play

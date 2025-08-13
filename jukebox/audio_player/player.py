@@ -75,17 +75,17 @@ class JukeboxPlayer:
         
         # Default configuration
         return {
-            'mpd_host': os.environ.get('MPD_HOST', 'localhost'),
-            'mpd_port': int(os.environ.get('MPD_PORT', '6600')),
+            # MPD via Unix socket only (simplifies networking)
+            'mpd_socket': os.environ.get('MPD_SOCKET'),
             'mpd_password': os.environ.get('MPD_PASSWORD') or None,
-            'mpd_socket': os.environ.get('MPD_SOCKATE') or None,
+            # Redis + Rails endpoints
             'redis_host': os.environ.get('REDIS_HOST', 'localhost'),
             'redis_port': int(os.environ.get('REDIS_PORT', '6379')),
             'redis_db': int(os.environ.get('REDIS_DB', '0')),
             'jukebox_api_url': os.environ.get('JUKEBOX_API_URL', 'http://localhost:3001/api'),
-            'cache_directory': '/var/lib/jukebox/cache',
+            # Playback tuning
             'crossfade_duration': 6,
-            'prequeue_margin': 3,  # seconds before crossfade to request next
+            'prequeue_margin': 3,
             'prequeue_enabled': False,
             'volume': 80,
             'retry_attempts': 3,
@@ -97,15 +97,11 @@ class JukeboxPlayer:
         """Connect to MPD daemon"""
         try:
             self.mpd_client = MPDClient()
-            # Prefer Unix socket if provided
+            # Require Unix socket; avoid TCP networking complexity
             mpd_socket = self.config.get('mpd_socket')
-            if mpd_socket:
-                self.mpd_client.connect(mpd_socket, None)
-            else:
-                self.mpd_client.connect(
-                    self.config['mpd_host'],
-                    self.config['mpd_port']
-                )
+            if not mpd_socket:
+                raise ConnectionError("MPD_SOCKET not set; configure /etc/mpd.conf to expose a Unix socket and export MPD_SOCKET=/run/mpd/socket")
+            self.mpd_client.connect(mpd_socket, None)
             
             if self.config.get('mpd_password'):
                 self.mpd_client.password(self.config['mpd_password'])
@@ -416,71 +412,22 @@ class JukeboxPlayer:
             return {'error': str(e)}
     
     def ensure_song_cached(self, song_data: Dict) -> bool:
-        """We always use stream_url (preferred) or local cached_path if exists."""
-        return bool(song_data.get('stream_url') or (song_data.get('cached_path') and os.path.exists(song_data.get('cached_path'))))
+        """Caching disabled. We rely solely on stream_url."""
+        return bool(song_data.get('stream_url'))
     
     def download_song(self, song_data: Dict) -> bool:
-        """Download song from archive to local cache"""
-        try:
-            song_id = song_data.get('id')
-            download_url = f"{self.config['jukebox_api_url']}/songs/{song_id}/download"
-            
-            # Create cache directory
-            cache_dir = Path(self.config['cache_directory'])
-            cache_dir.mkdir(parents=True, exist_ok=True)
-            
-            # Download file
-            response = requests.get(download_url, stream=True)
-            response.raise_for_status()
-            
-            # Determine file extension from content type
-            content_type = response.headers.get('content-type', 'application/octet-stream')
-            if 'flac' in content_type:
-                extension = '.flac'
-            elif 'mpeg' in content_type or 'mp3' in content_type:
-                extension = '.mp3'
-            elif 'wav' in content_type:
-                extension = '.wav'
-            elif 'ogg' in content_type:
-                extension = '.ogg'
-            elif 'm4a' in content_type or 'aac' in content_type or 'mp4' in content_type:
-                extension = '.m4a'
-            else:
-                extension = ''
-            
-            file_path = cache_dir / f"{song_id}{extension}"
-            
-            with open(file_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            
-            # Update song data with cached path
-            song_data['cached_path'] = str(file_path)
-            
-            # Notify Rails app that song is cached
-            self.redis_client.set(f"jukebox:cached:{song_id}", json.dumps(song_data))
-            
-            logger.info(f"Successfully cached song {song_id}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Failed to download song {song_id}: {e}")
-            return False
+        """Deprecated: no local downloads/caching."""
+        return False
     
     def play_song(self, song_data: Dict, force_play: bool = False):
         """Play a song using MPD (supports local path or HTTP URL). If force_play is True, clear and play immediately."""
         try:
-            # Determine source: prefer cached local path, fallback to HTTP stream URL
-            file_path = song_data.get('cached_path')
+            # Use only HTTP stream URL provided by Rails
             stream_url = song_data.get('stream_url')
-            source = None
-            if file_path and os.path.exists(file_path):
-                source = file_path
-            elif stream_url:
-                source = stream_url
-            else:
-                logger.error(f"No playable source for song {song_data.get('id')}")
+            if not stream_url:
+                logger.error(f"No playable stream_url for song {song_data.get('id')}")
                 return False
+            source = stream_url
 
             # If nothing queued, add and play; otherwise add only (for crossfade)
             status = self.mpd_client.status()

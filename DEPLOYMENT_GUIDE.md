@@ -179,8 +179,8 @@ export POSTGRES_DATA_PATH=/path/to/your/postgres/data
 cd ../jukebox
 export RAILS_MASTER_KEY=your_master_key_here
 export POSTGRES_PASSWORD=your_secure_password
-export ARCHIVE_STORAGE_PATH=/abs/path/to/archive/storage   # must be absolute
-export ARCHIVE_SERVER_URL=http://localhost:3000            # or your archive URL
+export HOST_STORAGE_PATH=/abs/path/to/archive/storage   # must be absolute
+export ARCHIVE_SERVER_URL=http://localhost:3000         # or your archive URL
 ./deploy.sh
 ```
 
@@ -198,7 +198,6 @@ export POSTGRES_DATA_PATH=/path/to/your/postgres/data
 cd jukebox
 export RAILS_MASTER_KEY=your_master_key_here
 export POSTGRES_PASSWORD=your_secure_password
-export ARCHIVE_SERVER_URL=http://archive-server-ip:3000
 export ARCHIVE_DB_HOST=archive-server-ip
 export ARCHIVE_REDIS_HOST=archive-server-ip
 export ARCHIVE_STORAGE_PATH=/path/to/shared/storage
@@ -231,7 +230,7 @@ export ARCHIVE_STORAGE_PATH=/path/to/shared/storage
 ## Docker Images and Services
 
 ### Archive Services
-- **archive** (Rails app): `ghcr.io/rails/devcontainer/images/ruby:3.3.8`
+- **archive** (Rails app): `ruby:3.2.5-slim`
   - Ports: 3000 (Rails)
   - Features: Includes ffmpeg for audio processing
   - Volumes: Storage, logs
@@ -245,9 +244,7 @@ export ARCHIVE_STORAGE_PATH=/path/to/shared/storage
   - Ports: 6379 (Redis)
   - Volumes: Redis data
 
-- **sidekiq** (Background jobs): Uses archive image
-  - Purpose: Music processing, metadata extraction
-  - Dependencies: Database, Redis, Archive app
+ 
 
 ### Jukebox Services
 - **jukebox** (Rails app): `ruby:3.2.5-slim`
@@ -261,6 +258,7 @@ export ARCHIVE_STORAGE_PATH=/path/to/shared/storage
   - Purpose: Controls MPD, manages queue, communicates with Jukebox API
   - Dependencies: Host MPD (localhost:6600), Jukebox Rails app
   - Volumes: Logs
+  - Note: The player feeds MPD HTTP stream URLs from Jukebox only. No local caching/downloading of audio.
 
 ### Host MPD setup (required for Jukebox)
 
@@ -304,7 +302,7 @@ export ARCHIVE_STORAGE_PATH=/path/to/shared/storage
      sudo usermod -a -G $(stat -c %G /abs/path/to/archive/storage) mpd
      sudo setfacl -R -m g:mpd:rx /abs/path/to/archive/storage
      ```
-   - No special Docker groups are required for control: the python controller talks to MPD over TCP (6600) using `host.docker.internal`.
+   - No special Docker groups are required for control.
 4) Restart MPD:
    ```bash
    sudo systemctl restart mpd
@@ -327,9 +325,9 @@ export ARCHIVE_STORAGE_PATH=/path/to/shared/storage
 - Option A (Unix socket, recommended):
   - Ensure MPD writes socket at `/run/mpd/socket` and is world/group readable
   - Compose mounts `/run/mpd:/run/mpd:ro` and sets `MPD_SOCKET=/run/mpd/socket`
-- Option B (TCP):
-  - Ensure MPD listens on 127.0.0.1:6600 and compose has `extra_hosts: host.docker.internal:host-gateway`
-  - Player uses `MPD_HOST=host.docker.internal`, `MPD_PORT=6600`, and optional `MPD_PASSWORD`
+- Option B (TCP, fallback only):
+  - Ensure MPD listens on 127.0.0.1:6600 and add host gateway mapping in compose
+  - Player uses `MPD_HOST`/`MPD_PORT`, optional `MPD_PASSWORD`
 
 ### Reusing Archive env flags for Jukebox (IP testing)
 - The same flags used for Archive are supported by Jukebox:
@@ -418,10 +416,10 @@ Jukebox accesses Archive's storage in read-only mode:
 ### Logs
 ```bash
 # Archive logs
-cd archive && docker-compose logs -f
+cd archive && docker compose logs -f
 
 # Jukebox logs
-cd jukebox && docker-compose logs -f
+cd jukebox && docker compose logs -f
 
 # Apache2 logs
 sudo tail -f /var/log/apache2/archive_error.log
@@ -457,11 +455,11 @@ docker compose build --no-cache jukebox && docker compose up -d jukebox
 ```bash
 # Archive database backup
 cd archive
-docker-compose exec db pg_dump -U postgres archive_production > backup.sql
+docker compose exec db pg_dump -U postgres archive_production > backup.sql
 
 # Jukebox data backup
 cd jukebox
-docker-compose exec jukebox tar czf jukebox-backup.tar.gz /rails/storage
+docker compose exec jukebox tar czf jukebox-backup.tar.gz /rails/storage
 ```
 
 ## Troubleshooting
@@ -484,54 +482,54 @@ docker-compose exec jukebox tar czf jukebox-backup.tar.gz /rails/storage
    curl -f http://localhost:3000/up
    
    # If Archive is down, start it first
-   cd archive && docker-compose up -d
+cd archive && docker compose up -d
    ```
 
 3. **Database connection issues**
    ```bash
    # Check PostgreSQL logs
-   cd archive && docker-compose logs db
+cd archive && docker compose logs db
    
    # Verify connection from Jukebox
-   cd jukebox && docker-compose exec jukebox rails console
+cd jukebox && docker compose exec jukebox rails console
    # In console: ActiveRecord::Base.connection.execute("SELECT 1")
    ```
 
 4. **Redis connection issues**
    ```bash
    # Check Redis logs
-   cd archive && docker-compose logs redis
+cd archive && docker compose logs redis
    
    # Verify connection from Jukebox
-   cd jukebox && docker-compose exec jukebox rails console
+cd jukebox && docker compose exec jukebox rails console
    # In console: Redis.new.ping
    ```
 
 5. **Storage access issues**
    ```bash
    # Check if storage is mounted correctly
-   cd jukebox && docker-compose exec jukebox ls -la /rails/storage
+cd jukebox && docker compose exec jukebox ls -la /rails/storage
    
    # Verify Archive storage path
-   cd archive && docker-compose exec archive ls -la /rails/storage
+cd archive && docker compose exec archive ls -la /rails/storage
    ```
 
 6. **MPD connection issues**
    ```bash
    # Check MPD logs
-   cd jukebox && docker-compose logs mpd
+cd jukebox && docker compose logs mpd
    
    # Test MPD connection
-   docker-compose exec mpd mpc status
+docker compose exec mpd mpc status
    ```
 
 7. **Python player issues**
    ```bash
    # Check player logs
-   cd jukebox && docker-compose logs jukebox-player
+cd jukebox && docker compose logs jukebox-player
    
    # Verify player is running
-   docker-compose exec jukebox-player pgrep -f player.py
+docker compose exec jukebox-player pgrep -f player.py
    ```
 
 8. **Apache2 configuration errors**
