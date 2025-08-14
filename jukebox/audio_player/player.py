@@ -67,6 +67,58 @@ class JukeboxPlayer:
         # Start background threads
         self.start_background_threads()
     
+# Flask Route Handlers (define before starting Flask so routes are registered)
+@app.route('/api/player/status')
+def api_player_status():
+    if 'player' not in globals():
+        return jsonify({'error': 'Player not initialized'}), 500
+    return jsonify(player.get_player_status())
+
+@app.route('/api/player/volume', methods=['GET', 'POST'])
+def api_player_volume():
+    if 'player' not in globals():
+        return jsonify({'error': 'Player not initialized'}), 500
+    if request.method == 'GET':
+        return jsonify(player.get_volume())
+    try:
+        data = request.get_json(force=True)
+        volume = int(data.get('volume', 80))
+        result = player.set_volume(volume)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/player/current_song')
+def api_current_song():
+    if 'player' not in globals():
+        return jsonify({'error': 'Player not initialized'}), 500
+    return jsonify(player.get_current_song())
+
+@app.route('/api/player/progress')
+def api_progress():
+    if 'player' not in globals():
+        return jsonify({'error': 'Player not initialized'}), 500
+    return jsonify(player.get_progress())
+
+@app.route('/api/player/queue')
+def api_queue():
+    if 'player' not in globals():
+        return jsonify({'error': 'Player not initialized'}), 500
+    return jsonify(player.get_queue())
+
+@app.route('/api/player/health')
+def api_health():
+    if 'player' not in globals():
+        return jsonify({'status': 'error', 'message': 'Player not initialized'}), 500
+    try:
+        status = player.get_player_status()
+        if status.get('connected', False):
+            return jsonify({'status': 'healthy', 'mpd_connected': True, 'timestamp': time.time()})
+        else:
+            return jsonify({'status': 'unhealthy', 'mpd_connected': False, 'error': status.get('error', 'Unknown'), 'timestamp': time.time()})
+    except Exception as e:
+        return jsonify({'status': 'error', 'error': str(e), 'timestamp': time.time()}), 500
+
     def load_config(self, config_path: str = None) -> Dict:
         """Load configuration from file or use defaults"""
         if config_path and os.path.exists(config_path):
@@ -75,8 +127,10 @@ class JukeboxPlayer:
         
         # Default configuration
         return {
-            # MPD via Unix socket only (simplifies networking)
-            'mpd_socket': os.environ.get('MPD_SOCKET'),
+            # MPD connection preferences: socket first, then TCP fallback
+            'mpd_socket': os.environ.get('MPD_SOCKET') or None,
+            'mpd_host': os.environ.get('MPD_HOST', 'localhost'),
+            'mpd_port': int(os.environ.get('MPD_PORT', '6600')),
             'mpd_password': os.environ.get('MPD_PASSWORD') or None,
             # Redis + Rails endpoints
             'redis_host': os.environ.get('REDIS_HOST', 'localhost'),
@@ -97,11 +151,12 @@ class JukeboxPlayer:
         """Connect to MPD daemon"""
         try:
             self.mpd_client = MPDClient()
-            # Require Unix socket; avoid TCP networking complexity
+            # Prefer Unix socket; fallback to TCP host:port
             mpd_socket = self.config.get('mpd_socket')
-            if not mpd_socket:
-                raise ConnectionError("MPD_SOCKET not set; configure /etc/mpd.conf to expose a Unix socket and export MPD_SOCKET=/run/mpd/socket")
-            self.mpd_client.connect(mpd_socket, None)
+            if mpd_socket:
+                self.mpd_client.connect(mpd_socket, None)
+            else:
+                self.mpd_client.connect(self.config['mpd_host'], self.config['mpd_port'])
             
             if self.config.get('mpd_password'):
                 self.mpd_client.password(self.config['mpd_password'])
@@ -453,8 +508,7 @@ class JukeboxPlayer:
             # Notify Rails app about current song
             self.redis_client.set('jukebox:current_song', json.dumps(song_data))
 
-            display_source = file_path if (file_path and os.path.exists(file_path)) else stream_url
-            logger.info(f"Now playing: {song_data.get('title', 'Unknown')} -> {display_source}")
+            logger.info(f"Now playing: {song_data.get('title', 'Unknown')} -> {stream_url}")
             return True
         except Exception as e:
             logger.error(f"Error playing song: {e}")
@@ -718,78 +772,3 @@ if __name__ == "__main__":
     
     # Run the main player
     player.run()
-
-# Flask Route Handlers
-@app.route('/api/player/status')
-def api_player_status():
-    """Get comprehensive player status"""
-    if 'player' not in globals():
-        return jsonify({'error': 'Player not initialized'}), 500
-    return jsonify(player.get_player_status())
-
-@app.route('/api/player/volume')
-def api_player_volume():
-    """Get or set volume"""
-    if 'player' not in globals():
-        return jsonify({'error': 'Player not initialized'}), 500
-    
-    if request.method == 'GET':
-        return jsonify(player.get_volume())
-    elif request.method == 'POST':
-        try:
-            data = request.get_json()
-            volume = int(data.get('volume', 80))
-            result = player.set_volume(volume)
-            return jsonify(result)
-        except Exception as e:
-            return jsonify({'error': str(e)}), 400
-
-@app.route('/api/player/current_song')
-def api_current_song():
-    """Get current song information"""
-    if 'player' not in globals():
-        return jsonify({'error': 'Player not initialized'}), 500
-    return jsonify(player.get_current_song())
-
-@app.route('/api/player/progress')
-def api_progress():
-    """Get playback progress"""
-    if 'player' not in globals():
-        return jsonify({'error': 'Player not initialized'}), 500
-    return jsonify(player.get_progress())
-
-@app.route('/api/player/queue')
-def api_queue():
-    """Get current playlist/queue"""
-    if 'player' not in globals():
-        return jsonify({'error': 'Player not initialized'}), 500
-    return jsonify(player.get_queue())
-
-@app.route('/api/player/health')
-def api_health():
-    """Health check endpoint"""
-    if 'player' not in globals():
-        return jsonify({'status': 'error', 'message': 'Player not initialized'}), 500
-    
-    try:
-        # Check MPD connection
-        status = player.get_player_status()
-        if status.get('connected', False):
-            return jsonify({
-                'status': 'healthy',
-                'mpd_connected': True,
-                'timestamp': time.time()
-            })
-        else:
-            return jsonify({
-                'status': 'unhealthy',
-                'mpd_connected': False,
-                'error': status.get('error', 'Unknown error'),
-                'timestamp': time.time()
-            })
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'error': str(e),
-            'timestamp': time.time()
-        }), 500 
