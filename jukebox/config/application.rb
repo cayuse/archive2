@@ -41,5 +41,28 @@ module Jukebox
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    # Initialize MPD client configuration
+    config.after_initialize do
+      # Only initialize MPD client if we're running the poller process
+      if ENV['FOREMAN_PROCESS_NAME'] == 'poller' || ENV['RAILS_ENV'] == 'development'
+        begin
+          mpd_host = ENV['MPD_HOST'] || 'localhost'
+          mpd_port = (ENV['MPD_PORT'] || 6600).to_i
+          mpd_password = ENV['MPD_PASSWORD']
+          
+          config.mpd_client = MPDClient.new(mpd_host, mpd_port, mpd_password)
+          
+          # Connect to MPD
+          config.mpd_client.connect
+          
+          Rails.logger.info "MPD client initialized and connected to #{mpd_host}:#{mpd_port}"
+          
+        rescue => e
+          Rails.logger.error "Failed to initialize MPD client: #{e.message}"
+          config.mpd_client = nil
+        end
+      end
+    end
   end
 end

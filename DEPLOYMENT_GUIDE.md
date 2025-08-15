@@ -41,12 +41,11 @@ Both applications use Docker containers with Apache2 as a reverse proxy.
     ┌─────────────┴─────────────┐
     │      Docker Compose       │
     │                           │
-    │  ┌─────────┐ ┌─────────┐  │
-    │  │ Jukebox │ │   MPD   │  │
-    │  │ :3001   │ │ :6600   │  │
-    │  └─────────┘ └─────────┘  │
     │  ┌─────────────────────┐  │
-    │  │   Python Player     │  │
+    │  │     Jukebox        │  │
+    │  │   Rails + MPD      │  │
+    │  │   Client + Poller  │  │
+    │  │     :3001          │  │
     │  └─────────────────────┘  │
     └───────────────────────────┘
                   │
@@ -55,7 +54,11 @@ Both applications use Docker containers with Apache2 as a reverse proxy.
     │  ┌─────────┐ ┌─────────┐  │
     │  │   PG    │ │  Redis  │  │
     │  │ :5432   │ │ :6379   │  │
-    │  └─────────┘ └─────────┘  │
+    └───────────────────────────┘
+                  │
+    ┌─────────────┴─────────────┐
+    │      Host MPD Service     │
+    │    (localhost:6600)       │
     └───────────────────────────┘
 ```
 
@@ -217,15 +220,18 @@ export ARCHIVE_STORAGE_PATH=/path/to/shared/storage
 ### Jukebox Required
 - `RAILS_MASTER_KEY` - Rails master key for credentials
 - `POSTGRES_PASSWORD` - Must match Archive's PostgreSQL password
+- `HOST_STORAGE_PATH` - Absolute path to Archive's storage directory
+- `MPD_HOST` - MPD host (default: `localhost`)
+- `MPD_PORT` - MPD port (default: `6600`)
+- `MPD_PASSWORD` - MPD password (optional, if authentication enabled)
+- `ARCHIVE_DB_HOST` - Archive's PostgreSQL host (default: `db`)
+- `ARCHIVE_REDIS_HOST` - Archive's Redis host (default: `redis`)
+- `ARCHIVE_DB_PORT` - Archive's PostgreSQL port (default: `5432`)
+- `ARCHIVE_REDIS_PORT` - Archive's Redis port (default: `6379`)
 
 ### Jukebox Optional
-- `ARCHIVE_SERVER_URL` - URL of Archive server (default: http://localhost:3000)
-- `ARCHIVE_DB_HOST` - Archive database host (default: localhost)
-- `ARCHIVE_DB_PORT` - Archive database port (default: 5432)
-- `ARCHIVE_REDIS_HOST` - Archive Redis host (default: localhost)
-- `ARCHIVE_REDIS_PORT` - Archive Redis port (default: 6379)
-- `ARCHIVE_STORAGE_PATH` - Path to Archive's storage (default: ../archive/storage)
 - `JUKEBOX_CLIENT_ID` - Unique client identifier (default: jukebox-1)
+- `MPD_SOCKET` - Unix socket path for MPD (alternative to TCP, e.g., `/run/mpd/socket`)
 
 ## Docker Images and Services
 
@@ -247,18 +253,20 @@ export ARCHIVE_STORAGE_PATH=/path/to/shared/storage
  
 
 ### Jukebox Services
-- **jukebox** (Rails app): `ruby:3.2.5-slim`
+- **jukebox** (Rails app + MPD client): `ruby:3.2.5-slim`
   - Ports: 3001 (Rails)
   - Dependencies: Archive's PostgreSQL (db), Redis (redis), Archive app (archive)
   - Volumes: Logs, Archive storage (read-only, absolute path)
+  - Process Management: Foreman runs both Rails server and MPD poller
+  - MPD Access: Direct connection via `network_mode: "host"`
 
-- Host MPD (preferred): install `mpd` on the host and expose 6600 locally. No MPD container.
+- Host MPD (required): install `mpd` on the host and expose 6600 locally. No MPD container.
 
-- **jukebox-player** (Python controller): `python:3.11-slim`
-  - Purpose: Controls MPD, manages queue, communicates with Jukebox API
-  - Dependencies: Host MPD (localhost:6600), Jukebox Rails app
-  - Volumes: Logs
-  - Note: The player feeds MPD HTTP stream URLs from Jukebox only. No local caching/downloading of audio.
+- **Integrated MPD Client**: Ruby MPD client replaces Python player
+  - Purpose: Controls MPD, manages queue, broadcasts updates via ActionCable
+  - Dependencies: Host MPD (localhost:6600), Redis for state management
+  - Features: Real-time polling, WebSocket updates, background job integration
+  - Note: The client feeds MPD HTTP stream URLs from Jukebox only. No local caching/downloading of audio.
 
 ### Host MPD setup (required for Jukebox)
 
@@ -322,12 +330,14 @@ export ARCHIVE_STORAGE_PATH=/path/to/shared/storage
    ```
 
 ### Docker-to-host MPD connectivity
-- Option A (Unix socket, recommended):
+- **Network Mode**: Container uses `network_mode: "host"` for direct MPD access
+- Option A (TCP, recommended):
+  - Ensure MPD listens on 127.0.0.1:6600
+  - Container connects directly via `MPD_HOST=localhost`, `MPD_PORT=6600`
+- Option B (Unix socket, alternative):
   - Ensure MPD writes socket at `/run/mpd/socket` and is world/group readable
-  - Compose mounts `/run/mpd:/run/mpd:ro` and sets `MPD_SOCKET=/run/mpd/socket`
-- Option B (TCP, fallback only):
-  - Ensure MPD listens on 127.0.0.1:6600 and add host gateway mapping in compose
-  - Player uses `MPD_HOST`/`MPD_PORT`, optional `MPD_PASSWORD`
+  - Set `MPD_SOCKET=/run/mpd/socket` in environment
+- Authentication: Optional `MPD_PASSWORD` if MPD requires authentication
 
 ### Reusing Archive env flags for Jukebox (IP testing)
 - The same flags used for Archive are supported by Jukebox:
@@ -441,11 +451,11 @@ docker compose up -d --build
 # Service-specific rebuilds
 docker compose build archive && docker compose up -d archive
 docker compose build jukebox && docker compose up -d jukebox
-docker compose build jukebox-player && docker compose up -d jukebox-player
+docker compose build jukebox && docker compose up -d jukebox
 
 # Restart without rebuild (config/env change only)
 docker compose restart archive
-docker compose restart jukebox jukebox-player
+docker compose restart jukebox
 
 # Force a clean rebuild (ignore cache)
 docker compose build --no-cache jukebox && docker compose up -d jukebox
@@ -516,20 +526,26 @@ cd archive && docker compose exec archive ls -la /rails/storage
 
 6. **MPD connection issues**
    ```bash
-   # Check MPD logs
-cd jukebox && docker compose logs mpd
+   # Check host MPD status
+   sudo systemctl status mpd
    
-   # Test MPD connection
-docker compose exec mpd mpc status
+   # Check MPD logs
+   sudo journalctl -u mpd -f
+   
+   # Test MPD connection from host
+   mpc status
+   
+   # Test MPD connection from container
+   docker compose exec jukebox rails runner "puts MPDClient.new.get_status"
    ```
 
-7. **Python player issues**
+7. **MPD client issues**
    ```bash
-   # Check player logs
-cd jukebox && docker compose logs jukebox-player
+   # Check MPD client logs
+cd jukebox && docker compose logs jukebox
    
-   # Verify player is running
-docker compose exec jukebox-player pgrep -f player.py
+   # Verify MPD client connection
+docker compose exec jukebox rails runner "puts MPDClient.new.get_status"
    ```
 
 8. **Apache2 configuration errors**

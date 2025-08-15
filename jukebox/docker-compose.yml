@@ -3,7 +3,7 @@
 # Jukebox Docker Compose (Standalone Jukebox only)
 # -----------------------------------------------------------------------------
 # IMPORTANT ARCHITECTURE NOTES (READ BEFORE EDITING):
-# - This file defines ONLY the Jukebox Rails app and the Python player.
+# - This file defines ONLY the Jukebox Rails app with integrated MPD client.
 # - It DOES NOT define Postgres or Redis. Jukebox connects to Archive's
 #   Postgres and Redis over a shared, external Docker network named
 #   `archive_default`, which is created by the Archive compose when it runs.
@@ -13,8 +13,8 @@
 #     - Archive app is reachable at `archive:3000`
 # - Do NOT re-add local `db`, `redis`, or `mpd` services here; doing so will
 #   create conflicts and break cross-stack connectivity.
-# - Audio playback uses a HOST MPD (installed on Linux host). Preferred access
-#   is via Unix socket `/run/mpd/socket` bind-mounted into the player container.
+# - Audio playback uses a HOST MPD (installed on Linux host). The Rails app
+#   connects directly to MPD via TCP (localhost:6600) or Unix socket.
 # - Audio files are NOT copied. Jukebox mounts the SAME host storage directory
 #   used by Archive at `/rails/storage` (read-only). Set HOST_STORAGE_PATH.
 # - Required environment variables (set on host before running deploy):
@@ -25,15 +25,16 @@
 #     - APP_HOST, APP_PROTOCOL, FORCE_SSL, ASSUME_SSL,
 #       FORGERY_ORIGIN_CHECK, ALLOW_ALL_HOSTS
 #   MPD options:
-#     - MPD_SOCKET=/run/mpd/socket (recommended)
-#     - or MPD_HOST/MPD_PORT (TCP fallback), and MPD_PASSWORD if set
+#     - MPD_HOST=localhost (or host IP if not localhost)
+#     - MPD_PORT=6600 (default MPD port)
+#     - MPD_PASSWORD (if MPD requires authentication)
 # - Network dependency: Ensure the `archive_default` network exists. Start
 #   Archive compose first or create it manually:
 #     docker network ls | grep archive_default || docker network create archive_default
 # -----------------------------------------------------------------------------
 
 services:
-  # Jukebox Rails application
+  # Jukebox Rails application with integrated MPD client
   jukebox:
     # All configuration is provided via environment variables (no env files)
     build:
@@ -41,7 +42,8 @@ services:
       dockerfile: Dockerfile
     image: jukebox:latest
     restart: unless-stopped
-    # Connects to Archive's external network; do NOT declare local db/redis/mpd here
+    # Use network host mode to access host MPD directly
+    network_mode: "host"
     environment:
       RAILS_ENV: production
       # Host/SSL controls (match Archive behavior)
@@ -53,11 +55,11 @@ services:
       ALLOW_ALL_HOSTS: ${ALLOW_ALL_HOSTS:-true}
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_HOST: ${ARCHIVE_DB_HOST:-db}
+      POSTGRES_HOST: ${ARCHIVE_DB_HOST:-localhost}
       POSTGRES_PORT: ${ARCHIVE_DB_PORT:-5432}
-      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@${ARCHIVE_DB_HOST:-db}:${ARCHIVE_DB_PORT:-5432}/archive_production
-      REDIS_URL: redis://${ARCHIVE_REDIS_HOST:-redis}:${ARCHIVE_REDIS_PORT:-6379}/1
-      REDIS_HOST: ${ARCHIVE_REDIS_HOST:-redis}
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@${ARCHIVE_DB_HOST:-localhost}:${ARCHIVE_DB_PORT:-5432}/archive_production
+      REDIS_URL: redis://${ARCHIVE_REDIS_HOST:-localhost}:${ARCHIVE_REDIS_PORT:-6379}/1
+      REDIS_HOST: ${ARCHIVE_REDIS_HOST:-localhost}
       REDIS_PORT: ${ARCHIVE_REDIS_PORT:-6379}
       REDIS_DB: 1
       RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
@@ -67,13 +69,17 @@ services:
       STORAGE_ROOT: /rails/storage
       ACTIVE_STORAGE_SERVICE: ${ACTIVE_STORAGE_SERVICE:-local}
       # Archive sync configuration
-      ARCHIVE_DB_HOST: ${ARCHIVE_DB_HOST:-db}
+      ARCHIVE_DB_HOST: ${ARCHIVE_DB_HOST:-localhost}
       ARCHIVE_DB_PORT: ${ARCHIVE_DB_PORT:-5432}
-      ARCHIVE_REDIS_HOST: ${ARCHIVE_REDIS_HOST:-redis}
+      ARCHIVE_REDIS_HOST: ${ARCHIVE_REDIS_HOST:-localhost}
       ARCHIVE_REDIS_PORT: ${ARCHIVE_REDIS_PORT:-6379}
       ARCHIVE_STORAGE_ROOT: ${ARCHIVE_STORAGE_ROOT:-/rails/storage}
-      # Python player HTTP API base for Rails proxy
-      PLAYER_API_URL: ${PLAYER_API_URL:-http://jukebox-player:5000}
+      # MPD connection configuration
+      MPD_HOST: ${MPD_HOST:-localhost}
+      MPD_PORT: ${MPD_PORT:-6600}
+      MPD_PASSWORD: ${MPD_PASSWORD}
+      # Process management
+      PORT: 3001
     ports:
       - "3001:3001"
     volumes:
@@ -87,48 +93,7 @@ services:
       retries: 3
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    networks:
-      - archive_net
-
-  # Host MPD preferred; no mpd container
-
-  # Python Jukebox Player Controller
-  jukebox-player:
-    # All configuration is provided via environment variables (no env files)
-    build:
-      context: ./audio_player
-      dockerfile: Dockerfile
-    image: jukebox-player:latest
-    restart: unless-stopped
-    # No local mpd/redis declared; use external network services on archive_default
-    environment:
-      MPD_HOST: ${MPD_HOST:-host.docker.internal}
-      MPD_PORT: 6600
-      MPD_SOCKET: ${MPD_SOCKET}
-      MPD_PASSWORD: ${MPD_PASSWORD}
-      REDIS_HOST: ${ARCHIVE_REDIS_HOST:-redis}
-      REDIS_PORT: ${ARCHIVE_REDIS_PORT:-6379}
-      REDIS_DB: 1
-      JUKEBOX_API_URL: ${JUKEBOX_API_URL:-http://jukebox:3001/api}
-    volumes:
-      - jukebox_logs:/var/log
-      - /run/mpd:/run/mpd:ro
-    healthcheck:
-      test: ["CMD", "pgrep", "-f", "player.py"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    networks:
-      - archive_net
 
 volumes:
   # Logs volume; storage is a bind mount via HOST_STORAGE_PATH
   jukebox_logs:
-
-networks:
-  # Shared network created by Archive compose. Required for service discovery.
-  archive_net:
-    external: true
-    name: archive_default

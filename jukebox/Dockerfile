@@ -1,74 +1,37 @@
-# syntax=docker/dockerfile:1
-# check=error=true
+# Use the official Ruby image as a base
+FROM ruby:3.2.5-slim
 
-# This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
-# docker build -t jukebox .
-# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name jukebox jukebox
+# Install system dependencies
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    libpq-dev \
+    nodejs \
+    npm \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
+# Install foreman for process management
+RUN gem install foreman
 
-# Make sure RUBY_VERSION matches the Ruby version in .ruby-version
-ARG RUBY_VERSION=3.2.5
-FROM ruby:3.2.5-slim AS base
+# Set working directory
+WORKDIR /app
 
-# Rails app lives here
-WORKDIR /rails
-
-# Install base packages
-RUN mkdir -p /var/lib/apt/lists/partial && \
-    apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libjemalloc2 libvips && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
-
-# Set production environment
-ENV RAILS_ENV="production" \
-    BUNDLE_DEPLOYMENT="1" \
-    BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development"
-
-# Throw-away build stage to reduce size of final image
-FROM base AS build
-
-# Install packages needed to build gems
-RUN mkdir -p /var/lib/apt/lists/partial && \
-    apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libyaml-dev pkg-config && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
-
-# Install application gems
+# Copy Gemfile and install dependencies
 COPY Gemfile Gemfile.lock ./
-RUN bundle install && \
-    rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
-    bundle exec bootsnap precompile --gemfile
+RUN bundle install
 
-# Copy application code
+# Copy the rest of the application
 COPY . .
 
-# Precompile bootsnap code for faster boot times
-RUN bundle exec bootsnap precompile app/ lib/
+# Create necessary directories
+RUN mkdir -p log tmp storage
 
-# Precompiling assets for production without requiring secret RAILS_MASTER_KEY
-RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
+# Precompile assets
+RUN bundle exec rails assets:precompile
 
-
-
-
-# Final stage for app image
-FROM base
-
-# Copy built artifacts: gems, application
-COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
-COPY --from=build /rails /rails
-
-# Run and own only the runtime files as a non-root user for security
-RUN groupadd --system --gid 1000 rails && \
-    useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash && \
-    chown -R rails:rails db log storage tmp
-USER 1000:1000
-
-# Entrypoint prepares the database.
-ENTRYPOINT ["/rails/bin/docker-entrypoint"]
-
-# Start server; listen on 3001 (non-privileged)
+# Expose port
 EXPOSE 3001
-CMD ["./bin/rails", "server", "-b", "0.0.0.0", "-p", "3001"]
+
+# Use foreman to start both Rails and MPD poller
+CMD ["foreman", "start"]
