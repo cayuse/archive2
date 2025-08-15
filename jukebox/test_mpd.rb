@@ -9,8 +9,8 @@ puts "Testing MPD Client..."
 
 begin
   # Initialize client
-  client = MPDClient.new('localhost', 6600)
-  puts "✓ MPDClient initialized"
+  client = MpdClient.new('localhost', 6600)
+puts "✓ MpdClient initialized"
   
   # Try to connect
   client.connect

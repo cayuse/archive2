@@ -1,2 +1,2 @@
 web: bundle exec rails server -p ${PORT:-3001} -b 0.0.0.0
-poller: bundle exec rails runner "MPDClient.new(ENV['MPD_HOST'] || 'localhost', (ENV['MPD_PORT'] || 6600).to_i, ENV['MPD_PASSWORD']).start_polling"
+poller: bundle exec rails runner "begin; client = MpdClient.new(ENV['MPD_HOST'] || 'localhost', (ENV['MPD_PORT'] || 6600).to_i, ENV['MPD_PASSWORD']); client.start_polling; puts 'MPD polling started, keeping process alive...'; loop { sleep 1 }; rescue => e; puts 'MPD client not available: #{e.message}'; exit 1; end"

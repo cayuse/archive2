@@ -5,11 +5,7 @@ class JukeboxService
   include Singleton
   
   def initialize
-    @redis = Redis.new(
-      host: ENV.fetch('REDIS_HOST', 'localhost'),
-      port: ENV.fetch('REDIS_PORT', 6379),
-      db: ENV.fetch('REDIS_DB', 0)
-    )
+    @redis = Redis.new(url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/0'))
   end
   
   # Get current system status

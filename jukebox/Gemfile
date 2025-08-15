@@ -50,7 +50,7 @@ gem "pundit"
 gem "bcrypt", "~> 3.1.7"
 
 # MPD client for direct audio control
-gem "ruby-mpd", "~> 0.3"
+gem "mpd_client", "~> 0.3"
 
 # Process management for running Rails + MPD poller
 gem "foreman"
