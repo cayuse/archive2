@@ -1,46 +1,14 @@
 class SystemController < ApplicationController
-  # before_action :require_login  # Temporarily disabled for testing
+  before_action :require_login  # Require authentication for all player controls
   before_action :set_redis
 
   def index
-    # Get real-time status from Python player API
-    @player_status = get_player_status
-    @current_volume = @player_status&.dig('volume') || 80
-    @current_song = @player_status&.dig('current_song')
-    @player_state = @player_status&.dig('state') || 'unknown'
-    @is_connected = @player_status&.dig('connected') || false
-    
-    # Fallback to Redis if API fails
-    if !@is_connected
-      @status = begin
-        raw = @redis.get('jukebox:status')
-        raw ? JSON.parse(raw) : { 'state' => 'unknown' }
-      rescue => e
-        Rails.logger.error "Failed to get status from Redis: #{e.message}"
-        { 'state' => 'unknown' }
-      end
-      
-      @current_song = begin
-        raw = @redis.get('jukebox:current_song')
-        raw ? JSON.parse(raw) : nil
-      rescue => e
-        Rails.logger.error "Failed to get current song from Redis: #{e.message}"
-        nil
-      end
-      
-      @current_volume = begin
-        raw = @redis.get('jukebox:current_volume')
-        if raw
-          raw.to_i
-        else
-          Rails.logger.info "No volume found in Redis, using default 80%"
-          80
-        end
-      rescue => e
-        Rails.logger.error "Failed to get volume from Redis: #{e.message}"
-        80  # Default volume
-      end
-    end
+    # Get real-time status directly from Redis
+    @player_status = get_player_status_from_redis
+    @current_volume = @player_status&.dig('volume')&.to_i || 80
+    @current_song = parse_current_song(@player_status)
+    @player_state = @player_status&.dig('desired_state') || 'unknown'
+    @is_connected = @player_status&.dig('health') == 'healthy'
   end
 
   def play
@@ -66,14 +34,14 @@ class SystemController < ApplicationController
   def volume_up
     current_vol = @current_volume || 80
     new_volume = [current_vol + 10, 100].min  # Don't exceed 100%
-    enqueue_command(action: 'volume', volume: new_volume)
+    enqueue_command(action: 'volume_up')
     redirect_to system_path, notice: "Volume increased to #{new_volume}%"
   end
 
   def volume_down
     current_vol = @current_volume || 80
     new_volume = [current_vol - 10, 0].max  # Don't go below 0%
-    enqueue_command(action: 'volume', volume: new_volume)
+    enqueue_command(action: 'volume_down')
     redirect_to system_path, notice: "Volume decreased to #{new_volume}%"
   end
 
@@ -91,7 +59,7 @@ class SystemController < ApplicationController
     # Debug logging
     Rails.logger.info "Setting volume to: #{volume}%"
     
-    enqueue_command(action: 'volume', volume: volume)
+    enqueue_command(action: 'set_volume', value: volume)
     
     # Respond appropriately based on request type
     if request.content_type == 'application/json'
@@ -103,22 +71,40 @@ class SystemController < ApplicationController
 
   private
 
-  def get_player_status
+  def get_player_status_from_redis
     begin
-      response = HTTP.get("#{player_api_url}/api/player/status")
-      if response.status.success?
-        JSON.parse(response.body.to_s)
+      status_data = @redis.hgetall('jukebox:player_status')
+      if status_data.any?
+        # Convert numeric values to proper types
+        status_data.each do |key, value|
+          if ['elapsed_seconds', 'duration_seconds', 'remaining_seconds', 'volume', 'crossfade_seconds', 'time_until_next_request', 'progress_percent'].include?(key)
+            status_data[key] = value.to_f if value.present?
+          end
+        end
+        status_data
       else
         nil
       end
     rescue => e
-      Rails.logger.error "Error getting player status: #{e.message}"
+      Rails.logger.error "Error getting player status from Redis: #{e.message}"
       nil
     end
   end
 
-  def player_api_url
-    ENV.fetch('PLAYER_API_URL', 'http://localhost:5000')
+  def parse_current_song(status_data)
+    return nil unless status_data&.dig('current_song_metadata')
+    
+    begin
+      song_metadata = status_data['current_song_metadata']
+      if song_metadata.present? && song_metadata != '{}'
+        JSON.parse(song_metadata)
+      else
+        nil
+      end
+    rescue JSON::ParserError => e
+      Rails.logger.error "Error parsing current song metadata: #{e.message}"
+      nil
+    end
   end
 
   def set_redis

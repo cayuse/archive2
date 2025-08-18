@@ -1,13 +1,23 @@
 Rails.application.routes.draw do
   # API proxy to Python player HTTP API (controller: Api::PlayerController)
   namespace :api do
+    # Player status endpoints (public, no authentication required)
     get   'player/status',        to: 'player#status'
     match 'player/volume',        to: 'player#volume', via: [:get, :post]
     get   'player/current_song',  to: 'player#current_song'
     get   'player/progress',      to: 'player#progress'
     get   'player/queue',         to: 'player#queue'
     get   'player/health',        to: 'player#health'
+    
+    # Player control endpoints (require authentication)
+    post  'player/play',          to: 'player#play'
+    post  'player/pause',         to: 'player#pause'
+    post  'player/stop',          to: 'player#stop'
+    post  'player/next',          to: 'player#next'
+    post  'player/volume_up',     to: 'player#volume_up'
+    post  'player/volume_down',   to: 'player#volume_down'
   end
+  
   # Jukebox controller UI
   get  '/system/player',   to: 'system#index', as: :system_player
   post '/system/play',     to: 'system#play',  as: :system_play
@@ -17,6 +27,7 @@ Rails.application.routes.draw do
   post '/system/volume_up', to: 'system#volume_up', as: :system_volume_up
   post '/system/volume_down', to: 'system#volume_down', as: :system_volume_down
   post '/system/set_volume', to: 'system#set_volume', as: :system_set_volume
+  
   # Session routes
   get 'login', to: 'sessions#new'
   post 'login', to: 'sessions#create'
@@ -117,14 +128,23 @@ Rails.application.routes.draw do
       delete 'cache', to: 'jukebox#clear_cache'
     end
     
-    # Player API - direct communication with Python player
+    # Player API - direct communication with Python player via Redis
     namespace :player do
+      # Status endpoints (public)
       get 'status', to: 'player#status'
       match 'volume', to: 'player#volume', via: [:get, :post]
       get 'current_song', to: 'player#current_song'
       get 'progress', to: 'player#progress'
       get 'queue', to: 'player#queue'
       get 'health', to: 'player#health'
+      
+      # Control endpoints (require authentication)
+      post 'play', to: 'player#play'
+      post 'pause', to: 'player#pause'
+      post 'stop', to: 'player#stop'
+      post 'next', to: 'player#next'
+      post 'volume_up', to: 'player#volume_up'
+      post 'volume_down', to: 'player#volume_down'
     end
   end
 

@@ -1,70 +1,69 @@
-<div class="system-controller">
-  <h1>Jukebox Controller</h1>
+<div class="player-container">
+  <h1>🎵 Jukebox Player</h1>
   
   <!-- Connection Status -->
-  <div class="connection-status <%= @is_connected ? 'connected' : 'disconnected' %>">
+  <div class="connection-status" id="connection-status">
     <span class="status-indicator"></span>
-    Status: <strong><%= @player_state %></strong>
-    <% if @is_connected %>
-      <span class="connection-badge">Connected to MPD</span>
-    <% else %>
-      <span class="connection-badge">Using Redis Fallback</span>
-    <% end %>
+    <span class="status-text">Connecting...</span>
+    <span class="last-update" id="last-update"></span>
   </div>
   
   <!-- Current Song Display -->
-  <% if @current_song %>
-    <div class="current-song">
-      <h3>Now Playing</h3>
-      <div class="song-info">
-        <div class="song-title"><%= @current_song['title'] %></div>
-        <div class="song-artist"><%= @current_song['artist'] %></div>
-        <div class="song-album"><%= @current_song['album'] %></div>
+  <div class="current-song" id="current-song-display">
+    <h3>Now Playing</h3>
+    <div class="song-info" id="song-info">
+      <div class="song-title">No song playing</div>
+      <div class="song-artist"></div>
+      <div class="song-album"></div>
+    </div>
+    
+    <!-- Progress Bar -->
+    <div class="progress-container">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
       </div>
-      
-      <!-- Progress Bar -->
-      <div class="progress-container">
-        <div class="progress-bar">
-          <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
-        </div>
-        <div class="time-display">
-          <span id="elapsed-time">0:00</span>
-          <span id="total-time">0:00</span>
-        </div>
+      <div class="time-display">
+        <span id="elapsed-time">0:00</span>
+        <span id="total-time">0:00</span>
+        <span id="remaining-time">0:00</span>
       </div>
     </div>
-  <% end %>
+  </div>
   
+  <!-- Volume Controls -->
   <div class="volume-controls">
     <h3>Volume Control</h3>
     <div class="volume-display">
       <span class="volume-label">Current Volume:</span>
-      <span class="volume-value" id="current-volume"><%= @current_volume %>%</span>
+      <span class="volume-value" id="current-volume">80%</span>
     </div>
     <div class="volume-buttons">
-      <%= button_to '🔊 +10', system_volume_up_path, method: :post, class: 'btn btn-volume' %>
-      <%= button_to '🔉 -10', system_volume_down_path, method: :post, class: 'btn btn-volume' %>
+      <button class="btn btn-volume" id="volume-down-btn" onclick="sendVolumeCommand('volume_down')">
+        🔉 -10
+      </button>
+      <button class="btn btn-volume" id="volume-up-btn" onclick="sendVolumeCommand('volume_up')">
+        🔊 +10
+      </button>
     </div>
     <div class="volume-slider">
       <div class="volume-form">
         <label for="volume">Set Volume:</label>
-        <input type="range" id="volume" name="volume" min="0" max="100" value="<%= @current_volume %>" class="volume-range">
-        <span class="volume-display-value"><%= @current_volume %>%</span>
-        <form action="<%= system_set_volume_path %>" method="post" style="display: inline;">
-          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-          <input type="hidden" id="volume-param" name="volume" value="<%= @current_volume %>">
-          <button type="submit" class="btn btn-set-volume">Set Volume</button>
-        </form>
+        <input type="range" id="volume-slider" name="volume" min="0" max="100" value="80" class="volume-range">
+        <span class="volume-display-value" id="volume-slider-value">80%</span>
+        <button type="button" class="btn btn-set-volume" onclick="sendVolumeCommand('set_volume')">Set Volume</button>
       </div>
     </div>
   </div>
   
+  <!-- Playback Controls -->
   <div class="controls">
     <h3>Playback Controls</h3>
-    <%= button_to '▶️ Play', system_play_path, method: :post, class: 'btn btn-play' %>
-    <%= button_to '⏸️ Pause', system_pause_path, method: :post, class: 'btn btn-pause' %>
-    <%= button_to '⏹️ Stop', system_stop_path, method: :post, class: 'btn btn-stop' %>
-    <%= button_to '⏭️ Skip', system_next_path, method: :post, class: 'btn btn-skip' %>
+    <div class="control-buttons">
+      <button class="btn btn-play" id="play-btn" onclick="sendPlayerCommand('play')">▶️ Play</button>
+      <button class="btn btn-pause" id="pause-btn" onclick="sendPlayerCommand('pause')">⏸️ Pause</button>
+      <button class="btn btn-stop" id="stop-btn" onclick="sendPlayerCommand('stop')">⏹️ Stop</button>
+      <button class="btn btn-skip" id="next-btn" onclick="sendPlayerCommand('next')">⏭️ Skip</button>
+    </div>
   </div>
   
   <!-- Real-time Status Display -->
@@ -73,25 +72,30 @@
     <div class="status-grid">
       <div class="status-item">
         <span class="status-label">Volume:</span>
-        <span class="status-value" id="status-volume"><%= @current_volume %>%</span>
+        <span class="status-value" id="status-volume">80%</span>
       </div>
       <div class="status-item">
         <span class="status-label">State:</span>
-        <span class="status-value" id="status-state"><%= @player_state %></span>
+        <span class="status-value" id="status-state">unknown</span>
       </div>
       <div class="status-item">
-        <span class="status-label">Connected:</span>
-        <span class="status-value" id="status-connected"><%= @is_connected ? 'Yes' : 'No' %></span>
+        <span class="status-label">Health:</span>
+        <span class="status-value" id="status-health">unknown</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Queue Length:</span>
+        <span class="status-value" id="status-queue">0</span>
       </div>
     </div>
   </div>
 </div>
 
 <style>
-.system-controller { 
+.player-container { 
   max-width: 800px; 
   margin: 2rem auto; 
   font-family: system-ui, sans-serif; 
+  padding: 0 1rem;
 }
 
 .connection-status {
@@ -102,6 +106,8 @@
   border-radius: 8px;
   margin-bottom: 1rem;
   font-weight: 500;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
 }
 
 .connection-status.connected {
@@ -116,19 +122,30 @@
   border: 1px solid #f5c6cb;
 }
 
+.connection-status.error {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
 .status-indicator {
   width: 12px;
   height: 12px;
   border-radius: 50%;
   background: currentColor;
+  animation: pulse 2s infinite;
 }
 
-.connection-badge {
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.last-update {
   margin-left: auto;
-  padding: 0.25rem 0.5rem;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
   font-size: 0.8em;
+  opacity: 0.7;
 }
 
 .current-song {
@@ -199,28 +216,11 @@
   color: #495057;
   border-bottom: 2px solid #dee2e6;
   padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .volume-display {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 1rem;
-  padding: 0.5rem;
-  background: white;
-  border-radius: 4px;
-  border: 1px solid #e9ecef;
-}
-
-.volume-label {
-  font-weight: 500;
-  color: #495057;
-}
-
-.volume-value {
-  font-size: 1.2em;
-  font-weight: bold;
-  color: #007bff;
 }
 
 .volume-buttons {
@@ -230,34 +230,20 @@
 }
 
 .volume-slider {
-  background: white;
-  padding: 1rem;
-  border-radius: 4px;
-  border: 1px solid #e9ecef;
-}
-
-.volume-form {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
   flex-wrap: wrap;
 }
 
 .volume-range {
   flex: 1;
-  min-width: 150px;
+  min-width: 200px;
 }
 
-.volume-display-value {
-  font-weight: bold;
-  color: #007bff;
-  min-width: 40px;
-}
-
-.controls { 
-  display: flex; 
-  gap: 0.5rem; 
-  margin-top: 1rem; 
+.control-buttons {
+  display: flex;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
@@ -270,11 +256,10 @@
 .status-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
+  padding: 0.5rem;
   background: white;
   border-radius: 4px;
-  border: 1px solid #e9ecef;
+  border: 1px solid #dee2e6;
 }
 
 .status-label {
@@ -283,78 +268,46 @@
 }
 
 .status-value {
-  font-weight: bold;
-  color: #007bff;
+  color: #6c757d;
 }
 
-.btn { 
-  padding: 0.6rem 1rem; 
-  background: #333; 
-  color: #fff; 
-  border-radius: 6px; 
-  border: none; 
-  cursor: pointer; 
-  text-decoration: none;
+.btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  background: white;
+  color: #495057;
+  cursor: pointer;
   font-size: 0.9em;
+  transition: all 0.2s ease;
 }
 
-.btn:hover { 
-  background: #555; 
+.btn:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
 }
 
-.btn-volume {
-  background: #28a745;
-  min-width: 80px;
+.btn:active {
+  transform: translateY(1px);
 }
 
-.btn-volume:hover {
-  background: #218838;
-}
+.btn-play { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+.btn-pause { background: #fff3cd; border-color: #ffeaa7; color: #856404; }
+.btn-stop { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+.btn-skip { background: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+.btn-volume { background: #e2e3e5; border-color: #d6d8db; color: #383d41; }
+.btn-set-volume { background: #007bff; border-color: #007bff; color: white; }
 
-.btn-play {
-  background: #007bff;
-}
+.btn-set-volume:hover { background: #0056b3; border-color: #0056b3; }
 
-.btn-play:hover {
-  background: #0056b3;
-}
-
-.btn-pause {
-  background: #ffc107;
-  color: #212529;
-}
-
-.btn-pause:hover {
-  background: #e0a800;
-}
-
-.btn-stop {
-  background: #dc3545;
-}
-
-.btn-stop:hover {
-  background: #c82333;
-}
-
-.btn-skip {
-  background: #6f42c1;
-}
-
-.btn-skip:hover {
-  background: #5a32a3;
-}
-
-.btn-set-volume {
-  background: #17a2b8;
-  min-width: 60px;
-}
-
-.btn-set-volume:hover {
-  background: #138496;
-}
-
-@media (max-width: 600px) {
-  .volume-form {
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .player-container {
+    margin: 1rem auto;
+    padding: 0 0.5rem;
+  }
+  
+  .volume-slider {
     flex-direction: column;
     align-items: stretch;
   }
@@ -363,7 +316,7 @@
     min-width: auto;
   }
   
-  .controls {
+  .control-buttons {
     justify-content: center;
   }
   
@@ -374,99 +327,269 @@
 </style>
 
 <script>
+// Player state management
+let playerState = {
+  isConnected: false,
+  lastUpdate: null,
+  errorCount: 0,
+  maxErrors: 3,
+  pollInterval: null
+};
+
+// Initialize player
 document.addEventListener('DOMContentLoaded', function() {
-  const volumeRange = document.getElementById('volume');
-  const volumeDisplay = document.querySelector('.volume-display-value');
-  const volumeParam = document.getElementById('volume-param');
-  
-  if (volumeRange && volumeDisplay && volumeParam) {
-    volumeRange.addEventListener('input', function() {
-      const newVolume = this.value;
-      volumeDisplay.textContent = newVolume + '%';
-      volumeParam.value = newVolume;
-    });
+  startPolling();
+});
+
+// Start polling for player status
+function startPolling() {
+  updatePlayerStatus();
+  playerState.pollInterval = setInterval(updatePlayerStatus, 1000);
+}
+
+// Stop polling (when errors occur)
+function stopPolling() {
+  if (playerState.pollInterval) {
+    clearInterval(playerState.pollInterval);
+    playerState.pollInterval = null;
   }
-  
-  // Real-time updates
-  let updateInterval;
-  
-  function startRealTimeUpdates() {
-    updateInterval = setInterval(updatePlayerStatus, 1000);
-  }
-  
-  function stopRealTimeUpdates() {
-    if (updateInterval) {
-      clearInterval(updateInterval);
-    }
-  }
-  
-  async function updatePlayerStatus() {
-    try {
-      const response = await fetch('/api/player/status');
-      if (response.ok) {
-        const data = await response.json();
-        updateStatusDisplay(data);
-      }
-    } catch (error) {
-      console.error('Error updating player status:', error);
-    }
-  }
-  
-  function updateStatusDisplay(data) {
-    // Update volume
-    const currentVolume = document.getElementById('current-volume');
-    const statusVolume = document.getElementById('status-volume');
-    if (currentVolume && data.volume !== undefined) {
-      currentVolume.textContent = data.volume + '%';
-    }
-    if (statusVolume && data.volume !== undefined) {
-      statusVolume.textContent = data.volume + '%';
+}
+
+// Update player status from Redis via Rails API
+async function updatePlayerStatus() {
+  try {
+    const response = await fetch('/api/player/status');
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
     
-    // Update state
-    const statusState = document.getElementById('status-state');
-    if (statusState && data.state) {
-      statusState.textContent = data.state;
-    }
+    const status = await response.json();
+    updateDisplay(status);
+    playerState.isConnected = true;
+    playerState.errorCount = 0;
+    playerState.lastUpdate = new Date();
     
     // Update connection status
-    const statusConnected = document.getElementById('status-connected');
-    if (statusConnected && data.connected !== undefined) {
-      statusConnected.textContent = data.connected ? 'Yes' : 'No';
+    updateConnectionStatus('connected');
+    
+  } catch (error) {
+    console.error('Error updating player status:', error);
+    playerState.errorCount++;
+    
+    if (playerState.errorCount >= playerState.maxErrors) {
+      updateConnectionStatus('error');
+      stopPolling();
+      showError('Connection lost. Please reload the page to reconnect.');
+    } else {
+      updateConnectionStatus('disconnected');
+    }
+  }
+}
+
+// Update the display with new status data
+function updateDisplay(status) {
+  // Update song information
+  updateSongInfo(status);
+  
+  // Update progress bar and time
+  updateProgress(status);
+  
+  // Update volume display
+  updateVolume(status);
+  
+  // Update status grid
+  updateStatusGrid(status);
+  
+  // Update last update time
+  updateLastUpdateTime();
+}
+
+// Update song information display
+function updateSongInfo(status) {
+  const songInfo = document.getElementById('song-info');
+  const songTitle = document.querySelector('.song-title');
+  const songArtist = document.querySelector('.song-artist');
+  const songAlbum = document.querySelector('.song-album');
+  
+  try {
+    const currentSong = JSON.parse(status.current_song_metadata || '{}');
+    
+    if (currentSong && currentSong.title) {
+      songTitle.textContent = currentSong.title;
+      songArtist.textContent = currentSong.artist || 'Unknown Artist';
+      songAlbum.textContent = currentSong.album || 'Unknown Album';
+      songInfo.style.display = 'block';
+    } else {
+      songTitle.textContent = 'No song playing';
+      songArtist.textContent = '';
+      songAlbum.textContent = '';
+      songInfo.style.display = 'block';
+    }
+  } catch (e) {
+    songTitle.textContent = 'No song playing';
+    songArtist.textContent = '';
+    songAlbum.textContent = '';
+    songInfo.style.display = 'block';
+  }
+}
+
+// Update progress bar and time display
+function updateProgress(status) {
+  const progressFill = document.getElementById('progress-fill');
+  const elapsedTime = document.getElementById('elapsed-time');
+  const totalTime = document.getElementById('total-time');
+  const remainingTime = document.getElementById('remaining-time');
+  
+  const elapsed = parseFloat(status.elapsed_seconds || 0);
+  const duration = parseFloat(status.duration_seconds || 0);
+  const progress = parseFloat(status.progress_percent || 0);
+  
+  // Update progress bar
+  progressFill.style.width = `${progress}%`;
+  
+  // Update time displays
+  elapsedTime.textContent = formatTime(elapsed);
+  totalTime.textContent = formatTime(duration);
+  remainingTime.textContent = formatTime(duration - elapsed);
+}
+
+// Update volume display
+function updateVolume(status) {
+  const currentVolume = document.getElementById('current-volume');
+  const volumeSlider = document.getElementById('volume-slider');
+  const volumeSliderValue = document.getElementById('volume-slider-value');
+  
+  const volume = parseInt(status.volume || 80);
+  
+  currentVolume.textContent = `${volume}%`;
+  volumeSlider.value = volume;
+  volumeSliderValue.textContent = `${volume}%`;
+}
+
+// Update status grid
+function updateStatusGrid(status) {
+  const statusVolume = document.getElementById('status-volume');
+  const statusState = document.getElementById('status-state');
+  const statusHealth = document.getElementById('status-health');
+  const statusQueue = document.getElementById('status-queue');
+  
+  statusVolume.textContent = `${status.volume || 0}%`;
+  statusState.textContent = status.desired_state || 'unknown';
+  statusHealth.textContent = status.health || 'unknown';
+  statusQueue.textContent = status.playlist_length || 0;
+}
+
+// Update connection status display
+function updateConnectionStatus(status) {
+  const connectionStatus = document.getElementById('connection-status');
+  const statusText = document.querySelector('.status-text');
+  
+  connectionStatus.className = `connection-status ${status}`;
+  
+  switch (status) {
+    case 'connected':
+      statusText.textContent = 'Connected to Player';
+      break;
+    case 'disconnected':
+      statusText.textContent = 'Connecting...';
+      break;
+    case 'error':
+      statusText.textContent = 'Connection Error';
+      break;
+  }
+}
+
+// Update last update time
+function updateLastUpdateTime() {
+  const lastUpdate = document.getElementById('last-update');
+  if (playerState.lastUpdate) {
+    lastUpdate.textContent = `Last: ${playerState.lastUpdate.toLocaleTimeString()}`;
+  }
+}
+
+// Send player command
+async function sendPlayerCommand(action) {
+  try {
+    const response = await fetch(`/api/player/${action}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
     
-    // Update progress bar
-    if (data.current_song && data.progress !== undefined) {
-      const progressFill = document.getElementById('progress-fill');
-      if (progressFill) {
-        progressFill.style.width = data.progress + '%';
-      }
-      
-      // Update time display
-      const elapsedTime = document.getElementById('elapsed-time');
-      const totalTime = document.getElementById('total-time');
-      if (elapsedTime && data.elapsed !== undefined) {
-        elapsedTime.textContent = formatTime(data.elapsed);
-      }
-      if (totalTime && data.duration !== undefined) {
-        totalTime.textContent = formatTime(data.duration);
-      }
+    const result = await response.json();
+    console.log(`${action} command sent:`, result);
+    
+    // Update status immediately after command
+    setTimeout(updatePlayerStatus, 100);
+    
+  } catch (error) {
+    console.error(`Error sending ${action} command:`, error);
+    showError(`Failed to send ${action} command`);
+  }
+}
+
+// Send volume command
+async function sendVolumeCommand(action) {
+  try {
+    let url = `/api/player/${action}`;
+    let body = null;
+    
+    if (action === 'set_volume') {
+      const volume = document.getElementById('volume-slider').value;
+      url = '/api/player/set_volume';
+      body = JSON.stringify({ volume: parseInt(volume) });
     }
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+      },
+      body: body
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log(`${action} command sent:`, result);
+    
+    // Update status immediately after command
+    setTimeout(updatePlayerStatus, 100);
+    
+  } catch (error) {
+    console.error(`Error sending ${action} command:`, error);
+    showError(`Failed to send ${action} command`);
   }
+}
+
+// Format time in MM:SS format
+function formatTime(seconds) {
+  if (!seconds || isNaN(seconds)) return '0:00';
   
-  function formatTime(seconds) {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  }
-  
-  // Start real-time updates
-  startRealTimeUpdates();
-  
-  // Cleanup on page unload
-  window.addEventListener('beforeunload', function() {
-    stopRealTimeUpdates();
-  });
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Show error message
+function showError(message) {
+  console.error(message);
+  // You could add a toast notification here if desired
+}
+
+// Handle volume slider change
+document.getElementById('volume-slider').addEventListener('input', function() {
+  const value = this.value;
+  document.getElementById('volume-slider-value').textContent = `${value}%`;
 });
 </script>
 
