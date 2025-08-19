@@ -62,7 +62,7 @@
       <button class="btn btn-play" id="play-btn" onclick="sendPlayerCommand('play')">▶️ Play</button>
       <button class="btn btn-pause" id="pause-btn" onclick="sendPlayerCommand('pause')">⏸️ Pause</button>
       <button class="btn btn-stop" id="stop-btn" onclick="sendPlayerCommand('stop')">⏹️ Stop</button>
-      <button class="btn btn-skip" id="next-btn" onclick="sendPlayerCommand('next')">⏭️ Skip</button>
+      <button class="btn btn-skip" id="next-btn" onclick="sendPlayerCommand('skip')">⏭️ Skip</button>
     </div>
   </div>
   
@@ -327,14 +327,20 @@
 </style>
 
 <script>
-// Player state management
-let playerState = {
+// Global state for the player
+const playerState = {
   isConnected: false,
-  lastUpdate: null,
   errorCount: 0,
-  maxErrors: 3,
-  pollInterval: null
+  maxErrors: 5,
+  lastUpdate: null,
+  pollInterval: null,
+  commandCounts: {} // Track command counts
 };
+
+// Initialize command counters
+['play', 'pause', 'stop', 'skip', 'volume_up', 'volume_down', 'set_volume'].forEach(cmd => {
+  playerState.commandCounts[cmd] = 0;
+});
 
 // Initialize player
 document.addEventListener('DOMContentLoaded', function() {
@@ -343,20 +349,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Start polling for player status
 function startPolling() {
+  console.log(`🔄 Starting status polling at ${new Date().toISOString()}`);
   updatePlayerStatus();
   playerState.pollInterval = setInterval(updatePlayerStatus, 1000);
+  console.log(`⏰ Polling interval set to 1000ms`);
 }
 
 // Stop polling (when errors occur)
 function stopPolling() {
+  console.log(`🛑 Stopping status polling at ${new Date().toISOString()}`);
   if (playerState.pollInterval) {
     clearInterval(playerState.pollInterval);
     playerState.pollInterval = null;
+    console.log(`⏹️ Polling interval cleared`);
   }
 }
 
 // Update player status from Redis via Rails API
 async function updatePlayerStatus() {
+  // Prevent excessive status updates
+  const now = Date.now();
+  if (window.lastStatusUpdate && (now - window.lastStatusUpdate) < 100) {
+    console.log(`⏭️ Status update skipped - too soon after last update (${now - window.lastStatusUpdate}ms)`);
+    return;
+  }
+  window.lastStatusUpdate = now;
+  
+  console.log(`📊 Updating player status at ${new Date().toISOString()}`);
+  
   try {
     const response = await fetch('/api/player/status');
     if (!response.ok) {
@@ -371,9 +391,10 @@ async function updatePlayerStatus() {
     
     // Update connection status
     updateConnectionStatus('connected');
+    console.log(`✅ Status update successful - connected: ${playerState.isConnected}`);
     
   } catch (error) {
-    console.error('Error updating player status:', error);
+    console.error('❌ Error updating player status:', error);
     playerState.errorCount++;
     
     if (playerState.errorCount >= playerState.maxErrors) {
@@ -509,8 +530,23 @@ function updateLastUpdateTime() {
 
 // Send player command
 async function sendPlayerCommand(action) {
+  // Increment command counter
+  playerState.commandCounts[action] = (playerState.commandCounts[action] || 0) + 1;
+  
+  console.log(`🔄 sendPlayerCommand called with action: "${action}" at ${new Date().toISOString()}`);
+  console.log(`📊 Command count for ${action}: ${playerState.commandCounts[action]}`);
+  
+  // Prevent rapid successive commands
+  const now = Date.now();
+  if (window.lastCommandTime && (now - window.lastCommandTime) < 1000) {
+    console.warn(`⚠️ Command "${action}" ignored - too soon after last command (${now - window.lastCommandTime}ms)`);
+    return;
+  }
+  window.lastCommandTime = now;
+  
   try {
-    const response = await fetch(`/api/player/${action}`, {
+    console.log(`📤 Sending ${action} command to /system/${action}`);
+    const response = await fetch(`/system/${action}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -523,27 +559,40 @@ async function sendPlayerCommand(action) {
     }
     
     const result = await response.json();
-    console.log(`${action} command sent:`, result);
+    console.log(`✅ ${action} command successful:`, result);
     
     // Update status immediately after command
     setTimeout(updatePlayerStatus, 100);
     
   } catch (error) {
-    console.error(`Error sending ${action} command:`, error);
+    console.error(`❌ Error sending ${action} command:`, error);
     showError(`Failed to send ${action} command`);
   }
 }
 
 // Send volume command
 async function sendVolumeCommand(action) {
+  console.log(`🔊 sendVolumeCommand called with action: "${action}" at ${new Date().toISOString()}`);
+  
+  // Prevent rapid successive volume commands
+  const now = Date.now();
+  if (window.lastVolumeCommandTime && (now - window.lastVolumeCommandTime) < 500) {
+    console.warn(`⚠️ Volume command "${action}" ignored - too soon after last volume command (${now - window.lastVolumeCommandTime}ms)`);
+    return;
+  }
+  window.lastVolumeCommandTime = now;
+  
   try {
-    let url = `/api/player/${action}`;
+    let url = `/system/${action}`;
     let body = null;
     
     if (action === 'set_volume') {
       const volume = document.getElementById('volume-slider').value;
-      url = '/api/player/set_volume';
+      url = '/system/set_volume';
       body = JSON.stringify({ volume: parseInt(volume) });
+      console.log(`📤 Setting volume to ${volume}% via /system/set_volume`);
+    } else {
+      console.log(`📤 Sending volume command to /system/${action}`);
     }
     
     const response = await fetch(url, {
@@ -560,14 +609,14 @@ async function sendVolumeCommand(action) {
     }
     
     const result = await response.json();
-    console.log(`${action} command sent:`, result);
+    console.log(`✅ Volume command "${action}" successful:`, result);
     
     // Update status immediately after command
     setTimeout(updatePlayerStatus, 100);
     
   } catch (error) {
-    console.error(`Error sending ${action} command:`, error);
-    showError(`Failed to send ${action} command`);
+    console.error(`❌ Error sending volume command "${action}":`, error);
+    showError(`Failed to send volume command`);
   }
 }
 
@@ -591,6 +640,29 @@ document.getElementById('volume-slider').addEventListener('input', function() {
   const value = this.value;
   document.getElementById('volume-slider-value').textContent = `${value}%`;
 });
+
+// Display command counts for debugging
+function showCommandCounts() {
+  console.log(`📊 Current command counts:`, playerState.commandCounts);
+  
+  // Create or update debug display
+  let debugDiv = document.getElementById('command-debug');
+  if (!debugDiv) {
+    debugDiv = document.createElement('div');
+    debugDiv.id = 'command-debug';
+    debugDiv.style.cssText = 'position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; z-index: 1000;';
+    document.body.appendChild(debugDiv);
+  }
+  
+  const counts = Object.entries(playerState.commandCounts)
+    .map(([cmd, count]) => `${cmd}: ${count}`)
+    .join('<br>');
+  
+  debugDiv.innerHTML = `<strong>Command Counts:</strong><br>${counts}`;
+}
+
+// Call this function periodically to update the display
+setInterval(showCommandCounts, 2000);
 </script>
 
 

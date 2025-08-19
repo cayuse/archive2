@@ -24,6 +24,7 @@ Rails.application.routes.draw do
   post '/system/pause',    to: 'system#pause', as: :system_pause
   post '/system/stop',     to: 'system#stop',  as: :system_stop
   post '/system/next',     to: 'system#next',  as: :system_next
+  post '/system/skip',     to: 'system#next',  as: :system_skip
   post '/system/volume_up', to: 'system#volume_up', as: :system_volume_up
   post '/system/volume_down', to: 'system#volume_down', as: :system_volume_down
   post '/system/set_volume', to: 'system#set_volume', as: :system_set_volume

@@ -27,7 +27,7 @@ class SystemController < ApplicationController
   end
 
   def next
-    enqueue_command(action: 'next')
+    enqueue_command(action: 'skip')
     redirect_to system_path, notice: 'Skip requested'
   end
 

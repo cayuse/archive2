@@ -159,15 +159,11 @@ class JukeboxService
   end
   
   def skip
-    send_command('next')
+    send_command('skip')
   end
   
   def set_volume(level)
-    send_command('volume', volume: level.to_i)
-  end
-  
-  def set_crossfade(duration)
-    send_command('crossfade', duration: duration.to_i)
+    send_command('set_volume', value: level.to_i)
   end
   
   # Search functionality using synced data
