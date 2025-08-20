@@ -59,6 +59,8 @@ Rails.application.routes.draw do
   
   # Jukebox web interface routes
   get 'live', to: 'jukebox_web#live'
+  get 'live/status', to: 'jukebox_web#live_status', defaults: { format: 'json' }
+  get 'live/upcoming', to: 'jukebox_web#live_upcoming', defaults: { format: 'json' }
   get 'search', to: 'jukebox_web#search'
   get 'browse', to: 'jukebox_web#browse'
   get 'queue', to: 'jukebox_web#queue'

@@ -93,35 +93,6 @@ services:
   # Host MPD preferred; no mpd container
 
   # Python Jukebox Player Controller
-  jukebox-player:
-    # All configuration is provided via environment variables (no env files)
-    build:
-      context: ./audio_player
-      dockerfile: Dockerfile
-    image: jukebox-player:latest
-    restart: unless-stopped
-    # No local mpd/redis declared; use external network services on archive_default
-    environment:
-      MPD_HOST: ${MPD_HOST:-host.docker.internal}
-      MPD_PORT: 6600
-      MPD_SOCKET: ${MPD_SOCKET}
-      MPD_PASSWORD: ${MPD_PASSWORD}
-      REDIS_HOST: ${ARCHIVE_REDIS_HOST:-redis}
-      REDIS_PORT: ${ARCHIVE_REDIS_PORT:-6379}
-      REDIS_DB: 1
-      JUKEBOX_API_URL: ${JUKEBOX_API_URL:-http://jukebox:3001/api}
-    volumes:
-      - jukebox_logs:/var/log
-      - /run/mpd:/run/mpd:ro
-    healthcheck:
-      test: ["CMD", "pgrep", "-f", "player.py"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    networks:
-      - archive_net
 
 volumes:
   # Logs volume; storage is a bind mount via HOST_STORAGE_PATH

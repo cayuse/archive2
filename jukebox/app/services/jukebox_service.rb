@@ -111,9 +111,16 @@ class JukeboxService
   def get_random_songs(count = 10)
     selected_ids = JukeboxSelectedPlaylist.pluck(:playlist_id)
     if selected_ids.empty?
-      return ArchiveSong.completed.order('RANDOM()').limit(count)
+      Rails.logger.warn "No playlists selected for jukebox - cannot get random songs"
+      return []
     end
+    
     song_ids = PlaylistsSong.where(playlist_id: selected_ids).pluck(:song_id).uniq
+    if song_ids.empty?
+      Rails.logger.warn "Selected playlists contain no songs - cannot get random songs"
+      return []
+    end
+    
     ArchiveSong.where(id: song_ids).order('RANDOM()').limit(count)
   end
   

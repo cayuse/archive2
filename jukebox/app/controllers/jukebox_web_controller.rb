@@ -10,6 +10,21 @@ class JukeboxWebController < ApplicationController
     @upcoming_songs = get_upcoming_songs
   end
   
+  # GET /live/status.json - JSON API for player status
+  def live_status
+    render json: {
+      player_status: @jukebox_service.status,
+      current_song: @jukebox_service.current_song
+    }
+  end
+  
+  # GET /live/upcoming.json - JSON API for upcoming songs
+  def live_upcoming
+    render json: {
+      upcoming_songs: get_upcoming_songs
+    }
+  end
+  
   # GET /
   def index
     @status = @jukebox_service.status
@@ -74,9 +89,18 @@ class JukeboxWebController < ApplicationController
     # Upcoming is exactly the unified queue (manual first, then random), capped to 10
     queue_items = JukeboxQueueItem.ordered_for_playback.includes(:song).limit(10)
     queue_items.map do |item|
-      # Status: '0' => manual (queue), '1' => random
-      src = (item.status.to_s == '1') ? 'random' : 'queue'
-      { song: item.song, source: src, position: item.position }
+      {
+        song: {
+          id: item.song.id,
+          title: item.song.title,
+          artist_name: item.song.artist&.name,
+          album_name: item.song.album&.title,
+          duration: item.song.duration
+        },
+        position: item.position,
+        source: item.status.to_s == '1' ? 'random' : 'queue',
+        order_number: item.position
+      }
     end
   end
 end 

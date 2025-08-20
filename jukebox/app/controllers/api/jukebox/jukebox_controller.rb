@@ -144,29 +144,56 @@ module Api
         need = [target - current, 0].max
         return if need <= 0
 
-        # Prefer from selected playlists; exclude recently played and already queued; require audio attachment
-        recent_ids   = JukeboxPlayedSong.order(played_at: :desc).limit(SystemSetting.recently_played_window).pluck(:song_id)
-        queued_ids   = JukeboxQueueItem.where(status: ['0','1']).pluck(:song_id)
-        attached_ids = ActiveStorage::Attachment.where(record_type: 'Song', name: 'audio_file').pluck(:record_id)
+        # Get selected playlist IDs
         selected_ids = JukeboxSelectedPlaylist.pluck(:playlist_id)
-
-        added = 0
-        if selected_ids.any?
-          playlist_song_ids = PlaylistsSong.where(playlist_id: selected_ids).pluck(:song_id)
-          selected_scope = ArchiveSong.completed.where(id: attached_ids)
-                                           .where(id: playlist_song_ids)
-                                           .where.not(id: recent_ids + queued_ids)
-          selected_scope.order('RANDOM()').limit(need).pluck(:id).each do |sid|
-            JukeboxQueueItem.add_random_to_queue(sid)
-            added += 1
-          end
+        
+        # If no playlists are selected, don't add any random songs
+        if selected_ids.empty?
+          Rails.logger.warn "No playlists selected for jukebox - cannot add random songs"
+          return
         end
 
+        # Get songs from selected playlists only
+        playlist_song_ids = PlaylistsSong.where(playlist_id: selected_ids).pluck(:song_id)
+        
+        if playlist_song_ids.empty?
+          Rails.logger.warn "Selected playlists contain no songs - cannot add random songs"
+          return
+        end
+
+        # Exclude recently played and already queued songs
+        recent_ids = JukeboxPlayedSong.order(played_at: :desc).limit(SystemSetting.recently_played_window).pluck(:song_id)
+        queued_ids = JukeboxQueueItem.where(status: ['0','1']).pluck(:song_id)
+        attached_ids = ActiveStorage::Attachment.where(record_type: 'Song', name: 'audio_file').pluck(:record_id)
+        
+        # First try: songs from selected playlists that haven't been played recently and aren't already queued
+        available_songs = ArchiveSong.completed
+                                    .where(id: attached_ids)
+                                    .where(id: playlist_song_ids)
+                                    .where.not(id: recent_ids + queued_ids)
+                                    .order('RANDOM()')
+                                    .limit(need)
+        
+        added = 0
+        available_songs.pluck(:id).each do |sid|
+          JukeboxQueueItem.add_random_to_queue(sid)
+          added += 1
+        end
+
+        # If we still need more songs, allow repeats from selected playlists
         remaining = need - added
         if remaining > 0
-          fallback_scope = ArchiveSong.completed.where(id: attached_ids)
-                                         .where.not(id: recent_ids + queued_ids)
-          fallback_scope.order('RANDOM()').limit(remaining).pluck(:id).each do |sid|
+          Rails.logger.info "Adding #{remaining} repeated songs from selected playlists to meet minimum queue length"
+          
+          # Get all songs from selected playlists (including repeats)
+          repeat_songs = ArchiveSong.completed
+                                   .where(id: attached_ids)
+                                   .where(id: playlist_song_ids)
+                                   .where.not(id: queued_ids) # Still exclude already queued
+                                   .order('RANDOM()')
+                                   .limit(remaining)
+          
+          repeat_songs.pluck(:id).each do |sid|
             JukeboxQueueItem.add_random_to_queue(sid)
           end
         end
@@ -262,9 +289,29 @@ module Api
       end
 
       def fallback_random_song
+        # Only pick songs from selected playlists, never from anywhere in the archive
+        selected_ids = JukeboxSelectedPlaylist.pluck(:playlist_id)
+        if selected_ids.empty?
+          Rails.logger.warn "No playlists selected for jukebox - cannot get fallback random song"
+          return nil
+        end
+        
         recent_ids = JukeboxPlayedSong.order(played_at: :desc).limit(SystemSetting.recently_played_window).pluck(:song_id)
         attached_ids = ActiveStorage::Attachment.where(record_type: 'Song', name: 'audio_file').limit(10_000).pluck(:record_id)
-        ArchiveSong.completed.where.not(id: recent_ids).where(id: attached_ids).order('RANDOM()').first
+        
+        # Get songs from selected playlists only
+        playlist_song_ids = PlaylistsSong.where(playlist_id: selected_ids).pluck(:song_id)
+        if playlist_song_ids.empty?
+          Rails.logger.warn "Selected playlists contain no songs - cannot get fallback random song"
+          return nil
+        end
+        
+        ArchiveSong.completed
+                   .where(id: attached_ids)
+                   .where(id: playlist_song_ids)
+                   .where.not(id: recent_ids)
+                   .order('RANDOM()')
+                   .first
       end
 
       def cache_status

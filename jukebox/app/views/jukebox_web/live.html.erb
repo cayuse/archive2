@@ -3,7 +3,7 @@
     <div class="col-12">
       <h1 class="mb-4">🎵 Live Jukebox</h1>
       
-      <!-- Current Song -->
+      <!-- Now Playing Card -->
       <div class="card mb-4">
         <div class="card-header">
           <h5 class="mb-0">
@@ -12,34 +12,44 @@
           </h5>
         </div>
         <div class="card-body">
-          <% if @current_song %>
-            <div class="row align-items-center">
-              <div class="col-md-8">
-                <h4 class="mb-1"><%= @current_song.title %></h4>
-                <p class="text-muted mb-2">
-                  <i class="fas fa-user me-1"></i>
-                  <%= @current_song.artist&.name || 'Unknown Artist' %>
-                </p>
-                <% if @current_song.album %>
-                  <p class="text-muted mb-0">
-                    <i class="fas fa-compact-disc me-1"></i>
-                    <%= @current_song.album.title %>
-                  </p>
-                <% end %>
-              </div>
-              <div class="col-md-4 text-end">
-                <div class="text-muted">
-                  <small>Player controls available to logged-in users at <a href="/system/player">/system/player</a></small>
-                </div>
-              </div>
-            </div>
-          <% else %>
+          <!-- Song Information -->
+          <div class="song-info mb-3" id="live-song-info">
             <div class="text-center py-4">
               <i class="fas fa-music fa-3x text-muted mb-3"></i>
               <h5 class="text-muted">No song currently playing</h5>
               <p class="text-muted">Add songs to the queue to start playing</p>
             </div>
-          <% end %>
+          </div>
+          
+          <!-- Progress Bar -->
+          <div class="progress-container mb-3" id="live-progress-container" style="display: none;">
+            <div class="progress">
+              <div class="progress-bar" id="live-progress-bar" role="progressbar" style="width: 0%"></div>
+            </div>
+            <div class="time-display d-flex justify-content-between mt-2">
+              <span id="live-elapsed-time" class="text-muted">0:00</span>
+              <span id="live-total-time" class="text-muted">0:00</span>
+              <span id="live-remaining-time" class="text-muted">0:00</span>
+            </div>
+          </div>
+          
+          <!-- Player Status -->
+          <div class="player-status" id="live-player-status" style="display: none;">
+            <div class="row">
+              <div class="col-md-6">
+                <small class="text-muted">
+                  <i class="fas fa-volume-up me-1"></i>
+                  Volume: <span id="live-volume">80%</span>
+                </small>
+              </div>
+              <div class="col-md-6 text-end">
+                <small class="text-muted">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Status: <span id="live-status">unknown</span>
+                </small>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       
@@ -50,69 +60,307 @@
             <i class="fas fa-list me-2"></i>
             Upcoming Songs
           </h5>
-          <span class="badge bg-primary"><%= @upcoming_songs.length %> songs</span>
+          <div>
+            <span class="badge bg-primary me-2" id="upcoming-count">0 songs</span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="refreshUpcomingSongs()">
+              <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+          </div>
         </div>
         <div class="card-body">
-          <% if @upcoming_songs.any? %>
-            <div class="table-responsive">
-              <table class="table table-hover">
-                <thead>
-                  <tr>
-                    <th style="width: 50px;">#</th>
-                    <th>Song</th>
-                    <th>Artist</th>
-                    <th>Album</th>
-                    <th style="width: 100px;">Source</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% @upcoming_songs.each_with_index do |item, index| %>
-                    <tr>
-                      <td>
-                        <span class="badge bg-secondary"><%= index + 1 %></span>
-                      </td>
-                      <td>
-                        <strong><%= item[:song].title %></strong>
-                        <% if item[:song].duration %>
-                          <br><small class="text-muted">
-                            <i class="fas fa-clock me-1"></i>
-                            <%= format_duration(item[:song].duration) %>
-                          </small>
-                        <% end %>
-                      </td>
-                      <td>
-                        <% if item[:song].artist %>
-                          <%= link_to item[:song].artist.name, artist_path(item[:song].artist), class: "text-decoration-none" %>
-                        <% else %>
-                          <span class="text-muted">Unknown Artist</span>
-                        <% end %>
-                      </td>
-                      <td>
-                        <% if item[:song].album %>
-                          <%= link_to item[:song].album.title, album_path(item[:song].album), class: "text-decoration-none" %>
-                        <% else %>
-                          <span class="text-muted">Unknown Album</span>
-                        <% end %>
-                      </td>
-                      <td>
-                        <span class="badge <%= item[:source] == 'random' ? 'bg-success' : 'bg-info' %>">
-                          <%= item[:source].titleize %>
-                        </span>
-                      </td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
-            </div>
-          <% else %>
+          <div id="upcoming-songs-content">
             <div class="text-center py-4">
-              <i class="fas fa-list fa-3x text-muted mb-3"></i>
-              <h5 class="text-muted">No upcoming songs</h5>
-              <p class="text-muted">Add songs to the queue to see upcoming tracks</p>
+              <i class="fas fa-spinner fa-spin fa-3x text-muted mb-3"></i>
+              <h5 class="text-muted">Loading upcoming songs...</h5>
             </div>
-          <% end %>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div> 
+</div>
+
+<!-- JavaScript for Live Updates -->
+<script>
+// Live view state management
+const liveState = {
+  isConnected: false,
+  errorCount: 0,
+  maxErrors: 5,
+  lastUpdate: null,
+  pollInterval: null,
+  upcomingInterval: null
+};
+
+// Initialize live view
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🎵 Live view initialized');
+  startLiveUpdates();
+  startUpcomingUpdates();
+});
+
+// Start live updates (1 second intervals)
+function startLiveUpdates() {
+  console.log('🔄 Starting live updates');
+  updateLiveStatus();
+  liveState.pollInterval = setInterval(updateLiveStatus, 1000);
+}
+
+// Start upcoming songs updates (10 second intervals)
+function startUpcomingUpdates() {
+  console.log('🔄 Starting upcoming songs updates');
+  updateUpcomingSongs();
+  liveState.upcomingInterval = setInterval(updateUpcomingSongs, 10000);
+}
+
+// Update live player status
+async function updateLiveStatus() {
+  try {
+    const response = await fetch('/live/status');
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('📊 Live status update:', data);
+    
+    updateLiveDisplay(data);
+    liveState.isConnected = true;
+    liveState.errorCount = 0;
+    liveState.lastUpdate = new Date();
+    
+  } catch (error) {
+    console.error('❌ Error updating live status:', error);
+    liveState.errorCount++;
+    
+    if (liveState.errorCount >= liveState.maxErrors) {
+      console.error('🚨 Too many errors, stopping live updates');
+      stopLiveUpdates();
+    }
+  }
+}
+
+// Update upcoming songs
+async function updateUpcomingSongs() {
+  try {
+    const response = await fetch('/live/upcoming');
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('📋 Upcoming songs update:', data);
+    
+    updateUpcomingDisplay(data.upcoming_songs);
+    
+  } catch (error) {
+    console.error('❌ Error updating upcoming songs:', error);
+  }
+}
+
+// Manual refresh of upcoming songs
+function refreshUpcomingSongs() {
+  console.log('🔄 Manual refresh of upcoming songs');
+  updateUpcomingSongs();
+}
+
+// Update live display with player status
+function updateLiveDisplay(data) {
+  const playerStatus = data.player_status;
+  const currentSong = data.current_song;
+  
+  // Update song information
+  updateLiveSongInfo(currentSong);
+  
+  // Update progress
+  updateLiveProgress(playerStatus);
+  
+  // Update player status
+  updateLivePlayerStatus(playerStatus);
+}
+
+// Update live song information
+function updateLiveSongInfo(currentSong) {
+  const songInfo = document.getElementById('live-song-info');
+  const progressContainer = document.getElementById('live-progress-container');
+  const playerStatus = document.getElementById('live-player-status');
+  
+  if (currentSong && currentSong.title) {
+    songInfo.innerHTML = `
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <h4 class="mb-1">${currentSong.title}</h4>
+          <p class="text-muted mb-2">
+            <i class="fas fa-user me-1"></i>
+            ${currentSong.artist || 'Unknown Artist'}
+          </p>
+          ${currentSong.album ? `
+            <p class="text-muted mb-0">
+              <i class="fas fa-compact-disc me-1"></i>
+              ${currentSong.album}
+            </p>
+          ` : ''}
+        </div>
+        <div class="col-md-4 text-end">
+          <div class="text-muted">
+            <small>Player controls available to logged-in users at <a href="/system/player">/system/player</a></small>
+          </div>
+        </div>
+      </div>
+    `;
+    progressContainer.style.display = 'block';
+    playerStatus.style.display = 'block';
+  } else {
+    songInfo.innerHTML = `
+      <div class="text-center py-4">
+        <i class="fas fa-music fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">No song currently playing</h5>
+        <p class="text-muted">Add songs to the queue to start playing</p>
+      </div>
+    `;
+    progressContainer.style.display = 'none';
+    playerStatus.style.display = 'none';
+  }
+}
+
+// Update live progress bar and time
+function updateLiveProgress(playerStatus) {
+  const progressBar = document.getElementById('live-progress-bar');
+  const elapsedTime = document.getElementById('live-elapsed-time');
+  const totalTime = document.getElementById('live-total-time');
+  const remainingTime = document.getElementById('live-remaining-time');
+  
+  const elapsed = parseFloat(playerStatus.elapsed_seconds || 0);
+  const duration = parseFloat(playerStatus.duration_seconds || 0);
+  const progress = parseFloat(playerStatus.progress_percent || 0);
+  
+  // Update progress bar
+  progressBar.style.width = `${progress}%`;
+  
+  // Update time displays
+  elapsedTime.textContent = formatTime(elapsed);
+  totalTime.textContent = formatTime(duration);
+  remainingTime.textContent = formatTime(duration - elapsed);
+}
+
+// Update live player status
+function updateLivePlayerStatus(playerStatus) {
+  const volume = document.getElementById('live-volume');
+  const status = document.getElementById('live-status');
+  
+  volume.textContent = `${playerStatus.volume || 0}%`;
+  
+  // Show both desired and actual state
+  const desiredState = playerStatus.desired_state || 'unknown';
+  const actualState = playerStatus.actual_state || 'unknown';
+  const idleActive = playerStatus.idle_active === 'true';
+  const paused = playerStatus.paused === 'true';
+  
+  let statusText = desiredState;
+  if (desiredState !== actualState) {
+    statusText = `${desiredState} → ${actualState}`;
+  }
+  if (idleActive) {
+    statusText += ' (idle)';
+  }
+  if (paused) {
+    statusText += ' (paused)';
+  }
+  
+  status.textContent = statusText;
+}
+
+// Update upcoming songs display
+function updateUpcomingDisplay(upcomingSongs) {
+  const content = document.getElementById('upcoming-songs-content');
+  const count = document.getElementById('upcoming-count');
+  
+  count.textContent = `${upcomingSongs.length} songs`;
+  
+  if (upcomingSongs.length > 0) {
+    content.innerHTML = `
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th style="width: 50px;">#</th>
+              <th>Song</th>
+              <th>Artist</th>
+              <th>Album</th>
+              <th style="width: 100px;">Duration</th>
+              <th style="width: 80px;">Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${upcomingSongs.map((item, index) => `
+              <tr>
+                <td>
+                  <span class="badge bg-secondary">${index + 1}</span>
+                </td>
+                <td>
+                  <strong>${item.song.title}</strong>
+                </td>
+                <td>
+                  ${item.song.artist_name || 'Unknown Artist'}
+                </td>
+                <td>
+                  ${item.song.album_name || 'Unknown Album'}
+                </td>
+                <td>
+                  ${item.song.duration ? formatDuration(item.song.duration) : '-'}
+                </td>
+                <td>
+                  <span class="badge ${item.source === 'random' ? 'bg-success' : 'bg-info'}" title="Order #${item.order_number}">
+                    ${item.source === 'random' ? 'Random' : 'Queue'}
+                  </span>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } else {
+    content.innerHTML = `
+      <div class="text-center py-4">
+        <i class="fas fa-list fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">No upcoming songs</h5>
+        <p class="text-muted">Add songs to the queue to see upcoming tracks</p>
+      </div>
+    `;
+  }
+}
+
+// Utility function to format time
+function formatTime(seconds) {
+  if (!seconds || seconds < 0) return '0:00';
+  
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Utility function to format duration (assuming it's in seconds)
+function formatDuration(duration) {
+  if (!duration) return '';
+  return formatTime(duration);
+}
+
+// Stop live updates
+function stopLiveUpdates() {
+  if (liveState.pollInterval) {
+    clearInterval(liveState.pollInterval);
+    liveState.pollInterval = null;
+  }
+  if (liveState.upcomingInterval) {
+    clearInterval(liveState.upcomingInterval);
+    liveState.upcomingInterval = null;
+  }
+  console.log('🛑 Live updates stopped');
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+  stopLiveUpdates();
+});
+</script> 
