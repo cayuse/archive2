@@ -12,41 +12,24 @@
           </h5>
         </div>
         <div class="card-body">
-          <!-- Song Information -->
-          <div class="song-info mb-3" id="live-song-info">
-            <div class="text-center py-4">
-              <i class="fas fa-music fa-3x text-muted mb-3"></i>
-              <h5 class="text-muted">No song currently playing</h5>
-              <p class="text-muted">Add songs to the queue to start playing</p>
+          <!-- Current Song Display (matches /system/player exactly) -->
+          <div class="current-song" id="live-current-song-display">
+            <h3>Now Playing</h3>
+            <div class="song-info" id="live-song-info" style="display: block;">
+              <div class="song-title">No song playing</div>
+              <div class="song-artist"></div>
+              <div class="song-album"></div>
             </div>
-          </div>
-          
-          <!-- Progress Bar -->
-          <div class="progress-container mb-3" id="live-progress-container" style="display: none;">
-            <div class="progress">
-              <div class="progress-bar" id="live-progress-bar" role="progressbar" style="width: 0%"></div>
-            </div>
-            <div class="time-display d-flex justify-content-between mt-2">
-              <span id="live-elapsed-time" class="text-muted">0:00</span>
-              <span id="live-total-time" class="text-muted">0:00</span>
-              <span id="live-remaining-time" class="text-muted">0:00</span>
-            </div>
-          </div>
-          
-          <!-- Player Status -->
-          <div class="player-status" id="live-player-status" style="display: none;">
-            <div class="row">
-              <div class="col-md-6">
-                <small class="text-muted">
-                  <i class="fas fa-volume-up me-1"></i>
-                  Volume: <span id="live-volume">80%</span>
-                </small>
+            
+            <!-- Progress Bar -->
+            <div class="progress-container">
+              <div class="progress-bar">
+                <div class="progress-fill" id="live-progress-fill" style="width: 0%"></div>
               </div>
-              <div class="col-md-6 text-end">
-                <small class="text-muted">
-                  <i class="fas fa-info-circle me-1"></i>
-                  Status: <span id="live-status">unknown</span>
-                </small>
+              <div class="time-display">
+                <span id="live-elapsed-time">0:00</span>
+                <span id="live-total-time">0:00</span>
+                <span id="live-remaining-time">0:00</span>
               </div>
             </div>
           </div>
@@ -169,63 +152,37 @@ function updateLiveDisplay(data) {
   const playerStatus = data.player_status;
   const currentSong = data.current_song;
   
+  console.log('🎵 Updating live display:', { playerStatus, currentSong });
+  
   // Update song information
   updateLiveSongInfo(currentSong);
   
-  // Update progress
+  // Update progress bar and time from player status
   updateLiveProgress(playerStatus);
-  
-  // Update player status
-  updateLivePlayerStatus(playerStatus);
 }
 
 // Update live song information
 function updateLiveSongInfo(currentSong) {
   const songInfo = document.getElementById('live-song-info');
-  const progressContainer = document.getElementById('live-progress-container');
-  const playerStatus = document.getElementById('live-player-status');
   
   if (currentSong && currentSong.title) {
     songInfo.innerHTML = `
-      <div class="row align-items-center">
-        <div class="col-md-8">
-          <h4 class="mb-1">${currentSong.title}</h4>
-          <p class="text-muted mb-2">
-            <i class="fas fa-user me-1"></i>
-            ${currentSong.artist || 'Unknown Artist'}
-          </p>
-          ${currentSong.album ? `
-            <p class="text-muted mb-0">
-              <i class="fas fa-compact-disc me-1"></i>
-              ${currentSong.album}
-            </p>
-          ` : ''}
-        </div>
-        <div class="col-md-4 text-end">
-          <div class="text-muted">
-            <small>Player controls available to logged-in users at <a href="/system/player">/system/player</a></small>
-          </div>
-        </div>
-      </div>
+      <div class="song-title">${currentSong.title}</div>
+      ${currentSong.artist ? `<div class="song-artist">${currentSong.artist}</div>` : ''}
+      ${currentSong.album ? `<div class="song-album">${currentSong.album}</div>` : ''}
     `;
-    progressContainer.style.display = 'block';
-    playerStatus.style.display = 'block';
   } else {
     songInfo.innerHTML = `
-      <div class="text-center py-4">
-        <i class="fas fa-music fa-3x text-muted mb-3"></i>
-        <h5 class="text-muted">No song currently playing</h5>
-        <p class="text-muted">Add songs to the queue to start playing</p>
-      </div>
+      <div class="song-title">No song playing</div>
+      <div class="song-artist"></div>
+      <div class="song-album"></div>
     `;
-    progressContainer.style.display = 'none';
-    playerStatus.style.display = 'none';
   }
 }
 
-// Update live progress bar and time
+// Update live progress bar and time display
 function updateLiveProgress(playerStatus) {
-  const progressBar = document.getElementById('live-progress-bar');
+  const progressFill = document.getElementById('live-progress-fill');
   const elapsedTime = document.getElementById('live-elapsed-time');
   const totalTime = document.getElementById('live-total-time');
   const remainingTime = document.getElementById('live-remaining-time');
@@ -234,40 +191,15 @@ function updateLiveProgress(playerStatus) {
   const duration = parseFloat(playerStatus.duration_seconds || 0);
   const progress = parseFloat(playerStatus.progress_percent || 0);
   
+  console.log('⏱️ Progress update:', { elapsed, duration, progress });
+  
   // Update progress bar
-  progressBar.style.width = `${progress}%`;
+  progressFill.style.width = `${progress}%`;
   
   // Update time displays
   elapsedTime.textContent = formatTime(elapsed);
   totalTime.textContent = formatTime(duration);
   remainingTime.textContent = formatTime(duration - elapsed);
-}
-
-// Update live player status
-function updateLivePlayerStatus(playerStatus) {
-  const volume = document.getElementById('live-volume');
-  const status = document.getElementById('live-status');
-  
-  volume.textContent = `${playerStatus.volume || 0}%`;
-  
-  // Show both desired and actual state
-  const desiredState = playerStatus.desired_state || 'unknown';
-  const actualState = playerStatus.actual_state || 'unknown';
-  const idleActive = playerStatus.idle_active === 'true';
-  const paused = playerStatus.paused === 'true';
-  
-  let statusText = desiredState;
-  if (desiredState !== actualState) {
-    statusText = `${desiredState} → ${actualState}`;
-  }
-  if (idleActive) {
-    statusText += ' (idle)';
-  }
-  if (paused) {
-    statusText += ' (paused)';
-  }
-  
-  status.textContent = statusText;
 }
 
 // Update upcoming songs display
@@ -363,4 +295,136 @@ function stopLiveUpdates() {
 window.addEventListener('beforeunload', function() {
   stopLiveUpdates();
 });
-</script> 
+</script>
+
+<style>
+/* Exact same styling as /system/player */
+.current-song {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.current-song h3 {
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+}
+
+.song-info {
+  margin-bottom: 2rem;
+}
+
+.song-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 0.5rem;
+}
+
+.song-artist {
+  font-size: 1.1rem;
+  color: #6c757d;
+  margin-bottom: 0.25rem;
+}
+
+.song-album {
+  font-size: 1rem;
+  color: #6c757d;
+}
+
+.progress-container {
+  margin-bottom: 1rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #007bff;
+  transition: width 0.3s ease;
+}
+
+.time-display {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.time-display span {
+  font-family: monospace;
+}
+
+/* Debug display styling */
+.debug-display {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.debug-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.debug-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.debug-label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.debug-value {
+  font-family: monospace;
+  color: #6c757d;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.status-label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.status-value {
+  color: #6c757d;
+}
+</style> 
