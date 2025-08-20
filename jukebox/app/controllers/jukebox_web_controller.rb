@@ -53,7 +53,8 @@ class JukeboxWebController < ApplicationController
   # GET /live/upcoming.json - JSON API for upcoming songs
   def live_upcoming
     render json: {
-      upcoming_songs: get_upcoming_songs
+      upcoming_songs: get_upcoming_songs,
+      logged_in: logged_in?
     }
   end
   

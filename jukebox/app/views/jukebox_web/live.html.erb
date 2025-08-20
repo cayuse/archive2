@@ -134,7 +134,7 @@ async function updateUpcomingSongs() {
     const data = await response.json();
     console.log('📋 Upcoming songs update:', data);
     
-    updateUpcomingDisplay(data.upcoming_songs);
+            updateUpcomingDisplay(data.upcoming_songs, data.logged_in);
     
   } catch (error) {
     console.error('❌ Error updating upcoming songs:', error);
@@ -203,7 +203,7 @@ function updateLiveProgress(playerStatus) {
 }
 
 // Update upcoming songs display
-function updateUpcomingDisplay(upcomingSongs) {
+function updateUpcomingDisplay(upcomingSongs, loggedIn = false) {
   const content = document.getElementById('upcoming-songs-content');
   const count = document.getElementById('upcoming-count');
   
@@ -221,6 +221,7 @@ function updateUpcomingDisplay(upcomingSongs) {
               <th>Album</th>
               <th style="width: 100px;">Duration</th>
               <th style="width: 80px;">Source</th>
+              ${loggedIn ? '<th style="width: 80px;">Actions</th>' : ''}
             </tr>
           </thead>
           <tbody>
@@ -246,6 +247,22 @@ function updateUpcomingDisplay(upcomingSongs) {
                     ${item.source === 'random' ? 'Random' : 'Queue'}
                   </span>
                 </td>
+                ${loggedIn ? `
+                  <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                      <button type="button" class="btn btn-outline-primary btn-sm" 
+                              onclick="moveSongToTop(${item.order_number})" 
+                              title="Move to top of queue">
+                        ⬆️
+                      </button>
+                      <button type="button" class="btn btn-outline-danger btn-sm" 
+                              onclick="removeSongFromQueue(${item.order_number})" 
+                              title="Remove from queue">
+                        ❌
+                      </button>
+                    </div>
+                  </td>
+                ` : ''}
               </tr>
             `).join('')}
           </tbody>
@@ -276,6 +293,66 @@ function formatTime(seconds) {
 function formatDuration(duration) {
   if (!duration) return '';
   return formatTime(duration);
+}
+
+// Move a song to the top of the queue
+async function moveSongToTop(orderNumber) {
+  try {
+    const response = await fetch('/songs/move_to_top', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+      },
+      body: JSON.stringify({ order_number: orderNumber })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      console.log('✅ Song moved to top:', result.message);
+      // Refresh the upcoming songs display
+      updateUpcomingSongs();
+    } else {
+      console.error('❌ Failed to move song:', result.message);
+      alert('Failed to move song to top: ' + result.message);
+    }
+  } catch (error) {
+    console.error('❌ Error moving song to top:', error);
+    alert('Error moving song to top. Please try again.');
+  }
+}
+
+// Remove a song from the queue
+async function removeSongFromQueue(orderNumber) {
+  if (!confirm('Are you sure you want to remove this song from the queue?')) {
+    return;
+  }
+  
+  try {
+    const response = await fetch('/songs/remove_from_queue', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+      },
+      body: JSON.stringify({ order_number: orderNumber })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      console.log('✅ Song removed from queue:', result.message);
+      // Refresh the upcoming songs display
+      updateUpcomingSongs();
+    } else {
+      console.error('❌ Failed to remove song:', result.message);
+      alert('Failed to remove song: ' + result.message);
+    }
+  } catch (error) {
+    console.error('❌ Error removing song:', error);
+    alert('Error removing song. Please try again.');
+  }
 }
 
 // Stop live updates

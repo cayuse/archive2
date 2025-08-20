@@ -72,6 +72,8 @@ Rails.application.routes.draw do
   resources :songs do
     collection do
       get :search
+      post :move_to_top
+      post :remove_from_queue
     end
   end
   resources :albums
