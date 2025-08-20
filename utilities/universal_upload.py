@@ -191,70 +191,99 @@ def find_audio_files(directory, limit=None):
         # Remove trailing slash for consistency
         clean_directory = directory.rstrip('/')
         
-        logger.info(f"Using find command to scan: {clean_directory}")
-        
-        # Use find command as fallback when os.walk fails
-        try:
-            # Build find command to locate audio files with better error handling
-            find_cmd = [
-                'find', clean_directory, 
-                '-type', 'f',
-                '(', '-iname', '*.mp3',
-                '-o', '-iname', '*.m4a', 
-                '-o', '-iname', '*.flac',
-                '-o', '-iname', '*.wav',
-                '-o', '-iname', '*.ogg', ')',
-                '-print0'  # Use null-terminated output to handle special characters
-            ]
-            
-            logger.info(f"Running command: {' '.join(find_cmd)}")
-            
-            # Run find command with binary output to handle null bytes
-            result = subprocess.run(
-                find_cmd,
-                capture_output=True,
-                text=False,  # Use binary mode
-                timeout=300  # 5 minute timeout
-            )
-            
-            if result.returncode != 0:
-                logger.error(f"Find command failed: {result.stderr.decode('utf-8', errors='replace')}")
-                return
-            
-            # Process null-terminated output
-            output = result.stdout.decode('utf-8', errors='replace')
-            files = output.split('\0')
-            
-            logger.info(f"Find command found {len(files)} potential audio files")
-            
-            count = 0
-            for filepath in files:
-                if not filepath.strip():
-                    continue
-                    
-                logger.info(f"Checking file: {filepath}")
-                
-                if is_audio_file(filepath):
-                    logger.info(f"Confirmed audio file: {filepath}")
-                    yield filepath
-                    count += 1
-                    
-                    # Stop if we've reached the limit
-                    if limit and count >= limit:
-                        logger.info(f"Reached limit of {limit} files, stopping scan")
-                        return
-            
-            logger.info(f"Scan complete: {len(files)} total files, {count} audio files found")
-            
-        except subprocess.TimeoutExpired:
-            logger.error("Find command timed out")
-            return
-        except Exception as e:
-            logger.error(f"Find command failed: {e}")
-            return
+        # Use platform-appropriate file scanning
+        if platform.system() == "Windows":
+            logger.info(f"Using os.walk for Windows/WSL: {clean_directory}")
+            return _find_audio_files_windows(clean_directory, limit)
+        else:
+            logger.info(f"Using find command for Unix: {clean_directory}")
+            return _find_audio_files_unix(clean_directory, limit)
          
     except Exception as e:
         logger.error(f"Error scanning directory {directory}: {e}")
+        return
+
+def _find_audio_files_windows(directory, limit=None):
+    """Find audio files using os.walk (Windows/WSL compatible)."""
+    try:
+        count = 0
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                filepath = os.path.join(root, file)
+                if is_audio_file(filepath):
+                    logger.debug(f"Found audio file: {filepath}")
+                    yield filepath
+                    count += 1
+                    
+                    if limit and count >= limit:
+                        logger.info(f"Reached limit of {limit} files, stopping scan")
+                        return
+        
+        logger.info(f"Windows scan complete: {count} audio files found")
+        
+    except Exception as e:
+        logger.error(f"Windows file scan failed: {e}")
+        return
+
+def _find_audio_files_unix(directory, limit=None):
+    """Find audio files using find command (Unix systems)."""
+    try:
+        # Build find command to locate audio files with better error handling
+        find_cmd = [
+            'find', directory, 
+            '-type', 'f',
+            '(', '-iname', '*.mp3',
+            '-o', '-iname', '*.m4a', 
+            '-o', '-iname', '*.flac',
+            '-o', '-iname', '*.wav',
+            '-o', '-iname', '*.ogg', ')',
+            '-print0'  # Use null-terminated output to handle special characters
+        ]
+        
+        logger.info(f"Running command: {' '.join(find_cmd)}")
+        
+        # Run find command with binary output to handle null bytes
+        result = subprocess.run(
+            find_cmd,
+            capture_output=True,
+            text=False,  # Use binary mode
+            timeout=300  # 5 minute timeout
+        )
+        
+        if result.returncode != 0:
+            logger.error(f"Find command failed: {result.stderr.decode('utf-8', errors='replace')}")
+            return
+        
+        # Process null-terminated output
+        output = result.stdout.decode('utf-8', errors='replace')
+        files = output.split('\0')
+        
+        logger.info(f"Find command found {len(files)} potential audio files")
+        
+        count = 0
+        for filepath in files:
+            if not filepath.strip():
+                continue
+                
+            logger.debug(f"Checking file: {filepath}")
+            
+            if is_audio_file(filepath):
+                logger.debug(f"Confirmed audio file: {filepath}")
+                yield filepath
+                count += 1
+                
+                # Stop if we've reached the limit
+                if limit and count >= limit:
+                    logger.info(f"Reached limit of {limit} files, stopping scan")
+                    return
+        
+        logger.info(f"Unix scan complete: {len(files)} total files, {count} audio files found")
+        
+    except subprocess.TimeoutExpired:
+        logger.error("Find command timed out")
+        return
+    except Exception as e:
+        logger.error(f"Find command failed: {e}")
         return
 
 def format_size(bytes_size):
