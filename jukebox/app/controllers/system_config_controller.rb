@@ -50,7 +50,7 @@ class SystemConfigController < ApplicationController
     @all_playlists = ArchivePlaylist.by_name
     @selected_ids = JukeboxSelectedPlaylist.pluck(:playlist_id)
     if request.post?
-      ids = Array(params[:playlist_ids]).map(&:to_i).uniq
+      ids = Array(params[:playlist_ids]).uniq  # Keep as UUIDs, don't convert to integers
       JukeboxSelectedPlaylist.delete_all
       ids.each { |pid| JukeboxSelectedPlaylist.create!(playlist_id: pid) }
       redirect_to system_random_sources_path, notice: 'Random sources updated'

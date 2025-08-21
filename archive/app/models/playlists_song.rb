@@ -19,8 +19,11 @@ class PlaylistsSong < ApplicationRecord
   def reorder_to_position(new_position)
     return if new_position == position
     
-    # Get all songs in this playlist
-    playlist_items = playlist.playlists_songs.where.not(id: id).ordered
+    # Get all songs in this playlist (excluding current song using composite key)
+    playlist_items = playlist.playlists_songs.where.not(
+      playlist_id: playlist_id, 
+      song_id: song_id
+    ).ordered
     
     if new_position > position
       # Moving down - shift items between old and new position up
@@ -32,15 +35,23 @@ class PlaylistsSong < ApplicationRecord
                    .update_all("position = position + 1")
     end
     
-    update!(position: new_position)
+    # Use raw SQL to avoid primary key issues
+    PlaylistsSong.where(playlist_id: playlist_id, song_id: song_id)
+                 .update_all(position: new_position)
   end
   
   private
   
   def renumber_playlist
     # Renumber all songs in the playlist to ensure sequential ordering
+    # Since this table has no primary key, we need to use a more explicit approach
     playlist.playlists_songs.ordered.each_with_index do |item, index|
-      item.update_column(:position, index + 1) unless item.position == index + 1
+      new_position = index + 1
+      unless item.position == new_position
+        # Use raw SQL to avoid primary key issues
+        PlaylistsSong.where(playlist_id: item.playlist_id, song_id: item.song_id)
+                     .update_all(position: new_position)
+      end
     end
   end
 end 
