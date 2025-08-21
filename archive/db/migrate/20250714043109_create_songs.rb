@@ -1,8 +1,8 @@
 class CreateSongs < ActiveRecord::Migration[8.0]
   def change
-    create_table :songs do |t|
+    create_table :songs, id: :uuid, default: -> { 'gen_random_uuid()' } do |t|
       t.string :title, null: false
-      t.references :album, null: false, foreign_key: true
+      t.references :album, null: false, foreign_key: true, type: :uuid
       t.integer :track_number
       t.integer :duration
       t.string :file_format

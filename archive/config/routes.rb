@@ -52,6 +52,7 @@ Rails.application.routes.draw do
   get '/login', to: 'sessions#new', as: :login
   post '/login', to: 'sessions#create'
   delete '/logout', to: 'sessions#destroy', as: :logout
+  get '/logout', to: 'sessions#destroy'  # Allow GET for easier logout
   
   # User management routes (admin only)
   resources :users, except: [:show] do

@@ -1,6 +1,6 @@
 class CreateArtists < ActiveRecord::Migration[8.0]
   def change
-    create_table :artists do |t|
+    create_table :artists, id: :uuid, default: -> { 'gen_random_uuid()' } do |t|
       t.string :name, null: false
       t.text :biography
       t.string :country

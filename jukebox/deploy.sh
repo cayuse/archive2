@@ -62,6 +62,11 @@ fi
 # Check for Archive dependencies (network only)
 print_status "Assuming Archive DB/Redis are reachable on the shared docker network (db/redis)."
 
+# Optional: Force database setup
+if [ "${FORCE_DB_SETUP:-false}" = "true" ]; then
+    print_status "FORCE_DB_SETUP is enabled - will recreate database"
+fi
+
 if [ -z "$POSTGRES_PASSWORD" ]; then
     print_error "POSTGRES_PASSWORD not set"
     exit 1
@@ -92,6 +97,17 @@ print_status "  Storage: $HOST_STORAGE_PATH"
 # Build and start services
 print_status "Building and starting Jukebox services..."
 docker compose up -d --build
+
+# One-time database setup on first deploy when jukebox tables don't exist
+print_status "Checking jukebox table initialization status..."
+JUKEBOX_READY=$(docker compose exec -T jukebox bash -lc "bin/rails runner \"puts ActiveRecord::Base.connection.table_exists?('jukebox_played_songs')\"" 2>/dev/null) || JUKEBOX_READY="false"
+
+if [ "${FORCE_DB_SETUP:-false}" = "true" ] || [ "$JUKEBOX_READY" != "true" ]; then
+  print_status "Running jukebox database setup (create/migrate)"
+  docker compose exec -T jukebox bash -lc './bin/rails db:migrate'
+else
+  print_status "Jukebox tables already exist. Skipping setup. (Set FORCE_DB_SETUP=true to override)"
+fi
 
 # Wait for services to be ready
 print_status "Waiting for services to be ready..."

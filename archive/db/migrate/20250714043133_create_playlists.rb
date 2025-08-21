@@ -1,8 +1,8 @@
 class CreatePlaylists < ActiveRecord::Migration[8.0]
   def change
-    create_table :playlists do |t|
+    create_table :playlists, id: :uuid, default: -> { 'gen_random_uuid()' } do |t|
       t.string :name, null: false
-      t.references :user, null: false, foreign_key: true
+      t.references :user, null: false, foreign_key: true, type: :uuid
       t.text :description
       t.boolean :is_public, default: false, null: false
 

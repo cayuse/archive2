@@ -10,7 +10,7 @@
 #   config.schema = {
 #     # Core music metadata tables
 #     songs: {
-#       id: :integer,
+#       id: :uuid,
 #       title: :string,
 #       artist: :string,
 #       album: :string,
@@ -27,7 +27,7 @@
 #     },
 #     
 #     artists: {
-#       id: :integer,
+#       id: :uuid,
 #       name: :string,
 #       bio: :text,
 #       created_at: :datetime,
@@ -35,9 +35,9 @@
 #     },
 #     
 #     albums: {
-#       id: :integer,
+#       id: :uuid,
 #       title: :string,
-#       artist_id: :integer,
+#       artist_id: :uuid,
 #       year: :integer,
 #       genre: :string,
 #       cover_art_path: :string,
@@ -46,7 +46,7 @@
 #     },
 #     
 #     genres: {
-#       id: :integer,
+#       id: :uuid,
 #       name: :string,
 #       description: :text,
 #       created_at: :datetime,
@@ -54,26 +54,26 @@
 #     },
 #     
 #     playlists: {
-#       id: :integer,
+#       id: :uuid,
 #       name: :string,
 #       description: :text,
-#       user_id: :integer,
+#       user_id: :uuid,
 #       is_public: :boolean,
 #       created_at: :datetime,
 #       updated_at: :datetime
 #     },
 #     
 #     playlist_songs: {
-#       id: :integer,
-#       playlist_id: :integer,
-#       song_id: :integer,
+#       id: :uuid,
+#       playlist_id: :uuid,
+#       song_id: :uuid,
 #       position: :integer,
 #       created_at: :datetime,
 #       updated_at: :datetime
 #     },
 #     
 #     users: {
-#       id: :integer,
+#       id: :uuid,
 #       name: :string,
 #       email: :string,
 #       role: :string,

@@ -1,8 +1,8 @@
 class CreateSyncChanges < ActiveRecord::Migration[8.0]
   def change
-    create_table :sync_changes do |t|
+    create_table :sync_changes, id: :uuid, default: -> { 'gen_random_uuid()' } do |t|
       t.string :table_name, null: false
-      t.integer :record_id, null: false
+      t.string :record_id, null: false
       t.string :change_type, null: false
       t.jsonb :change_data
       t.timestamp :applied_at

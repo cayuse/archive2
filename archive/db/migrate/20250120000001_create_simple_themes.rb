@@ -1,6 +1,6 @@
 class CreateSimpleThemes < ActiveRecord::Migration[8.0]
   def change
-    create_table :themes do |t|
+    create_table :themes, id: :uuid, default: -> { 'gen_random_uuid()' } do |t|
       t.string :name, null: false, index: { unique: true }
       t.string :display_name, null: false
       t.text :description
@@ -34,8 +34,8 @@ class CreateSimpleThemes < ActiveRecord::Migration[8.0]
       t.timestamps
     end
 
-    create_table :theme_assets do |t|
-      t.references :theme, null: false, foreign_key: { on_delete: :cascade }
+    create_table :theme_assets, id: :uuid, default: -> { 'gen_random_uuid()' } do |t|
+      t.references :theme, null: false, foreign_key: { on_delete: :cascade }, type: :uuid
       t.string :asset_type, null: false # 'icon', 'image', 'logo'
       t.string :filename, null: false
       t.string :display_name, null: false
@@ -50,10 +50,6 @@ class CreateSimpleThemes < ActiveRecord::Migration[8.0]
       t.index [:theme_id, :asset_type, :filename], unique: true
     end
 
-    # Create default theme (without PowerSync for now)
-    execute <<-SQL
-      INSERT INTO themes (name, display_name, description, is_default, is_active, created_at, updated_at)
-      VALUES ('default', 'Default Theme', 'The default dark theme for the archive', true, true, NOW(), NOW())
-    SQL
+    # Theme creation moved to seeds.rb for cleaner management
   end
 end 

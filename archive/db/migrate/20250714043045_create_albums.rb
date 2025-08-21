@@ -1,8 +1,8 @@
 class CreateAlbums < ActiveRecord::Migration[8.0]
   def change
-    create_table :albums do |t|
+    create_table :albums, id: :uuid, default: -> { 'gen_random_uuid()' } do |t|
       t.string :title, null: false
-      t.references :artist, null: false, foreign_key: true
+      t.references :artist, null: false, foreign_key: true, type: :uuid
       t.date :release_date
       t.text :description
       t.string :cover_image_url

@@ -1,6 +1,6 @@
 class CreateGenres < ActiveRecord::Migration[8.0]
   def change
-    create_table :genres do |t|
+    create_table :genres, id: :uuid, default: -> { 'gen_random_uuid()' } do |t|
       t.string :name, null: false
       t.text :description
       t.string :color

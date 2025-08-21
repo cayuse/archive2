@@ -1,6 +1,6 @@
 class CreateSlaveKeys < ActiveRecord::Migration[8.0]
   def change
-    create_table :slave_keys do |t|
+    create_table :slave_keys, id: :uuid, default: -> { 'gen_random_uuid()' } do |t|
       t.string :name, null: false
       t.string :key_hash, null: false
       t.string :node_id, null: false

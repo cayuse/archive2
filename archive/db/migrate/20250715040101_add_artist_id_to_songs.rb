@@ -1,6 +1,6 @@
 class AddArtistIdToSongs < ActiveRecord::Migration[8.0]
   def change
-    add_reference :songs, :artist, null: true, foreign_key: true
+    add_reference :songs, :artist, null: true, foreign_key: true, type: :uuid
     
     # Populate artist_id from existing album relationships
     reversible do |dir|

@@ -5,7 +5,7 @@
 This system consists of two applications with a shared architecture:
 
 1. **Archive** - Central music repository with PostgreSQL, Redis, and storage
-2. **Jukebox** - Music player that connects to Archive's services
+2. **Jukebox** - Music player interface that connects to Archive's services
 
 Archive must be deployed first, as Jukebox depends on its PostgreSQL database, Redis, and storage.
 Both applications use Docker containers with Apache2 as a reverse proxy.
@@ -41,13 +41,10 @@ Both applications use Docker containers with Apache2 as a reverse proxy.
     ┌─────────────┴─────────────┐
     │      Docker Compose       │
     │                           │
-    │  ┌─────────┐ ┌─────────┐  │
-    │  │ Jukebox │ │   MPD   │  │
-    │  │ :3001   │ │ :6600   │  │
-    │  └─────────┘ └─────────┘  │
-    │  ┌─────────────────────┐  │
-    │  │   Python Player     │  │
-    │  └─────────────────────┘  │
+    │  ┌─────────┐              │
+    │  │ Jukebox │              │
+    │  │ :3001   │              │
+    │  └─────────┘              │
     └───────────────────────────┘
                   │
     ┌─────────────┴─────────────┐
@@ -95,7 +92,7 @@ Both applications use Docker containers with Apache2 as a reverse proxy.
 
 ### Networking and SSL modes
 
-- Direct port (testing/dev): Access the app at http://SERVER_IP:3000 without a reverse proxy.
+- **Direct port (testing/dev)**: Access the app at http://SERVER_IP:3000 without a reverse proxy.
   - Recommended env for testing with an IP and HTTP:
     ```bash
 export RAILS_MASTER_KEY=...               # required
@@ -112,7 +109,7 @@ export ALLOW_ALL_HOSTS=true               # accept any Host header during testin
 docker compose up -d --build
     ```
 
-- Reverse proxy (production): Keep the container listening on 3000 and front it with Apache/Nginx on 80/443, terminating TLS.
+- **Reverse proxy (production)**: Keep the container listening on 3000 and front it with Apache/Nginx on 80/443, terminating TLS.
   - Recommended env for production behind TLS:
     ```bash
 export ARCHIVE_PORT=80                    # optional; only if you also publish host 80 → container 3000
@@ -128,10 +125,10 @@ docker compose up -d --build
 
 ### Database persistence and first-time setup
 
-- Persistence:
+- **Persistence**:
   - `POSTGRES_DATA_PATH` is the on-host directory for PostgreSQL data.
   - `HOST_STORAGE_PATH` is the on-host directory for file storage.
-- First-time DB init:
+- **First-time DB init**:
   - The `archive/deploy.sh` script checks if the DB is initialized (via `schema_migrations`). If empty, it runs `rails db:prepare` and, when `AUTO_SEED=true`, `rails db:seed`.
   - Force a re-run if needed:
     ```bash
@@ -140,10 +137,29 @@ export AUTO_SEED=true        # optional
 ./deploy.sh --production
     ```
 
+### Important: First Login After Fresh Deployment
+
+When deploying from scratch, the system creates a new admin user with a randomly generated UUID. Browsers often cache stale credentials, causing Rails to not recognize the new UUID. To resolve this:
+
+```bash
+# After successful deployment, first logout to clear any cached sessions:
+http://<your-server-ip>:3000/logout
+
+# Then visit the login page:
+http://<your-server-ip>:3000/login
+
+# This helps the system recognize the new UUID-based user account
+# Default credentials (change immediately after first login):
+# Email: admin@musicarchive.com
+# Password: admin123
+```
+
+**Note**: This step is only necessary on fresh deployments. Subsequent deployments work normally. The logout step clears browser-cached credentials that may interfere with the new UUID-based user system.
+
 ### Port mapping options
 
-- Default container port: 3000 (non-root inside the container).
-- Host port can be changed via `ARCHIVE_PORT` (e.g., 80 for convenience):
+- **Default container port**: 3000 (non-root inside the container).
+- **Host port can be changed** via `ARCHIVE_PORT` (e.g., 80 for convenience):
   ```bash
 export ARCHIVE_PORT=80
 docker compose up -d --build
@@ -151,9 +167,11 @@ docker compose up -d --build
 
 ### Security notes for production
 
-- Do not expose PostgreSQL or Redis publicly. In Compose, either remove the `ports:` block or bind to localhost only (e.g., `127.0.0.1:5432:5432`).
-- Prefer a reverse proxy on 80/443 with TLS termination. Keep the Rails container on 3000.
-- Remove the `version:` line from `docker-compose.yml` to silence Compose v2 warnings.
+- **Do not expose PostgreSQL or Redis publicly**. In Compose, either remove the `ports:` block or bind to localhost only (e.g., `127.0.0.1:5432:5432`).
+- **Prefer a reverse proxy on 80/443 with TLS termination**. Keep the Rails container on 3000.
+- **Remove the `version:` line** from `docker-compose.yml` to silence Compose v2 warnings.
+
+## Deployment Workflow
 
 ### Option 1: Deploy Archive Only
 ```bash
@@ -180,7 +198,6 @@ cd ../jukebox
 export RAILS_MASTER_KEY=your_master_key_here
 export POSTGRES_PASSWORD=your_secure_password
 export HOST_STORAGE_PATH=/abs/path/to/archive/storage   # must be absolute
-export ARCHIVE_SERVER_URL=http://localhost:3000         # or your archive URL
 ./deploy.sh
 ```
 
@@ -200,7 +217,7 @@ export RAILS_MASTER_KEY=your_master_key_here
 export POSTGRES_PASSWORD=your_secure_password
 export ARCHIVE_DB_HOST=archive-server-ip
 export ARCHIVE_REDIS_HOST=archive-server-ip
-export ARCHIVE_STORAGE_PATH=/path/to/shared/storage
+export HOST_STORAGE_PATH=/path/to/shared/storage
 ./deploy.sh
 ```
 
@@ -213,19 +230,25 @@ export ARCHIVE_STORAGE_PATH=/path/to/shared/storage
 - `POSTGRES_PASSWORD` - PostgreSQL password (default: password)
 - `HOST_STORAGE_PATH` - Host path for music files (default: ./storage)
 - `POSTGRES_DATA_PATH` - Host path for PostgreSQL data (default: ./postgres_data)
+- `ARCHIVE_PORT` - Host port for Archive (default: 3000 for dev, 80 for production)
+- `APP_HOST` - Domain or IP for the application
+- `APP_PROTOCOL` - Protocol (http or https)
+- `FORCE_SSL` - Force SSL redirects (default: false)
+- `ASSUME_SSL` - Assume SSL behind proxy (default: false)
+- `FORGERY_ORIGIN_CHECK` - CSRF origin checking (default: true)
+- `ALLOW_ALL_HOSTS` - Allow any Host header (default: false)
 
 ### Jukebox Required
 - `RAILS_MASTER_KEY` - Rails master key for credentials
 - `POSTGRES_PASSWORD` - Must match Archive's PostgreSQL password
 
 ### Jukebox Optional
-- `ARCHIVE_SERVER_URL` - URL of Archive server (default: http://localhost:3000)
-- `ARCHIVE_DB_HOST` - Archive database host (default: localhost)
+- `HOST_STORAGE_PATH` - Path to Archive's storage (must be absolute)
+- `ARCHIVE_DB_HOST` - Archive database host (default: db)
 - `ARCHIVE_DB_PORT` - Archive database port (default: 5432)
-- `ARCHIVE_REDIS_HOST` - Archive Redis host (default: localhost)
+- `ARCHIVE_REDIS_HOST` - Archive Redis host (default: redis)
 - `ARCHIVE_REDIS_PORT` - Archive Redis port (default: 6379)
-- `ARCHIVE_STORAGE_PATH` - Path to Archive's storage (default: ../archive/storage)
-- `JUKEBOX_CLIENT_ID` - Unique client identifier (default: jukebox-1)
+- `FORCE_DB_SETUP` - Force database recreation (default: false)
 
 ## Docker Images and Services
 
@@ -244,106 +267,11 @@ export ARCHIVE_STORAGE_PATH=/path/to/shared/storage
   - Ports: 6379 (Redis)
   - Volumes: Redis data
 
- 
-
 ### Jukebox Services
 - **jukebox** (Rails app): `ruby:3.2.5-slim`
   - Ports: 3001 (Rails)
   - Dependencies: Archive's PostgreSQL (db), Redis (redis), Archive app (archive)
   - Volumes: Logs, Archive storage (read-only, absolute path)
-
-- Host MPD (preferred): install `mpd` on the host and expose 6600 locally. No MPD container.
-
-- **jukebox-player** (Python controller): `python:3.11-slim`
-  - Purpose: Controls MPD, manages queue, communicates with Jukebox API
-  - Dependencies: Host MPD (localhost:6600), Jukebox Rails app
-  - Volumes: Logs
-  - Note: The player feeds MPD HTTP stream URLs from Jukebox only. No local caching/downloading of audio.
-
-### Host MPD setup (required for Jukebox)
-
-1) Install MPD on the host:
-   ```bash
-   sudo apt update && sudo apt install -y mpd mpc
-   ```
-2) Configure MPD to listen and use Archive storage (recommended: Unix socket):
-   - Edit `/etc/mpd.conf` and set:
-     - For Unix socket (preferred inside Docker):
-       - `bind_to_address "/run/mpd/socket"`
-       - `umask "0000"`  (or manage permissions via group/ACL instead)
-     - For TCP fallback (optional):
-       - `bind_to_address "127.0.0.1"`
-       - `port "6600"`
-     - `music_directory "/abs/path/to/archive/storage"` (same as `ARCHIVE_STORAGE_PATH`)
-     - Ensure `playlist_directory`, `db_file`, `state_file`, `log_file` are writable by MPD.
-   - Optional password:
-     - Add `password "yourpass@read,add,control,admin"`
-
-   Example audio output blocks (pick one that matches your system):
-   ```
-   audio_output {
-     type  "alsa"
-     name  "ALSA Default"
-     device "default"
-     mixer_type "software"
-     enabled "yes"
-   }
-   # or PulseAudio
-   audio_output {
-     type  "pulse"
-     name  "PulseAudio"
-     mixer_type "software"
-     enabled "yes"
-   }
-   ```
-3) Permissions:
-   - MPD runs as `mpd` user by default; ensure it has read access to your music directory:
-     ```bash
-     sudo usermod -a -G $(stat -c %G /abs/path/to/archive/storage) mpd
-     sudo setfacl -R -m g:mpd:rx /abs/path/to/archive/storage
-     ```
-   - No special Docker groups are required for control.
-4) Restart MPD:
-   ```bash
-   sudo systemctl restart mpd
-   sudo systemctl status mpd --no-pager
-   mpc update
-   ```
-
-5) Verify and enable outputs (if muted/disabled):
-   ```bash
-   # For TCP host
-   mpc -h 127.0.0.1 -p 6600 outputs
-   # For Unix socket
-   mpc -h /run/mpd/socket outputs
-   # Enable first output if disabled
-   mpc -h /run/mpd/socket enable 1
-   mpc -h /run/mpd/socket volume 80
-   ```
-
-### Docker-to-host MPD connectivity
-- Option A (Unix socket, recommended):
-  - Ensure MPD writes socket at `/run/mpd/socket` and is world/group readable
-  - Compose mounts `/run/mpd:/run/mpd:ro` and sets `MPD_SOCKET=/run/mpd/socket`
-- Option B (TCP, fallback only):
-  - Ensure MPD listens on 127.0.0.1:6600 and add host gateway mapping in compose
-  - Player uses `MPD_HOST`/`MPD_PORT`, optional `MPD_PASSWORD`
-
-### Reusing Archive env flags for Jukebox (IP testing)
-- The same flags used for Archive are supported by Jukebox:
-  - `APP_HOST`, `APP_PROTOCOL`, `FORCE_SSL`, `ASSUME_SSL`, `FORGERY_ORIGIN_CHECK`, `ALLOW_ALL_HOSTS`.
-- Example (HTTP/IP testing):
-  ```bash
-  export APP_HOST=192.168.1.201
-  export APP_PROTOCOL=http
-  export FORCE_SSL=false ASSUME_SSL=false FORGERY_ORIGIN_CHECK=false ALLOW_ALL_HOSTS=true
-  # MPD (choose one)
-  export MPD_SOCKET=/run/mpd/socket                   # if using Unix socket
-  # or
-  export MPD_HOST=host.docker.internal MPD_PORT=6600  # TCP fallback
-  # optional
-  export MPD_PASSWORD=yourpass
-  ```
 
 ## Apache2 Configuration
 
@@ -441,11 +369,10 @@ docker compose up -d --build
 # Service-specific rebuilds
 docker compose build archive && docker compose up -d archive
 docker compose build jukebox && docker compose up -d jukebox
-docker compose build jukebox-player && docker compose up -d jukebox-player
 
 # Restart without rebuild (config/env change only)
 docker compose restart archive
-docker compose restart jukebox jukebox-player
+docker compose restart jukebox
 
 # Force a clean rebuild (ignore cache)
 docker compose build --no-cache jukebox && docker compose up -d jukebox
@@ -473,7 +400,6 @@ docker compose exec jukebox tar czf jukebox-backup.tar.gz /rails/storage
    sudo netstat -tlnp | grep :3001
    sudo netstat -tlnp | grep :5432
    sudo netstat -tlnp | grep :6379
-   sudo netstat -tlnp | grep :6600
    ```
 
 2. **Archive not running when deploying Jukebox**
@@ -482,57 +408,39 @@ docker compose exec jukebox tar czf jukebox-backup.tar.gz /rails/storage
    curl -f http://localhost:3000/up
    
    # If Archive is down, start it first
-cd archive && docker compose up -d
+   cd archive && docker compose up -d
    ```
 
 3. **Database connection issues**
    ```bash
    # Check PostgreSQL logs
-cd archive && docker compose logs db
+   cd archive && docker compose logs db
    
    # Verify connection from Jukebox
-cd jukebox && docker compose exec jukebox rails console
+   cd jukebox && docker compose exec jukebox rails console
    # In console: ActiveRecord::Base.connection.execute("SELECT 1")
    ```
 
 4. **Redis connection issues**
    ```bash
    # Check Redis logs
-cd archive && docker compose logs redis
+   cd archive && docker compose logs redis
    
    # Verify connection from Jukebox
-cd jukebox && docker compose exec jukebox rails console
+   cd jukebox && docker compose exec jukebox rails console
    # In console: Redis.new.ping
    ```
 
 5. **Storage access issues**
    ```bash
    # Check if storage is mounted correctly
-cd jukebox && docker compose exec jukebox ls -la /rails/storage
+   cd jukebox && docker compose exec jukebox ls -la /rails/storage
    
    # Verify Archive storage path
-cd archive && docker compose exec archive ls -la /rails/storage
+   cd archive && docker compose exec archive ls -la /rails/storage
    ```
 
-6. **MPD connection issues**
-   ```bash
-   # Check MPD logs
-cd jukebox && docker compose logs mpd
-   
-   # Test MPD connection
-docker compose exec mpd mpc status
-   ```
-
-7. **Python player issues**
-   ```bash
-   # Check player logs
-cd jukebox && docker compose logs jukebox-player
-   
-   # Verify player is running
-docker compose exec jukebox-player pgrep -f player.py
-   ```
-
-8. **Apache2 configuration errors**
+6. **Apache2 configuration errors**
    ```bash
    # Test configuration
    sudo apache2ctl configtest
