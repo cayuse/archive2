@@ -40,30 +40,47 @@ class AudioFileProcessor
     }
 
     begin
-      # Ask ffprobe for format tags and stream info in JSON
+      # Use the exact ffprobe command that works
       cmd = [
-        'ffprobe', '-v', 'error',
-        '-show_entries', 'format=duration:format_tags=title,artist,album,genre,track',
+        'ffprobe', '-v', 'quiet',
         '-of', 'json',
+        '-show_entries', 'format_tags',
         @file_path
       ]
+      
       stdout, stderr, status = Open3.capture3(*cmd)
-      unless status.success?
-        Rails.logger.warn "ffprobe failed for #{@filename}: #{stderr}"
-        return file_info
+      
+      if status.success?
+        data = JSON.parse(stdout) rescue {}
+        tags = (data.dig('format', 'tags') || {})
+        
+        # Extract metadata with case-insensitive fallbacks
+        file_info[:title] = clean_string(tags['title'] || tags['TITLE'])
+        file_info[:artist] = clean_string(tags['artist'] || tags['ARTIST'])
+        file_info[:album] = clean_string(tags['album'] || tags['ALBUM'])
+        file_info[:genre] = clean_string(tags['genre'] || tags['GENRE'])
+        
+        # Handle track number from various possible tag names
+        track_tag = tags['track'] || tags['TRACK'] || tags['tracknumber'] || tags['TRACKNUMBER']
+        if track_tag
+          file_info[:track_number] = track_tag.to_s.split('/').first.to_i
+        end
+        
+        # Get duration separately since we're not showing format info
+        duration_cmd = [
+          'ffprobe', '-v', 'quiet',
+          '-of', 'json',
+          '-show_entries', 'format=duration',
+          @file_path
+        ]
+        
+        duration_stdout, duration_stderr, duration_status = Open3.capture3(*duration_cmd)
+        if duration_status.success?
+          duration_data = JSON.parse(duration_stdout) rescue {}
+          duration = duration_data.dig('format', 'duration')
+          file_info[:duration] = duration.to_f.round if duration
+        end
       end
-      data = JSON.parse(stdout) rescue {}
-      tags = (data.dig('format', 'tags') || {})
-      duration = data.dig('format', 'duration')
-
-      file_info[:title] = clean_string(tags['title']) if tags['title']
-      file_info[:artist] = clean_string(tags['artist']) if tags['artist']
-      file_info[:album] = clean_string(tags['album']) if tags['album']
-      file_info[:genre] = clean_string(tags['genre']) if tags['genre']
-      if tags['track']
-        file_info[:track_number] = tags['track'].to_s.split('/').first.to_i
-      end
-      file_info[:duration] = duration.to_f.round if duration
 
       file_info
     rescue => e
