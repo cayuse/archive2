@@ -63,21 +63,20 @@ Rails.application.configure do
   # Set default URL options for Active Storage
   config.active_storage.default_url_options = { host: app_host, protocol: app_proto }
 
-  # Configure email delivery for production using SMTP
+  # Configure email delivery for production using AWS SES SMTP
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.perform_deliveries = true
   config.action_mailer.raise_delivery_errors = true
 
-  # SMTP configuration for direct email delivery
+  # AWS SES SMTP configuration
   config.action_mailer.smtp_settings = {
-    address: ENV.fetch("SMTP_HOST", "localhost"),
-    port: ENV.fetch("SMTP_PORT", "587").to_i,
-    domain: ENV.fetch("SMTP_DOMAIN", ENV.fetch("APP_HOST", "musicarchive.com")),
-    user_name: ENV.fetch("SMTP_USERNAME", nil),
-    password: ENV.fetch("SMTP_PASSWORD", nil),
-    authentication: ENV.fetch("SMTP_AUTHENTICATION", "plain"),
-    enable_starttls_auto: ENV.fetch("SMTP_ENABLE_STARTTLS", "true") == "true",
-    openssl_verify_mode: ENV.fetch("SMTP_OPENSSL_VERIFY_MODE", "none")
+    address: ENV.fetch("AWS_SES_SMTP_HOST", "email-smtp.us-east-2.amazonaws.com"),
+    port: ENV.fetch("AWS_SES_SMTP_PORT", "587").to_i,
+    domain: ENV.fetch("AWS_SES_SMTP_DOMAIN", "cavaforge.net"),
+    user_name: ENV.fetch("AWS_SES_SMTP_USERNAME", "dummy_username_for_build"),
+    password: ENV.fetch("AWS_SES_SMTP_PASSWORD", "dummy_password_for_build"),
+    authentication: :login,
+    enable_starttls_auto: true
   }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to

@@ -69,14 +69,13 @@ services:
       # Storage configuration
       STORAGE_ROOT: ${STORAGE_ROOT:-/rails/storage}
       ACTIVE_STORAGE_SERVICE: ${ACTIVE_STORAGE_SERVICE:-local}
-      # SMTP configuration for email delivery
-      SMTP_HOST: ${SMTP_HOST:-localhost}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_DOMAIN: ${SMTP_DOMAIN:-${APP_HOST:-musicarchive.com}}
-      SMTP_USERNAME: ${SMTP_USERNAME}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
-      SMTP_AUTHENTICATION: ${SMTP_AUTHENTICATION:-plain}
-      SMTP_ENABLE_STARTTLS: ${SMTP_ENABLE_STARTTLS:-true}
+      # AWS SES SMTP configuration for email delivery
+      AWS_SES_SMTP_HOST: ${AWS_SES_SMTP_HOST:-email-smtp.us-east-2.amazonaws.com}
+      AWS_SES_SMTP_PORT: ${AWS_SES_SMTP_PORT:-587}
+      AWS_SES_SMTP_DOMAIN: ${AWS_SES_SMTP_DOMAIN:-cavaforge.net}
+      AWS_SES_SMTP_USERNAME: ${AWS_SES_SMTP_USERNAME}
+      AWS_SES_SMTP_PASSWORD: ${AWS_SES_SMTP_PASSWORD}
+      MAILER_FROM_EMAIL: ${MAILER_FROM_EMAIL:-noreply@cavaforge.net}
     ports:
       - "${ARCHIVE_PORT:-3000}:3000"
     volumes:

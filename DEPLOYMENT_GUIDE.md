@@ -112,16 +112,63 @@ docker compose up -d --build
 - **Reverse proxy (production)**: Keep the container listening on 3000 and front it with Apache/Nginx on 80/443, terminating TLS.
   - Recommended env for production behind TLS:
     ```bash
-export ARCHIVE_PORT=80                    # optional; only if you also publish host 80 → container 3000
-export APP_HOST=archive.yourdomain.com
-export APP_PROTOCOL=https
-export FORCE_SSL=true
-export ASSUME_SSL=true
-export FORGERY_ORIGIN_CHECK=true
-export ALLOW_ALL_HOSTS=false
+export RAILS_MASTER_KEY=...               # required
+export POSTGRES_PASSWORD=...              # required
+export HOST_STORAGE_PATH=/abs/path/storage
+export POSTGRES_DATA_PATH=/abs/path/pg
+export ARCHIVE_PORT=3000                  # keep container on 3000, nginx proxies 80/443
+export APP_HOST=archive.yourdomain.com    # your actual domain
+export APP_PROTOCOL=https                 # use HTTPS
+export FORCE_SSL=true                     # redirect HTTP to HTTPS
+export ASSUME_SSL=true                    # assume SSL behind nginx
+export FORGERY_ORIGIN_CHECK=true          # enable CSRF protection
+export ALLOW_ALL_HOSTS=false              # only accept your domain
+export AWS_SES_SMTP_USERNAME=...          # AWS SES credentials
+export AWS_SES_SMTP_PASSWORD=...
 docker compose up -d --build
     ```
-  - See Apache/Nginx examples below; point the proxy to http://127.0.0.1:3000.
+  - **Nginx Configuration**: Create `/etc/nginx/sites-available/archive.yourdomain.com`:
+    ```nginx
+    server {
+        listen 80;
+        server_name archive.yourdomain.com;
+        return 301 https://$server_name$request_uri;
+    }
+    
+    server {
+        listen 443 ssl http2;
+        server_name archive.yourdomain.com;
+        
+        ssl_certificate /etc/letsencrypt/live/archive.yourdomain.com/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/archive.yourdomain.com/privkey.pem;
+        
+        location / {
+            proxy_pass http://127.0.0.1:3000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+    ```
+  - **Let's Encrypt Setup**:
+    ```bash
+    # Install certbot
+    sudo apt install certbot python3-certbot-nginx
+    
+    # Get initial certificate
+    sudo certbot --nginx -d archive.yourdomain.com
+    
+    # Auto-renewal (add to crontab)
+    sudo crontab -e
+    # Add: 0 12 * * * /usr/bin/certbot renew --quiet
+    ```
+  - **Enable the site**:
+    ```bash
+    sudo ln -s /etc/nginx/sites-available/archive.yourdomain.com /etc/nginx/sites-enabled/
+    sudo nginx -t
+    sudo systemctl reload nginx
+    ```
 
 ### Database persistence and first-time setup
 
@@ -150,7 +197,7 @@ http://<your-server-ip>:3000/login
 
 # This helps the system recognize the new UUID-based user account
 # Default credentials (change immediately after first login):
-# Email: admin@musicarchive.com
+# Email: admin@cavaforge.net
 # Password: admin123
 ```
 
@@ -237,6 +284,132 @@ export HOST_STORAGE_PATH=/path/to/shared/storage
 - `ASSUME_SSL` - Assume SSL behind proxy (default: false)
 - `FORGERY_ORIGIN_CHECK` - CSRF origin checking (default: true)
 - `ALLOW_ALL_HOSTS` - Allow any Host header (default: false)
+
+## Email Configuration
+
+### AWS SES Setup
+
+The Archive application is configured to use AWS SES (Simple Email Service) for sending emails. This includes welcome emails for new users and other system notifications.
+
+#### Required AWS SES Environment Variables
+
+```bash
+# AWS SES SMTP Credentials (Required)
+export AWS_SES_SMTP_USERNAME="your_aws_ses_smtp_username"
+export AWS_SES_SMTP_PASSWORD="your_aws_ses_smtp_password"
+
+# Optional AWS SES Configuration (have sensible defaults)
+export AWS_SES_SMTP_HOST="email-smtp.us-east-2.amazonaws.com"
+export AWS_SES_SMTP_PORT="587"
+export AWS_SES_SMTP_DOMAIN="cavaforge.net"
+export MAILER_FROM_EMAIL="noreply@cavaforge.net"
+```
+
+#### Setting Environment Variables
+
+**Option 1: Export in your shell before deployment:**
+```bash
+export AWS_SES_SMTP_USERNAME="your_username"
+export AWS_SES_SMTP_PASSWORD="your_password"
+cd archive
+./deploy.sh
+```
+
+**Option 2: Create a `.env` file in the archive directory:**
+```bash
+# archive/.env
+AWS_SES_SMTP_USERNAME=your_aws_ses_smtp_username
+AWS_SES_SMTP_PASSWORD=your_aws_ses_smtp_password
+```
+
+**Option 3: Pass directly to docker-compose:**
+```bash
+AWS_SES_SMTP_USERNAME=your_username AWS_SES_SMTP_PASSWORD=your_password docker compose up -d
+```
+
+#### Email Features Enabled
+
+- **Welcome Emails**: Automatically sent when administrators create new user accounts
+- **Professional Templates**: HTML email templates with CavaForge branding
+- **AWS SES Delivery**: High deliverability and professional email service
+- **From Address**: `noreply@cavaforge.net` (configurable via `MAILER_FROM_EMAIL`)
+
+#### Testing Email Configuration
+
+After deployment, test the email system by:
+1. Creating a new user account through the admin interface
+2. Checking if the welcome email is sent successfully
+3. Verifying the email comes from `noreply@cavaforge.net`
+4. Checking AWS SES console for delivery status
+
+## Credentials Management
+
+### Generating New Credentials from Scratch
+
+When cloning a fresh repository that doesn't have `credentials.yml.enc` or `master.key`, you'll need to generate new Rails credentials. This can be done using Docker without installing Rails locally.
+
+#### Option 1: Using Docker Container (Recommended)
+
+```bash
+# Navigate to archive directory
+cd archive
+
+# Create a temporary container with Rails
+docker run --rm -it -v $(pwd):/app -w /app ruby:3.2.5-slim bash
+
+# Inside the container, install Rails and generate credentials
+apt-get update && apt-get install -y build-essential
+gem install rails
+
+# Bundle install is required because Rails demands it with existing Gemfile
+bundle install
+
+# Generate new credentials (this will show you the master key)
+rails credentials:edit
+
+# After generation, you'll see the master key (32 characters)
+# Example: abc123def456ghi789jkl012mno345pqr678stu901vwx234yz567890
+
+# Set the master key and edit credentials
+export RAILS_MASTER_KEY=<paste_the_32_character_key_here>
+VISUAL="code --wait" bin/rails credentials:edit
+```
+
+#### Option 2: Using Existing Docker Compose
+
+If you already have the Docker setup working:
+
+```bash
+# Build the image first
+docker compose build
+
+# Generate new credentials
+docker compose run --rm archive rails credentials:edit
+```
+
+#### What This Generates
+
+1. **`master.key`** - 32-character random key (add to `.gitignore`)
+2. **`credentials.yml.enc`** - Encrypted credentials file (safe to commit)
+
+#### Important Notes
+
+- **Bundle install is required** after `gem install rails` due to existing Gemfile
+- **Two-step process**: First generate, then set master key and edit
+- **Master key must be kept secure** and never committed to Git
+- **Set `RAILS_MASTER_KEY`** environment variable to the generated key
+
+#### After Generation
+
+1. **Copy the master key** from the first command output
+2. **Set it as environment variable** for your deployment
+3. **Edit credentials** to add your configuration (AWS SES, etc.)
+4. **Commit `credentials.yml.enc`** to Git
+5. **Never commit `master.key`** (should be in `.gitignore`)
+
+
+This procedure should also be done in the jukebox folder if you are going to deploy a jukebox
+
 
 ### Jukebox Required
 - `RAILS_MASTER_KEY` - Rails master key for credentials
