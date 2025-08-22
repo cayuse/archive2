@@ -70,6 +70,12 @@ Examples:
 
     # Show detailed error report
     python3 universal_upload.py ~/Music --show-errors-verbose
+
+    # Note: If your password contains special characters (like dashes), use single quotes:
+    # python3 universal_upload.py ~/Music --username user@example.com --password '--ComplexPassword123'
+    
+    # Alternative: Omit --password to enter password interactively (recommended for complex passwords):
+    # python3 universal_upload.py ~/Music --username user@example.com
 """
 
 import os
@@ -530,7 +536,7 @@ def main():
     # Authentication
     parser.add_argument("--url", default=DEFAULT_API_URL, help=f"Base URL of the archive (default: {DEFAULT_API_URL})")
     parser.add_argument("--username", help="Username/email for authentication")
-    parser.add_argument("--password", help="Password for authentication")
+    parser.add_argument("--password", nargs='?', const='', help="Password for authentication (use single quotes if password contains special characters, or omit to enter interactively)")
     
     # Other options
     parser.add_argument("-d", "--dry-run", action="store_true", help="Show what would be uploaded without actually uploading")
@@ -581,6 +587,11 @@ def main():
         username = input("Username/Email: ").strip()
     
     if not password:
+        print("Password not provided via command line. Entering interactive mode...")
+        password = getpass.getpass("Password: ").strip()
+    elif password == '':
+        # This happens when --password is used without a value
+        print("Password argument provided but empty. Entering interactive mode...")
         password = getpass.getpass("Password: ").strip()
     
     if not username or not password:
