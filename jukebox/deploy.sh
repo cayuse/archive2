@@ -121,53 +121,19 @@ else
     exit 1
 fi
 
-# Apache2 setup
-print_status "Setting up Apache2 configuration..."
-
-# Check if Apache2 is installed
-if ! command -v apache2ctl >/dev/null 2>&1; then
-    print_warning "Apache2 not installed. Installing..."
-    sudo apt update
-    sudo apt install -y apache2 libapache2-mod-proxy-html
-fi
-
-# Enable required Apache2 modules
-print_status "Enabling Apache2 modules..."
-sudo a2enmod proxy
-sudo a2enmod proxy_http
-sudo a2enmod headers
-sudo a2enmod deflate
-sudo a2enmod expires
-
-# Copy Apache2 configuration
-print_status "Installing Apache2 configuration..."
-sudo cp apache2-jukebox.conf /etc/apache2/sites-available/jukebox.conf
-
-# Enable the site
-sudo a2ensite jukebox
-
-# Test Apache2 configuration
-if sudo apache2ctl configtest; then
-    print_success "Apache2 configuration is valid"
-else
-    print_error "Apache2 configuration has errors"
-    exit 1
-fi
-
-# Restart Apache2
-print_status "Restarting Apache2..."
-sudo systemctl restart apache2
-
 print_success "Jukebox deployment completed!"
 echo ""
 print_status "Next steps:"
-echo "1. Update your DNS to point jukebox.yourdomain.com to this server"
-echo "2. Configure SSL certificates for HTTPS"
-echo "3. Access your jukebox at: http://jukebox.yourdomain.com"
-echo "4. Ensure Archive services (db/redis) are reachable on the shared docker network"
+echo "1. Configure your reverse proxy (nginx/Apache) to proxy 80/443 → 3001"
+echo "2. Set up SSL certificates (Let's Encrypt recommended)"
+echo "3. Configure your domain DNS to point to this server"
+echo "4. Access your jukebox at: http://localhost:3001"
+echo "5. Ensure Archive services (db/redis) are reachable on the shared docker network"
 echo ""
 print_status "Useful commands:"
 echo "- View logs: docker compose logs -f"
 echo "- Stop services: docker compose down"
 echo "- Update: git pull && docker compose up -d --build"
-echo "- Check sync status: curl http://localhost:3001/api/jukebox/sync" 
+echo "- Check sync status: curl http://localhost:3001/api/jukebox/sync"
+echo ""
+print_status "For production deployment with nginx/SSL, see DEPLOYMENT_GUIDE.md" 

@@ -91,31 +91,22 @@ if [ -z "$ARCHIVE_PORT" ]; then
 fi
 
 # Optional: Set SMTP configuration for email delivery
-if [ -z "$SMTP_HOST" ]; then
-    print_warning "SMTP_HOST not set, using default 'localhost'"
-    export SMTP_HOST=localhost
-fi
-
-if [ -z "$SMTP_PORT" ]; then
-    print_warning "SMTP_PORT not set, using default '587'"
-    export SMTP_PORT=587
-fi
-
-if [ -z "$SMTP_DOMAIN" ]; then
-    if [ -n "$APP_HOST" ]; then
-        export SMTP_DOMAIN="$APP_HOST"
-        print_status "Using APP_HOST as SMTP_DOMAIN: $SMTP_DOMAIN"
-    else
-        print_warning "SMTP_DOMAIN not set, using default 'musicarchive.com'"
-        export SMTP_DOMAIN=musicarchive.com
-    fi
-fi
-
-# Note: SMTP_USERNAME and SMTP_PASSWORD are optional (for unauthenticated SMTP)
-if [ -n "$SMTP_USERNAME" ] && [ -n "$SMTP_PASSWORD" ]; then
-    print_status "SMTP authentication enabled with username: $SMTP_USERNAME"
+if [ -z "$AWS_SES_SMTP_USERNAME" ] || [ -z "$AWS_SES_SMTP_PASSWORD" ]; then
+    print_warning "AWS SES SMTP credentials not set - email functionality will be limited"
+    print_status "Set AWS_SES_SMTP_USERNAME and AWS_SES_SMTP_PASSWORD for full email support"
 else
-    print_warning "SMTP authentication not configured - using unauthenticated SMTP"
+    print_status "AWS SES SMTP authentication configured"
+fi
+
+# Check for AWS SES domain configuration
+if [ -z "$AWS_SES_SMTP_DOMAIN" ]; then
+    if [ -n "$APP_HOST" ]; then
+        export AWS_SES_SMTP_DOMAIN="$APP_HOST"
+        print_status "Using APP_HOST as AWS_SES_SMTP_DOMAIN: $AWS_SES_SMTP_DOMAIN"
+    else
+        print_warning "AWS_SES_SMTP_DOMAIN not set, using default 'cavaforge.net'"
+        export AWS_SES_SMTP_DOMAIN=cavaforge.net
+    fi
 fi
 
 # Required: storage path must be provided (absolute path)
@@ -176,57 +167,20 @@ else
     exit 1
 fi
 
-# Apache2 setup
-print_status "Setting up Apache2 configuration..."
-
-# Check if Apache2 is installed
-if ! command -v apache2ctl >/dev/null 2>&1; then
-    print_warning "Apache2 not installed. Installing..."
-    sudo apt update
-    sudo apt install -y apache2 libapache2-mod-proxy-html
-fi
-
-# Enable required Apache2 modules
-print_status "Enabling Apache2 modules..."
-sudo a2enmod proxy
-sudo a2enmod proxy_http
-sudo a2enmod headers
-sudo a2enmod deflate
-sudo a2enmod expires
-
-# Copy Apache2 configuration
-print_status "Installing Apache2 configuration..."
-# Replace the port placeholder in the Apache config
-sed "s/\${ARCHIVE_PORT:-3000}/$ARCHIVE_PORT/g" apache2-archive.conf > /tmp/archive.conf
-sudo cp /tmp/archive.conf /etc/apache2/sites-available/archive.conf
-rm /tmp/archive.conf
-
-# Enable the site
-sudo a2ensite archive
-
-# Test Apache2 configuration
-if sudo apache2ctl configtest; then
-    print_success "Apache2 configuration is valid"
-else
-    print_error "Apache2 configuration has errors"
-    exit 1
-fi
-
-# Restart Apache2
-print_status "Restarting Apache2..."
-sudo systemctl restart apache2
-
 print_success "Archive deployment completed!"
 echo ""
 print_status "Next steps:"
-echo "1. Update your DNS to point archive.yourdomain.com to this server"
-echo "2. Configure SSL certificates for HTTPS"
-echo "3. Access your archive at: http://archive.yourdomain.com"
-echo "4. Default admin login: admin@musicarchive.com / admin123"
+echo "1. Configure your reverse proxy (nginx/Apache) to proxy 80/443 → ${ARCHIVE_PORT}"
+echo "2. Set up SSL certificates (Let's Encrypt recommended)"
+echo "3. Configure your domain DNS to point to this server"
+echo "4. Access your archive at: http://localhost:${ARCHIVE_PORT}"
+echo "5. Default admin login: admin@cavaforge.net / admin123"
 echo ""
 print_warning "IMPORTANT: Change the default admin password immediately!"
 echo ""
 print_status "Useful commands:"
 echo "- View logs: docker compose logs -f"
 echo "- Stop services: docker compose down"
-echo "- Update: git pull && docker compose up -d --build" 
+echo "- Update: git pull && docker compose up -d --build"
+echo ""
+print_status "For production deployment with nginx/SSL, see DEPLOYMENT_GUIDE.md" 
