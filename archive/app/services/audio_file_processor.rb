@@ -10,14 +10,8 @@ class AudioFileProcessor
   end
 
   def process
-    # Try to extract metadata using ffprobe first
+    # Extract metadata using ffprobe only
     metadata = extract_metadata_with_ffprobe
-
-    # If no metadata found, fall back to filename parsing
-    if metadata[:title].blank? && metadata[:artist].blank?
-      filename_metadata = extract_metadata_from_filename
-      metadata.merge!(filename_metadata)
-    end
 
     metadata
   rescue => e

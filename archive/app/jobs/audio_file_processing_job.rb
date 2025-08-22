@@ -36,30 +36,30 @@ class AudioFileProcessingJob < ApplicationJob
         return
       end
       
-      # Update song with extracted metadata (only fill NULL fields)
+      # Update song with extracted metadata (always use extracted metadata when available)
       updates = {}
       
-      # Basic metadata - only fill if currently NULL
-      updates[:title] = metadata[:title] if metadata[:title].present? && song.title.blank?
-      updates[:track_number] = metadata[:track_number] if metadata[:track_number].present? && song.track_number.blank?
-      updates[:duration] = metadata[:duration] if metadata[:duration].present? && song.duration.blank?
-      updates[:file_format] = metadata[:file_format] if metadata[:file_format].present? && song.file_format.blank?
-      updates[:file_size] = metadata[:file_size] if metadata[:file_size].present? && song.file_size.blank?
+      # Basic metadata - always use extracted metadata when available
+      updates[:title] = metadata[:title] if metadata[:title].present?
+      updates[:track_number] = metadata[:track_number] if metadata[:track_number].present?
+      updates[:duration] = metadata[:duration] if metadata[:duration].present?
+      updates[:file_format] = metadata[:file_format] if metadata[:file_format].present?
+      updates[:file_size] = metadata[:file_size] if metadata[:file_size].present?
       
-      # Handle artist - only fill if currently NULL
-      if metadata[:artist].present? && song.artist.blank?
+      # Handle artist - always use extracted metadata when available
+      if metadata[:artist].present?
         artist = Artist.find_or_create_by(name: metadata[:artist])
         updates[:artist_id] = artist.id
       end
       
-      # Handle album - only fill if currently NULL
-      if metadata[:album].present? && song.album.blank?
+      # Handle album - always use extracted metadata when available
+      if metadata[:album].present?
         album = Album.find_or_create_by(title: metadata[:album])
         updates[:album_id] = album.id
       end
       
-      # Handle genre - only fill if currently NULL
-      if metadata[:genre].present? && song.genre.blank?
+      # Handle genre - always use extracted metadata when available
+      if metadata[:genre].present?
         genre = Genre.find_or_create_by(name: metadata[:genre])
         updates[:genre_id] = genre.id
       end
