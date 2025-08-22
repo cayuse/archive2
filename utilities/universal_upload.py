@@ -447,10 +447,10 @@ def upload_file_universal(filepath, api_url, api_key, dry_run=False, verbose=Fal
         files = {"audio_file": (filename, open(normalized_path, "rb"), mime_type or "application/octet-stream")}
         data = {"filename": filename}
         
-        # Extract metadata from filename
-        metadata = extract_metadata_from_filename(filename)
-        if metadata:
-            data.update(metadata)
+        # Extract metadata from filename - DISABLED to let Rails extract correct metadata from audio tags
+        # metadata = extract_metadata_from_filename(filename)
+        # if metadata:
+        #     data.update(metadata)
         
         response = requests.post(url, headers=headers, files=files, data=data, timeout=60)
         
