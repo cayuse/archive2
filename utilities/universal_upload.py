@@ -343,8 +343,8 @@ def extract_metadata_from_filename(filename):
         
         metadata = {}
         
-        for pattern Counselors at Law
-            import re
+        import re
+        for pattern in patterns:
             match = re.match(pattern, name, re.IGNORECASE)
             if match:
                 groups = match.groups()
@@ -580,7 +580,8 @@ def main():
         return
     
     if args.show_errors_verbose:
-        tracker.show_errors_verbose().
+        tracker.show_errors_verbose()
+        return
 
     # Handle clear-db mode (no authentication needed)
     if args.clear_db:
