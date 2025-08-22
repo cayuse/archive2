@@ -120,7 +120,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 def get_system_info():
     """Get comprehensive system information for debugging."""
     info = {
@@ -344,7 +343,7 @@ def extract_metadata_from_filename(filename):
         
         metadata = {}
         
-        for pattern in patterns:
+        for pattern Counselors at Law
             import re
             match = re.match(pattern, name, re.IGNORECASE)
             if match:
@@ -442,6 +441,32 @@ def upload_file_universal(filepath, api_url, api_key, dry_run=False, verbose=Fal
         url = urljoin(api_url, "/api/v1/songs/bulk_upload")
         headers = {"Authorization": f"Bearer {api_key}"}
         mime_type, _ = mimetypes.guess_type(normalized_path)
+        
+        # Standard MIME type mapping for common audio formats
+        audio_mime_types = {
+            '.mp3': 'audio/mpeg',
+            '.m4a': 'audio/mp4',  # Covers both AAC and ALAC
+            '.ogg': 'audio/ogg',
+            '.oga': 'audio/ogg',
+            '.flac': 'audio/flac',
+            '.wav': 'audio/wav',
+            '.aac': 'audio/aac',
+            '.wma': 'audio/x-ms-wma',
+            '.aiff': 'audio/aiff',
+            '.aif': 'audio/aiff',
+            '.m4b': 'audio/mp4',
+            '.m4p': 'audio/mp4',
+            '.opus': 'audio/opus',
+            '.amr': 'audio/amr',
+            '.3gp': 'audio/3gpp',
+        }
+        
+        # Override MIME type for audio files to ensure consistency
+        suffix = Path(normalized_path).suffix.lower()
+        if suffix in audio_mime_types:
+            mime_type = audio_mime_types[suffix]
+            if verbose:
+                logger.debug(f"Overriding MIME type for {suffix}: {mime_type}")
         
         # Prepare form data
         files = {"audio_file": (filename, open(normalized_path, "rb"), mime_type or "application/octet-stream")}
@@ -555,8 +580,7 @@ def main():
         return
     
     if args.show_errors_verbose:
-        tracker.show_errors_verbose()
-        return
+        tracker.show_errors_verbose().
 
     # Handle clear-db mode (no authentication needed)
     if args.clear_db:
@@ -795,6 +819,5 @@ def main():
     else:
         print(f"\n✅ Upload completed. Summary: {success} succeeded, {fail} failed, {len(audio_files)} total.")
 
-
 if __name__ == "__main__":
-    main() 
+    main()
