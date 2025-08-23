@@ -1,7 +1,7 @@
 class PlaylistsSong < ApplicationRecord
-  # Associations
-  belongs_to :playlist
-  belongs_to :song
+  # Associations with explicit UUID foreign key types
+  belongs_to :playlist, foreign_key: :playlist_id, primary_key: :id
+  belongs_to :song, foreign_key: :song_id, primary_key: :id
 
   # Validations
   validates :playlist, presence: true
@@ -20,7 +20,8 @@ class PlaylistsSong < ApplicationRecord
     return if new_position == position
     
     # Get all songs in this playlist (excluding current song using composite key)
-    playlist_items = playlist.playlists_songs.where.not(
+    # Use explicit SQL to avoid UUID association issues
+    playlist_items = PlaylistsSong.where(playlist_id: playlist_id).where.not(
       playlist_id: playlist_id, 
       song_id: song_id
     ).ordered
@@ -45,7 +46,8 @@ class PlaylistsSong < ApplicationRecord
   def renumber_playlist
     # Renumber all songs in the playlist to ensure sequential ordering
     # Since this table has no primary key, we need to use a more explicit approach
-    playlist.playlists_songs.ordered.each_with_index do |item, index|
+    # Use explicit SQL to avoid UUID association issues
+    PlaylistsSong.where(playlist_id: playlist_id).ordered.each_with_index do |item, index|
       new_position = index + 1
       unless item.position == new_position
         # Use raw SQL to avoid primary key issues

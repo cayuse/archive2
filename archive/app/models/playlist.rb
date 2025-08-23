@@ -1,8 +1,8 @@
 class Playlist < ApplicationRecord
   # Associations
   belongs_to :user
-  has_many :playlists_songs, dependent: :destroy
-  has_many :songs, through: :playlists_songs
+  has_many :playlists_songs, foreign_key: :playlist_id, class_name: 'PlaylistsSong', dependent: :destroy, primary_key: :id
+  has_many :songs, through: :playlists_songs, source: :song
 
   # Validations
   validates :name, presence: true, length: { minimum: 1, maximum: 100 }
@@ -30,22 +30,26 @@ class Playlist < ApplicationRecord
   def add_song(song)
     return false if songs.include?(song)
     
-    # Add song to end of playlist
-    max_position = playlists_songs.maximum(:position) || 0
-    playlists_songs.create!(song: song, position: max_position + 1)
+    # Add song to end of playlist using explicit SQL to avoid UUID association issues
+    max_position = PlaylistsSong.where(playlist_id: id).maximum(:position) || 0
+    PlaylistsSong.create!(playlist_id: id, song_id: song.id, position: max_position + 1)
   end
   
   def remove_song(song)
-    playlists_songs.find_by(song: song)&.destroy
+    # Use explicit SQL to avoid UUID association issues
+    PlaylistsSong.where(playlist_id: id, song_id: song.id).first&.destroy
   end
   
   def reorder_songs(song_ids)
     # song_ids should be an array of song IDs in the desired order
     song_ids.each_with_index do |song_id, index|
-      playlists_songs.find_by(song_id: song_id)&.update!(position: index + 1)
+      # Use explicit SQL to avoid UUID association issues
+      PlaylistsSong.where(playlist_id: id, song_id: song_id).first&.update!(position: index + 1)
     end
     # Trigger renumbering to ensure consistency
-    playlists_songs.first&.send(:renumber_playlist) if playlists_songs.any?
+    # Use explicit SQL to avoid UUID association issues
+    first_item = PlaylistsSong.where(playlist_id: id).first
+    first_item&.send(:renumber_playlist) if first_item
   end
   
   def total_duration

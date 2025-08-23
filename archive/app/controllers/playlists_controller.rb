@@ -31,10 +31,10 @@ class PlaylistsController < ApplicationController
       if params[:song_ids].present?
         song_ids = params[:song_ids]
         # Start position at 1,000,000 to add new songs at the end
-        next_position = @playlist.playlists_songs.maximum(:position) || 1_000_000
+        next_position = PlaylistsSong.where(playlist_id: @playlist.id).maximum(:position) || 1_000_000
         
         song_ids.each_with_index do |song_id, index|
-          @playlist.playlists_songs.create!(song_id: song_id, position: next_position + index)
+          PlaylistsSong.create!(playlist_id: @playlist.id, song_id: song_id, position: next_position + index)
         end
       end
       
@@ -59,10 +59,32 @@ class PlaylistsController < ApplicationController
   end
   
   def update
-    if @playlist.owned_by?(current_user) && @playlist.update(playlist_params)
-      redirect_to @playlist, notice: 'Playlist updated successfully.'
+    unless @playlist.owned_by?(current_user)
+      if ajax_request?
+        render json: { error: 'Not authorized' }, status: :forbidden
+      else
+        redirect_to @playlist, alert: 'Not authorized'
+      end
+      return
+    end
+
+    if @playlist.update(playlist_params)
+      if ajax_request?
+        render json: { 
+          success: true, 
+          message: 'Playlist updated successfully.',
+          playlist_id: @playlist.id,
+          playlist_name: @playlist.name
+        }
+      else
+        redirect_to @playlist, notice: 'Playlist updated successfully.'
+      end
     else
-      redirect_to @playlist, alert: 'Failed to update playlist.'
+      if ajax_request?
+        render json: { error: 'Failed to update playlist.' }, status: :unprocessable_entity
+      else
+        redirect_to @playlist, alert: 'Failed to update playlist.'
+      end
     end
   end
   
@@ -80,13 +102,13 @@ class PlaylistsController < ApplicationController
     
     if song_ids.present?
       # Start position at 1,000,000 to add new songs at the end
-      next_position = @playlist.playlists_songs.maximum(:position) || 1_000_000
+      next_position = PlaylistsSong.where(playlist_id: @playlist.id).maximum(:position) || 1_000_000
       added_count = 0
       
       song_ids.each_with_index do |song_id, index|
         # Only add if not already in playlist
-        unless @playlist.playlists_songs.exists?(song_id: song_id)
-          @playlist.playlists_songs.create!(song_id: song_id, position: next_position + index)
+        unless PlaylistsSong.where(playlist_id: @playlist.id, song_id: song_id).exists?
+          PlaylistsSong.create!(playlist_id: @playlist.id, song_id: song_id, position: next_position + index)
           added_count += 1
         end
       end
@@ -119,14 +141,16 @@ class PlaylistsController < ApplicationController
     song_ids = params[:song_ids]
     
     if song_ids.present?
-      # Remove songs from playlist
+      # Remove songs from playlist using explicit SQL to avoid UUID association issues
       removed_count = 0
       song_ids.each do |song_id|
-        playlist_song = @playlist.playlists_songs.find_by(song_id: song_id)
-        if playlist_song
-          playlist_song.destroy
-          removed_count += 1
-        end
+        # Debug: Let's see what's actually happening
+        Rails.logger.info "About to delete playlist_song for song_id: #{song_id}"
+        
+        # Use direct SQL delete to bypass the problematic destroy method entirely
+        deleted_count = PlaylistsSong.where(playlist_id: @playlist.id, song_id: song_id).delete_all
+        Rails.logger.info "Deleted #{deleted_count} records"
+        removed_count += deleted_count
       end
       
       if request.xhr?
@@ -161,7 +185,8 @@ class PlaylistsController < ApplicationController
     if song_ids.present?
       # Update the position of each song in the playlist
       song_ids.each_with_index do |song_id, index|
-        playlist_song = @playlist.playlists_songs.find_by(song_id: song_id)
+        # Use explicit SQL instead of the problematic association
+        playlist_song = PlaylistsSong.where(playlist_id: @playlist.id, song_id: song_id).first
         if playlist_song
           playlist_song.update(position: index + 1)
           Rails.logger.info "Updated song #{song_id} to position #{index + 1}"
@@ -197,5 +222,9 @@ class PlaylistsController < ApplicationController
   
   def playlist_params
     params.require(:playlist).permit(:name, :is_public)
+  end
+  
+  def ajax_request?
+    request.xhr? || request.format.json? || request.headers['X-Requested-With'] == 'XMLHttpRequest'
   end
 end 

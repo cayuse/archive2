@@ -16,4 +16,17 @@
     <% end %>
   </td>
   <td><span class="playlist-date"><%= playlist.created_at.strftime("%Y-%m-%d") %></span></td>
+  <td>
+    <% if playlist.owned_by?(current_user) %>
+      <button class="btn btn-sm btn-outline-primary rename-playlist-btn" 
+              data-playlist-id="<%= playlist.id %>" 
+              data-playlist-name="<%= playlist.name %>"
+              data-bs-toggle="modal" 
+              data-bs-target="#renamePlaylistModal">
+        <i class="fas fa-edit"></i> Rename
+      </button>
+    <% else %>
+      <span class="text-muted">-</span>
+    <% end %>
+  </td>
 </tr> 

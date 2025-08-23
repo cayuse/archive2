@@ -4,8 +4,8 @@ class Song < ApplicationRecord
   belongs_to :album, optional: true
   belongs_to :genre, optional: true
   belongs_to :user, optional: true
-  has_many :playlists_songs, dependent: :destroy
-  has_many :playlists, through: :playlists_songs
+  has_many :playlists_songs, foreign_key: :song_id, class_name: 'PlaylistsSong', dependent: :destroy, primary_key: :id
+  has_many :playlists, through: :playlists_songs, source: :playlist
 
   # Active Storage for audio file
   has_one_attached :audio_file

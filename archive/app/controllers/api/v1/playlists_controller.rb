@@ -38,7 +38,8 @@ class Api::V1::PlaylistsController < ApplicationController
     
     # Update position if specified
     if params[:position]
-      playlist_song = @playlist.playlists_songs.find_by(song: song)
+      # Use explicit SQL to avoid UUID association issues
+      playlist_song = PlaylistsSong.where(playlist_id: @playlist.id, song_id: song.id).first
       playlist_song.update(position: position) if playlist_song
     end
     
@@ -57,8 +58,8 @@ class Api::V1::PlaylistsController < ApplicationController
     if @playlist.songs.include?(song)
       @playlist.songs.delete(song)
       
-      # Reorder remaining songs
-      @playlist.playlists_songs.order(:position).each_with_index do |playlist_song, index|
+      # Reorder remaining songs using explicit SQL to avoid UUID association issues
+      PlaylistsSong.where(playlist_id: @playlist.id).order(:position).each_with_index do |playlist_song, index|
         playlist_song.update(position: index + 1)
       end
       
@@ -90,7 +91,8 @@ class Api::V1::PlaylistsController < ApplicationController
     
     # Update positions based on provided order
     song_order.each_with_index do |song_id, index|
-      playlist_song = @playlist.playlists_songs.find_by(song_id: song_id)
+      # Use explicit SQL to avoid UUID association issues
+      playlist_song = PlaylistsSong.where(playlist_id: @playlist.id, song_id: song_id).first
       playlist_song&.update(position: index + 1)
     end
     
@@ -130,7 +132,8 @@ class Api::V1::PlaylistsController < ApplicationController
           title: song.title,
           track_number: song.track_number,
           duration: song.duration,
-          position: playlist.playlists_songs.find_by(song: song)&.position,
+          # Use explicit SQL to avoid UUID association issues
+          position: PlaylistsSong.where(playlist_id: playlist.id, song_id: song.id).first&.position,
           artist: {
             id: song.artist&.id,
             name: song.artist&.name
