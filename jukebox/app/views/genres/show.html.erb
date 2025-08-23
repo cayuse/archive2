@@ -126,7 +126,7 @@
                   Showing <%= @songs.offset_value + 1 %> to <%= @songs.offset_value + @songs.length %> of <%= @songs.total_count %> songs
                 </div>
                 <div>
-                  <%= paginate @songs, theme: 'bootstrap' %>
+                  <%= paginate @songs %>
                 </div>
               </div>
             <% end %>
