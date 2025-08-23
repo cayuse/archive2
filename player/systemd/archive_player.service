@@ -1,0 +1,25 @@
+[Unit]
+Description=Music Player Service
+After=network.target
+
+[Service]
+# It is recommended to create a dedicated user for the service
+User=player
+Group=player
+
+# IMPORTANT: Update this to the absolute path of your project's root directory
+WorkingDirectory=/opt/archive2/player/player
+
+# IMPORTANT: Update the path to your Python executable (e.g., in a virtualenv)
+ExecStart=/opt/archive2/player/.venv/bin/python -m player.main
+
+# Restart the service automatically if it fails
+Restart=on-failure
+RestartSec=5
+
+# Send output to the systemd journal
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
