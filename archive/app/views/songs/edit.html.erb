@@ -147,7 +147,6 @@
                   <label for="album_search" class="form-label theme-form-label">Album</label>
                   <input type="text" 
                          id="album_search" 
-                         name="q"
                          class="form-control" 
                          placeholder="Start typing to search albums..."
                          value="<%= @song.album&.title %>"
@@ -174,7 +173,6 @@
                   <label for="genre_search" class="form-label theme-form-label">Genre</label>
                   <input type="text" 
                          id="genre_search" 
-                         name="q"
                          class="form-control" 
                          placeholder="Start typing to search genres..."
                          value="<%= @song.genre&.name %>"
@@ -239,6 +237,7 @@
 // Artist selection functionality
 function selectArtist(artistId, artistName) {
   document.getElementById('selected_artist_id').value = artistId;
+  document.getElementById('selected_artist_name').value = artistName;
   document.getElementById('selected_artist_display').innerHTML = 
     '<div class="alert alert-info"><strong>Selected:</strong> ' + artistName + '</div>';
   document.getElementById('artist_results').innerHTML = '';
@@ -260,6 +259,7 @@ function createNewArtist() {
 // Album selection functionality
 function selectAlbum(albumId, albumTitle) {
   document.getElementById('selected_album_id').value = albumId;
+  document.getElementById('selected_album_title').value = albumTitle;
   document.getElementById('selected_album_display').innerHTML = 
     '<div class="alert alert-info"><strong>Selected:</strong> ' + albumTitle + '</div>';
   document.getElementById('album_results').innerHTML = '';
@@ -281,6 +281,7 @@ function createNewAlbum() {
 // Genre selection functionality
 function selectGenre(genreId, genreName) {
   document.getElementById('selected_genre_id').value = genreId;
+  document.getElementById('selected_genre_name').value = genreName;
   document.getElementById('selected_genre_display').innerHTML = 
     '<div class="alert alert-info"><strong>Selected:</strong> ' + genreName + '</div>';
   document.getElementById('genre_results').innerHTML = '';
@@ -309,6 +310,88 @@ document.addEventListener('click', function(e) {
   }
   if (!e.target.closest('#genre_search') && !e.target.closest('#genre_results')) {
     document.getElementById('genre_results').innerHTML = '';
+  }
+});
+
+// Sync search input fields with hidden form fields
+document.addEventListener('DOMContentLoaded', function() {
+  // Artist search sync
+  const artistSearch = document.getElementById('artist_search');
+  if (artistSearch) {
+    artistSearch.addEventListener('input', function() {
+      const artistName = this.value.trim();
+      if (artistName) {
+        document.getElementById('selected_artist_name').value = artistName;
+        // Clear ID if user is typing a new name
+        if (!artistName.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+          document.getElementById('selected_artist_id').value = '';
+        }
+      }
+    });
+  }
+  
+  // Album search sync
+  const albumSearch = document.getElementById('album_search');
+  if (albumSearch) {
+    albumSearch.addEventListener('input', function() {
+      const albumTitle = this.value.trim();
+      if (albumTitle) {
+        document.getElementById('selected_album_title').value = albumTitle;
+        // Clear ID if user is typing a new title
+        if (!albumTitle.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+          document.getElementById('selected_album_id').value = '';
+        }
+      }
+    });
+  }
+  
+  // Genre search sync
+  const genreSearch = document.getElementById('genre_search');
+  if (genreSearch) {
+    genreSearch.addEventListener('input', function() {
+      const genreName = this.value.trim();
+      if (genreName) {
+        document.getElementById('selected_genre_name').value = genreName;
+        // Clear ID if user is typing a new name
+        if (!genreName.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+          document.getElementById('selected_genre_id').value = '';
+        }
+      }
+    });
+  }
+  
+  // Form submission handler
+  const songForm = document.querySelector('form[action*="/songs"]');
+  if (songForm) {
+    songForm.addEventListener('submit', function(e) {
+      console.log('Form submission - Form data:');
+      console.log('Artist ID:', document.getElementById('selected_artist_id').value);
+      console.log('Artist Name:', document.getElementById('selected_artist_name').value);
+      console.log('Album ID:', document.getElementById('selected_album_id').value);
+      console.log('Album Title:', document.getElementById('selected_album_title').value);
+      console.log('Genre ID:', document.getElementById('selected_genre_id').value);
+      console.log('Genre Name:', document.getElementById('selected_genre_name').value);
+      
+      // Ensure search field values are synced to hidden fields
+      const artistSearchValue = document.getElementById('artist_search').value.trim();
+      const albumSearchValue = document.getElementById('album_search').value.trim();
+      const genreSearchValue = document.getElementById('genre_search').value.trim();
+      
+      if (artistSearchValue && !document.getElementById('selected_artist_name').value) {
+        document.getElementById('selected_artist_name').value = artistSearchValue;
+      }
+      if (albumSearchValue && !document.getElementById('selected_album_title').value) {
+        document.getElementById('selected_album_title').value = albumSearchValue;
+      }
+      if (genreSearchValue && !document.getElementById('selected_genre_name').value) {
+        document.getElementById('selected_genre_name').value = genreSearchValue;
+      }
+      
+      console.log('After sync - Form data:');
+      console.log('Artist Name:', document.getElementById('selected_artist_name').value);
+      console.log('Album Title:', document.getElementById('selected_album_title').value);
+      console.log('Genre Name:', document.getElementById('selected_genre_name').value);
+    });
   }
 });
 </script> 

@@ -267,32 +267,79 @@ class SongsController < ApplicationController
     # Handle new artist/album/genre creation if names are provided but IDs are blank
     params = song_params.to_h
     
+    Rails.logger.info "Song update params: #{params.inspect}"
+    
     # Extract the name fields before updating the song
     artist_name = params.delete(:artist_name)
     album_title = params.delete(:album_title)
     genre_name = params.delete(:genre_name)
     
-    # Handle new artist
+    Rails.logger.info "Extracted names - Artist: '#{artist_name}', Album: '#{album_title}', Genre: '#{genre_name}'"
+    
+    # Handle artist association
+    if params[:artist_id].present?
+      # Existing artist selected - verify it exists
+      artist = Artist.find_by(id: params[:artist_id])
+      if artist
+        Rails.logger.info "Using existing artist '#{artist.name}' with ID: #{artist.id}"
+      else
+        Rails.logger.warn "Artist ID #{params[:artist_id]} not found, will create new artist"
+        params[:artist_id] = nil
+      end
+    end
+    
+    # If no valid artist ID, create/find by name
     if params[:artist_id].blank? && artist_name.present?
       artist = Artist.find_or_create_by(name: artist_name)
       params[:artist_id] = artist.id
+      Rails.logger.info "Created/found artist '#{artist_name}' with ID: #{artist.id}"
     end
     
-    # Handle new album
+    # Handle album association
+    if params[:album_id].present?
+      # Existing album selected - verify it exists
+      album = Album.find_by(id: params[:album_id])
+      if album
+        Rails.logger.info "Using existing album '#{album.title}' with ID: #{album.id}"
+      else
+        Rails.logger.warn "Album ID #{params[:album_id]} not found, will create new album"
+        params[:album_id] = nil
+      end
+    end
+    
+    # If no valid album ID, create/find by title
     if params[:album_id].blank? && album_title.present?
       album = Album.find_or_create_by(title: album_title)
       params[:album_id] = album.id
+      Rails.logger.info "Created/found album '#{album_title}' with ID: #{album.id}"
     end
     
-    # Handle new genre
+    # Handle genre association
+    if params[:genre_id].present?
+      # Existing genre selected - verify it exists
+      genre = Genre.find_by(id: params[:genre_id])
+      if genre
+        Rails.logger.info "Using existing genre '#{genre.name}' with ID: #{genre.id}"
+      else
+        Rails.logger.warn "Genre ID #{params[:genre_id]} not found, will create new genre"
+        params[:genre_id] = nil
+      end
+    end
+    
+    # If no valid genre ID, create/find by name
     if params[:genre_id].blank? && genre_name.present?
       genre = Genre.find_or_create_by(name: genre_name)
       params[:genre_id] = genre.id
+      Rails.logger.info "Created/found genre '#{genre_name}' with ID: #{genre.id}"
     end
     
+    Rails.logger.info "Final update params: #{params.inspect}"
+    
     if @song.update(params)
+      Rails.logger.info "Song updated successfully"
       redirect_to @song, notice: 'Song updated successfully.'
     else
+      Rails.logger.error "Song update failed: #{@song.errors.full_messages.join(', ')}"
       render :edit, status: :unprocessable_entity
     end
   end
