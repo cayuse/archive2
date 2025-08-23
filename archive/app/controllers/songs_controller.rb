@@ -7,7 +7,8 @@ class SongsController < ApplicationController
     @songs = policy_scope(Song)
                   .includes(:artist, :album, :genre)
                   .order(created_at: :desc)
-                  .limit(50) # Show first 50 songs, more will load via AJAX
+                  .page(params[:page])
+                  .per(params[:per_page] || 50)
   end
   
   def show
@@ -17,7 +18,7 @@ class SongsController < ApplicationController
   def search
     query = params[:q]&.strip
     page = params[:page]&.to_i || 1
-    per_page = 20
+    per_page = params[:per_page]&.to_i || 50
     
     @songs = policy_scope(Song)
                   .includes(:artist, :album, :genre)
@@ -33,11 +34,11 @@ class SongsController < ApplicationController
                      .distinct
     end
     
-    @songs = @songs.offset((page - 1) * per_page).limit(per_page)
+    @songs = @songs.page(page).per(per_page)
     
     respond_to do |format|
       format.html { render partial: 'songs/song_list', locals: { songs: @songs } }
-      format.json { render json: { songs: @songs, has_more: @songs.count == per_page } }
+      format.json { render json: { songs: @songs, has_more: @songs.total_pages > page } }
     end
   end
   

@@ -99,6 +99,101 @@ h6 { font-size: 1rem; }
   border-bottom: none;
 }
 
+/* Universal Pagination Button Styling */
+.pagination {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  gap: 0.25rem;
+}
+
+.pagination .page-item {
+  margin: 0;
+}
+
+.pagination .page-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+  border: 1px solid var(--border-color, #dee2e6);
+  background: var(--secondary-bg, #f8f9fa);
+  color: var(--text-primary, #495057);
+  text-decoration: none;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.pagination .page-link:hover {
+  background: var(--accent-color, #007bff);
+  color: var(--text-inverse, #ffffff);
+  border-color: var(--accent-color, #007bff);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pagination .page-link:focus {
+  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.pagination .page-item.active .page-link {
+  background: var(--accent-color, #007bff);
+  color: var(--text-inverse, #ffffff);
+  border-color: var(--accent-color, #007bff);
+  font-weight: 600;
+}
+
+.pagination .page-item.disabled .page-link {
+  background: var(--disabled-bg, #e9ecef);
+  color: var(--text-muted, #6c757d);
+  border-color: var(--border-color, #dee2e6);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.pagination .page-item.disabled .page-link:hover {
+  background: var(--disabled-bg, #e9ecef);
+  color: var(--text-muted, #6c757d);
+  border-color: var(--border-color, #dee2e6);
+  transform: none;
+  box-shadow: none;
+}
+
+/* Specific styling for navigation arrows */
+.pagination .page-link[aria-label="Previous"],
+.pagination .page-link[aria-label="Next"] {
+  font-weight: 600;
+  min-width: 3rem;
+}
+
+.pagination .page-link[aria-label="First"],
+.pagination .page-link[aria-label="Last"] {
+  font-weight: 600;
+  min-width: 3rem;
+}
+
+/* Ellipsis styling */
+.pagination .page-item .page-link:contains("…") {
+  background: transparent;
+  border: none;
+  cursor: default;
+  min-width: 2rem;
+}
+
+.pagination .page-item .page-link:contains("…"):hover {
+  background: transparent;
+  color: var(--text-muted, #6c757d);
+  transform: none;
+  box-shadow: none;
+}
+
 /* Search results container */
 #album_results, #genre_results, #artist_results {
   max-height: 200px;

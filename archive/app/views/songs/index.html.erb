@@ -71,17 +71,17 @@
             </table>
           </div>
           
-          <!-- Loading indicator -->
-          <div id="loading" class="text-center mt-3" style="display: none;">
-            <div class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">Loading...</span>
+          <!-- Pagination -->
+          <% if @songs.respond_to?(:current_page) %>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <div class="text-muted">
+                Showing <%= @songs.offset_value + 1 %> to <%= @songs.offset_value + @songs.length %> of <%= @songs.total_count %> songs
+              </div>
+                              <div>
+                  <%= paginate @songs, theme: 'bootstrap' %>
+                </div>
             </div>
-          </div>
-          
-          <!-- Load more button -->
-          <div id="load-more-container" class="text-center mt-3" style="display: none;">
-            <button id="load-more" class="btn btn-outline-primary">Load More Songs</button>
-          </div>
+          <% end %>
         </div>
       </div>
     </div>
@@ -252,18 +252,11 @@ function initializeSearch() {
   console.log('Initializing search functionality');
   
   let searchTimeout;
-  let currentPage = 1;
-  let currentQuery = '';
-  let isLoading = false;
-  let hasMore = true;
   let currentlyPlaying = null;
   
   const searchInput = document.getElementById('search-input');
   const clearSearchBtn = document.getElementById('clear-search');
   const songsTableBody = document.getElementById('songs-table-body');
-  const loadingDiv = document.getElementById('loading');
-  const loadMoreContainer = document.getElementById('load-more-container');
-  const loadMoreBtn = document.getElementById('load-more');
   const songCountDiv = document.getElementById('song-count');
   
   console.log('Search input element:', searchInput);
@@ -279,72 +272,35 @@ function initializeSearch() {
     return;
   }
   
-
-  
-
-  
   // Live search functionality
   searchInput.addEventListener('input', function() {
     console.log('Search input event triggered');
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(function() {
-      currentQuery = searchInput.value.trim();
-      console.log('Searching for:', currentQuery);
-      currentPage = 1;
-      hasMore = true;
-      loadSongs(true);
+      const query = searchInput.value.trim();
+      console.log('Searching for:', query);
+      performSearch(query);
     }, 300); // Debounce search
   });
   
   // Clear search
   clearSearchBtn.addEventListener('click', function() {
     searchInput.value = '';
-    currentQuery = '';
-    currentPage = 1;
-    hasMore = true;
-    loadSongs(true);
+    performSearch('');
     clearSearchBtn.style.display = 'none';
   });
   
-  // Load more functionality
-  loadMoreBtn.addEventListener('click', function() {
-    if (!isLoading && hasMore) {
-      currentPage++;
-      loadSongs(false);
-    }
-  });
-  
-  // Infinite scroll
-  window.addEventListener('scroll', function() {
-    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
-      if (!isLoading && hasMore) {
-        currentPage++;
-        loadSongs(false);
-      }
-    }
-  });
-  
-  function loadSongs(reset = false) {
-    console.log('loadSongs called with reset:', reset);
-    if (isLoading) return;
-    
-    isLoading = true;
-    loadingDiv.style.display = 'block';
-    
+  function performSearch(query) {
     const params = new URLSearchParams({
-      q: currentQuery,
-      page: currentPage
+      q: query,
+      page: 1
     });
     
     console.log('Fetching from:', `/songs/search?${params}`);
     fetch(`/songs/search?${params}`)
       .then(response => response.text())
       .then(html => {
-        if (reset) {
-          songsTableBody.innerHTML = html;
-        } else {
-          songsTableBody.insertAdjacentHTML('beforeend', html);
-        }
+        songsTableBody.innerHTML = html;
         
         // Re-initialize audio players after loading new content
         initializeAudioPlayers();
@@ -354,29 +310,22 @@ function initializeSearch() {
         songCountDiv.textContent = `${songCount} songs`;
         
         // Show/hide clear search button
-        if (currentQuery) {
+        if (query) {
           clearSearchBtn.style.display = 'block';
         }
         
-        // Check if we have more songs to load by counting the song rows in the response
-        // Look for actual song data rows (not header rows)
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
-        const songRows = tempDiv.querySelectorAll('tr[data-song-id]');
-        hasMore = songRows.length > 0;
-        
-        if (hasMore && !reset) {
-          loadMoreContainer.style.display = 'block';
+        // Update URL to reflect search
+        const url = new URL(window.location);
+        if (query) {
+          url.searchParams.set('q', query);
         } else {
-          loadMoreContainer.style.display = 'none';
+          url.searchParams.delete('q');
         }
+        url.searchParams.delete('page');
+        window.history.replaceState({}, '', url);
       })
       .catch(error => {
         console.error('Error loading songs:', error);
-      })
-      .finally(() => {
-        isLoading = false;
-        loadingDiv.style.display = 'none';
       });
   }
   

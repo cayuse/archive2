@@ -35,7 +35,8 @@ gem "jbuilder"
 gem "redis", ">= 4.0.1"
 
 # Use Kaminari for pagination
-gem "kaminari"
+gem "kaminari", "~> 1.2"
+gem "kaminari-bootstrap", "~> 0.1"
 
 # HTTP client for downloading songs
 gem "http"

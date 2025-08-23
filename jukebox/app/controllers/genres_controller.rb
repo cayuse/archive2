@@ -8,7 +8,10 @@ class GenresController < ApplicationController
 
   def show
     @genre = ArchiveGenre.includes(:songs).find_by!(id: params[:id])
-    @songs = @genre.songs.completed.includes(:artist, :album).order(:title)
+    @songs = @genre.songs.completed.includes(:artist, :album)
+                   .order(:title)
+                   .page(params[:page])
+                   .per(params[:per_page] || 50)
   end
 
   def search

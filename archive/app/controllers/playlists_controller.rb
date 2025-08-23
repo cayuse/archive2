@@ -20,7 +20,10 @@ class PlaylistsController < ApplicationController
   end
   
   def show
-    @songs = @playlist.songs.includes(:artist, :album, :genre).order(:position, :title)
+    @songs = @playlist.songs.includes(:artist, :album, :genre)
+                   .order(:position, :title)
+                   .page(params[:page])
+                   .per(params[:per_page] || 50)
   end
   
   def create
@@ -162,7 +165,10 @@ class PlaylistsController < ApplicationController
         }
       else
         # Return the updated playlist songs for HTMX to swap
-        @songs = @playlist.songs.includes(:artist, :album, :genre).order(:position, :title)
+        @songs = @playlist.songs.includes(:artist, :album, :genre)
+                       .order(:position, :title)
+                       .page(params[:page])
+                       .per(params[:per_page] || 50)
         render partial: 'playlist_songs', locals: { songs: @songs, playlist: @playlist }
       end
     else
@@ -204,7 +210,10 @@ class PlaylistsController < ApplicationController
         }
       else
         # Return the updated playlist songs for HTMX to swap
-        @songs = @playlist.songs.includes(:artist, :album, :genre).order(:position, :title)
+        @songs = @playlist.songs.includes(:artist, :album, :genre)
+                       .order(:position, :title)
+                       .page(params[:page])
+                       .per(params[:per_page] || 50)
         Rails.logger.info "Rendering partial with #{@songs.count} songs"
         render partial: 'playlist_songs', locals: { songs: @songs, playlist: @playlist }
       end

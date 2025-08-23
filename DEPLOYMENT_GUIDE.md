@@ -359,7 +359,7 @@ docker run --rm -it -v $(pwd):/app -w /app ruby:3.2.5-slim bash
 
 # Inside the container, install Rails and generate credentials
 apt-get update && apt-get install -y build-essential
-gem install rails
+#gem install rails  < unnecessary, it will be installed by bundler>
 
 # Bundle install is required because Rails demands it with existing Gemfile
 bundle install

@@ -11,7 +11,10 @@ class AlbumsController < ApplicationController
   end
   
   def show
-    @songs = @album.songs.includes(:artist, :genre).order(:track_number, :title)
+    @songs = @album.songs.includes(:artist, :genre)
+                   .order(:track_number, :title)
+                   .page(params[:page])
+                   .per(params[:per_page] || 50)
   end
   
   def search

@@ -13,6 +13,9 @@ class PlaylistsController < ApplicationController
   def show
     @playlist = ArchivePlaylist.find(params[:id])
     @songs = @playlist.songs.includes(:artist, :album, :genre)
+                   .order(:position, :title)
+                   .page(params[:page])
+                   .per(params[:per_page] || 50)
   end
 
   # Creation of archive playlists is done in Archive app; Jukebox is read-only for playlists
