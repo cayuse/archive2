@@ -23,8 +23,7 @@ class Theme < ApplicationRecord
   scope :active, -> { where(is_active: true) }
   scope :default, -> { where(is_default: true) }
   
-  # PowerSync integration (commented out for now)
-  # include PowerSync::Model
+
   
   def self.current
     name = SystemSetting.current_theme

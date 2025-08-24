@@ -11,8 +11,7 @@ class ThemeAsset < ApplicationRecord
   
   validates :filename, uniqueness: { scope: [:theme_id, :asset_type] }
   
-  # PowerSync integration (commented out for now)
-  # include PowerSync::Model
+
   
   # Asset type scopes
   scope :icons, -> { where(asset_type: 'icon') }
