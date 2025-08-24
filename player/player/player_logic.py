@@ -139,8 +139,10 @@ class Player:
                     if idle:
                         if (song := self.get_next_song()) and song.get("stream_url"):
                             self.current_song = song
-                            self.mpv.load(song["stream_url"])
-                            log.info("Playing next song: %s", song["title"])
+                            stream_url = settings.patch_stream_url(song.get("stream_url"))
+
+                            self.mpv.load(stream_url)
+                            log.info("Playing next song: %s url:%s", song["title"], song.get("stream_url"))
                         else:
                             self.desired_state = "stopped"; self._save_desired_state("stopped")
                             log.info("No next song; transitioning to 'stopped' state.")
