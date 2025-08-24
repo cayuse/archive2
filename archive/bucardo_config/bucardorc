@@ -1,0 +1,22 @@
+# Bucardo configuration file
+# Local database connection (this machine)
+dbport = 5432
+dbhost = db
+dbname = bucardo
+dbuser = bucardo
+dbpass = bucardo
+
+# Master database connection (remote master)
+master_dbport = 5432
+master_dbhost = 192.168.1.200
+master_dbname = archive_production
+master_dbuser = postgres
+master_dbpass = password
+
+# Bucardo settings
+pid_dir = /var/run/bucardo
+log_file = /var/lib/bucardo/bucardo.log
+log_level = 1
+
+# Database connection string format
+dbconn = dbname=bucardo host=db port=5432 user=bucardo password=bucardo

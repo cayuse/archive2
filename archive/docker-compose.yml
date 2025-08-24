@@ -17,7 +17,9 @@ services:
 
   # PostgreSQL database for Archive
   db:
-    image: postgres:15
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -73,8 +75,8 @@ services:
       AWS_SES_SMTP_HOST: ${AWS_SES_SMTP_HOST:-email-smtp.us-east-2.amazonaws.com}
       AWS_SES_SMTP_PORT: ${AWS_SES_SMTP_PORT:-587}
       AWS_SES_SMTP_DOMAIN: ${AWS_SES_SMTP_DOMAIN:-cavaforge.net}
-      AWS_SES_SMTP_USERNAME: ${AWS_SES_SMTP_USERNAME}
-      AWS_SES_SMTP_PASSWORD: ${AWS_SES_SMTP_PASSWORD}
+      AWS_SES_SMTP_USERNAME: ${AWS_SES_SMTP_USERNAME:-}
+      AWS_SES_SMTP_PASSWORD: ${AWS_SES_SMTP_PASSWORD:-}
       MAILER_FROM_EMAIL: ${MAILER_FROM_EMAIL:-noreply@cavaforge.net}
     ports:
       - "${ARCHIVE_PORT:-3000}:3000"
@@ -88,6 +90,51 @@ services:
       timeout: 10s
       retries: 3
 
+  # Bucardo replication service
+  bucardo:
+    build:
+      context: .
+      dockerfile: Dockerfile.bucardo
+    image: bucardo:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Role and sync direction
+      ARCHIVE_ROLE: ${ARCHIVE_ROLE}
+      BUCARDO_SYNC_DIRECTION: ${BUCARDO_SYNC_DIRECTION}
+      # PostgreSQL password for setup
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Local database connection
+      BUCARDO_LOCAL_DB_HOST: ${BUCARDO_LOCAL_DB_HOST}
+      BUCARDO_LOCAL_DB_PORT: ${BUCARDO_LOCAL_DB_PORT}
+      BUCARDO_LOCAL_DB_NAME: ${BUCARDO_LOCAL_DB_NAME}
+      BUCARDO_LOCAL_DB_USER: ${BUCARDO_LOCAL_DB_USER}
+      BUCARDO_LOCAL_DB_PASS: ${BUCARDO_LOCAL_DB_PASS}
+      # Master database connection
+      BUCARDO_MASTER_DB_HOST: ${BUCARDO_MASTER_DB_HOST}
+      BUCARDO_MASTER_DB_PORT: ${BUCARDO_MASTER_DB_PORT}
+      BUCARDO_MASTER_DB_NAME: ${BUCARDO_MASTER_DB_NAME}
+      BUCARDO_MASTER_DB_USER: ${BUCARDO_MASTER_DB_USER}
+      BUCARDO_MASTER_DB_PASS: ${BUCARDO_MASTER_DB_PASS}
+      # Bucardo environment variables
+      PGPASSWORD: ${BUCARDO_LOCAL_DB_PASS}
+      PGHOST: ${BUCARDO_LOCAL_DB_HOST}
+      PGPORT: ${BUCARDO_LOCAL_DB_PORT}
+      PGDATABASE: ${BUCARDO_LOCAL_DB_NAME}
+      PGUSER: ${BUCARDO_LOCAL_DB_USER}
+    volumes:
+      - bucardo_data:/var/lib/bucardo
+      - bucardo_logs:/var/log/bucardo
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "db", "-p", "5432", "-U", "bucardo", "-d", "bucardo"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
   archive_logs:
   redis_data:
+  bucardo_data:
+  bucardo_logs:
