@@ -159,7 +159,7 @@
                 
                 <div class="mb-3">
                   <%= form.label :master_archive_url, "Master Archive URL", class: "form-label theme-text-primary" %>
-                  <%= form.text_field :master_archive_url, value: @system_settings[:master_archive_url], class: "form-control", placeholder: "http://master-archive.example.com" %>
+                  <%= form.text_field :master_archive_url, value: @system_settings[:master_archive_url], class: "form-control", id: "master_archive_url", placeholder: "http://master-archive.example.com" %>
                   <div class="form-text theme-text-secondary">URL of the master archive (required for slave nodes)</div>
                 </div>
                 

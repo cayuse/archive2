@@ -17,7 +17,6 @@ Rails.application.routes.draw do
       get :song_types
       get :general
       get :archive_sync
-      post :test_connection
       post :force_sync
       post :force_file_sync
       post :generate_slave_key
@@ -25,6 +24,9 @@ Rails.application.routes.draw do
       post :perform_initial_sync
     end
   end
+  
+  # Explicit test connection route
+  post '/settings/test_connection', to: 'settings#test_connection', as: :test_connection
   
   # Sync control routes (admin only)
   get '/sync_control/status', to: 'sync_control#status', as: :sync_control_status
