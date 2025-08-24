@@ -2,9 +2,7 @@ Rails.application.routes.draw do
   # Sidekiq Web UI (optional). Protect with basic auth if exposed.
   # require "sidekiq/web"
   # mount Sidekiq::Web => "/sidekiq"
-  # PowerSync routes for jukebox synchronization
-  # Note: PowerSync is implemented as a custom service, not as a Rails engine
-  # mount PowerSync::Engine => '/powersync'
+
   
   # Theme routes (public access for assets, admin for management)
   get '/themes/:theme.css', to: 'themes#css', as: :theme_css
@@ -16,27 +14,13 @@ Rails.application.routes.draw do
       get :api_keys
       get :song_types
       get :general
-      get :archive_sync
-      post :force_sync
-      post :force_file_sync
-      post :generate_slave_key
-      post :generate_jukebox_key
-      post :perform_initial_sync
+
     end
   end
   
-  # Explicit test connection route
-  post '/settings/test_connection', to: 'settings#test_connection', as: :test_connection
+
   
-  # Sync control routes (admin only)
-  get '/sync_control/status', to: 'sync_control#status', as: :sync_control_status
-  post '/sync_control/pause', to: 'sync_control#pause', as: :sync_control_pause
-  post '/sync_control/resume', to: 'sync_control#resume', as: :sync_control_resume
-  post '/sync_control/emergency_stop', to: 'sync_control#emergency_stop', as: :sync_control_emergency_stop
-  post '/sync_control/clear_emergency_stop', to: 'sync_control#clear_emergency_stop', as: :sync_control_clear_emergency_stop
-  post '/sync_control/force_sync', to: 'sync_control#force_sync', as: :sync_control_force_sync
-  post '/sync_control/update_settings', to: 'sync_control#update_settings', as: :sync_control_update_settings
-  post '/sync_control/clear_failed_syncs', to: 'sync_control#clear_failed_syncs', as: :sync_control_clear_failed_syncs
+
   
   # Theme management routes
   get 'themes', to: 'settings#themes', as: :manage_themes
@@ -52,13 +36,7 @@ Rails.application.routes.draw do
   post 'themes/:id/duplicate', to: 'settings#duplicate_theme', as: :duplicate_manage_theme
   post 'themes/:id/switch', to: 'settings#switch_theme', as: :switch_theme
   
-  # Key management routes
-  post '/settings/regenerate_slave_key/:id', to: 'settings#regenerate_slave_key', as: :regenerate_slave_key
-  post '/settings/deactivate_slave_key/:id', to: 'settings#deactivate_slave_key', as: :deactivate_slave_key
-  post '/settings/reactivate_slave_key/:id', to: 'settings#reactivate_slave_key', as: :reactivate_slave_key
-  post '/settings/regenerate_jukebox_key/:id', to: 'settings#regenerate_jukebox_key', as: :regenerate_jukebox_key
-  post '/settings/deactivate_jukebox_key/:id', to: 'settings#deactivate_jukebox_key', as: :deactivate_jukebox_key
-  post '/settings/reactivate_jukebox_key/:id', to: 'settings#reactivate_jukebox_key', as: :reactivate_jukebox_key
+
   
   # Authentication routes
   get '/login', to: 'sessions#new', as: :login
@@ -133,14 +111,7 @@ Rails.application.routes.draw do
       post '/auth/logout', to: 'auth#logout'
       get '/auth/verify', to: 'auth#verify'
       
-      # Archive sync API
-      namespace :sync do
-        get '/changes', to: 'sync#changes'
-        post '/apply', to: 'sync#apply'
-        get '/status', to: 'sync#status'
-        get '/jukebox_status', to: 'sync#jukebox_status'
-        get '/initial_data', to: 'sync#initial_data'
-      end
+
       
       # Bulk song operations (admin/moderator only)
       resources :songs, only: [:index, :show] do

@@ -70,132 +70,14 @@ class SystemSetting < ApplicationRecord
       set('site_description', description, 'Site description for SEO')
     end
     
-    # Archive sync methods
-    def archive_role
-      get('archive_role', 'standalone')
-    end
-    
-    def master_archive_url
-      get('master_archive_url', '')
-    end
-    
-    def archive_node_id
-      get('archive_node_id', Socket.gethostname)
-    end
-    
-    def sync_enabled?
-      get('sync_enabled', 'false') == 'true'
-    end
-    
-    def sync_interval
-      get('sync_interval', '300').to_i
-    end
-    
-    def rsync_enabled?
-      get('rsync_enabled', 'false') == 'true'
-    end
-    
-    def rsync_source_path
-      get('rsync_source_path', Rails.root.join('storage').to_s)
-    end
-    
-    def rsync_dest_path
-      get('rsync_dest_path', '')
-    end
-    
-    # Check if this is a master archive
-    def master?
-      archive_role == 'master'
-    end
-    
-    # Check if this is a slave archive
-    def slave?
-      archive_role == 'slave'
-    end
-    
-    # Check if this is a standalone archive
-    def standalone?
-      archive_role == 'standalone'
-    end
 
-    # Sync control methods
-    def sync_paused?
-      get('sync_paused', 'false') == 'true'
-    end
     
-    def pause_sync
-      set('sync_paused', 'true', 'Sync is currently paused by user')
-    end
-    
-    def resume_sync
-      set('sync_paused', 'false', 'Sync is currently active')
-    end
-    
-    def sync_emergency_stop?
-      get('sync_emergency_stop', 'false') == 'true'
-    end
-    
-    def emergency_stop_sync
-      set('sync_emergency_stop', 'true', 'Sync emergency stopped due to system issues')
-    end
-    
-    def clear_emergency_stop
-      set('sync_emergency_stop', 'false', 'Sync emergency stop cleared')
-    end
-    
-    def sync_health_check_enabled?
-      get('sync_health_check_enabled', 'true') == 'true'
-    end
-    
-    def sync_max_concurrent_operations
-      get('sync_max_concurrent_operations', '3').to_i
-    end
-    
-    def sync_operation_timeout
-      get('sync_operation_timeout', '30').to_i
-    end
-    
-    # Slave key management (for client archives)
-    def slave_key_encrypted
-      get('slave_key_encrypted', '')
-    end
-    
-    def set_slave_key(key)
-      # Encrypt and store the slave key
-      encrypted_key = encrypt_value(key)
-      set('slave_key_encrypted', encrypted_key, 'Encrypted slave key for master authentication')
-    end
-    
-    def decrypt_slave_key
-      return nil unless slave_key_encrypted.present?
-      decrypt_value(slave_key_encrypted)
-    end
 
-    # File sync settings
-    def file_sync_enabled?
-      get('file_sync_enabled', 'false') == 'true'
-    end
 
-    def file_sync_in_progress?
-      get('file_sync_in_progress', 'false') == 'true'
-    end
 
-    def last_file_sync_time
-      timestamp = get('last_file_sync_time')
-      timestamp ? Time.parse(timestamp) : nil
-    end
+    
 
-    def file_sync_status
-      get('file_sync_status', 'idle')
-    end
 
-    def slave_hosts
-      hosts = get('slave_hosts')
-      hosts.present? ? hosts.split(',') : []
-    end
 
-    def master_host
-      get('master_host', '')
-    end
   end
 end
