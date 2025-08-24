@@ -1,5 +1,8 @@
 class CreateSlaveKeys < ActiveRecord::Migration[8.0]
   def change
+    # Ensure pgcrypto extension is enabled for UUID generation
+    enable_extension 'pgcrypto' unless extension_enabled?('pgcrypto')
+    
     create_table :slave_keys, id: :uuid, default: -> { 'gen_random_uuid()' } do |t|
       t.string :name, null: false
       t.string :key_hash, null: false

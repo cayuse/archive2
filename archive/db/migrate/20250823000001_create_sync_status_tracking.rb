@@ -1,5 +1,8 @@
 class CreateSyncStatusTracking < ActiveRecord::Migration[8.0]
   def change
+    # Ensure pgcrypto extension is enabled for UUID generation
+    enable_extension 'pgcrypto' unless extension_enabled?('pgcrypto')
+    
     create_table :sync_status_tracking, id: :uuid, default: -> { 'gen_random_uuid()' } do |t|
       t.string :sync_type, null: false  # 'database', 'file', 'initial'
       t.string :target_node_id          # For master->slave syncs

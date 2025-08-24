@@ -1,5 +1,8 @@
 class CreateConflictLogs < ActiveRecord::Migration[8.0]
   def change
+    # Ensure pgcrypto extension is enabled for UUID generation
+    enable_extension 'pgcrypto' unless extension_enabled?('pgcrypto')
+    
     create_table :conflict_logs, id: :uuid, default: -> { 'gen_random_uuid()' } do |t|
       t.string :conflict_type, null: false
       t.jsonb :master_change

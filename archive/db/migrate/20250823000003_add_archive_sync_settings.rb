@@ -45,10 +45,15 @@ class AddArchiveSyncSettings < ActiveRecord::Migration[8.0]
     ]
     
     settings.each do |setting|
-      SystemSetting.find_or_create_by(key: setting[:key]) do |s|
-        s.value = setting[:value]
-        s.description = setting[:description]
-      end
+      # Use raw SQL to avoid model dependency during migration
+      execute <<-SQL
+        INSERT INTO system_settings (key, value, description, created_at, updated_at)
+        VALUES ('#{setting[:key]}', '#{setting[:value]}', '#{setting[:description]}', NOW(), NOW())
+        ON CONFLICT (key) DO UPDATE SET
+          value = EXCLUDED.value,
+          description = EXCLUDED.description,
+          updated_at = NOW()
+      SQL
     end
   end
   
@@ -65,6 +70,9 @@ class AddArchiveSyncSettings < ActiveRecord::Migration[8.0]
       'rsync_dest_path'
     ]
     
-    SystemSetting.where(key: keys_to_remove).destroy_all
+    # Use raw SQL to avoid model dependency during migration
+    keys_to_remove.each do |key|
+      execute "DELETE FROM system_settings WHERE key = '#{key}'"
+    end
   end
 end
