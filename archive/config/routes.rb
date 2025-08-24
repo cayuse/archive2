@@ -27,7 +27,7 @@ Rails.application.routes.draw do
   end
   
   # Sync control routes (admin only)
-  resource :sync_control, only: [] do
+  resources :sync_control, only: [] do
     collection do
       get :status
       post :pause
