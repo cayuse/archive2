@@ -27,18 +27,14 @@ Rails.application.routes.draw do
   end
   
   # Sync control routes (admin only)
-  resources :sync_control, only: [] do
-    collection do
-      get :status
-      post :pause
-      post :resume
-      post :emergency_stop
-      post :clear_emergency_stop
-      post :force_sync
-      post :update_settings
-      post :clear_failed_syncs
-    end
-  end
+  get '/sync_control/status', to: 'sync_control#status', as: :sync_control_status
+  post '/sync_control/pause', to: 'sync_control#pause', as: :sync_control_pause
+  post '/sync_control/resume', to: 'sync_control#resume', as: :sync_control_resume
+  post '/sync_control/emergency_stop', to: 'sync_control#emergency_stop', as: :sync_control_emergency_stop
+  post '/sync_control/clear_emergency_stop', to: 'sync_control#clear_emergency_stop', as: :sync_control_clear_emergency_stop
+  post '/sync_control/force_sync', to: 'sync_control#force_sync', as: :sync_control_force_sync
+  post '/sync_control/update_settings', to: 'sync_control#update_settings', as: :sync_control_update_settings
+  post '/sync_control/clear_failed_syncs', to: 'sync_control#clear_failed_syncs', as: :sync_control_clear_failed_syncs
   
   # Theme management routes
   get 'themes', to: 'settings#themes', as: :manage_themes
