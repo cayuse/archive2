@@ -346,7 +346,10 @@ After deployment, test the email system by:
 
 ### Generating New Credentials from Scratch
 
-When cloning a fresh repository that doesn't have `credentials.yml.enc` or `master.key`, you'll need to generate new Rails credentials. This can be done using Docker without installing Rails locally.
+When cloning a fresh repository that doesn't have `credentials.yml.enc` or `master.key`, you'll need to generate new 
+Rails credentials. This can be done using Docker without installing Rails locally.
+
+### NOTE make sure if you have old versions of either of those files you delete them before this procedure
 
 #### Option 1: Using Docker Container (Recommended)
 

@@ -39,21 +39,20 @@ Rails.application.routes.draw do
       post :clear_failed_syncs
     end
   end
-    
-    # Theme management routes
-    get 'themes', to: 'settings#themes', as: :manage_themes
-    get 'themes/new', to: 'settings#new_theme', as: :new_manage_theme
-    post 'themes', to: 'settings#create_theme'
-    get 'themes/:id', to: 'settings#show_theme', as: :manage_theme
-    get 'themes/:id/edit', to: 'settings#edit_theme', as: :edit_manage_theme
-    patch 'themes/:id', to: 'settings#update_theme'
-    put 'themes/:id', to: 'settings#update_theme'
-    delete 'themes/:id', to: 'settings#destroy_theme'
-    get 'themes/:id/export', to: 'settings#export_theme', as: :export_manage_theme
-    get 'themes/:id/preview', to: 'settings#preview_theme', as: :preview_manage_theme
-    post 'themes/:id/duplicate', to: 'settings#duplicate_theme', as: :duplicate_manage_theme
-    post 'themes/:id/switch', to: 'settings#switch_theme', as: :switch_theme
-  end
+  
+  # Theme management routes
+  get 'themes', to: 'settings#themes', as: :manage_themes
+  get 'themes/new', to: 'settings#new_theme', as: :new_manage_theme
+  post 'themes', to: 'settings#create_theme'
+  get 'themes/:id', to: 'settings#show_theme', as: :manage_theme
+  get 'themes/:id/edit', to: 'settings#edit_theme', as: :edit_manage_theme
+  patch 'themes/:id', to: 'settings#update_theme'
+  put 'themes/:id', to: 'settings#update_theme'
+  delete 'themes/:id', to: 'settings#destroy_theme'
+  get 'themes/:id/export', to: 'settings#export_theme', as: :export_manage_theme
+  get 'themes/:id/preview', to: 'settings#preview_theme', as: :preview_manage_theme
+  post 'themes/:id/duplicate', to: 'settings#duplicate_theme', as: :duplicate_manage_theme
+  post 'themes/:id/switch', to: 'settings#switch_theme', as: :switch_theme
   
   # Key management routes
   post '/settings/regenerate_slave_key/:id', to: 'settings#regenerate_slave_key', as: :regenerate_slave_key
