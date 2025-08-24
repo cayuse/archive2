@@ -45,20 +45,42 @@ class MPV:
             raise RuntimeError(f"Failed to start mpv: {e}")
 
         # Wait for the socket to be created by mpv
-        for _ in range(50):  # ~5s timeout
+        start_time = time.time()
+        timeout = 5.0  # 5 second timeout
+        
+        while time.time() - start_time < timeout:
             if os.path.exists(self.ipc_path):
                 try:
                     self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                    self.sock.settimeout(1.0)  # Set a connection timeout
                     self.sock.connect(self.ipc_path)
                     self.sock.setblocking(True)
+                    self.sock.settimeout(None)  # Remove timeout after successful connection
                     break
-                except (ConnectionRefusedError, FileNotFoundError):
+                except (ConnectionRefusedError, FileNotFoundError, socket.timeout):
+                    if self.sock:
+                        self.sock.close()
+                        self.sock = None
                     time.sleep(0.1)
                 except Exception as e:
                     log.error(f"Error connecting to mpv socket: {e}")
+                    if self.sock:
+                        self.sock.close()
+                        self.sock = None
                     time.sleep(0.1)
+            else:
+                # Socket file doesn't exist yet, wait a bit
+                time.sleep(0.1)
+        
         if not self.sock:
-            raise RuntimeError("Failed to connect to mpv IPC socket")
+            # Clean up the process if socket connection failed
+            if self.proc:
+                try:
+                    self.proc.terminate()
+                    self.proc.wait(timeout=2.0)
+                except subprocess.TimeoutExpired:
+                    self.proc.kill()
+            raise RuntimeError("Failed to connect to mpv IPC socket within timeout")
 
         self.reader_thread = threading.Thread(target=self._reader, daemon=True, name="MPVReader")
         self.reader_thread.start()

@@ -1,4 +1,7 @@
-import json, time, logging, threading
+import json
+import time
+import logging
+import threading
 from typing import Optional, Dict, Any
 import redis
 import requests
@@ -31,7 +34,8 @@ class Player:
         try:
             res = self.http.get(url, timeout=5)
             res.raise_for_status()
-            if res.status_code == 204: return None # No Content
+            if res.status_code == 204:
+                return None  # No Content
             return res.json()
         except requests.RequestException as e:
             log.warning(f"API request for next song failed: {e}")
@@ -40,14 +44,19 @@ class Player:
     def _load_desired_state(self) -> str:
         try:
             val = self.r.get(settings.DESIRED)
-            return val if val in ("playing","paused","stopped") else "stopped"
+            if val in ("playing", "paused", "stopped"):
+                return val
+            else:
+                return "stopped"
         except redis.exceptions.RedisError as e:
             log.error(f"Failed to load desired state from Redis: {e}")
             return "stopped"
 
     def _save_desired_state(self, state: str):
-        try: self.r.set(settings.DESIRED, state)
-        except redis.exceptions.RedisError as e: log.error(f"Failed to save state to Redis: {e}")
+        try:
+            self.r.set(settings.DESIRED, state)
+        except redis.exceptions.RedisError as e:
+            log.error(f"Failed to save state to Redis: {e}")
 
     def write_status(self, extra_error: str = ""):
         try:
@@ -57,7 +66,13 @@ class Player:
             el = float(self.mpv.get_prop("time-pos", 0.2) or 0.0)
             vol = self.mpv.get_prop("volume", 0.2) or settings.VOLUME
 
-            actual_state = "stopped" if idle else ("paused" if paused else "playing")
+            if idle:
+                actual_state = "stopped"
+            elif paused:
+                actual_state = "paused"
+            else:
+                actual_state = "playing"
+            
             now = time.time()
             song = self.current_song or {}
 
@@ -75,37 +90,60 @@ class Player:
                 "error_message": extra_error
             }
             self.r.hset(settings.STATUS_KEY, mapping=status)
-            if self.current_song: self.r.set(settings.CUR_SONG, json.dumps(self.current_song))
-            else: self.r.delete(settings.CUR_SONG)
+            if self.current_song:
+                self.r.set(settings.CUR_SONG, json.dumps(self.current_song))
+            else:
+                self.r.delete(settings.CUR_SONG)
 
-        except redis.exceptions.RedisError as e: log.warning(f"write_status failed: {e}")
+        except redis.exceptions.RedisError as e:
+            log.warning(f"write_status failed: {e}")
 
     def handle_commands(self):
-        PRIORITY = {"play":1, "pause":2, "skip":3, "stop":4}
-        prio, state, skip = 0, None, False
-        vol_kind, vol_val = None, None
+        PRIORITY = {"play": 1, "pause": 2, "skip": 3, "stop": 4}
+        prio = 0
+        state = None
+        skip = False
+        vol_kind = None
+        vol_val = None
 
         try:
             commands = self.r.lrange(settings.CMD_LIST, 0, -1)
-            if not commands: return {"state": None, "skip": False, "vol_set": None, "vol_delta": 0}
+            if not commands:
+                return {"state": None, "skip": False, "vol_set": None, "vol_delta": 0}
 
             self.r.ltrim(settings.CMD_LIST, len(commands), -1)
 
             for raw in commands:
                 try:
                     cmd = json.loads(raw)
-                    action = str(cmd.get("action","")).lower()
+                    action = str(cmd.get("action", "")).lower()
                     if action in PRIORITY and PRIORITY[action] > prio:
                         prio = PRIORITY[action]
-                        if action == "skip": skip = True
-                        else: state = {"play": "playing", "pause": "paused", "stop": "stopped"}[action]
-                    elif action == "set_volume": vol_kind, vol_val = "set", int(cmd.get("value"))
-                    elif action == "volume_up": vol_kind, vol_val = "delta", 10
-                    elif action == "volume_down": vol_kind, vol_val = "delta", -10
-                except (json.JSONDecodeError, ValueError) as e: log.error(f"Parsing cmd '{raw}': {e}")
+                        if action == "skip":
+                            skip = True
+                        else:
+                            state = {"play": "playing", "pause": "paused", "stop": "stopped"}[action]
+                    elif action == "set_volume":
+                        vol_kind = "set"
+                        vol_val = int(cmd.get("value"))
+                    elif action == "volume_up":
+                        vol_kind = "delta"
+                        vol_val = 10
+                    elif action == "volume_down":
+                        vol_kind = "delta"
+                        vol_val = -10
+                except (json.JSONDecodeError, ValueError) as e:
+                    log.error(f"Parsing cmd '{raw}': {e}")
 
-            vol_set = max(0, min(100, vol_val)) if vol_kind == "set" and vol_val is not None else None
-            vol_delta = vol_val if vol_kind == "delta" and vol_val is not None else 0
+            if vol_kind == "set" and vol_val is not None:
+                vol_set = max(0, min(100, vol_val))
+            else:
+                vol_set = None
+            
+            if vol_kind == "delta" and vol_val is not None:
+                vol_delta = vol_val
+            else:
+                vol_delta = 0
 
             log.info(f"Collapsed {len(commands)} cmds -> state={state}, skip={skip}, vol_set={vol_set}, vol_delta={vol_delta}")
             return {"state": state, "skip": skip, "vol_set": vol_set, "vol_delta": vol_delta}
@@ -124,9 +162,14 @@ class Player:
             error_msg = ""
             try:
                 cmd = self.handle_commands()
-                if cmd["skip"]: self.mpv.stop(); self.current_song = None
-                if cmd["state"]: self.desired_state = cmd["state"]; self._save_desired_state(self.desired_state)
-                if cmd["vol_set"] is not None: self.mpv.set_volume(cmd["vol_set"])
+                if cmd["skip"]:
+                    self.mpv.stop()
+                    self.current_song = None
+                if cmd["state"]:
+                    self.desired_state = cmd["state"]
+                    self._save_desired_state(self.desired_state)
+                if cmd["vol_set"] is not None:
+                    self.mpv.set_volume(cmd["vol_set"])
                 elif cmd["vol_delta"]:
                     current_vol = self.mpv.get_prop("volume", 0.2) or settings.VOLUME
                     self.mpv.set_volume(max(0, min(100, current_vol + cmd["vol_delta"])))
@@ -136,19 +179,24 @@ class Player:
 
                 if self.desired_state == "playing":
                     if idle:
-                        if (song := self.get_next_song()) and song.get("stream_url"):
+                        song = self.get_next_song()
+                        if song and song.get("stream_url"):
                             self.current_song = song
                             stream_url = settings.patch_stream_url(song.get("stream_url"))
 
                             self.mpv.load(stream_url)
-                            log.info("Playing next song: %s url:%s", song["title"], song.get("stream_url"))
+                            log.info("Playing next song: %s url:%s", song["title"], stream_url)
                         else:
-                            self.desired_state = "stopped"; self._save_desired_state("stopped")
+                            self.desired_state = "stopped"
+                            self._save_desired_state("stopped")
                             log.info("No next song; transitioning to 'stopped' state.")
-                    elif paused: self.mpv.pause(False)
-                elif self.desired_state == "paused" and not idle and not paused: self.mpv.pause(True)
+                    elif paused:
+                        self.mpv.pause(False)
+                elif self.desired_state == "paused" and not idle and not paused:
+                    self.mpv.pause(True)
                 elif self.desired_state == "stopped" and not idle:
-                    self.mpv.stop(); self.current_song = None
+                    self.mpv.stop()
+                    self.current_song = None
             except Exception as e:
                 log.error(f"Main loop error: {e}", exc_info=True)
                 error_msg = str(e)

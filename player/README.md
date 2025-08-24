@@ -1,5 +1,5 @@
 # Archive Player
-The remove player app.
+The song player app.
 Takes song info from a redis queue, and plays the songs as they come up.
 
 
