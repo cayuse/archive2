@@ -24,6 +24,21 @@ Rails.application.routes.draw do
       post :generate_jukebox_key
       post :perform_initial_sync
     end
+  end
+  
+  # Sync control routes (admin only)
+  resource :sync_control, only: [] do
+    collection do
+      get :status
+      post :pause
+      post :resume
+      post :emergency_stop
+      post :clear_emergency_stop
+      post :force_sync
+      post :update_settings
+      post :clear_failed_syncs
+    end
+  end
     
     # Theme management routes
     get 'themes', to: 'settings#themes', as: :manage_themes

@@ -1,0 +1,244 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 theme-text-primary">Sync Control Center</h1>
+        <div>
+          <%= link_to "Back to Settings", settings_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+
+      <% if notice %>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <%= notice %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      <% end %>
+
+      <% if alert %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <%= alert %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      <% end %>
+
+      <!-- Sync Control Panel -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0 theme-text-primary">Sync Control</h5>
+        </div>
+        <div class="card-body theme-card-content">
+          <div class="row">
+            <div class="col-md-6">
+              <h6>Current Status</h6>
+              <div class="mb-3">
+                <span class="badge bg-<%= @sync_status[:running] ? 'success' : 'danger' %> me-2">
+                  <%= @sync_status[:running] ? 'Running' : 'Stopped' %>
+                </span>
+                
+                <% if @system_settings[:sync_paused] %>
+                  <span class="badge bg-warning me-2">Paused</span>
+                <% end %>
+                
+                <% if @system_settings[:sync_emergency_stop] %>
+                  <span class="badge bg-danger me-2">Emergency Stop</span>
+                <% end %>
+              </div>
+              
+              <div class="d-grid gap-2">
+                <% if @sync_status[:running] && !@system_settings[:sync_paused] %>
+                  <%= button_to "Pause Sync", sync_control_pause_path, method: :post, 
+                      class: "btn btn-warning", data: { confirm: "Are you sure you want to pause sync?" } %>
+                <% else %>
+                  <%= button_to "Resume Sync", sync_control_resume_path, method: :post, 
+                      class: "btn btn-success" %>
+                <% end %>
+                
+                <%= button_to "Emergency Stop", sync_control_emergency_stop_path, method: :post, 
+                    class: "btn btn-danger", data: { confirm: "This will immediately stop all sync operations. Continue?" } %>
+                
+                <%= button_to "Force Sync Now", sync_control_force_sync_path, method: :post, 
+                    class: "btn btn-primary" %>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <h6>Sync Health</h6>
+              <dl class="row">
+                <dt class="col-sm-6">Health Check:</dt>
+                <dd class="col-sm-6">
+                  <span class="badge bg-<%= @sync_status[:healthy?] ? 'success' : 'danger' %>">
+                    <%= @sync_status[:healthy?] ? 'Healthy' : 'Unhealthy' %>
+                  </span>
+                </dd>
+                
+                <dt class="col-sm-6">Active Threads:</dt>
+                <dd class="col-sm-6"><%= @sync_status[:threads] %></dd>
+                
+                <dt class="col-sm-6">Pending Retries:</dt>
+                <dd class="col-sm-6"><%= @sync_status[:pending_retries] %></dd>
+                
+                <dt class="col-sm-6">Recent Failures:</dt>
+                <dd class="col-sm-6"><%= @sync_status[:recent_failures] %></dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sync Settings -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0 theme-text-primary">Sync Settings</h5>
+        </div>
+        <div class="card-body theme-card-content">
+          <%= form_with url: sync_control_update_settings_path, method: :post, local: true do |f| %>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-check form-switch">
+                  <%= f.check_box :sync_health_check_enabled, 
+                      { class: "form-check-input", checked: @system_settings[:sync_health_check_enabled] }, "1", "0" %>
+                  <label class="form-check-label" for="sync_health_check_enabled">
+                    Enable Health Checks
+                  </label>
+                </div>
+              </div>
+              
+              <div class="col-md-4">
+                <label for="sync_interval" class="form-label">Sync Interval (seconds)</label>
+                <%= f.number_field :sync_interval, 
+                    value: @system_settings[:sync_interval], 
+                    class: "form-control", min: 60, max: 3600, 
+                    help: "How often the client checks for sync (60s = 1 min, 300s = 5 min)" %>
+              </div>
+              
+              <div class="col-md-4">
+                <label for="sync_max_concurrent_operations" class="form-label">Max Concurrent Operations</label>
+                <%= f.number_field :sync_max_concurrent_operations, 
+                    value: @system_settings[:sync_max_concurrent_operations], 
+                    class: "form-control", min: 1, max: 10 %>
+              </div>
+              
+              <div class="col-md-4">
+                <label for="sync_operation_timeout" class="form-label">Operation Timeout (seconds)</label>
+                <%= f.number_field :sync_operation_timeout, 
+                    value: @system_settings[:sync_operation_timeout], 
+                    class: "form-control", min: 10, max: 300 %>
+              </div>
+            </div>
+            
+            <div class="mt-3">
+              <%= f.submit "Update Settings", class: "btn btn-primary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Recent Sync Attempts -->
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 theme-text-primary">Recent Sync Attempts</h5>
+          <%= button_to "Clear Failed Records", sync_control_clear_failed_syncs_path, method: :post, 
+              class: "btn btn-sm btn-outline-warning", 
+              data: { confirm: "This will clear all failed sync records. Continue?" } %>
+        </div>
+        <div class="card-body theme-card-content">
+          <% if @recent_sync_attempts.any? %>
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Target</th>
+                    <th>Status</th>
+                    <th>Last Attempt</th>
+                    <th>Last Success</th>
+                    <th>Attempts</th>
+                    <th>Error</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @recent_sync_attempts.each do |attempt| %>
+                    <tr>
+                      <td><%= attempt.sync_type.titleize %></td>
+                      <td><%= attempt.target_node_id || 'N/A' %></td>
+                      <td>
+                        <span class="badge bg-<%= case attempt.status
+                          when 'success' then 'success'
+                          when 'failed' then 'danger'
+                          when 'in_progress' then 'warning'
+                          else 'secondary'
+                        end %>">
+                          <%= attempt.status.titleize %>
+                        </span>
+                      </td>
+                      <td><%= attempt.last_attempt_at&.strftime("%Y-%m-%d %H:%M:%S") || 'Never' %></td>
+                      <td><%= attempt.last_success_at&.strftime("%Y-%m-%d %H:%M:%S") || 'Never' %></td>
+                      <td><%= attempt.attempt_count %></td>
+                      <td>
+                        <% if attempt.error_message.present? %>
+                          <span class="text-danger" title="<%= attempt.error_message %>">
+                            <%= truncate(attempt.error_message, length: 50) %>
+                          </span>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <p class="text-muted">No sync attempts recorded yet.</p>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Failed Syncs -->
+      <% if @failed_syncs.any? %>
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0 theme-text-primary">Recent Failures</h5>
+          </div>
+          <div class="card-body theme-card-content">
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Target</th>
+                    <th>Last Attempt</th>
+                    <th>Attempts</th>
+                    <th>Error</th>
+                    <th>Next Retry</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @failed_syncs.each do |attempt| %>
+                    <tr>
+                      <td><%= attempt.sync_type.titleize %></td>
+                      <td><%= attempt.target_node_id || 'N/A' %></td>
+                      <td><%= attempt.last_attempt_at&.strftime("%Y-%m-%d %H:%M:%S") %></td>
+                      <td><%= attempt.attempt_count %></td>
+                      <td>
+                        <span class="text-danger" title="<%= attempt.error_message %>">
+                          <%= truncate(attempt.error_message, length: 80) %>
+                        </span>
+                      </td>
+                      <td>
+                        <% if attempt.next_attempt_at %>
+                          <%= attempt.next_attempt_at.strftime("%Y-%m-%d %H:%M:%S") %>
+                        <% else %>
+                          Manual intervention required
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

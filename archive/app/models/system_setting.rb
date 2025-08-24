@@ -118,6 +118,59 @@ class SystemSetting < ApplicationRecord
       archive_role == 'standalone'
     end
 
+    # Sync control methods
+    def sync_paused?
+      get('sync_paused', 'false') == 'true'
+    end
+    
+    def pause_sync
+      set('sync_paused', 'true', 'Sync is currently paused by user')
+    end
+    
+    def resume_sync
+      set('sync_paused', 'false', 'Sync is currently active')
+    end
+    
+    def sync_emergency_stop?
+      get('sync_emergency_stop', 'false') == 'true'
+    end
+    
+    def emergency_stop_sync
+      set('sync_emergency_stop', 'true', 'Sync emergency stopped due to system issues')
+    end
+    
+    def clear_emergency_stop
+      set('sync_emergency_stop', 'false', 'Sync emergency stop cleared')
+    end
+    
+    def sync_health_check_enabled?
+      get('sync_health_check_enabled', 'true') == 'true'
+    end
+    
+    def sync_max_concurrent_operations
+      get('sync_max_concurrent_operations', '3').to_i
+    end
+    
+    def sync_operation_timeout
+      get('sync_operation_timeout', '30').to_i
+    end
+    
+    # Slave key management (for client archives)
+    def slave_key_encrypted
+      get('slave_key_encrypted', '')
+    end
+    
+    def set_slave_key(key)
+      # Encrypt and store the slave key
+      encrypted_key = encrypt_value(key)
+      set('slave_key_encrypted', encrypted_key, 'Encrypted slave key for master authentication')
+    end
+    
+    def decrypt_slave_key
+      return nil unless slave_key_encrypted.present?
+      decrypt_value(slave_key_encrypted)
+    end
+
     # File sync settings
     def file_sync_enabled?
       get('file_sync_enabled', 'false') == 'true'
