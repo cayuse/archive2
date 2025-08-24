@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import sys, signal, logging
 from .player_logic import Player
 

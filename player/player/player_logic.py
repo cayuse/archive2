@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import json, time, logging, threading
 from typing import Optional, Dict, Any
 import redis

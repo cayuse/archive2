@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os, json, time, socket, subprocess, threading, logging
 from typing import Optional, Dict, Any
 

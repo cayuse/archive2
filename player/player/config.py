@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List
-from urllib.parse import urlparse
 
 class Settings(BaseSettings):
     """
