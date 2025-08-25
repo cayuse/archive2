@@ -4,14 +4,17 @@ After=network.target
 
 [Service]
 # It is recommended to create a dedicated user for the service
+# NOTE: you may not have this, so replace "player" with your desired username
 User=player
 Group=player
 
 # IMPORTANT: Update this to the absolute path of your project's root directory
-WorkingDirectory=/opt/archive2/player/player
+# This will be $PLAYER_ROOT from the README file
+WorkingDirectory=/opt/archive2/player
 
 # IMPORTANT: Update the path to your Python executable (e.g., in a virtualenv)
-ExecStart=/opt/archive2/player/.venv/bin/python -m player.main
+# If the working directory is set right, then the .venv file will be in the working directory
+ExecStart=./.venv/bin/python -m player.main
 
 # Restart the service automatically if it fails
 Restart=on-failure

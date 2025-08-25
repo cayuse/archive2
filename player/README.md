@@ -60,6 +60,93 @@ The same goes for my redis port
 
     PLAYER_REDIS_PORT=3012
 
+# Running the application
+
+The "player" app is in a subdirectory of the 'archive2' repo.
+For the sake of this discussion, the location that you extract
+the archive2 repository shall be called "REPO_ROOT".
+
+The player subdirectory is then $REPO_ROOT/player, but I'll call that
+$PLAYER_ROOT. IF this was all in a bash script, and we assume
+the repo is extracted to /home/kutenai/proj/archive2, then you have
+
+    export REPO_ROOT=/home/kutenai/proj/archive2
+    export PLAYER_ROOT=$REPO_ROOT/player
+
+I will assume that the $PLAYER_ROOT env variable is setup from now on.
+
+So, we want to install a python virtualenv in $PLAYER_ROOT.
+
+## Install VirtualENV
+
+I have no idea what you are running on. On a standard *nix disti, like Ubuntu,
+you can use `sudo apt install python3` or be more specific,
+`sudo apt install python3.12`. What is available may vary, and you can
+enable some other repods to get more recent versions. This app should
+not require cuttying edge python. 3.12 is fine, 3.11 will work, even 3.10. 
+
+You also need to install the venv for the python, so your install will be these two lines
+
+    sudo apt install python3.12 python3.23-venv
+
+Now, you have a working python3.12 (or whatever version you happened to use)
+
+Create a virtualenv
+
+    cd $PLAYER_ROOT
+    python3.23 -m venv .venv
+
+Now, I'm explicitely calling the 3.12, and i'm using the `-m` to use the 'venv' module,
+and giving it the single argument `.venv`. The name of that virtualenv is just
+convention, call it `.tiddlywinks` or `ilovecats`..  don't care. But, letting
+you know it's just a name.
+
+## Configure virtual environment modules
+You can easiy test this out by running from the command line
+
+    cd $PLAYER_ROOT
+    source .venv/bin/activate
+
+The above commands will "activate" the python virtualenv IN THE CURRENT SHELL. Nowhere else. This is
+just a local thing. It sets some shell variables, that's it. and it adds the $PLAYER_ROOT/.venv/bin to your
+path. So, now, just "python" will run the python from that virtualenv, and, use whatever modules you
+have configured. So, the first thing I always do when I setup a new virtualenv is update pip.
+
+    pip install -U pip
+
+Now, you can install the requirements
+
+    pip install -r requirements.txt
+
+At this point, your virtual is created, activated (for this shell), and has the required modules installed.
+
+## Run the player in your shell
+
+Anytime you want to run the player, you can use the following commands. I'll assume this is a new shell,
+but $PLAYER_ROOT is defined -- or you use the full path. This is how to run the app
+
+    cd $PLAYER_ROOT
+    source .venv/bin/activate
+    python -m player.main
+
+I sourced the environment, than used the raw python, that is now in the path. I could have done this
+instead:
+
+    cd $PLAYER_ROOT
+    .venv/bin/python -m player.main
+
+I do not 'NEED' the environment to be source, that's just a convenience, once python is running, it
+won't ned that path.
+
+Finally, I can just do this also
+
+    $PLAYER_ROOT/.venv/bin/python -m player.main
+
+Full path provided. Now, that above won't work properly if the "working directory" is not $PLAYER_ROOT,
+that is because the `-m player.main` assumes there is a python module in the current directory.
+
+Inside that module there is a file named `main.py`, and that is what you are "running". Technically, you are
+importing the module player.main, and that will auto-run
 
 # System Service
 
