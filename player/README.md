@@ -148,7 +148,56 @@ that is because the `-m player.main` assumes there is a python module in the cur
 Inside that module there is a file named `main.py`, and that is what you are "running". Technically, you are
 importing the module player.main, and that will auto-run
 
+## Run the player in your shell "as a script"
+I've been running the player as a module.
+If you wanted to run it as a "script", you'd have to have a
+wrapper of some sort. A very simple wrapper would be a `run.py` script
+
+    ./player/run.py
+
+That would like like this
+
+
+    from player.main import main
+
+    main()
+
+You could then run this from anywhere
+
+    cd ~
+    $PLAYER_ROOT/.venv/bin/python $PLAYER_ROOT/run.py
+
+The trick there is that you'd need to make sure you copied the 
+`.env` file to the local path where you run it, so these 
+values would work. In otherwords, the system expects to find
+a .env file in the current working directory.
+
+
+
+
 # System Service
+
+I have provided an *EXAMPLE* systemd service file. This file
+is installed by copying to /etc/systemd/system. 
+
+THIS IS AN EXAMPLE!!
+
+## Modify the file to match your local environment
+First, set the "WorkingDirectory" to match your install
+location. This will be the `PLAYER_ROOT` value, but it will NOT
+be an environment variable, provide the full path here.
+
+Next, you will need the `ExecStart` line to match your environment.
+This is easy, since the service will have the working directory in the player
+location, where you have already created the virtrual env, it should
+just work like the example.
+
+## Systemd file "User"
+
+I added the "user". This is just an example also. The systemd service
+will run as "root", but if you want it to run as something else, you can
+create a user, i.e. "player" and run it as that. this is optional, but
+probably recommended. Comment those lines out of you don't make this.
 
 The systemd service will run with the installed systemd file. An example is located in the
 systemd path. Install like this:
