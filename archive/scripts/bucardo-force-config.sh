@@ -11,12 +11,19 @@ mkdir -p /var/lib/bucardo /var/run/bucardo /var/log/bucardo
 # Set HOME for Bucardo user
 export HOME=/var/lib/bucardo
 
-# Defaults for connection if not provided by env
-: "${PGHOST:=db}"; export PGHOST
-: "${PGPORT:=5432}"; export PGPORT
-: "${PGDATABASE:=bucardo}"; export PGDATABASE
-: "${PGUSER:=bucardo}"; export PGUSER
-: "${PGPASSWORD:=bucardo}"; export PGPASSWORD
+# Use the Bucardo-specific environment variables
+: "${BUCARDO_LOCAL_DB_HOST:=db}"; export BUCARDO_LOCAL_DB_HOST
+: "${BUCARDO_LOCAL_DB_PORT:=5432}"; export BUCARDO_LOCAL_DB_PORT
+: "${BUCARDO_LOCAL_DB_NAME:=bucardo}"; export BUCARDO_LOCAL_DB_NAME
+: "${BUCARDO_LOCAL_DB_USER:=bucardo}"; export BUCARDO_LOCAL_DB_USER
+: "${BUCARDO_LOCAL_DB_PASS:=bucardo}"; export BUCARDO_LOCAL_DB_PASS
+
+# Also set standard PG variables for compatibility
+export PGHOST=$BUCARDO_LOCAL_DB_HOST
+export PGPORT=$BUCARDO_LOCAL_DB_PORT
+export PGDATABASE=$BUCARDO_LOCAL_DB_NAME
+export PGUSER=$BUCARDO_LOCAL_DB_USER
+export PGPASSWORD=$BUCARDO_LOCAL_DB_PASS
 
 echo "HOME set to $HOME"
 echo "Database connection environment: host=$PGHOST port=$PGPORT db=$PGDATABASE user=$PGUSER"
@@ -24,14 +31,14 @@ echo "Database connection environment: host=$PGHOST port=$PGPORT db=$PGDATABASE 
 # Ensure ownership so we can write config and logs
 chown -R bucardo:bucardo /var/lib/bucardo /var/run/bucardo /var/log/bucardo || true
 
-# Write minimal ~/.bucardorc
+# Write minimal ~/.bucardorc with explicit values
 cat > /var/lib/bucardo/.bucardorc << EOF
 # Minimal Bucardo rc
-dbhost=$PGHOST
-dbport=$PGPORT
-dbname=$PGDATABASE
-dbuser=$PGUSER
-dbpass=$PGPASSWORD
+dbhost=$BUCARDO_LOCAL_DB_HOST
+dbport=$BUCARDO_LOCAL_DB_PORT
+dbname=$BUCARDO_LOCAL_DB_NAME
+dbuser=$BUCARDO_LOCAL_DB_USER
+dbpass=$BUCARDO_LOCAL_DB_PASS
 EOF
 chmod 600 /var/lib/bucardo/.bucardorc
 chown bucardo:bucardo /var/lib/bucardo/.bucardorc
@@ -41,7 +48,7 @@ cat /var/lib/bucardo/.bucardorc
 
 # Test database readiness explicitly
 echo "Testing database readiness..."
-until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" >/dev/null 2>&1; do
+until pg_isready -h "$BUCARDO_LOCAL_DB_HOST" -p "$BUCARDO_LOCAL_DB_PORT" -U "$BUCARDO_LOCAL_DB_USER" -d "$BUCARDO_LOCAL_DB_NAME" >/dev/null 2>&1; do
   echo "  Database not ready, waiting..."
   sleep 2
 done
