@@ -48,7 +48,7 @@ fi
 print_success "Environment loaded: $ARCHIVE_ROLE"
 print_status "App Host: $APP_HOST"
 print_status "Master DB: $MASTER_DB_HOST:$MASTER_DB_PORT"
-print_status "Sync Frequency: every $BUCARDO_SYNC_FREQUENCY minute(s)"
+print_status "Replication Mode: logical"
 
 # Check if Docker is running
 if ! docker info >/dev/null 2>&1; then
@@ -67,7 +67,6 @@ required_vars=(
     "MASTER_DB_HOST"
     "MASTER_DB_USER"
     "MASTER_DB_PASS"
-    "BUCARDO_SYNC_FREQUENCY"
 )
 
 for var in "${required_vars[@]}"; do
@@ -143,36 +142,7 @@ docker compose exec archive bin/rails db:migrate
 
 print_success "Database migrations complete!"
 
-# Setup Bucardo database and user
-print_status "Setting up Bucardo database and user..."
-docker compose exec db psql -U postgres -c "DO \$\$ BEGIN CREATE USER bucardo WITH PASSWORD 'bucardo'; EXCEPTION WHEN duplicate_object THEN null; END \$\$;" 2>/dev/null || true
-docker compose exec db psql -U postgres -c "CREATE DATABASE bucardo OWNER bucardo;" 2>/dev/null || true
-docker compose exec db psql -U postgres -c "ALTER USER bucardo WITH SUPERUSER;" 2>/dev/null || true
-docker compose exec db psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE bucardo TO bucardo;" 2>/dev/null || true
-docker compose exec db psql -U postgres -d bucardo -c "GRANT ALL PRIVILEGES ON SCHEMA public TO bucardo;" 2>/dev/null || true
-
-# Install Bucardo schema
-print_status "Installing Bucardo schema..."
-docker compose exec db psql -U bucardo -d bucardo -f /usr/share/bucardo/bucardo.schema 2>/dev/null || true
-
-print_success "Bucardo database setup complete!"
-
-# Bucardo configuration is handled by command line parameters in the container
-print_status "Bucardo will use command line parameters for configuration"
-
-# Build and start Bucardo
-print_status "Building and starting Bucardo replication service..."
-docker compose build bucardo
-docker compose up -d bucardo
-
-# Wait for Bucardo to be healthy
-print_status "Waiting for Bucardo to be ready..."
-until docker compose exec bucardo pg_isready -h db -U bucardo 2>/dev/null; do
-    print_status "   Bucardo not ready, waiting..."
-    sleep 5
-done
-
-print_success "Bucardo is ready!"
+print_status "Skipping Bucardo setup (removed)"
 
 # Start remaining services
 print_status "Starting remaining services..."
@@ -186,13 +156,11 @@ echo ""
 print_success "Archive Slave deployment completed!"
 echo ""
 print_status "Next steps:"
-echo "1. Check Bucardo logs: docker compose logs bucardo"
-echo "2. Verify replication: docker compose exec bucardo bucardo status"
-echo "3. Monitor sync: docker compose exec bucardo bucardo list syncs"
+echo "1. Run after_deploy_slave.sh to create logical subscription"
 echo ""
 print_status "Useful commands:"
 echo "- View logs: docker compose logs -f"
 echo "- Stop services: docker compose down"
 echo "- Update: git pull && docker compose up -d --build"
 echo ""
-print_status "For replication troubleshooting, see BUCARDO_SETUP.md"
+print_status "For replication, see DEPLOYMENT_GUIDE.md (logical replication section)"

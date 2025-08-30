@@ -38,7 +38,7 @@ source "$EXPORTS_FILE"
 # Verify required environment variables
 REQUIRED_VARS=(
     "MASTER_DB_HOST" "MASTER_DB_PORT" "MASTER_DB_NAME" "MASTER_DB_USER" "MASTER_DB_PASS"
-    "POSTGRES_PASSWORD" "ARCHIVE_ROLE" "BUCARDO_SYNC_FREQUENCY"
+    "POSTGRES_PASSWORD" "ARCHIVE_ROLE" "REPLICATION_MODE"
 )
 
 for var in "${REQUIRED_VARS[@]}"; do
@@ -56,6 +56,7 @@ fi
 success "Environment variables loaded successfully"
 info "Master: $MASTER_DB_HOST:$MASTER_DB_PORT/$MASTER_DB_NAME"
 info "Slave: local archive_production database"
+info "Replication mode: ${REPLICATION_MODE:-bucardo}"
 
 # Ensure we're in the archive directory
 if [[ ! -f "docker-compose.yml" ]]; then
@@ -107,14 +108,16 @@ if ! PGPASSWORD="$MASTER_DB_PASS" pg_isready -h "$MASTER_DB_HOST" -p "$MASTER_DB
 fi
 success "Master database connectivity verified"
 
-# Check if Bucardo is running
-info "Checking Bucardo status..."
-if ! docker compose exec bucardo /usr/bin/bucardo-original --dbhost=db --dbport=5432 --dbname=bucardo --dbuser=bucardo status >/dev/null 2>&1; then
-    error "Bucardo is not running properly. Check logs:"
-    error "  docker compose logs bucardo"
-    exit 1
+if [[ "${REPLICATION_MODE:-bucardo}" == "bucardo" ]]; then
+  # Check if Bucardo is running (slave-only)
+  info "Checking Bucardo status..."
+  if ! docker compose exec bucardo /usr/bin/bucardo-original --dbhost=db --dbport=5432 --dbname=bucardo --dbuser=bucardo status >/dev/null 2>&1; then
+      error "Bucardo is not running properly. Check logs:"
+      error "  docker compose logs bucardo"
+      exit 1
+  fi
+  success "Bucardo is running"
 fi
-success "Bucardo is running"
 
 # Step 1: Dump master database with proper constraint handling
 info "📥 Dumping master database..."
@@ -191,8 +194,9 @@ else
     success "Data copy verified: $MASTER_COUNT songs on both master and slave"
 fi
 
-# Step 5: Setup Bucardo replication
-info "🔧 Setting up Bucardo replication..."
+if [[ "${REPLICATION_MODE:-bucardo}" == "bucardo" ]]; then
+  # Step 5: Setup Bucardo replication
+  info "🔧 Setting up Bucardo replication..."
 
 # Add local database
 info "Adding local database to Bucardo..."
@@ -285,10 +289,10 @@ docker compose exec bucardo bash -c "echo '*/$BUCARDO_SYNC_FREQUENCY * * * * /us
 # Start cron service in the container
 docker compose exec bucardo service cron start 2>/dev/null || warning "Could not start cron service"
 
-success "Bucardo replication setup complete with $BUCARDO_SYNC_FREQUENCY-minute polling"
+  success "Bucardo replication setup complete with $BUCARDO_SYNC_FREQUENCY-minute polling"
 
 # Step 6: Test replication
-info "🧪 Testing replication (master -> slave direction)..."
+  info "🧪 Testing replication (master -> slave direction)..."
 TEST_TIME=$(date +%s)
 TEST_TITLE="replication_test_$TEST_TIME"
 
@@ -344,6 +348,40 @@ else
     error "Expected 1 record, found $FOUND_COUNT"
     info "Check Bucardo logs: docker compose logs bucardo"
     info "Check Bucardo status: docker compose exec bucardo /usr/bin/bucardo-original --dbhost=db --dbport=5432 --dbname=bucardo --dbuser=bucardo status archive_sync"
+  fi
+else
+  # Step 5: Setup logical replication subscription on slave
+  info "🔧 Setting up PostgreSQL logical replication (subscription on slave)..."
+
+  # Ensure logical replication settings are visible/healthy (no hard fail here)
+  docker compose exec -T db psql -U postgres -c "SHOW wal_level;" >/dev/null 2>&1 || true
+
+  # Create subscription idempotently
+  info "Creating subscription ${SUB_NAME:-sub_archive} (copy_data=false)..."
+  docker compose exec -T db psql -U postgres -d archive_production -c "DROP SUBSCRIPTION IF EXISTS ${SUB_NAME:-sub_archive};" >/dev/null 2>&1 || true
+  if ! docker compose exec -T db psql -U postgres -d archive_production -c "CREATE SUBSCRIPTION ${SUB_NAME:-sub_archive} CONNECTION 'host=${MASTER_DB_HOST} port=${MASTER_DB_PORT} dbname=${MASTER_DB_NAME} user=${REPL_USER:-archive_replicator} password=${REPL_PASS:-change-me}' PUBLICATION ${PUB_NAME:-pub_archive} WITH (copy_data=false, create_slot=true, slot_name='${SUB_SLOT_NAME:-sub_archive_slot}');"; then
+      error "Failed to create subscription. Verify master publication, user, network, and credentials."
+      exit 1
+  fi
+
+  success "Subscription ${SUB_NAME:-sub_archive} created"
+
+  # Quick replication smoke test
+  info "🧪 Testing logical replication (master -> slave)..."
+  TEST_TIME=$(date +%s)
+  TEST_TITLE="lr_test_$TEST_TIME"
+  if ! PGPASSWORD="$MASTER_DB_PASS" psql -h "$MASTER_DB_HOST" -p "$MASTER_DB_PORT" -U "$MASTER_DB_USER" -d "$MASTER_DB_NAME" -c "INSERT INTO songs (id, title, created_at, updated_at) VALUES (gen_random_uuid(), '$TEST_TITLE', NOW(), NOW());"; then
+      warning "Could not insert test record on master; skipping test"
+  else
+      sleep 5
+      FOUND_COUNT=$(docker compose exec -T db psql -U postgres -d archive_production -t -c "SELECT COUNT(*) FROM songs WHERE title = '$TEST_TITLE';" | tr -d ' ')
+      if [[ "$FOUND_COUNT" == "1" ]]; then
+          success "✨ Logical replication test PASSED!"
+      else
+          warning "⚠️  Logical replication test did not find record yet; check pg_stat_subscription"
+      fi
+  fi
+fi
 fi
 
 # Final status and verification
@@ -370,12 +408,15 @@ fi
 
 echo ""
 info "⚙️  Replication Settings:"
-info "  - Direction: master ($MASTER_DB_HOST) -> slave (local)"
-info "  - Sync method: Polling-based (no triggers on master)"
-info "  - Sync interval: Every $BUCARDO_SYNC_FREQUENCY minute(s) (via cron)"
-info "  - Sync type: swap (compares data and syncs differences)"
-info "  - Tables synced: 16 tables (including all music data, users, themes, storage)"
-info "  - Master impact: Read-only queries, no triggers installed"
+if [[ "${REPLICATION_MODE:-bucardo}" == "bucardo" ]]; then
+  info "  - Mode: Bucardo (polling via cron)"
+  info "  - Direction: master ($MASTER_DB_HOST) -> slave (local)"
+  info "  - Interval: Every $BUCARDO_SYNC_FREQUENCY minute(s)"
+else
+  info "  - Mode: PostgreSQL logical replication"
+  info "  - Direction: master ($MASTER_DB_HOST) -> slave (subscription ${SUB_NAME:-sub_archive})"
+  info "  - Interval: near real-time (streaming)"
+fi
 echo ""
 info "📚 Useful commands:"
 info "  Check sync status: docker compose exec bucardo /usr/bin/bucardo-original --dbhost=db --dbport=5432 --dbname=bucardo --dbuser=bucardo status archive_sync"

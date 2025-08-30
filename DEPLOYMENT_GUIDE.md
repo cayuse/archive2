@@ -1,6 +1,6 @@
 # Archive Deployment Guide
 
-A comprehensive guide for deploying the Archive music management system with optional Bucardo database replication and Syncthing file synchronization.
+A comprehensive guide for deploying the Archive music management system with PostgreSQL logical replication and Syncthing file synchronization.
 
 ## Table of Contents
 
@@ -10,7 +10,7 @@ A comprehensive guide for deploying the Archive music management system with opt
 4. [Standalone Deployment](#standalone-deployment)
 5. [Master Deployment](#master-deployment)
 6. [Slave Deployment](#slave-deployment)
-7. [Database Replication with Bucardo](#database-replication-with-bucardo)
+7. [Database Replication with PostgreSQL Logical Replication](#database-replication-with-postgresql-logical-replication)
 8. [Troubleshooting](#troubleshooting)
 9. [Security Considerations](#security-considerations)
 
@@ -25,7 +25,7 @@ The Archive system supports three deployment configurations:
 ### Technology Stack
 
 - **Application**: Ruby on Rails in Docker containers
-- **Database**: PostgreSQL with optional Bucardo replication
+- **Database**: PostgreSQL with logical replication
 - **Cache**: Redis
 - **File Sync**: Syncthing (planned)
 - **Networking**: WireGuard VPN recommended for inter-server communication
@@ -105,14 +105,9 @@ export FORGERY_ORIGIN_CHECK=false           # Disable for internal testing
 export ALLOW_ALL_HOSTS=true                 # Accept any Host header
 
 # Docker Compose configuration
-export COMPOSE_FILE="docker-compose.yml:docker-compose.replication.yml"
+export COMPOSE_FILE="docker-compose.yml"
 
-# Local Bucardo database connection
-export BUCARDO_LOCAL_DB_HOST=db             # Docker service name
-export BUCARDO_LOCAL_DB_PORT=5432           # PostgreSQL port
-export BUCARDO_LOCAL_DB_NAME=bucardo        # Bucardo control database
-export BUCARDO_LOCAL_DB_USER=bucardo        # Bucardo database user
-export BUCARDO_LOCAL_DB_PASS=bucardo        # Bucardo database password
+## Bucardo variables removed (using logical replication)
 
 # Master database connection (must be reachable via VPN/LAN)
 export MASTER_DB_HOST=192.168.1.201         # Master server IP address
@@ -121,16 +116,7 @@ export MASTER_DB_NAME=archive_production    # Master database name
 export MASTER_DB_USER=postgres              # Master database user
 export MASTER_DB_PASS=$POSTGRES_PASSWORD    # Master database password
 
-# Bucardo convenience variables (auto-derived from above)
-export BUCARDO_MASTER_DB_HOST=$MASTER_DB_HOST
-export BUCARDO_MASTER_DB_PORT=$MASTER_DB_PORT
-export BUCARDO_MASTER_DB_NAME=$MASTER_DB_NAME
-export BUCARDO_MASTER_DB_USER=$MASTER_DB_USER
-export BUCARDO_MASTER_DB_PASS=$MASTER_DB_PASS
-export BUCARDO_SYNC_DIRECTION=slave_from_master
-
-# Bucardo sync frequency (in minutes) - how often to poll for changes
-export BUCARDO_SYNC_FREQUENCY=5
+## Bucardo variables removed
 
 # Logical replication (master-driven; slaves only need subscription)
 # Master-only exports (used when preparing master for logical replication)
@@ -160,7 +146,7 @@ All deployments assume this directory structure:
 ~/archive2/
 ├── archive/                    # Main application directory
 │   ├── docker-compose.yml     # Base compose file
-│   ├── docker-compose.replication.yml  # Slave-specific overlay
+│   ├── (replication overlay removed)
 │   ├── deploy_slave.sh        # Slave deployment script
 │   ├── after_deploy_slave.sh  # Post-deployment sync setup
 │   └── ...                    # Application files
@@ -268,10 +254,7 @@ cd ~/archive2/archive
 This script will:
 - Validate environment variables
 - Create required directories
-- Build custom PostgreSQL image with Bucardo support
-- Start all containers (PostgreSQL, Redis, Rails, Bucardo)
-- Set up Bucardo database and user
-- Install Bucardo schema
+- Start all containers (PostgreSQL, Redis, Rails)
 
 3. **Verify initial deployment**:
 
@@ -279,8 +262,7 @@ This script will:
 # Check all containers are running
 docker compose ps
 
-# Verify Bucardo is working
-docker compose exec bucardo /usr/bin/bucardo-original --dbhost=db --dbport=5432 --dbname=bucardo --dbuser=bucardo status
+# (Bucardo removed) Verify DB and app are healthy
 
 # Test connectivity to master
 psql -h $MASTER_DB_HOST -p $MASTER_DB_PORT -U $MASTER_DB_USER -d $MASTER_DB_NAME -c "\l"
@@ -299,7 +281,7 @@ This script will:
 1. **Dump master database** - Creates complete backup of master data
 2. **Restore to slave** - Loads master data into local database
 3. **Verify data integrity** - Compares record counts
-4. **Configure Bucardo replication** - Sets up ongoing sync
+4. **Create logical replication subscription** - Sets up ongoing sync
 5. **Test replication** - Inserts test record and verifies sync
 
 ### Expected Output
@@ -309,7 +291,7 @@ The script provides colored output and progress indicators:
 - 📥 Dumping master database
 - 📤 Restoring data to slave
 - ✅ Verifying data copy
-- 🔧 Setting up Bucardo replication
+- 🔧 Creating logical replication subscription
 - 🧪 Testing replication
 - ✨ Setup complete
 
@@ -333,22 +315,21 @@ docker compose exec -T db psql -U postgres -d archive_production -c "CREATE SUBS
 docker compose exec -T db psql -U postgres -d archive_production -c "SELECT subname, status, last_msg_send_time, last_msg_receipt_time FROM pg_stat_subscription;"
 ```
 
-## Database Replication with Bucardo
+## Database Replication with PostgreSQL Logical Replication
 
 ### Architecture
 
 - **Master**: Standard Archive deployment with PostgreSQL
-- **Slave**: Archive deployment + Bucardo container
-- **Replication**: Bidirectional PostgreSQL-to-PostgreSQL sync
+- **Slave**: Archive deployment with subscription
+- **Replication**: Logical replication (publication/subscription)
 - **Network**: VPN recommended (WireGuard, OpenVPN, etc.)
 
 ### Replication Flow
 
 1. **Initial sync**: Master database dumped and restored to slave
-2. **Ongoing sync**: Bucardo polls master for changes at configured intervals
-3. **Polling frequency**: Controlled by `BUCARDO_SYNC_FREQUENCY` (default: 5 minutes)
-4. **Conflict resolution**: Bucardo handles conflicts with configurable rules
-5. **Health monitoring**: Built-in status and logging
+2. **Ongoing sync**: Slave streams changes from master publication
+3. **Latency**: Near real-time
+4. **Health monitoring**: `pg_stat_subscription` and `pg_replication_slots`
 
 ### Replication Method
 
@@ -359,28 +340,14 @@ The slave uses **polling-based replication** with the following characteristics:
 - **Multi-slave friendly**: Multiple slaves can connect without interference
 - **Connection resilient**: Handles network disconnections gracefully
 
-### Manual Replication Commands
+### Manual Replication Commands (Logical)
 
 If you need to manually configure replication or troubleshoot:
 
 ```bash
-# Add databases to Bucardo
-docker compose exec bucardo /usr/bin/bucardo-original --dbhost=db --dbport=5432 --dbname=bucardo --dbuser=bucardo add database local \
-  dbname=archive_production host=db port=5432 \
-  user=postgres pass=$POSTGRES_PASSWORD
-
-docker compose exec bucardo /usr/bin/bucardo-original --dbhost=db --dbport=5432 --dbname=bucardo --dbuser=bucardo add database master \
-  dbname=$MASTER_DB_NAME host=$MASTER_DB_HOST port=$MASTER_DB_PORT \
-  user=$MASTER_DB_USER pass=$MASTER_DB_PASS
-
-# Add tables for replication
-docker compose exec bucardo /usr/bin/bucardo-original --dbhost=db --dbport=5432 --dbname=bucardo --dbuser=bucardo add all tables --db=local,master
-
-# Create and start sync
-docker compose exec bucardo /usr/bin/bucardo-original --dbhost=db --dbport=5432 --dbname=bucardo --dbuser=bucardo add sync archive_sync \
-  relgroup=default dbs=local,master
-
-docker compose exec bucardo /usr/bin/bucardo-original --dbhost=db --dbport=5432 --dbname=bucardo --dbuser=bucardo start archive_sync
+# Create subscription on slave
+docker compose exec -T db psql -U postgres -d archive_production -c "DROP SUBSCRIPTION IF EXISTS ${SUB_NAME:-sub_archive};"
+docker compose exec -T db psql -U postgres -d archive_production -c "CREATE SUBSCRIPTION ${SUB_NAME:-sub_archive} CONNECTION 'host=${MASTER_DB_HOST} port=${MASTER_DB_PORT} dbname=${MASTER_DB_NAME} user=${REPL_USER:-archive_replicator} password=${REPL_PASS:-change-me}' PUBLICATION ${PUB_NAME:-pub_archive} WITH (copy_data=false, create_slot=true, slot_name='${SUB_SLOT_NAME:-sub_archive_slot}');"
 ```
 
 ### Monitoring Replication
@@ -429,20 +396,14 @@ ping $MASTER_DB_HOST
 nc -zv $MASTER_DB_HOST $MASTER_DB_PORT
 ```
 
-#### 3. Bucardo Issues
+#### 3. Logical Replication Issues
 
 ```bash
-# Check Bucardo status
-docker compose exec bucardo /usr/bin/bucardo-original --dbhost=db --dbport=5432 --dbname=bucardo --dbuser=bucardo status
+# Check subscription status
+docker compose exec -T db psql -U postgres -d archive_production -c "SELECT * FROM pg_stat_subscription;"
 
-# Restart Bucardo daemon
-docker compose exec bucardo /usr/bin/bucardo-original --dbhost=db --dbport=5432 --dbname=bucardo --dbuser=bucardo restart
-
-# Check Bucardo configuration
-docker compose exec bucardo cat /var/lib/bucardo/.bucardorc
-
-# View Bucardo logs
-docker compose exec bucardo cat /var/log/bucardo/bucardo.log
+# Check replication slots on master
+psql -h $MASTER_DB_HOST -p $MASTER_DB_PORT -U $MASTER_DB_USER -d $MASTER_DB_NAME -c "SELECT slot_name, active, restart_lsn FROM pg_replication_slots;"
 ```
 
 #### 4. Environment Variable Issues
@@ -490,8 +451,7 @@ docker compose exec bucardo pg_isready -h $MASTER_DB_HOST -p $MASTER_DB_PORT -U 
 
 - **Application logs**: `docker compose logs archive`
 - **Database logs**: `docker compose logs db`
-- **Bucardo logs**: `docker compose logs bucardo`
-- **Bucardo daemon log**: `/var/log/bucardo/bucardo.log` (inside container)
+  (Bucardo removed)
 
 ## Security Considerations
 
@@ -547,7 +507,7 @@ docker compose exec bucardo pg_isready -h $MASTER_DB_HOST -p $MASTER_DB_PORT -U 
 1. **Health checks**
    - Monitor application `/up` endpoint
    - Check database connectivity
-   - Monitor Bucardo sync status
+   - Monitor subscription status
 
 2. **Alerting**
    - Set up alerts for container failures
