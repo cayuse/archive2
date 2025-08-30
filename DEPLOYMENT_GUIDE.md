@@ -107,8 +107,6 @@ export ALLOW_ALL_HOSTS=true                 # Accept any Host header
 # Docker Compose configuration
 export COMPOSE_FILE="docker-compose.yml"
 
-## Bucardo variables removed (using logical replication)
-
 # Master database connection (must be reachable via VPN/LAN)
 export MASTER_DB_HOST=192.168.1.201         # Master server IP address
 export MASTER_DB_PORT=5432                  # Master PostgreSQL port
@@ -116,13 +114,13 @@ export MASTER_DB_NAME=archive_production    # Master database name
 export MASTER_DB_USER=postgres              # Master database user
 export MASTER_DB_PASS=$POSTGRES_PASSWORD    # Master database password
 
-## Bucardo variables removed
-
-# Logical replication (master-driven; slaves only need subscription)
-# Master-only exports (used when preparing master for logical replication)
-export REPL_USER=archive_replicator
-export REPL_PASS=change-me
-export PUB_NAME=pub_archive
+# Logical replication configuration
+export REPLICATION_MODE=logical             # Use PostgreSQL logical replication
+export REPL_USER=archive_replicator         # Replication user on master
+export REPL_PASS=change-me                  # Replication user password
+export PUB_NAME=pub_archive                 # Publication name on master
+export SUB_NAME=sub_archive                 # Subscription name on slave
+export SUB_SLOT_NAME=sub_archive_slot       # Replication slot name
 ```
 
 ### Environment Validation
@@ -131,7 +129,7 @@ After setting variables, verify them:
 
 ```bash
 # Check all Archive-related variables
-env | grep -E "(ARCHIVE|POSTGRES|APP_|BUCARDO|MASTER)" | sort
+env | grep -E "(ARCHIVE|POSTGRES|APP_|MASTER|REPL_)" | sort
 
 # Verify required directories exist
 ls -la $HOST_STORAGE_PATH $POSTGRES_DATA_PATH
@@ -146,7 +144,6 @@ All deployments assume this directory structure:
 ~/archive2/
 ├── archive/                    # Main application directory
 │   ├── docker-compose.yml     # Base compose file
-│   ├── (replication overlay removed)
 │   ├── deploy_slave.sh        # Slave deployment script
 │   ├── after_deploy_slave.sh  # Post-deployment sync setup
 │   └── ...                    # Application files
@@ -262,7 +259,7 @@ This script will:
 # Check all containers are running
 docker compose ps
 
-# (Bucardo removed) Verify DB and app are healthy
+# Verify DB and app are healthy
 
 # Test connectivity to master
 psql -h $MASTER_DB_HOST -p $MASTER_DB_PORT -U $MASTER_DB_USER -d $MASTER_DB_NAME -c "\l"
@@ -298,20 +295,18 @@ The script provides colored output and progress indicators:
 ### Post-Deployment Verification
 
 ```bash
-# Check sync status
-docker compose exec bucardo /usr/bin/bucardo-original --dbhost=db --dbport=5432 --dbname=bucardo --dbuser=bucardo status archive_sync
-
-# Monitor replication logs
-docker compose logs bucardo -f
+# Check subscription status
+docker compose exec -T db psql -U postgres -d archive_production -c "SELECT * FROM pg_stat_subscription;"
 
 # Compare data counts
 echo "Master:" && psql -h $MASTER_DB_HOST -p $MASTER_DB_PORT -U $MASTER_DB_USER -d $MASTER_DB_NAME -t -c "SELECT COUNT(*) FROM songs;"
 echo "Slave:" && docker compose exec -T db psql -U postgres -d archive_production -t -c "SELECT COUNT(*) FROM songs;"
-# Logical replication: create subscription on slave (idempotent)
+
+# Manually recreate subscription if needed (idempotent)
 docker compose exec -T db psql -U postgres -d archive_production -c "DROP SUBSCRIPTION IF EXISTS ${SUB_NAME:-sub_archive};"
 docker compose exec -T db psql -U postgres -d archive_production -c "CREATE SUBSCRIPTION ${SUB_NAME:-sub_archive} CONNECTION 'host=${MASTER_DB_HOST} port=${MASTER_DB_PORT} dbname=${MASTER_DB_NAME} user=${REPL_USER:-archive_replicator} password=${REPL_PASS:-change-me}' PUBLICATION ${PUB_NAME:-pub_archive} WITH (copy_data=false, create_slot=true, slot_name='${SUB_SLOT_NAME:-sub_archive_slot}');"
 
-# Verify
+# Verify subscription health
 docker compose exec -T db psql -U postgres -d archive_production -c "SELECT subname, status, last_msg_send_time, last_msg_receipt_time FROM pg_stat_subscription;"
 ```
 
@@ -333,12 +328,13 @@ docker compose exec -T db psql -U postgres -d archive_production -c "SELECT subn
 
 ### Replication Method
 
-The slave uses **polling-based replication** with the following characteristics:
+The slave uses **PostgreSQL logical replication** with the following characteristics:
 - **No triggers on master**: Master database remains unchanged
-- **Independent polling**: Each slave polls master independently
-- **Configurable frequency**: Set via `BUCARDO_SYNC_FREQUENCY` environment variable
-- **Multi-slave friendly**: Multiple slaves can connect without interference
+- **Streaming replication**: Changes are streamed in near real-time
+- **Publisher/Subscriber model**: Master publishes changes, slave subscribes
+- **Multi-slave friendly**: Multiple slaves can subscribe independently
 - **Connection resilient**: Handles network disconnections gracefully
+- **WAL-based**: Uses PostgreSQL's Write-Ahead Log for change detection
 
 ### Manual Replication Commands (Logical)
 
@@ -353,17 +349,17 @@ docker compose exec -T db psql -U postgres -d archive_production -c "CREATE SUBS
 ### Monitoring Replication
 
 ```bash
-# Check sync status
-docker compose exec bucardo /usr/bin/bucardo-original --dbhost=db --dbport=5432 --dbname=bucardo --dbuser=bucardo status archive_sync
+# Check subscription status (on slave)
+docker compose exec -T db psql -U postgres -d archive_production -c "SELECT * FROM pg_stat_subscription;"
 
-# View active syncs
-docker compose exec bucardo /usr/bin/bucardo-original --dbhost=db --dbport=5432 --dbname=bucardo --dbuser=bucardo list syncs
+# Check replication slots (on master)
+psql -h $MASTER_DB_HOST -p $MASTER_DB_PORT -U $MASTER_DB_USER -d $MASTER_DB_NAME -c "SELECT * FROM pg_replication_slots;"
 
-# Monitor logs
-docker compose logs bucardo -f
+# Monitor replication lag
+docker compose exec -T db psql -U postgres -d archive_production -c "SELECT now() - last_msg_receipt_time AS lag FROM pg_stat_subscription;"
 
-# Check for conflicts
-docker compose exec bucardo /usr/bin/bucardo-original --dbhost=db --dbport=5432 --dbname=bucardo --dbuser=bucardo list conflicts
+# Check publication tables (on master)
+psql -h $MASTER_DB_HOST -p $MASTER_DB_PORT -U $MASTER_DB_USER -d $MASTER_DB_NAME -c "SELECT * FROM pg_publication_tables WHERE pubname = '${PUB_NAME:-pub_archive}';"
 ```
 
 ## Troubleshooting
@@ -410,13 +406,13 @@ psql -h $MASTER_DB_HOST -p $MASTER_DB_PORT -U $MASTER_DB_USER -d $MASTER_DB_NAME
 
 ```bash
 # Check if variables are set
-env | grep -E "(ARCHIVE|POSTGRES|BUCARDO|MASTER)"
+env | grep -E "(ARCHIVE|POSTGRES|MASTER|REPL_)"
 
 # Re-source configuration
 source ~/archive2/temp_corrected_exports.sh
 
-# Verify in containers
-docker compose exec bucardo env | grep BUCARDO
+# Verify database settings
+docker compose exec -T db psql -U postgres -c "SHOW wal_level;"
 ```
 
 #### 5. Permission Issues
@@ -433,25 +429,23 @@ sudo chmod 755 $HOST_STORAGE_PATH $POSTGRES_DATA_PATH
 # Container health checks
 docker compose ps
 docker compose exec db pg_isready -U postgres
-docker compose exec bucardo pg_isready -h db -U bucardo -d bucardo
 
 # Application health
 curl http://$APP_HOST:$ARCHIVE_PORT/up
 
 # Database queries
 docker compose exec db psql -U postgres -d archive_production -c "\dt"
-docker compose exec bucardo psql -h db -U bucardo -d bucardo -c "\dt"
 
-# Network tests
-docker compose exec bucardo ping db
-docker compose exec bucardo pg_isready -h $MASTER_DB_HOST -p $MASTER_DB_PORT -U $MASTER_DB_USER
+# Network tests from slave to master
+nc -zv $MASTER_DB_HOST $MASTER_DB_PORT
+PGPASSWORD=$MASTER_DB_PASS psql -h $MASTER_DB_HOST -p $MASTER_DB_PORT -U $MASTER_DB_USER -d $MASTER_DB_NAME -c "SELECT 1;"
 ```
 
 ### Log Locations
 
 - **Application logs**: `docker compose logs archive`
 - **Database logs**: `docker compose logs db`
-  (Bucardo removed)
+- **PostgreSQL logs**: Check within database container or mounted volume
 
 ## Security Considerations
 
