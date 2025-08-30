@@ -23,6 +23,18 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: archive_production
+    # Enable optional PostgreSQL replication-related settings via env.
+    # Safe defaults work for both master and slave; master should set wal_level=logical.
+    command:
+      - postgres
+      - -c
+      - wal_level=${PG_WAL_LEVEL:-replica}
+      - -c
+      - max_wal_senders=${PG_MAX_WAL_SENDERS:-10}
+      - -c
+      - max_replication_slots=${PG_MAX_REPLICATION_SLOTS:-10}
+      - -c
+      - max_worker_processes=${PG_MAX_WORKER_PROCESSES:-20}
     volumes:
       - ${POSTGRES_DATA_PATH}:/var/lib/postgresql/data
     ports:

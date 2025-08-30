@@ -39,15 +39,16 @@ fi
 
 # Check if environment is sourced
 if [ -z "$ARCHIVE_ROLE" ] || [ "$ARCHIVE_ROLE" != "slave" ]; then
-    print_error "Please source env.common and env.slave first:"
-    print_status "   source env.common"
-    print_status "   source env.slave"
+    print_error "Please source the environment configuration first:"
+    print_status "   source ../temp_corrected_exports.sh"
+    print_status "Current ARCHIVE_ROLE: ${ARCHIVE_ROLE:-'not set'}"
     exit 1
 fi
 
 print_success "Environment loaded: $ARCHIVE_ROLE"
 print_status "App Host: $APP_HOST"
 print_status "Master DB: $MASTER_DB_HOST:$MASTER_DB_PORT"
+print_status "Sync Frequency: every $BUCARDO_SYNC_FREQUENCY minute(s)"
 
 # Check if Docker is running
 if ! docker info >/dev/null 2>&1; then
@@ -63,8 +64,10 @@ required_vars=(
     "POSTGRES_DATA_PATH"
     "HOST_STORAGE_PATH"
     "RAILS_MASTER_KEY"
-    "BUCARDO_MASTER_DB_HOST"
-    "BUCARDO_MASTER_DB_PASS"
+    "MASTER_DB_HOST"
+    "MASTER_DB_USER"
+    "MASTER_DB_PASS"
+    "BUCARDO_SYNC_FREQUENCY"
 )
 
 for var in "${required_vars[@]}"; do
