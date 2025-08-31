@@ -288,7 +288,8 @@ h6 { font-size: 1rem; }
   
   .table-responsive {
     border-radius: 8px;
-    overflow: hidden;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   }
 }
 
@@ -765,7 +766,33 @@ h6 { font-size: 1rem; }
   
   .table-responsive {
     border-radius: 8px;
-    overflow: hidden;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
+
+  /* Enhanced mobile table scrolling */
+  @media (max-width: 767.98px) {
+    .table-responsive {
+      margin-bottom: 0.75rem;
+      min-height: 0.01%; /* Workaround for IE9 bug */
+    }
+    
+    .table-responsive table {
+      min-width: 600px; /* Ensure minimum width for proper column spacing */
+    }
+    
+    /* Ensure action buttons are always accessible */
+    .table-responsive .btn-group,
+    .table-responsive .btn {
+      white-space: nowrap;
+    }
+    
+    /* Improve touch targets on mobile */
+    .table-responsive .btn-sm {
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0.5rem;
+    }
   }
   
   .btn {

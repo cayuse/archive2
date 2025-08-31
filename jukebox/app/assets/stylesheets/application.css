@@ -141,3 +141,42 @@ body {
   transform: none;
   box-shadow: none;
 }
+
+/* Enhanced mobile table scrolling */
+.table-responsive {
+  border-radius: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+@media (max-width: 767.98px) {
+  .table-responsive {
+    margin-bottom: 0.75rem;
+    min-height: 0.01%; /* Workaround for IE9 bug */
+  }
+  
+  .table-responsive table {
+    min-width: 600px; /* Ensure minimum width for proper column spacing */
+  }
+  
+  /* Ensure action buttons are always accessible */
+  .table-responsive .btn-group,
+  .table-responsive .btn {
+    white-space: nowrap;
+  }
+  
+  /* Improve touch targets on mobile */
+  .table-responsive .btn-sm {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.5rem;
+  }
+  
+  /* Better mobile experience for live queue buttons */
+  .table-responsive .btn-group-sm .btn {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0.4rem;
+    font-size: 0.875rem;
+  }
+}
