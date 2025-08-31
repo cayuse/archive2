@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Archive Slave Deployment Script
-# This script deploys a slave Archive system with Bucardo replication
+# This script deploys a slave Archive system with PostgreSQL logical replication
 
 set -e
 
@@ -142,7 +142,7 @@ docker compose exec archive bin/rails db:migrate
 
 print_success "Database migrations complete!"
 
-print_status "Skipping Bucardo setup (removed)"
+print_status "Logical replication will be configured in after_deploy_slave.sh"
 
 # Start remaining services
 print_status "Starting remaining services..."
@@ -163,4 +163,4 @@ echo "- View logs: docker compose logs -f"
 echo "- Stop services: docker compose down"
 echo "- Update: git pull && docker compose up -d --build"
 echo ""
-print_status "For replication, see DEPLOYMENT_GUIDE.md (logical replication section)"
+print_status "For replication setup, see DEPLOYMENT_GUIDE.md or run ./after_deploy_slave.sh"

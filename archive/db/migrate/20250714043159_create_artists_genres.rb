@@ -7,6 +7,9 @@ class CreateArtistsGenres < ActiveRecord::Migration[8.0]
       t.timestamps
     end
     
+    # Add composite primary key (required for logical replication)
+    execute "ALTER TABLE artists_genres ADD CONSTRAINT artists_genres_pkey PRIMARY KEY (artist_id, genre_id);"
+    
     # Add foreign key constraints
     add_foreign_key :artists_genres, :artists, column: :artist_id, primary_key: :id, on_delete: :cascade
     add_foreign_key :artists_genres, :genres, column: :genre_id, primary_key: :id, on_delete: :cascade

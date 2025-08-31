@@ -216,6 +216,15 @@ docker compose exec db psql -U postgres -d archive_production -c "GRANT SELECT O
   public.themes, public.users \
 TO ${REPL_USER:-archive_replicator};"
 
+# ⚠️ SECURITY: If you used the default "change-me" password above, change it now!
+# Update replication user password to something secure:
+docker compose exec db psql -U postgres -d archive_production -c "ALTER ROLE ${REPL_USER:-archive_replicator} PASSWORD 'your_secure_replication_password_here';"
+
+# Ensure all tables have primary keys (required for logical replication DELETEs)
+docker compose exec db psql -U postgres -d archive_production -c "ALTER TABLE albums_genres ADD CONSTRAINT albums_genres_pkey PRIMARY KEY (album_id, genre_id);" 2>/dev/null || true
+docker compose exec db psql -U postgres -d archive_production -c "ALTER TABLE artists_genres ADD CONSTRAINT artists_genres_pkey PRIMARY KEY (artist_id, genre_id);" 2>/dev/null || true
+docker compose exec db psql -U postgres -d archive_production -c "ALTER TABLE playlists_songs ADD CONSTRAINT playlists_songs_pkey PRIMARY KEY (playlist_id, song_id);" 2>/dev/null || true
+
 # Create publication (idempotent)
 docker compose exec db psql -U postgres -d archive_production -c "DROP PUBLICATION IF EXISTS ${PUB_NAME:-pub_archive};"
 docker compose exec db psql -U postgres -d archive_production -c "CREATE PUBLICATION ${PUB_NAME:-pub_archive} FOR TABLE \
@@ -230,6 +239,39 @@ docker compose exec db psql -U postgres -d archive_production -c "CREATE PUBLICA
 ## Slave Deployment
 
 For replication targets that sync from a master server.
+
+### 🚀 Quick Start for Slave Deployment
+
+**For convenience, we provide a template file that contains all required environment variables:**
+
+1. **Copy the template**: 
+   ```bash
+   cp ~/archive2/archive/slave_exports_template.sh ~/my_slave_config.sh
+   ```
+
+2. **Edit with your values**:
+   ```bash
+   nano ~/my_slave_config.sh
+   ```
+   - Change `APP_HOST` to your slave's IP address
+   - Change `MASTER_DB_HOST` to your master's IP address  
+   - Set `RAILS_MASTER_KEY` (generate with: `openssl rand -hex 16`)
+   - Set `POSTGRES_PASSWORD` to a secure password
+   - Set `REPL_PASS` to match your master's replication user password
+   - Update AWS SES settings if using email features
+
+3. **Deploy**:
+   ```bash
+   source ~/my_slave_config.sh
+   cd ~/archive2/archive
+   ./deploy_slave.sh && ./after_deploy_slave.sh
+   ```
+
+**⚠️ Security Note**: Save your config file OUTSIDE the git repository to avoid committing passwords!
+
+### Manual Configuration (Alternative)
+
+If you prefer to set environment variables manually:
 
 ### Overview
 
@@ -319,6 +361,22 @@ docker compose exec -T db psql -U postgres -d archive_production -c "SELECT subn
 - **Replication**: Logical replication (publication/subscription)
 - **Network**: VPN recommended (WireGuard, OpenVPN, etc.)
 
+### Multiple Slaves Support
+
+PostgreSQL logical replication naturally supports multiple slaves connecting to one master:
+
+#### How It Works:
+- **One Publication**: The master has ONE publication (`pub_archive`) that all slaves subscribe to
+- **One Replication User**: All slaves use the SAME replication user (`archive_replicator`)
+- **Unique Subscriptions**: Each slave creates its OWN subscription with a UNIQUE slot name
+- **Independent Connections**: Slaves connect independently - one going down doesn't affect others
+
+#### Slot Management:
+- **Slot Name Pattern**: Each slave should use a unique `SUB_SLOT_NAME` (e.g., `slave_001_slot`, `slave_002_slot`)
+- **Default Limits**: PostgreSQL allows 10 concurrent replication slots by default
+- **Automatic Creation**: Slots are created automatically when slaves connect
+- **Automatic Cleanup**: Slots are removed when subscriptions are dropped
+
 ### Replication Flow
 
 1. **Initial sync**: Master database dumped and restored to slave
@@ -361,6 +419,64 @@ docker compose exec -T db psql -U postgres -d archive_production -c "SELECT now(
 # Check publication tables (on master)
 psql -h $MASTER_DB_HOST -p $MASTER_DB_PORT -U $MASTER_DB_USER -d $MASTER_DB_NAME -c "SELECT * FROM pg_publication_tables WHERE pubname = '${PUB_NAME:-pub_archive}';"
 ```
+
+### Managing Multiple Slaves
+
+For managing multiple slaves, use the provided management script on the **master server**:
+
+```bash
+# Copy management script to master server
+scp ~/archive2/manage_replication.sh master-server:~/
+
+# On master server:
+chmod +x manage_replication.sh
+
+# List all connected slaves
+./manage_replication.sh list
+
+# Show detailed status
+./manage_replication.sh status
+
+# Show slot usage and limits
+./manage_replication.sh limits
+
+# Remove a dead/inactive slave slot
+./manage_replication.sh remove slave_002_slot
+
+# Clean up all inactive slots
+./manage_replication.sh cleanup
+```
+
+#### Slave Naming Convention
+
+For multiple slaves, customize the slot name in each slave's config:
+
+```bash
+# Slave 1:
+export SUB_SLOT_NAME=slave_001_slot
+
+# Slave 2:
+export SUB_SLOT_NAME=slave_002_slot
+
+# Slave 3:
+export SUB_SLOT_NAME=slave_003_slot
+```
+
+#### When Running Test Deployments
+
+**Q: Will each test run create a new slot?**
+- **No** - If you use the same `SUB_SLOT_NAME`, it will reuse the existing slot
+- **Yes** - Only if you change the `SUB_SLOT_NAME` between runs
+
+**Q: How to avoid cluttering the master with test slots?**
+1. **Use consistent naming** for test slaves (e.g., `test_slave_slot`)
+2. **Clean up after testing**: `./manage_replication.sh remove test_slave_slot`
+3. **Use the cleanup command**: `./manage_replication.sh cleanup` (removes inactive slots)
+
+**Q: Will reusing slots cause issues?**
+- **No** - PostgreSQL handles slot reuse gracefully
+- **Benefits** - No accumulation of dead slots on master
+- **Same credentials** - All slaves use the same replication user
 
 ## Troubleshooting
 

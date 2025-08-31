@@ -100,7 +100,7 @@ services:
       timeout: 10s
       retries: 3
 
-  # Bucardo replication service is defined in docker-compose.replication.yml (used on slave only)
+  # PostgreSQL logical replication is handled natively (no additional services needed)
 
 volumes:
   archive_logs:
