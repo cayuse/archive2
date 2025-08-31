@@ -1,14 +1,36 @@
 <div class="container">
   <div class="row">
     <div class="col-12">
+      <!-- Notice Container -->
+      <div id="notice-container"></div>
+      
+      <!-- Page Header -->
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Genres</h1>
-        <div>
-          <span class="badge bg-primary"><%= @genres.total_count %> genres</span>
+      </div>
+      
+      <!-- Search Bar -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-8">
+              <input type="text" id="search-input" class="form-control" placeholder="Search genres..." autocomplete="off" value="<%= params[:q] %>">
+            </div>
+            <div class="col-md-4">
+              <button id="clear-search" class="btn btn-outline-secondary" style="<%= 'display: none;' unless params[:q].present? %>">Clear Search</button>
+            </div>
+          </div>
         </div>
       </div>
       
+      <!-- Genres Table -->
       <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">All Genres</h5>
+          <div class="d-flex align-items-center gap-3">
+            <div id="genre-count" class="theme-text-muted"></div>
+          </div>
+        </div>
         <div class="card-body">
           <% if @genres.any? %>
             <div class="table-responsive">
@@ -22,8 +44,8 @@
                     <th>Created</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <%= render partial: 'genre', collection: @genres %>
+                <tbody id="genres-table-body">
+                  <%= render partial: 'genre_list', locals: { genres: @genres } %>
                 </tbody>
               </table>
             </div>
@@ -43,4 +65,105 @@
       </div>
     </div>
   </div>
-</div> 
+</div>
+
+<script>
+// Notice system functions
+window.showNotice = function(message, type = 'success') {
+  const noticeContainer = document.getElementById('notice-container');
+  if (!noticeContainer) return;
+  
+  const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+  const noticeHtml = `
+    <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+  
+  noticeContainer.innerHTML = noticeHtml;
+  
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    const alert = noticeContainer.querySelector('.alert');
+    if (alert) {
+      alert.remove();
+    }
+  }, 5000);
+};
+
+function initializeSearch() {
+  console.log('Initializing genre search functionality');
+  
+  let searchTimeout;
+  
+  const searchInput = document.getElementById('search-input');
+  const clearSearchBtn = document.getElementById('clear-search');
+  const genresTableBody = document.getElementById('genres-table-body');
+  const genreCountDiv = document.getElementById('genre-count');
+  
+  if (!searchInput || !genresTableBody) {
+    console.error('Required search elements not found!');
+    return;
+  }
+  
+  // Live search functionality
+  searchInput.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(function() {
+      const query = searchInput.value.trim();
+      performSearch(query);
+    }, 300); // Debounce search
+  });
+  
+  // Clear search
+  clearSearchBtn.addEventListener('click', function() {
+    searchInput.value = '';
+    performSearch('');
+    clearSearchBtn.style.display = 'none';
+  });
+  
+  function performSearch(query) {
+    const params = new URLSearchParams({
+      q: query,
+      page: 1
+    });
+    
+    fetch(`/genres/search?${params}`)
+      .then(response => response.text())
+      .then(html => {
+        genresTableBody.innerHTML = html;
+        
+        // Update genre count
+        const genreCount = genresTableBody.querySelectorAll('tr').length;
+        genreCountDiv.textContent = `${genreCount} genres`;
+        
+        // Show/hide clear search button
+        if (query) {
+          clearSearchBtn.style.display = 'block';
+        }
+        
+        // Update URL to reflect search
+        const url = new URL(window.location);
+        if (query) {
+          url.searchParams.set('q', query);
+        } else {
+          url.searchParams.delete('q');
+        }
+        url.searchParams.delete('page');
+        window.history.replaceState({}, '', url);
+      })
+      .catch(error => {
+        console.error('Error loading genres:', error);
+      });
+  }
+  
+  // Initialize genre count
+  const initialCount = genresTableBody.querySelectorAll('tr').length;
+  genreCountDiv.textContent = `${initialCount} genres`;
+}
+
+// Initialize on both Turbo and regular page load
+document.addEventListener('turbo:load', initializeSearch);
+document.addEventListener('DOMContentLoaded', initializeSearch);
+</script> 

@@ -1,5 +1,4 @@
 <tr data-song-id="<%= song.id %>">
-  
   <% if local_assigns[:show_filename] %>
     <td>
       <small class="song-filename">
@@ -10,7 +9,7 @@
   
   <td>
     <% if song.title.present? %>
-      <%= link_to song.title, "#", class: "song-title text-decoration-none fw-medium queue-link", data: { song_id: song.id } %>
+      <%= button_to song.title, add_to_queue_song_path(song), method: :post, class: "btn btn-link song-title text-decoration-none fw-medium p-0 border-0 text-start" %>
     <% else %>
       <span class="song-title">No title</span>
     <% end %>
@@ -116,7 +115,7 @@
         </audio>
       </div>
     <% else %>
-      <%= button_to 'Add to Queue', api_jukebox_queue_path, method: :post, params: { song_id: song.id }, class: 'btn btn-sm btn-outline-primary' %>
+      <%= link_to 'Add to Queue', add_to_queue_song_path(song), method: :post, class: 'btn btn-sm btn-outline-primary' %>
     <% end %>
   </td>
   

@@ -88,4 +88,23 @@ class SongsController < ApplicationController
       render json: { success: false, message: "Queue item not found" }, status: :not_found
     end
   end
+
+  # Add a song to the queue (regular controller action, not API)
+  def add_to_queue
+    @song = Song.find(params[:id])
+    
+    begin
+      jukebox_service = JukeboxService.instance
+      queue_item = jukebox_service.add_to_queue(@song.id)
+      
+      flash[:notice] = "\"#{@song.title}\" by #{@song.artist&.name || 'Unknown Artist'} added to queue"
+      redirect_to live_path
+    rescue ActiveRecord::RecordNotFound
+      flash[:alert] = 'Song not found'
+      redirect_back(fallback_location: songs_path)
+    rescue => e
+      flash[:alert] = "Failed to add song to queue: #{e.message}"
+      redirect_back(fallback_location: songs_path)
+    end
+  end
 end 

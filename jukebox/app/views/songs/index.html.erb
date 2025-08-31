@@ -98,29 +98,6 @@ window.showNotice = function(message, type = 'success') {
 
 
 function initializeSearch() {
-  // Delegate click on song titles to add to queue
-  document.addEventListener('click', function(e) {
-    const link = e.target.closest('.queue-link');
-    if (link) {
-      e.preventDefault();
-      const songId = link.dataset.songId;
-      fetch('/api/jukebox/queue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ song_id: songId })
-      }).then(r => r.json())
-        .then(json => {
-          if (json.success) {
-            showNotice('Added to queue');
-          } else {
-            showNotice(json.message || 'Failed to add to queue', 'danger');
-          }
-        }).catch(err => {
-          console.error(err);
-          showNotice('Error adding to queue', 'danger');
-        });
-    }
-  });
   console.log('Initializing search functionality');
   
   let searchTimeout;
@@ -312,70 +289,5 @@ function initializeSearch() {
 document.addEventListener('turbo:load', initializeSearch);
 document.addEventListener('DOMContentLoaded', initializeSearch);
 
-// Initialize playlist functionality
-document.addEventListener('turbo:load', function() {
-  console.log('Initializing playlist functionality...');
-  
-  // Select all checkbox
-  const selectAllCheckbox = document.getElementById('select-all-songs');
-  if (selectAllCheckbox) {
-    selectAllCheckbox.addEventListener('change', function() {
-      const songCheckboxes = document.querySelectorAll('.song-select-checkbox');
-      songCheckboxes.forEach(checkbox => {
-        checkbox.checked = this.checked;
-      });
-      updatePlaylistButtonState();
-    });
-  }
-  
-  // Individual song checkboxes
-  document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('song-select-checkbox')) {
-      updatePlaylistButtonState();
-      updateSelectAllCheckbox();
-    }
-  });
-  
-  // Initialize button state
-  updatePlaylistButtonState();
-  
-  console.log('Playlist functions available:', {
-    addSelectedSongsToPlaylist: typeof window.addSelectedSongsToPlaylist,
-    showCreatePlaylistModal: typeof window.showCreatePlaylistModal,
-    testPlaylistFunctions: typeof window.testPlaylistFunctions
-  });
-});
 
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('DOMContentLoaded - Initializing playlist functionality...');
-  
-  // Select all checkbox
-  const selectAllCheckbox = document.getElementById('select-all-songs');
-  if (selectAllCheckbox) {
-    selectAllCheckbox.addEventListener('change', function() {
-      const songCheckboxes = document.querySelectorAll('.song-select-checkbox');
-      songCheckboxes.forEach(checkbox => {
-        checkbox.checked = this.checked;
-      });
-      updatePlaylistButtonState();
-    });
-  }
-  
-  // Individual song checkboxes
-  document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('song-select-checkbox')) {
-      updatePlaylistButtonState();
-      updateSelectAllCheckbox();
-    }
-  });
-  
-  // Initialize button state
-  updatePlaylistButtonState();
-  
-  console.log('DOMContentLoaded - Playlist functions available:', {
-    addSelectedSongsToPlaylist: typeof window.addSelectedSongsToPlaylist,
-    showCreatePlaylistModal: typeof window.showCreatePlaylistModal,
-    testPlaylistFunctions: typeof window.testPlaylistFunctions
-  });
-});
 </script> 

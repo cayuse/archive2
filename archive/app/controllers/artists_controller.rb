@@ -3,11 +3,17 @@ class ArtistsController < ApplicationController
   before_action :set_artist, only: [:show]
   
   def index
-    @artists = policy_scope(Artist)
-                  .includes(:songs, :genres)
-                  .order(:name)
-                  .page(params[:page])
-                  .per(params[:per_page] || 20)
+    query = params[:q]&.strip
+    
+    @artists = policy_scope(Artist).includes(:songs, :genres)
+    
+    if query.present?
+      @artists = @artists.where("name ILIKE ?", "%#{query}%")
+    end
+    
+    @artists = @artists.order(:name)
+                       .page(params[:page])
+                       .per(params[:per_page] || 20)
   end
   
   def show
@@ -19,16 +25,21 @@ class ArtistsController < ApplicationController
   
   def search
     query = params[:q]&.strip
+    page = params[:page]&.to_i || 1
+    per_page = 20
+    
+    @artists = policy_scope(Artist).includes(:songs, :genres)
     
     if query.present?
-      @artists = Artist.where("name ILIKE ?", "%#{query}%")
-                       .order(:name)
-                       .limit(10)
-    else
-      @artists = Artist.order(:name).limit(10)
+      @artists = @artists.where("name ILIKE ?", "%#{query}%")
     end
     
-    render partial: 'artists/search_results', locals: { artists: @artists }
+    @artists = @artists.order(:name).page(page).per(per_page)
+    
+    respond_to do |format|
+      format.html { render partial: 'artists/artist_list', locals: { artists: @artists } }
+      format.json { render json: { artists: @artists, has_more: @artists.count == per_page } }
+    end
   end
   
   private

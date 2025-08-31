@@ -1,9 +1,16 @@
 class GenresController < ApplicationController
   def index
+    query = params[:q]&.strip
+    
     @genres = ArchiveGenre.includes(:songs)
-                         .ordered
-                         .page(params[:page])
-                         .per(params[:per_page] || 20)
+    
+    if query.present?
+      @genres = @genres.search_by_name(query)
+    end
+    
+    @genres = @genres.ordered
+                     .page(params[:page])
+                     .per(params[:per_page] || 20)
   end
 
   def show
@@ -16,15 +23,20 @@ class GenresController < ApplicationController
 
   def search
     query = params[:q]&.strip
+    page = params[:page]&.to_i || 1
+    per_page = 20
+    
+    @genres = ArchiveGenre.includes(:songs)
     
     if query.present?
-      @genres = ArchiveGenre.search_by_name(query)
-                           .ordered
-                           .limit(10)
-    else
-      @genres = ArchiveGenre.ordered.limit(10)
+      @genres = @genres.search_by_name(query)
     end
     
-    render partial: 'genres/search_results', locals: { genres: @genres }
+    @genres = @genres.ordered.page(page).per(per_page)
+    
+    respond_to do |format|
+      format.html { render partial: 'genres/genre_list', locals: { genres: @genres } }
+      format.json { render json: { genres: @genres, has_more: @genres.count == per_page } }
+    end
   end
 end 

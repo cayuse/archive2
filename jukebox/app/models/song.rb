@@ -24,16 +24,35 @@ class Song < ApplicationRecord
   scope :by_genre, ->(genre_name) { where(genre: genre_name) }
   scope :by_year, ->(year) { where(year: year) }
   
-  # Search functionality across title and associated names
+  # Multi-term search: each term must exist somewhere (AND logic between terms)
+  # "strait run" finds songs where ANY field contains "strait" AND ANY field contains "run"
+  # More terms = more specific/fewer results
   def self.search(query)
     return all if query.blank?
-    sanitized = "%#{ActiveRecord::Base.sanitize_sql_like(query)}%"
+    
+    # Split query into individual terms, removing empty strings
+    terms = query.strip.split(/\s+/).reject(&:blank?)
+    return all if terms.empty?
+    
+    # Build a condition for each term that searches across all fields
+    conditions = terms.map do |term|
+      sanitized = ActiveRecord::Base.sanitize_sql_like(term)
+      "(songs.title ILIKE ? OR artists.name ILIKE ? OR albums.title ILIKE ? OR genres.name ILIKE ?)"
+    end
+    
+    # All terms must be found (AND logic between terms)
+    where_clause = conditions.join(" AND ")
+    
+    # Flatten the parameters array (4 params per term: title, artist, album, genre)
+    params = terms.flat_map { |term| 
+      sanitized = "%#{ActiveRecord::Base.sanitize_sql_like(term)}%"
+      [sanitized, sanitized, sanitized, sanitized] 
+    }
+    
     left_outer_joins(:artist, :album, :genre)
-      .where(
-        "songs.title ILIKE :q OR artists.name ILIKE :q OR albums.title ILIKE :q OR genres.name ILIKE :q",
-        q: sanitized
-      )
+      .where(where_clause, *params)
       .distinct
+      .limit(100) # Reasonable limit for performance
   end
   
   # Check if song is cached locally

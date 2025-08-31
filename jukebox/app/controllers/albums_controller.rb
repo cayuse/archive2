@@ -1,9 +1,16 @@
 class AlbumsController < ApplicationController
   def index
+    query = params[:q]&.strip
+    
     @albums = ArchiveAlbum.includes(:songs)
-                         .ordered
-                         .page(params[:page])
-                         .per(params[:per_page] || 20)
+    
+    if query.present?
+      @albums = @albums.search_by_title(query)
+    end
+    
+    @albums = @albums.ordered
+                     .page(params[:page])
+                     .per(params[:per_page] || 20)
   end
 
   def show
@@ -13,15 +20,20 @@ class AlbumsController < ApplicationController
 
   def search
     query = params[:q]&.strip
+    page = params[:page]&.to_i || 1
+    per_page = 20
+    
+    @albums = ArchiveAlbum.includes(:songs)
     
     if query.present?
-      @albums = ArchiveAlbum.search_by_title(query)
-                           .ordered
-                           .limit(10)
-    else
-      @albums = ArchiveAlbum.ordered.limit(10)
+      @albums = @albums.search_by_title(query)
     end
     
-    render partial: 'albums/search_results', locals: { albums: @albums }
+    @albums = @albums.ordered.page(page).per(per_page)
+    
+    respond_to do |format|
+      format.html { render partial: 'albums/album_list', locals: { albums: @albums } }
+      format.json { render json: { albums: @albums, has_more: @albums.count == per_page } }
+    end
   end
 end 

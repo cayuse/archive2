@@ -68,16 +68,31 @@ Rails.application.routes.draw do
   get 'sync', to: 'jukebox_web#sync'
   
   # Resource routes for main entities
-  resources :artists
+  resources :artists do
+    collection do
+      get :search
+    end
+  end
   resources :songs do
     collection do
       get :search
       post :move_to_top
       post :remove_from_queue
     end
+    member do
+      post :add_to_queue
+    end
   end
-  resources :albums
-  resources :genres
+  resources :albums do
+    collection do
+      get :search
+    end
+  end
+  resources :genres do
+    collection do
+      get :search
+    end
+  end
   resources :playlists
 
   # Admin: configure random source playlists

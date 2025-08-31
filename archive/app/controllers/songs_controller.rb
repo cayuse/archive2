@@ -25,13 +25,35 @@ class SongsController < ApplicationController
                   .order(created_at: :desc)
     
     if query.present?
-      # Use a more efficient search with proper joins
-      @songs = @songs.joins("LEFT JOIN artists ON songs.artist_id = artists.id")
-                     .joins("LEFT JOIN albums ON songs.album_id = albums.id")
-                     .joins("LEFT JOIN genres ON songs.genre_id = genres.id")
-                     .where("songs.title ILIKE ? OR artists.name ILIKE ? OR albums.title ILIKE ? OR genres.name ILIKE ?", 
-                            "%#{query}%", "%#{query}%", "%#{query}%", "%#{query}%")
-                     .distinct
+      # Multi-term search: each term must exist somewhere (AND logic between terms)
+      # "strait run" finds songs where ANY field contains "strait" AND ANY field contains "run"
+      # More terms = more specific/fewer results
+      
+      # Split query into individual terms, removing empty strings
+      terms = query.strip.split(/\s+/).reject(&:blank?)
+      
+      unless terms.empty?
+        # Build a condition for each term that searches across all fields
+        conditions = terms.map do |term|
+          sanitized = ActiveRecord::Base.sanitize_sql_like(term)
+          "(songs.title ILIKE ? OR artists.name ILIKE ? OR albums.title ILIKE ? OR genres.name ILIKE ?)"
+        end
+        
+        # All terms must be found (AND logic between terms)
+        where_clause = conditions.join(" AND ")
+        
+        # Flatten the parameters array (4 params per term: title, artist, album, genre)
+        params = terms.flat_map { |term| 
+          sanitized = "%#{ActiveRecord::Base.sanitize_sql_like(term)}%"
+          [sanitized, sanitized, sanitized, sanitized] 
+        }
+        
+        @songs = @songs.joins("LEFT JOIN artists ON songs.artist_id = artists.id")
+                       .joins("LEFT JOIN albums ON songs.album_id = albums.id")
+                       .joins("LEFT JOIN genres ON songs.genre_id = genres.id")
+                       .where(where_clause, *params)
+                       .distinct
+      end
     end
     
     @songs = @songs.page(page).per(per_page)
