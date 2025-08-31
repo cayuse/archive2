@@ -405,7 +405,11 @@ const playerState = {
   maxErrors: 5,
   lastUpdate: null,
   pollInterval: null,
-  commandCounts: {} // Track command counts
+  commandCounts: {}, // Track command counts
+  // Volume control state
+  lastKnownVolume: 0, // What we think the server volume is
+  userSliderVolume: 0, // What the user has set the slider to
+  sliderBeingUsed: false // Whether user is actively using the slider
 };
 
 // Initialize command counters
@@ -552,17 +556,32 @@ function updateProgress(status) {
   remainingTime.textContent = formatTime(duration - elapsed);
 }
 
-// Update volume display
+// Update volume display with smart slider management
 function updateVolume(status) {
   const currentVolume = document.getElementById('current-volume');
   const volumeSlider = document.getElementById('volume-slider');
   const volumeSliderValue = document.getElementById('volume-slider-value');
   
-  const volume = parseInt(status.volume || 80);
+  const serverVolume = parseInt(status.volume || 80);
   
-  currentVolume.textContent = `${volume}%`;
-  volumeSlider.value = volume;
-  volumeSliderValue.textContent = `${volume}%`;
+  // Always update the status display
+  currentVolume.textContent = `${serverVolume}%`;
+  
+  // Smart slider management: only update slider if server volume actually changed
+  if (serverVolume !== playerState.lastKnownVolume) {
+    console.log(`📊 Server volume changed from ${playerState.lastKnownVolume} to ${serverVolume} - updating slider`);
+    
+    // Update both our tracking variables and the UI
+    playerState.lastKnownVolume = serverVolume;
+    playerState.userSliderVolume = serverVolume;
+    
+    // Only update slider if user isn't actively using it
+    if (!playerState.sliderBeingUsed) {
+      volumeSlider.value = serverVolume;
+      volumeSliderValue.textContent = `${serverVolume}%`;
+    }
+  }
+  // If volumes are the same, don't touch the slider - let user play with it
 }
 
 // Update status grid
@@ -710,9 +729,9 @@ async function sendVolumeCommand(action) {
     let body = null;
     
     if (action === 'set_volume') {
-      const volume = document.getElementById('volume-slider').value;
+      const volume = playerState.userSliderVolume;
       url = '/system/set_volume';
-      body = JSON.stringify({ volume: parseInt(volume) });
+      body = JSON.stringify({ volume: volume });
       console.log(`📤 Setting volume to ${volume}% via /system/set_volume`);
     } else {
       console.log(`📤 Sending volume command to /system/${action}`);
@@ -758,10 +777,40 @@ function showError(message) {
   // You could add a toast notification here if desired
 }
 
-// Handle volume slider change
-document.getElementById('volume-slider').addEventListener('input', function() {
-  const value = this.value;
-  document.getElementById('volume-slider-value').textContent = `${value}%`;
+// Smart volume slider interaction handling
+document.addEventListener('DOMContentLoaded', function() {
+  const volumeSlider = document.getElementById('volume-slider');
+  const volumeSliderValue = document.getElementById('volume-slider-value');
+  
+  // Track when user starts interacting with slider
+  volumeSlider.addEventListener('mousedown', function() {
+    playerState.sliderBeingUsed = true;
+    console.log('🎚️ User started using volume slider');
+  });
+  
+  volumeSlider.addEventListener('touchstart', function() {
+    playerState.sliderBeingUsed = true;
+    console.log('🎚️ User started using volume slider (touch)');
+  });
+  
+  // Track when user stops interacting with slider
+  volumeSlider.addEventListener('mouseup', function() {
+    playerState.sliderBeingUsed = false;
+    console.log('🎚️ User stopped using volume slider');
+  });
+  
+  volumeSlider.addEventListener('touchend', function() {
+    playerState.sliderBeingUsed = false;
+    console.log('🎚️ User stopped using volume slider (touch)');
+  });
+  
+  // Handle slider value changes (visual feedback only)
+  volumeSlider.addEventListener('input', function() {
+    const value = parseInt(this.value);
+    playerState.userSliderVolume = value;
+    volumeSliderValue.textContent = `${value}%`;
+    console.log(`🎚️ User slider value: ${value}% (server: ${playerState.lastKnownVolume}%)`);
+  });
 });
 
 // Display command counts for debugging
