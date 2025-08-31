@@ -15,7 +15,11 @@ class ArtistsController < ApplicationController
 
   def show
     @artist = ArchiveArtist.includes(:songs).find_by!(id: params[:id])
-    @songs = @artist.songs.completed.includes(:album, :genre).order(:title)
+    # Get the archive songs first
+    archive_songs = @artist.songs.completed.includes(:album, :genre).order(:title)
+    # Get the corresponding Song models with audio files for the partial
+    song_ids = archive_songs.pluck(:id)
+    @songs = Song.where(id: song_ids).includes(:artist, :album, :genre, audio_file_attachment: :blob).order(:title)
   end
 
   def search

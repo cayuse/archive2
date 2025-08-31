@@ -15,10 +15,14 @@ class GenresController < ApplicationController
 
   def show
     @genre = ArchiveGenre.includes(:songs).find_by!(id: params[:id])
-    @songs = @genre.songs.completed.includes(:artist, :album)
-                   .order(:title)
-                   .page(params[:page])
-                   .per(params[:per_page] || 50)
+    # Get the archive songs first
+    archive_songs = @genre.songs.completed.includes(:artist, :album)
+                           .order(:title)
+                           .page(params[:page])
+                           .per(params[:per_page] || 50)
+    # Get the corresponding Song models with audio files for the partial
+    song_ids = archive_songs.pluck(:id)
+    @songs = Song.where(id: song_ids).includes(:artist, :album, :genre, audio_file_attachment: :blob).order(:title)
   end
 
   def search

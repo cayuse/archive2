@@ -1,7 +1,7 @@
 class SongsController < ApplicationController
   def index
     @songs = Song.completed
-                  .includes(:artist, :album, :genre)
+                  .includes(:artist, :album, :genre, audio_file_attachment: :blob)
                   .recent
                   .page(params[:page])
                   .per(params[:per_page] || 20)
@@ -17,7 +17,7 @@ class SongsController < ApplicationController
     per_page = 20
     
     @songs = Song.completed
-                  .includes(:artist, :album, :genre)
+                  .includes(:artist, :album, :genre, audio_file_attachment: :blob)
                   .recent
     
     if query.present?

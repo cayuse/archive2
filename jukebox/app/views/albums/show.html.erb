@@ -106,17 +106,18 @@
               <table class="table table-hover song-list-table">
                 <thead>
                   <tr>
-                    <th>Track</th>
                     <th>Title</th>
                     <th>Artist</th>
+                    <th>Album</th>
                     <th>Genre</th>
                     <th>Duration</th>
-                    <th>Created</th>
                     <th>Play</th>
                   </tr>
                 </thead>
                 <tbody id="songs-table-body">
-                  <%= render partial: 'songs/song_list', locals: { songs: @songs } %>
+                  <% @songs.each do |song| %>
+                    <%= render 'songs/song', song: song %>
+                  <% end %>
                 </tbody>
               </table>
             </div>
