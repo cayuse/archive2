@@ -6,13 +6,15 @@ A comprehensive guide for deploying the Archive music management system with Pos
 
 1. [Overview](#overview)
 2. [Environment Setup](#environment-setup)
+   - [Creating Rails Master Key and Credentials](#creating-rails-master-key-and-credentials-critical-first-step)
 3. [Deployment Types](#deployment-types)
 4. [Standalone Deployment](#standalone-deployment)
 5. [Master Deployment](#master-deployment)
 6. [Slave Deployment](#slave-deployment)
 7. [Database Replication with PostgreSQL Logical Replication](#database-replication-with-postgresql-logical-replication)
-8. [Troubleshooting](#troubleshooting)
-9. [Security Considerations](#security-considerations)
+8. [Player Service Installation](#player-service-installation)
+9. [Troubleshooting](#troubleshooting)
+10. [Security Considerations](#security-considerations)
 
 ## Overview
 
@@ -39,13 +41,92 @@ The Archive system supports three deployment configurations:
 3. **Network connectivity** between master and slave (VPN recommended)
 4. **Sufficient disk space** for PostgreSQL data and file storage
 
+### Creating Rails Master Key and Credentials (CRITICAL FIRST STEP)
+
+**⚠️ IMPORTANT**: Before setting environment variables, you MUST create the Rails master key and credentials file. The application ships without these security files and they must be generated for each deployment.
+
+#### Method 1: Using Temporary Docker Container (Recommended for Production)
+####   this method shows archive, but you need to do this procedure in both archive and jukebox 
+####   or copy the credentials from archive to jukebox
+If you're deploying directly with Docker and don't have a local Ruby environment:
+
+```bash
+# Navigate to the archive directory
+cd ~/archive2/archive
+
+# Start a temporary container with bundle install capability
+docker run --rm -it -v "$(pwd):/app" -w /app ruby:3.2.5 bash
+
+# Inside the container:
+bundle install
+
+# First, generate the master key
+rails credentials:edit
+# Then create the encrypted credentials file
+VISUAL="code --wait" bin/rails credentials:edit
+# This process creates:
+# - config/master.key (32-character key) - created by rails secret
+# - config/credentials.yml.enc (encrypted secrets file) - created by credentials:edit
+# - save the master key, it will be displayed to you, and you'll need it for deployment
+# Exit the container
+exit
+
+# Back on host - copy the master key value for your environment variable 
+cat config/master.key  #may require sudo
+```
+
+#### Method 2: Using Local Rails Environment
+
+If you have Ruby and Rails installed locally:
+
+```bash
+cd ~/archive2/archive
+
+# Install dependencies
+bundle install
+
+# First, generate the master key
+bin/rails secret > config/master.key
+
+# Then create the encrypted credentials file (opens editor)
+bin/rails credentials:edit
+
+# This process creates:
+# - config/master.key (32-character key) - created by rails secret
+# - config/credentials.yml.enc (encrypted secrets file) - created by credentials:edit
+# Copy the master key value:
+cat config/master.key
+```
+
+#### Method 3: Quick Development Setup (Development Only)
+
+For development environments only (not recommended for production):
+
+```bash
+cd ~/archive2/archive
+
+# Generate master key using Rails (preferred method)
+echo "changeme-dev-key-only" > config/master.key
+
+# Create basic encrypted credentials
+EDITOR="echo '# Development secrets'" bin/rails credentials:edit
+```
+
+**⚠️ Warning**: This method creates a weak development key. For production, always use Method 1 or Method 2 above.
+
+**🔒 Security Notes:**
+- The `config/master.key` file contains your encryption key - keep it secure!
+- Never commit `config/master.key` to version control
+- Use the key value from this file as your `RAILS_MASTER_KEY` environment variable
+- Each deployment should have its own unique master key
+
 ### Base Environment Variables (Required for ALL deployments)
 
 These variables are needed regardless of deployment type:
 
 ```bash
-# Rails application secrets
-export RAILS_MASTER_KEY=your_32_character_rails_master_key_here
+# Rails application secrets (use the exact key from config/master.key created in section above)
+export RAILS_MASTER_KEY=your_actual_master_key_from_config_master_key_file
 
 # Database configuration
 export POSTGRES_PASSWORD=your_secure_database_password
@@ -255,7 +336,7 @@ For replication targets that sync from a master server.
    ```
    - Change `APP_HOST` to your slave's IP address
    - Change `MASTER_DB_HOST` to your master's IP address  
-   - Set `RAILS_MASTER_KEY` (generate with: `openssl rand -hex 16`)
+   - Set `RAILS_MASTER_KEY` (see [Creating Rails Master Key and Credentials](#creating-rails-master-key-and-credentials-critical-first-step) section above)
    - Set `POSTGRES_PASSWORD` to a secure password
    - Set `REPL_PASS` to match your master's replication user password
    - Update AWS SES settings if using email features
@@ -478,6 +559,78 @@ export SUB_SLOT_NAME=slave_003_slot
 - **Benefits** - No accumulation of dead slots on master
 - **Same credentials** - All slaves use the same replication user
 
+## Player Service Installation
+
+The Archive system includes a Python-based music player service that handles audio playback. This service connects to the jukebox via Redis and streams audio using MPV.
+
+### Overview
+
+The player service:
+- Connects to jukebox Redis queue for commands
+- Fetches audio streams from jukebox API  
+- Uses MPV for high-quality audio playback
+- Runs as a systemd service for reliability
+
+### Installation Steps
+
+⚠️ **Important**: The player installation process requires manual configuration. For detailed installation instructions, see:
+
+**📖 [Player Installation Guide](./player/README.md)**
+
+The player README contains comprehensive instructions for:
+- Python virtual environment setup
+- Dependency installation
+- Configuration file creation
+- Systemd service installation
+- Audio system requirements
+
+### Quick Installation Summary
+
+1. **Install Dependencies**:
+   ```bash
+   sudo apt install mpv python3.12 python3.12-venv
+   ```
+
+2. **Set up Python Environment**:
+   ```bash
+   cd ~/archive2/player
+   python3.12 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+3. **Create Configuration**:
+   ```bash
+   # Create .env file with Redis and API settings
+   # See player/README.md for full configuration details
+   ```
+
+4. **Install as System Service**:
+   ```bash
+   # Configure systemd service
+   # Ensure user has audio system access
+   # See player/README.md for complete service setup
+   ```
+
+### Audio System Requirements
+
+⚠️ **Critical**: The player service requires access to the audio subsystem. The service user must have:
+
+- Access to audio devices (ALSA/PulseAudio/PipeWire)
+- Proper audio group membership
+- Runtime audio session access
+
+**Note**: Audio configuration varies by Linux distribution and audio system. Consult your system's audio documentation if you encounter audio permission issues.
+
+### Configuration Notes
+
+- **Redis Connection**: Must connect to same Redis instance as jukebox
+- **API Endpoint**: Direct connection to jukebox API recommended
+- **Audio Output**: Configurable via MPV audio device settings
+- **Service User**: Can run as console user or dedicated service user
+
+For complete installation procedures and troubleshooting, refer to the dedicated [Player README](./player/README.md).
+
 ## Troubleshooting
 
 ### Common Issues
@@ -537,6 +690,27 @@ docker compose exec -T db psql -U postgres -c "SHOW wal_level;"
 # Fix directory permissions
 sudo chown -R $USER:$USER $HOST_STORAGE_PATH $POSTGRES_DATA_PATH
 sudo chmod 755 $HOST_STORAGE_PATH $POSTGRES_DATA_PATH
+```
+
+#### 6. Rails Credentials Issues
+
+```bash
+# Missing or invalid master key
+# Error: `Rails couldn't decrypt credentials`
+# Solution: Recreate credentials using temporary container method above
+
+# Check if credentials files exist
+ls -la ~/archive2/archive/config/master.key
+ls -la ~/archive2/archive/config/credentials.yml.enc
+
+# Regenerate credentials if missing
+cd ~/archive2/archive
+docker run --rm -it -v "$(pwd):/app" -w /app ruby:3.3.8 bash
+# Inside container: gem install bundler && bundle install && bundle exec rails secret > config/master.key && bundle exec rails credentials:edit
+
+# Verify master key matches environment variable
+echo "File: $(cat config/master.key)"
+echo "Env:  $RAILS_MASTER_KEY"
 ```
 
 ### Debug Commands

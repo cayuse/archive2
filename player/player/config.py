@@ -33,29 +33,13 @@ class Settings(BaseSettings):
 
     def patch_stream_url(self, stream_url: str) -> str:
         """
-        Replace the base URL portion of a stream URL with the configured API_URL.
+        For localhost deployment, just return the original stream URL as-is.
+        No URL patching needed when API and player are on same system.
         
-        Example:
-        Input: 'http://localhost:3001/api/jukebox/player/stream/723ca04e-5f41-4764-8b75-7703ae03c099.flac'
-        Output: 'http://localhost:3011/api/jukebox/player/stream/723ca04e-5f41-4764-8b75-7703ae03c099.flac'
+        Note: The original complex URL patching logic was removed for localhost
+        deployments as it's unnecessary when the API and player run on the same system.
         """
-        if not stream_url:
-            return stream_url
-            
-        # Find the position of '/api' in the URL
-        api_index = stream_url.find('/api')
-        if api_index == -1:
-            # If '/api' is not found, return the original URL
-            return stream_url
-        
-        # Extract the path starting from '/api'
-        api_path = stream_url[api_index:]
-        
-        # Combine with the configured API_URL
-        # Remove '/api' from API_URL if it exists to avoid duplication
-        base_url = self.API_URL.rstrip('/api').rstrip('/')
-        
-        return f"{base_url}{api_path}"
+        return stream_url
 
 # Create a single, importable instance of the settings
 settings = Settings()

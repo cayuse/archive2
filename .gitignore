@@ -81,3 +81,11 @@ yarn-error.log*
 
 # Ignore the large jukebox-dev.tar file that's already in the repo
 jukebox/jukebox-dev.tar 
+
+# Player virtual environment
+player/.venv/
+player/.env
+
+# System service files (deployment-specific)
+*.sock
+*.pid

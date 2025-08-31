@@ -102,9 +102,9 @@ for i in {1..30}; do
     sleep 2
 done
 
-# Test connectivity to master
+# Test connectivity to master using the db container
 info "Testing connectivity to master database..."
-if ! PGPASSWORD="$MASTER_DB_PASS" pg_isready -h "$MASTER_DB_HOST" -p "$MASTER_DB_PORT" -U "$MASTER_DB_USER" >/dev/null 2>&1; then
+if ! docker compose exec -T db pg_isready -h "$MASTER_DB_HOST" -p "$MASTER_DB_PORT" -U "$MASTER_DB_USER" >/dev/null 2>&1; then
     error "Cannot connect to master database at $MASTER_DB_HOST:$MASTER_DB_PORT"
     error "Please check:"
     error "  1. Master database is running"
@@ -118,14 +118,14 @@ success "Master database connectivity verified"
 info "📥 Dumping master database..."
 DUMP_FILE="master_full_dump_$(date +%Y%m%d_%H%M%S).sql"
 
-if ! PGPASSWORD="$MASTER_DB_PASS" pg_dump \
-    -h "$MASTER_DB_HOST" \
-    -p "$MASTER_DB_PORT" \
-    -U "$MASTER_DB_USER" \
-    -d "$MASTER_DB_NAME" \
+if ! docker compose exec -T db sh -c "PGPASSWORD='$MASTER_DB_PASS' pg_dump \
+    -h '$MASTER_DB_HOST' \
+    -p '$MASTER_DB_PORT' \
+    -U '$MASTER_DB_USER' \
+    -d '$MASTER_DB_NAME' \
     --no-owner --no-privileges \
     --disable-triggers \
-    --data-only \
+    --data-only" \
     > "$DUMP_FILE"; then
     error "Failed to dump master database"
     exit 1
@@ -136,12 +136,12 @@ success "Master database dumped to $DUMP_FILE (Size: $DUMP_SIZE)"
 
 # Step 2: Get record counts before restore
 info "📊 Checking initial record counts..."
-MASTER_COUNT=$(PGPASSWORD="$MASTER_DB_PASS" psql \
-    -h "$MASTER_DB_HOST" \
-    -p "$MASTER_DB_PORT" \
-    -U "$MASTER_DB_USER" \
-    -d "$MASTER_DB_NAME" \
-    -t -c "SELECT COUNT(*) FROM songs;" 2>/dev/null | tr -d ' ' || echo "0")
+MASTER_COUNT=$(docker compose exec -T db sh -c "PGPASSWORD='$MASTER_DB_PASS' psql \
+    -h '$MASTER_DB_HOST' \
+    -p '$MASTER_DB_PORT' \
+    -U '$MASTER_DB_USER' \
+    -d '$MASTER_DB_NAME' \
+    -t -c 'SELECT COUNT(*) FROM songs;'" 2>/dev/null | tr -d ' ' || echo "0")
 
 SLAVE_COUNT_BEFORE=$(docker compose exec -T db psql -U postgres -d archive_production \
     -t -c "SELECT COUNT(*) FROM songs;" 2>/dev/null | tr -d ' ' || echo "0")
@@ -208,7 +208,7 @@ success "Subscription $SUB_NAME created"
 info "🧪 Testing logical replication (master -> slave)..."
 TEST_TIME=$(date +%s)
 TEST_TITLE="lr_test_$TEST_TIME"
-if ! PGPASSWORD="$MASTER_DB_PASS" psql -h "$MASTER_DB_HOST" -p "$MASTER_DB_PORT" -U "$MASTER_DB_USER" -d "$MASTER_DB_NAME" -c "INSERT INTO songs (id, title, created_at, updated_at) VALUES (gen_random_uuid(), '$TEST_TITLE', NOW(), NOW());"; then
+if ! docker compose exec -T db sh -c "PGPASSWORD='$MASTER_DB_PASS' psql -h '$MASTER_DB_HOST' -p '$MASTER_DB_PORT' -U '$MASTER_DB_USER' -d '$MASTER_DB_NAME' -c \"INSERT INTO songs (id, title, created_at, updated_at) VALUES (gen_random_uuid(), '$TEST_TITLE', NOW(), NOW());\""; then
     warning "Could not insert test record on master; skipping test"
 else
     sleep 5

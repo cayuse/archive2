@@ -1,7 +1,14 @@
 # Archive Player
-The song player app.
-Takes song info from a redis queue, and plays the songs as they come up.
 
+The Archive Player is a standalone Python service that handles music playback for the Archive jukebox system. It connects to Redis for commands and streams audio via the jukebox API using MPV for high-quality playback.
+
+## Features
+
+- **Redis Integration**: Receives play/pause/stop commands via Redis queue
+- **MPV Audio Engine**: High-quality audio playback with broad format support  
+- **Systemd Service**: Runs as a reliable system service with auto-restart
+- **Real-time Status**: Reports playback status and progress to Redis
+- **Volume Control**: Remote volume adjustment via Redis commands
 
 # Installation
 
@@ -22,43 +29,105 @@ update the requiremehts for the player app:
     pip install -U piop
     pip install -r requirements.txt
 
-## Install MPV
-This depends on your system. For my Mac, I used homebrew
+## Install System Dependencies
 
-    brew install mpv
+### Install MPV Media Player
 
-That works
+MPV is required for audio playback. Install it using your system's package manager:
+
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install mpv python3.12 python3.12-venv
+```
+
+**Other Systems:**
+- **macOS**: `brew install mpv`
+- **Fedora/RHEL**: `sudo dnf install mpv python3`
+- **Arch**: `sudo pacman -S mpv python`
+
+### Audio System Requirements
+
+⚠️ **Critical**: The player service requires access to your system's audio subsystem.
+
+**Audio System Access:**
+- The service user must have permission to access audio devices
+- May require audio group membership (`audio`, `pulse-audio`, etc.)  
+- Runtime audio session access (especially for systemd services)
+
+**Common Audio Systems:**
+- **PulseAudio**: Most desktop Linux distributions
+- **PipeWire**: Modern distributions (Ubuntu 22.04+, Fedora 34+)
+- **ALSA**: Direct hardware access (lower level)
+
+**Troubleshooting Audio Issues:**
+If you encounter "No audio output" or permission errors:
+1. Check user audio group membership: `groups $USER`
+2. Test MPV manually: `mpv --no-video /path/to/audio/file`
+3. For systemd services: ensure `XDG_RUNTIME_DIR` is set
+4. Consult your distribution's audio documentation
 
 # Setup Configuration
 
-Copy the .env.example file to .env
-Modify the values as needed.
-For example, I'm using "jukebox" via a tunnel, where port 3011 is the port
-locally, and 3001 is remote. I have this in my ~/.ssh/config files
+Create a `.env` file in the player directory with your configuration settings:
 
-    Host archive-dave
-    hostname archive.cavaforge.net
-    user kutenai
-    port 16597
-    
-        IdentityFile "/Users/edhenderson/.ssh/bondilabs/CavaForge SSH Key.pub"
-        IdentitiesOnly true
-    
-        LocalForward 3010 localhost:3000
-        LocalForward 3011 localhost:3001
-        Localforward 3012 localhost:6379
+```bash
+cd ~/archive2/player
+cat > .env << 'EOF'
+# Player Configuration
+# Redis Configuration (connect to jukebox Redis)
+PLAYER_REDIS_HOST=localhost
+PLAYER_REDIS_PORT=6379
+PLAYER_REDIS_DB=1
 
-So, my .env PLAYER_API_URL value is
+# Jukebox API Configuration (connect to jukebox)
+PLAYER_API_URL=http://localhost:3001/api
 
-    PLAYER_API_URL="http://localhost:3011/api"
+# Audio Configuration
+PLAYER_VOLUME=80
+PLAYER_MPV_SOCKET=/tmp/player_mpv.sock
+PLAYER_CACHE_SECS=20
 
-Instead of default:
+# Redis Keys (match jukebox defaults)
+PLAYER_STATUS_KEY=jukebox:player_status
+PLAYER_CMD_LIST=jukebox:commands
+PLAYER_CUR_SONG=jukebox:current_song
+PLAYER_DESIRED=jukebox:desired_state
+EOF
+```
 
-    PLAYER_API_URL="http://localhost:3001/api"
+## Configuration Options
 
-The same goes for my redis port
+### Core Settings
 
-    PLAYER_REDIS_PORT=3012
+- **PLAYER_REDIS_HOST**: Redis server hostname (default: `localhost`)
+- **PLAYER_REDIS_PORT**: Redis server port (default: `6379`)
+- **PLAYER_REDIS_DB**: Redis database number (default: `1`)
+- **PLAYER_API_URL**: Jukebox API endpoint (default: `http://localhost:3001/api`)
+
+### Audio Settings
+
+- **PLAYER_VOLUME**: Initial volume 0-100 (default: `80`)
+- **PLAYER_MPV_SOCKET**: MPV IPC socket path (default: `/tmp/player_mpv.sock`)
+- **PLAYER_CACHE_SECS**: Audio cache duration (default: `20`)
+
+### Advanced Configuration
+
+For remote connections or SSH tunnels, modify the connection settings:
+
+**SSH Tunnel Example:**
+```bash
+# If using SSH tunnel: local:3011 -> remote:3001
+PLAYER_API_URL=http://localhost:3011/api
+PLAYER_REDIS_PORT=3012  # If Redis is also tunneled
+```
+
+**Direct Network Connection:**
+```bash
+# Direct connection to remote jukebox
+PLAYER_API_URL=http://192.168.1.100:3001/api
+PLAYER_REDIS_HOST=192.168.1.100
+```
 
 # Running the application
 
@@ -192,28 +261,74 @@ This is easy, since the service will have the working directory in the player
 location, where you have already created the virtrual env, it should
 just work like the example.
 
-## Systemd file "User"
+## Systemd Service Installation
 
-I added the "user". This is just an example also. The systemd service
-will run as "root", but if you want it to run as something else, you can
-create a user, i.e. "player" and run it as that. this is optional, but
-probably recommended. Comment those lines out of you don't make this.
+### Service User Configuration
 
-The systemd service will run with the installed systemd file. An example is located in the
-systemd path. Install like this:
+**Recommended Approach**: Run the service as your console user (e.g., `cayuse`) to ensure audio system access:
 
-    cd /opt/archive2player
-    cp systemd/archive_player.service /etc/systemd/system
-    sudo systemctl daemon-reload
-    sudo systemctl enable archive_player.service
-    sudo systemctl start archive_player.service
+```bash
+# Edit the systemd service file before installation
+sudo nano ~/archive2/player/systemd/archive_player.service
 
-Check if the service is running
+# Update these lines:
+User=cayuse          # Replace with your username
+Group=cayuse         # Replace with your group
+WorkingDirectory=/home/cayuse/archive2/player  # Update path
+ExecStart=/home/cayuse/archive2/player/.venv/bin/python -m player.main  # Update path
 
-    sudo systemctl status archive_player
+# Add audio environment (for systemd services):
+Environment="XDG_RUNTIME_DIR=/run/user/1000"  # Replace 1000 with your UID
+Environment="PULSE_RUNTIME_PATH=/run/user/1000/pulse"
+```
 
-Or, monitor it with journalctl
+**Alternative**: Create a dedicated `player` system user and add to audio groups:
+```bash
+sudo useradd --system --shell /bin/false --home /opt/archive2/player player
+sudo usermod -a -G audio,pulse-audio player  # Add to audio groups
+```
 
-    sudo journalctl -n 100 -f -u archive_player
+### Install the Service
+
+```bash
+# Copy service file to systemd
+sudo cp ~/archive2/player/systemd/archive_player.service /etc/systemd/system/
+
+# Reload systemd and enable service
+sudo systemctl daemon-reload
+sudo systemctl enable archive_player.service
+sudo systemctl start archive_player.service
+```
+
+### Verify Installation
+
+Check if the service is running:
+```bash
+sudo systemctl status archive_player
+```
+
+Monitor logs:
+```bash
+sudo journalctl -n 100 -f -u archive_player
+```
+
+### Service Management Commands
+
+```bash
+# Start/stop/restart service
+sudo systemctl start archive_player
+sudo systemctl stop archive_player  
+sudo systemctl restart archive_player
+
+# Enable/disable auto-start
+sudo systemctl enable archive_player
+sudo systemctl disable archive_player
+
+# View recent logs
+sudo journalctl -u archive_player -n 50
+
+# Follow logs in real-time
+sudo journalctl -u archive_player -f
+```
 
 
