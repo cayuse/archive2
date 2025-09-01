@@ -39,6 +39,7 @@ Rails.application.routes.draw do
   get  'system/themes', to: 'system_config#themes'
   post 'system/themes', to: 'system_config#themes'
   get 'system/settings', to: 'system_config#settings'
+  post 'system/settings', to: 'system_config#settings'
   
   # Theme routes
   get 'themes/:theme.css', to: 'themes#css'

@@ -31,8 +31,8 @@ class SystemConfigController < ApplicationController
     @refill_queue_to = SystemSetting.refill_queue_to
     
     if request.post?
-      SystemSetting.set_site_name(params[:site_name]) if params[:site_name].present?
-      SystemSetting.set_site_description(params[:site_description]) if params[:site_description].present?
+      SystemSetting.set('site_name', params[:site_name]) if params[:site_name].present?
+      SystemSetting.set('site_description', params[:site_description]) if params[:site_description].present?
       if params[:min_queue_length].present?
         val = params[:min_queue_length].to_i
         SystemSetting.set('min_queue_length', val.clamp(0, 10_000), 'Minimum queue length before auto-refill')
