@@ -501,6 +501,22 @@ p, div, span:not(.badge):not(.btn):not(.navbar-brand):not(.nav-link) {
   color: var(--text-primary);
 }
 
+/* Now Playing card - lighter background */
+.card .card-body .current-song {
+  background-color: var(--primary-bg);
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+/* Song info content area - white background */
+.current-song .song-info {
+  background-color: #ffffff !important;
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1rem;
+}
+
 /* Small text and descriptions */
 small, .small {
   color: var(--text-muted) !important;
