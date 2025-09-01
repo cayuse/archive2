@@ -89,36 +89,7 @@
     </div>
   </div>
   
-  <!-- Debug Display -->
-  <div class="debug-display">
-    <h3>Debug Info</h3>
-    <div class="debug-grid">
-      <div class="debug-item">
-        <span class="debug-label">Song ID:</span>
-        <span class="debug-value" id="debug-song-id">-</span>
-      </div>
-      <div class="debug-item">
-        <span class="debug-label">Song Title:</span>
-        <span class="debug-value" id="debug-song-title">-</span>
-      </div>
-      <div class="debug-item">
-        <span class="debug-label">Song Artist:</span>
-        <span class="debug-value" id="debug-song-artist">-</span>
-      </div>
-      <div class="debug-item">
-        <span class="debug-label">Song Album:</span>
-        <span class="debug-value" id="debug-song-album">-</span>
-      </div>
-      <div class="debug-item">
-        <span class="debug-label">Idle Active:</span>
-        <span class="debug-value" id="debug-idle-active">-</span>
-      </div>
-      <div class="debug-item">
-        <span class="debug-label">Paused:</span>
-        <span class="debug-value" id="debug-paused">-</span>
-      </div>
-    </div>
-  </div>
+
 </div>
 
 <style>
@@ -285,44 +256,7 @@
   margin-top: 1rem;
 }
 
-.debug-display {
-  margin-top: 2rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
 
-.debug-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-
-.debug-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem;
-  background: white;
-  border-radius: 4px;
-  border: 1px solid #dee2e6;
-}
-
-.debug-label {
-  font-weight: 600;
-  color: #495057;
-}
-
-.debug-value {
-  font-family: monospace;
-  color: #6c757d;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 .status-item {
   display: flex;
@@ -405,17 +339,11 @@ const playerState = {
   maxErrors: 5,
   lastUpdate: null,
   pollInterval: null,
-  commandCounts: {}, // Track command counts
   // Volume control state
   lastKnownVolume: 0, // What we think the server volume is
   userSliderVolume: 0, // What the user has set the slider to
   sliderBeingUsed: false // Whether user is actively using the slider
 };
-
-// Initialize command counters
-['play', 'pause', 'stop', 'skip', 'volume_up', 'volume_down', 'set_volume'].forEach(cmd => {
-  playerState.commandCounts[cmd] = 0;
-});
 
 // Initialize player
 document.addEventListener('DOMContentLoaded', function() {
@@ -424,19 +352,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Start polling for player status
 function startPolling() {
-  console.log(`🔄 Starting status polling at ${new Date().toISOString()}`);
   updatePlayerStatus();
   playerState.pollInterval = setInterval(updatePlayerStatus, 1000);
-  console.log(`⏰ Polling interval set to 1000ms`);
 }
 
 // Stop polling (when errors occur)
 function stopPolling() {
-  console.log(`🛑 Stopping status polling at ${new Date().toISOString()}`);
   if (playerState.pollInterval) {
     clearInterval(playerState.pollInterval);
     playerState.pollInterval = null;
-    console.log(`⏹️ Polling interval cleared`);
   }
 }
 
@@ -445,12 +369,9 @@ async function updatePlayerStatus() {
   // Prevent excessive status updates
   const now = Date.now();
   if (window.lastStatusUpdate && (now - window.lastStatusUpdate) < 100) {
-    console.log(`⏭️ Status update skipped - too soon after last update (${now - window.lastStatusUpdate}ms)`);
     return;
   }
   window.lastStatusUpdate = now;
-  
-  console.log(`📊 Updating player status at ${new Date().toISOString()}`);
   
   try {
     const response = await fetch('/api/player/status');
@@ -466,10 +387,9 @@ async function updatePlayerStatus() {
     
     // Update connection status
     updateConnectionStatus('connected');
-    console.log(`✅ Status update successful - connected: ${playerState.isConnected}`);
     
   } catch (error) {
-    console.error('❌ Error updating player status:', error);
+    console.error('Error updating player status:', error);
     playerState.errorCount++;
     
     if (playerState.errorCount >= playerState.maxErrors) {
@@ -484,9 +404,6 @@ async function updatePlayerStatus() {
 
 // Update the display with new status data
 function updateDisplay(status) {
-  // Debug: Log the raw status data
-  console.log('📊 Raw status data received:', status);
-  
   // Update song information
   updateSongInfo(status);
   
@@ -569,8 +486,6 @@ function updateVolume(status) {
   
   // Smart slider management: only update slider if server volume actually changed
   if (serverVolume !== playerState.lastKnownVolume) {
-    console.log(`📊 Server volume changed from ${playerState.lastKnownVolume} to ${serverVolume} - updating slider`);
-    
     // Update both our tracking variables and the UI
     playerState.lastKnownVolume = serverVolume;
     playerState.userSliderVolume = serverVolume;
@@ -620,27 +535,9 @@ function updateStatusGrid(status) {
   } else {
     statusQueue.textContent = 'No song';
   }
-  
-  // Update debug display
-  updateDebugDisplay(status);
 }
 
-// Update debug display with raw field values
-function updateDebugDisplay(status) {
-  const debugSongId = document.getElementById('debug-song-id');
-  const debugSongTitle = document.getElementById('debug-song-title');
-  const debugSongArtist = document.getElementById('debug-song-artist');
-  const debugSongAlbum = document.getElementById('debug-song-album');
-  const debugIdleActive = document.getElementById('debug-idle-active');
-  const debugPaused = document.getElementById('debug-paused');
-  
-  debugSongId.textContent = status.song_id || '-';
-  debugSongTitle.textContent = status.song_title || '-';
-  debugSongArtist.textContent = status.song_artist || '-';
-  debugSongAlbum.textContent = status.song_album || '-';
-  debugIdleActive.textContent = status.idle_active || '-';
-  debugPaused.textContent = status.paused || '-';
-}
+
 
 // Update connection status display
 function updateConnectionStatus(status) {
@@ -672,22 +569,14 @@ function updateLastUpdateTime() {
 
 // Send player command
 async function sendPlayerCommand(action) {
-  // Increment command counter
-  playerState.commandCounts[action] = (playerState.commandCounts[action] || 0) + 1;
-  
-  console.log(`🔄 sendPlayerCommand called with action: "${action}" at ${new Date().toISOString()}`);
-  console.log(`📊 Command count for ${action}: ${playerState.commandCounts[action]}`);
-  
   // Prevent rapid successive commands
   const now = Date.now();
   if (window.lastCommandTime && (now - window.lastCommandTime) < 1000) {
-    console.warn(`⚠️ Command "${action}" ignored - too soon after last command (${now - window.lastCommandTime}ms)`);
     return;
   }
   window.lastCommandTime = now;
   
   try {
-    console.log(`📤 Sending ${action} command to /system/${action}`);
     const response = await fetch(`/system/${action}`, {
       method: 'POST',
       headers: {
@@ -701,25 +590,21 @@ async function sendPlayerCommand(action) {
     }
     
     const result = await response.json();
-    console.log(`✅ ${action} command successful:`, result);
     
     // Update status immediately after command
     setTimeout(updatePlayerStatus, 100);
     
   } catch (error) {
-    console.error(`❌ Error sending ${action} command:`, error);
+    console.error(`Error sending ${action} command:`, error);
     showError(`Failed to send ${action} command`);
   }
 }
 
 // Send volume command
 async function sendVolumeCommand(action) {
-  console.log(`🔊 sendVolumeCommand called with action: "${action}" at ${new Date().toISOString()}`);
-  
   // Prevent rapid successive volume commands
   const now = Date.now();
   if (window.lastVolumeCommandTime && (now - window.lastVolumeCommandTime) < 500) {
-    console.warn(`⚠️ Volume command "${action}" ignored - too soon after last volume command (${now - window.lastVolumeCommandTime}ms)`);
     return;
   }
   window.lastVolumeCommandTime = now;
@@ -732,9 +617,6 @@ async function sendVolumeCommand(action) {
       const volume = playerState.userSliderVolume;
       url = '/system/set_volume';
       body = JSON.stringify({ volume: volume });
-      console.log(`📤 Setting volume to ${volume}% via /system/set_volume`);
-    } else {
-      console.log(`📤 Sending volume command to /system/${action}`);
     }
     
     const response = await fetch(url, {
@@ -751,13 +633,12 @@ async function sendVolumeCommand(action) {
     }
     
     const result = await response.json();
-    console.log(`✅ Volume command "${action}" successful:`, result);
     
     // Update status immediately after command
     setTimeout(updatePlayerStatus, 100);
     
   } catch (error) {
-    console.error(`❌ Error sending volume command "${action}":`, error);
+    console.error(`Error sending volume command "${action}":`, error);
     showError(`Failed to send volume command`);
   }
 }
@@ -785,23 +666,19 @@ document.addEventListener('DOMContentLoaded', function() {
   // Track when user starts interacting with slider
   volumeSlider.addEventListener('mousedown', function() {
     playerState.sliderBeingUsed = true;
-    console.log('🎚️ User started using volume slider');
   });
   
   volumeSlider.addEventListener('touchstart', function() {
     playerState.sliderBeingUsed = true;
-    console.log('🎚️ User started using volume slider (touch)');
   });
   
   // Track when user stops interacting with slider
   volumeSlider.addEventListener('mouseup', function() {
     playerState.sliderBeingUsed = false;
-    console.log('🎚️ User stopped using volume slider');
   });
   
   volumeSlider.addEventListener('touchend', function() {
     playerState.sliderBeingUsed = false;
-    console.log('🎚️ User stopped using volume slider (touch)');
   });
   
   // Handle slider value changes (visual feedback only)
@@ -809,32 +686,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const value = parseInt(this.value);
     playerState.userSliderVolume = value;
     volumeSliderValue.textContent = `${value}%`;
-    console.log(`🎚️ User slider value: ${value}% (server: ${playerState.lastKnownVolume}%)`);
   });
 });
 
-// Display command counts for debugging
-function showCommandCounts() {
-  console.log(`📊 Current command counts:`, playerState.commandCounts);
-  
-  // Create or update debug display
-  let debugDiv = document.getElementById('command-debug');
-  if (!debugDiv) {
-    debugDiv = document.createElement('div');
-    debugDiv.id = 'command-debug';
-    debugDiv.style.cssText = 'position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; z-index: 1000;';
-    document.body.appendChild(debugDiv);
-  }
-  
-  const counts = Object.entries(playerState.commandCounts)
-    .map(([cmd, count]) => `${cmd}: ${count}`)
-    .join('<br>');
-  
-  debugDiv.innerHTML = `<strong>Command Counts:</strong><br>${counts}`;
-}
 
-// Call this function periodically to update the display
-setInterval(showCommandCounts, 2000);
 </script>
 
 

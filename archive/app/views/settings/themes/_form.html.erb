@@ -1,5 +1,5 @@
 <%= form_with model: theme, 
-              url: theme.new_record? ? manage_themes_settings_path : manage_theme_settings_path(theme),
+              url: theme.new_record? ? manage_themes_path : manage_theme_path(theme),
               method: theme.new_record? ? :post : :patch,
               local: true, 
               class: "theme-form" do |form| %>
@@ -330,7 +330,7 @@
   <!-- Form Actions -->
   <div class="d-flex justify-content-between">
     <div>
-      <%= link_to "Cancel", manage_themes_settings_path, class: "btn btn-outline-secondary" %>
+      <%= link_to "Cancel", manage_themes_path, class: "btn btn-outline-secondary" %>
     </div>
     <div>
       <%= form.submit theme.new_record? ? "Create Theme" : "Update Theme", class: "btn btn-primary" %>

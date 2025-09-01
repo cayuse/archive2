@@ -7,14 +7,6 @@ class SettingsController < ApplicationController
     @current_tab = 'index'
   end
 
-  def api_keys
-    # Stub for API keys management
-  end
-
-  def song_types
-    # Stub for song types management
-  end
-
   # Theme management methods
   def themes
     @themes = Theme.all.order(:name)
@@ -40,18 +32,16 @@ class SettingsController < ApplicationController
     @theme = Theme.new(theme_params)
     
     if @theme.save
-      redirect_to manage_theme_settings_path(@theme), notice: 'Theme was successfully created.'
+      redirect_to manage_theme_path(@theme), notice: 'Theme was successfully created.'
     else
       render 'settings/themes/new', status: :unprocessable_entity
     end
   end
 
-
-
   def update_theme
     @theme = Theme.find(params[:id])
     if @theme.update(theme_params)
-      redirect_to manage_theme_settings_path(@theme), notice: 'Theme was successfully updated.'
+      redirect_to manage_theme_path(@theme), notice: 'Theme was successfully updated.'
     else
       render 'settings/themes/edit', status: :unprocessable_entity
     end
@@ -60,10 +50,10 @@ class SettingsController < ApplicationController
   def destroy_theme
     @theme = Theme.find(params[:id])
     if @theme.is_default
-      redirect_to manage_themes_settings_path, alert: 'Cannot delete the default theme.'
+      redirect_to manage_themes_path, alert: 'Cannot delete the default theme.'
     else
       @theme.destroy
-      redirect_to manage_themes_settings_path, notice: 'Theme was successfully deleted.'
+      redirect_to manage_themes_path, notice: 'Theme was successfully deleted.'
     end
   end
 
@@ -71,9 +61,9 @@ class SettingsController < ApplicationController
     @theme = Theme.find(params[:id])
     new_theme = @theme.duplicate!
     if new_theme
-      redirect_to manage_theme_settings_path(new_theme), notice: 'Theme was successfully duplicated.'
+      redirect_to manage_theme_path(new_theme), notice: 'Theme was successfully duplicated.'
     else
-      redirect_to manage_theme_settings_path(@theme), alert: 'Failed to duplicate theme.'
+      redirect_to manage_theme_path(@theme), alert: 'Failed to duplicate theme.'
     end
   end
 
@@ -97,7 +87,7 @@ class SettingsController < ApplicationController
       File.write(asset_dir.join(asset.filename), asset.file_data)
     end
     
-    redirect_to manage_theme_settings_path(@theme), notice: "Theme exported to #{theme_dir}"
+    redirect_to manage_theme_path(@theme), notice: "Theme exported to #{theme_dir}"
   end
 
   def switch_theme
@@ -105,12 +95,12 @@ class SettingsController < ApplicationController
     if theme
       # Set the global current theme in settings for single-source truth
       SystemSetting.set_current_theme(theme.name)
-      redirect_to manage_themes_settings_path, notice: "Theme '#{theme.display_name}' is now active"
+      redirect_to manage_themes_path, notice: "Theme '#{theme.display_name}' is now active"
     else
-      redirect_to manage_themes_settings_path, alert: "Theme not found"
+      redirect_to manage_themes_path, alert: "Theme not found"
     end
   rescue ActiveRecord::RecordNotFound
-    redirect_to manage_themes_settings_path, alert: "Theme not found"
+    redirect_to manage_themes_path, alert: "Theme not found"
   end
 
   def preview_theme
@@ -126,19 +116,12 @@ class SettingsController < ApplicationController
     @site_description = SystemSetting.site_description
   end
 
-
-
   def update
     case params[:tab]
     when 'theme'
       update_theme_settings
     when 'general'
       update_general_settings
-    when 'api_keys'
-      update_api_keys
-    when 'song_types'
-      update_song_types
-
     else
       flash[:error] = "Invalid settings tab"
     end
@@ -193,47 +176,4 @@ class SettingsController < ApplicationController
 
     flash[:success] = "General settings updated"
   end
-
-  def update_api_keys
-    # Stub for API keys update
-    flash[:info] = "API keys management coming soon"
-  end
-
-  def update_song_types
-    # Stub for song types update
-    flash[:info] = "Song types management coming soon"
-  end
-
-
-
-
-
-
-
-
-
-  # Key management actions
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  private
-
-
-
-
 end

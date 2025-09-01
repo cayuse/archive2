@@ -86,6 +86,8 @@ class Player:
                 "volume": str(int(round(float(vol)))),
                 "song_id": str(song.get("id", "")),
                 "song_title": str(song.get("title", "")),
+                "song_artist": str(song.get("artist", "")),
+                "song_album": str(song.get("album", "")),
                 "health": "healthy" if not extra_error else "degraded",
                 "error_message": extra_error
             }

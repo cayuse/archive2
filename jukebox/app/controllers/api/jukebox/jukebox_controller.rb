@@ -121,7 +121,7 @@ module Api
         ensure_min_queue_length!
 
         # 1) Consume from unified ordered queue: manual first, then random; each by position
-        if (item = JukeboxQueueItem.ordered_for_playback.first)
+        if (item = JukeboxQueueItem.includes(song: [:artist, :album]).ordered_for_playback.first)
           song = item.song
           source = (item.status.to_s == '1' || item.status == 'pending_random') ? 'random' : 'queue'
           item.destroy!  # remove from queue upon consumption

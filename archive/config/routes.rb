@@ -11,10 +11,7 @@ Rails.application.routes.draw do
   # Settings routes (admin only)
   resource :settings, only: [:show, :update] do
     collection do
-      get :api_keys
-      get :song_types
       get :general
-
     end
   end
   

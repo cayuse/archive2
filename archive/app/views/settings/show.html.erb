@@ -22,42 +22,15 @@
         </div>
       <% end %>
 
-      <!-- Settings Tabs -->
+      <!-- Settings Content -->
       <div class="card settings-card">
-        <div class="card-header">
-          <ul class="nav nav-tabs card-header-tabs settings-tabs" id="settingsTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <%= link_to "General", general_settings_path, 
-                  class: "nav-link #{@current_tab == 'general' ? 'active' : ''}",
-                  data: { bs_toggle: "tab" } %>
-            </li>
-            <li class="nav-item" role="presentation">
-                            <%= link_to "Theme", manage_themes_path,
-                  class: "nav-link #{@current_tab == 'theme' ? 'active' : ''}",
-                  data: { bs_toggle: "tab" } %>
-            </li>
-            <li class="nav-item" role="presentation">
-              <%= link_to "API Keys", api_keys_settings_path, 
-                  class: "nav-link #{@current_tab == 'api_keys' ? 'active' : ''}",
-                  data: { bs_toggle: "tab" } %>
-            </li>
-            <li class="nav-item" role="presentation">
-              <%= link_to "Song Types", song_types_settings_path, 
-                  class: "nav-link #{@current_tab == 'song_types' ? 'active' : ''}",
-                  data: { bs_toggle: "tab" } %>
-            </li>
-
-          </ul>
-        </div>
         <div class="card-body">
-          <div class="tab-content settings-tabs" id="settingsTabContent">
-            <!-- Welcome content for the main settings page -->
-            <div class="tab-pane fade show active" id="welcome" role="tabpanel">
+          <div class="settings-content">
               <div class="row">
                 <div class="col-md-8">
                   <h4 class="theme-text-primary mb-3">Welcome to System Settings</h4>
                   <p class="theme-text-secondary">
-                    Use the tabs above to navigate between different settings sections:
+                    Configure your music archive settings and customize the interface.
                   </p>
                   
                   <div class="row mt-4">
@@ -89,40 +62,7 @@
                       </div>
                     </div>
                   </div>
-                  
-                  <div class="row mt-3">
-                    <div class="col-md-6">
-                      <div class="card h-100">
-                        <div class="card-body">
-                          <h6 class="theme-text-primary">
-                            <i class="fas fa-key me-2"></i>API Keys
-                          </h6>
-                          <p class="theme-text-secondary small">
-                            Manage API keys for external integrations (coming soon).
-                          </p>
-                          <%= link_to "Go to API Keys", api_keys_settings_path, class: "btn btn-sm btn-outline-primary" %>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                      <div class="card h-100">
-                        <div class="card-body">
-                          <h6 class="theme-text-primary">
-                            <i class="fas fa-music me-2"></i>Song Types
-                          </h6>
-                          <p class="theme-text-secondary small">
-                            Configure song type categories and metadata (coming soon).
-                          </p>
-                          <%= link_to "Go to Song Types", song_types_settings_path, class: "btn btn-sm btn-outline-primary" %>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div class="row mt-3">
 
-                  </div>
                 </div>
                 
                 <div class="col-md-4">
@@ -150,7 +90,6 @@
               </div>
             </div>
           </div>
-        </div>
       </div>
     </div>
   </div>

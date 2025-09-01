@@ -7,7 +7,7 @@
       <% Theme.active.order(:display_name).each do |theme| %>
         <li>
           <%= button_to theme.display_name, 
-                        switch_theme_settings_path(theme), 
+                        switch_theme_path(theme), 
                         method: :post, 
                         class: "dropdown-item #{current_theme == theme.name ? 'active' : ''}",
                         form: { style: 'display: inline;' } %>

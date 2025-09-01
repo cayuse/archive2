@@ -14,7 +14,6 @@
         <div class="card-body">
           <!-- Current Song Display (matches /system/player exactly) -->
           <div class="current-song" id="live-current-song-display">
-            <h3>Now Playing</h3>
             <div class="song-info" id="live-song-info" style="display: block;">
               <div class="song-title">No song playing</div>
               <div class="song-artist"></div>
@@ -150,26 +149,25 @@ function refreshUpcomingSongs() {
 // Update live display with player status
 function updateLiveDisplay(data) {
   const playerStatus = data.player_status;
-  const currentSong = data.current_song;
   
-  console.log('🎵 Updating live display:', { playerStatus, currentSong });
+  console.log('🎵 Updating live display:', { playerStatus });
   
-  // Update song information
-  updateLiveSongInfo(currentSong);
+  // Update song information from player status (same as system player)
+  updateLiveSongInfo(playerStatus);
   
   // Update progress bar and time from player status
   updateLiveProgress(playerStatus);
 }
 
 // Update live song information
-function updateLiveSongInfo(currentSong) {
+function updateLiveSongInfo(playerStatus) {
   const songInfo = document.getElementById('live-song-info');
   
-  if (currentSong && currentSong.title) {
+  if (playerStatus && playerStatus.song_title) {
     songInfo.innerHTML = `
-      <div class="song-title">${currentSong.title}</div>
-      ${currentSong.artist ? `<div class="song-artist">${currentSong.artist}</div>` : ''}
-      ${currentSong.album ? `<div class="song-album">${currentSong.album}</div>` : ''}
+      <div class="song-title">${playerStatus.song_title}</div>
+      ${playerStatus.song_artist ? `<div class="song-artist">${playerStatus.song_artist}</div>` : '<div class="song-artist">Unknown Artist</div>'}
+      ${playerStatus.song_album ? `<div class="song-album">${playerStatus.song_album}</div>` : '<div class="song-album">Unknown Album</div>'}
     `;
   } else {
     songInfo.innerHTML = `

@@ -34,7 +34,7 @@
         <!-- Logo and Brand -->
         <div class="navbar-brand-container">
           <div class="logo-area">
-            <img src="<%= theme_logo_path %>" alt="Logo" height="40">
+            <img src="/icon.svg" alt="Logo" height="40">
           </div>
           <div class="brand-info">
             <a class="navbar-brand" href="<%= root_path %>">🎵 Jukebox</a>
@@ -74,15 +74,18 @@
 
           <!-- User Profile -->
           <ul class="navbar-nav">
-            <!-- DEBUG: <%= current_user&.email || 'No user' %> -->
             <% if current_user %>
-              <li class="nav-item">
-                <%= link_to "Admin", admin_path, class: "nav-link nav-btn" %>
-              </li>
               <li class="nav-item">
                 <div class="user-profile-container">
                   <div class="user-info">
                     <span class="user-name"><%= current_user.name %></span>
+                    <%= link_to admin_path, class: "user-avatar-link" do %>
+                      <div class="user-avatar">
+                        <span class="avatar-placeholder">
+                          <%= current_user.name.first.upcase %>
+                        </span>
+                      </div>
+                    <% end %>
                     <%= button_to logout_path, method: :delete, class: "btn btn-outline-light btn-sm ms-2", title: "Logout" do %>
                       <i class="fas fa-sign-out-alt"></i>
                     <% end %>

@@ -4,8 +4,8 @@
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 theme-text-primary"><%= @theme.display_name %></h1>
         <div>
-          <%= link_to "Back to Theme Manager", manage_themes_settings_path, class: "btn btn-outline-secondary" %>
-          <%= link_to "Edit Theme", edit_manage_theme_settings_path(@theme), class: "btn btn-primary ms-2" %>
+          <%= link_to "Back to Theme Manager", manage_themes_path, class: "btn btn-outline-secondary" %>
+          <%= link_to "Edit Theme", edit_manage_theme_path(@theme), class: "btn btn-primary ms-2" %>
         </div>
       </div>
 
@@ -193,11 +193,11 @@
             </div>
             <div class="card-body theme-card-content">
               <div class="d-grid gap-2">
-                <%= link_to "Edit Theme", edit_manage_theme_settings_path(@theme), class: "btn btn-primary" %>
-                                  <%= link_to "Duplicate Theme", duplicate_manage_theme_settings_path(@theme), data: { method: :post, confirm: "Create a copy of this theme?" }, class: "btn btn-outline-info" %>
-                  <%= link_to "Export Theme", export_manage_theme_settings_path(@theme), class: "btn btn-outline-success" %>
+                <%= link_to "Edit Theme", edit_manage_theme_path(@theme), class: "btn btn-primary" %>
+                                  <%= link_to "Duplicate Theme", duplicate_manage_theme_path(@theme), data: { method: :post, confirm: "Create a copy of this theme?" }, class: "btn btn-outline-info" %>
+                  <%= link_to "Export Theme", export_manage_theme_path(@theme), class: "btn btn-outline-success" %>
                   <% unless @theme.is_default %>
-                    <%= link_to "Delete Theme", manage_theme_settings_path(@theme), data: { method: :delete, confirm: "Are you sure? This cannot be undone." }, class: "btn btn-outline-danger" %>
+                    <%= link_to "Delete Theme", manage_theme_path(@theme), data: { method: :delete, confirm: "Are you sure? This cannot be undone." }, class: "btn btn-outline-danger" %>
                   <% end %>
               </div>
             </div>

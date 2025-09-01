@@ -5,7 +5,7 @@
         <h1 class="h3 mb-0">Theme Management</h1>
         <div>
           <%= link_to "Back to Settings", settings_path, class: "btn btn-outline-secondary" %>
-          <%= link_to "Create New Theme", new_manage_theme_settings_path, class: "btn btn-primary ms-2" %>
+          <%= link_to "Create New Theme", new_manage_theme_path, class: "btn btn-primary ms-2" %>
         </div>
       </div>
 
@@ -45,9 +45,9 @@
               </div>
               <div class="col-md-4 text-end">
                 <div class="btn-group" role="group">
-                  <%= link_to "View", manage_theme_settings_path(current_theme), class: "btn btn-outline-primary btn-sm" %>
-                  <%= link_to "Edit", edit_manage_theme_settings_path(current_theme), class: "btn btn-outline-secondary btn-sm" %>
-                  <%= button_to "Duplicate", duplicate_manage_theme_settings_path(current_theme), 
+                  <%= link_to "View", manage_theme_path(current_theme), class: "btn btn-outline-primary btn-sm" %>
+                  <%= link_to "Edit", edit_manage_theme_path(current_theme), class: "btn btn-outline-secondary btn-sm" %>
+                  <%= button_to "Duplicate", duplicate_manage_theme_path(current_theme), 
                       method: :post, 
                       data: { confirm: "Create a copy of this theme?" }, 
                       class: "btn btn-outline-info btn-sm",
@@ -112,22 +112,22 @@
                       </td>
                       <td>
                         <div class="btn-group btn-group-sm" role="group">
-                          <%= link_to "View", manage_theme_settings_path(theme), class: "btn btn-outline-primary" %>
-                          <%= link_to "Edit", edit_manage_theme_settings_path(theme), class: "btn btn-outline-secondary" %>
-                          <%= button_to "Duplicate", duplicate_manage_theme_settings_path(theme), 
+                          <%= link_to "View", manage_theme_path(theme), class: "btn btn-outline-primary" %>
+                          <%= link_to "Edit", edit_manage_theme_path(theme), class: "btn btn-outline-secondary" %>
+                          <%= button_to "Duplicate", duplicate_manage_theme_path(theme), 
                               method: :post, 
                               data: { confirm: "Create a copy of this theme?" }, 
                               class: "btn btn-outline-info btn-sm",
                               form: { style: "display: inline;" } %>
                           <% if theme != current_theme %>
-                            <%= button_to "Make Active", switch_theme_settings_path(theme), 
+                            <%= button_to "Make Active", switch_theme_path(theme), 
                                 method: :post, 
                                 data: { confirm: "Make '#{theme.display_name}' the active theme?" }, 
                                 class: "btn btn-outline-success btn-sm",
                                 form: { style: "display: inline;" } %>
                           <% end %>
                           <% unless theme.is_default %>
-                            <%= button_to "Delete", manage_theme_settings_path(theme), 
+                            <%= button_to "Delete", manage_theme_path(theme), 
                                 method: :delete, 
                                 data: { confirm: "Are you sure? This cannot be undone." }, 
                                 class: "btn btn-outline-danger btn-sm",
@@ -143,7 +143,7 @@
           <% else %>
             <div class="text-center py-4">
               <p class="text-muted">No themes found. Create your first theme to get started.</p>
-              <%= link_to "Create New Theme", new_manage_theme_settings_path, class: "btn btn-primary" %>
+              <%= link_to "Create New Theme", new_manage_theme_path, class: "btn btn-primary" %>
             </div>
           <% end %>
         </div>
