@@ -37,6 +37,8 @@ utilities/__pycache__/
 Dockerfile.*
 .dockerignore
 docker-compose.override.yml
+archive/container
+jukebox/container
 
 # Backup and archive files
 *.tar
