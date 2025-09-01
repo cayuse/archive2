@@ -15,11 +15,11 @@
     <span class="genre-song-count badge bg-secondary"><%= genre.songs.count %></span>
   </td>
   <td>
-    <% genre.artists.limit(3).each do |artist| %>
+    <% genre.song_artists.limit(3).each do |artist| %>
       <span class="badge bg-info genre-artist"><%= artist.name %></span>
     <% end %>
-    <% if genre.artists.count > 3 %>
-      <span class="genre-artist-more">+<%= genre.artists.count - 3 %> more</span>
+    <% if genre.song_artists.count > 3 %>
+      <span class="genre-artist-more" style="color: #1f2937;">+<%= genre.song_artists.count - 3 %> more</span>
     <% end %>
   </td>
 </tr> 

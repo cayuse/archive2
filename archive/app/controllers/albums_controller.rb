@@ -5,7 +5,7 @@ class AlbumsController < ApplicationController
   def index
     query = params[:q]&.strip
     
-    @albums = policy_scope(Album).includes(:songs, :artist)
+    @albums = policy_scope(Album).includes(:artist, songs: :artist)
     
     if query.present?
       @albums = @albums.where("title ILIKE ?", "%#{query}%")

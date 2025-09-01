@@ -6,7 +6,16 @@
     <% if album.artist.present? %>
       <span class="badge bg-info album-artist"><%= album.artist.name %></span>
     <% else %>
-      <span class="album-artist">-</span>
+      <% unique_artists = album.songs.includes(:artist).map(&:artist).compact.uniq %>
+      <% unique_artists.first(3).each do |artist| %>
+        <span class="badge bg-info album-artist"><%= artist.name %></span>
+      <% end %>
+      <% if unique_artists.count > 3 %>
+        <span class="album-artist-more" style="color: #1f2937;">+<%= unique_artists.count - 3 %> more</span>
+      <% end %>
+      <% if unique_artists.empty? %>
+        <span class="album-artist" style="color: #1f2937;">-</span>
+      <% end %>
     <% end %>
   </td>
   <td>
@@ -14,9 +23,9 @@
   </td>
   <td>
     <% if album.release_date.present? %>
-      <span class="album-release-date"><%= album.release_date.strftime("%Y-%m-%d") %></span>
+      <span class="album-release-date" style="color: #1f2937;"><%= album.release_date.strftime("%Y-%m-%d") %></span>
     <% else %>
-      <span class="album-release-date">-</span>
+      <span class="album-release-date" style="color: #1f2937;">-</span>
     <% end %>
   </td>
 </tr> 

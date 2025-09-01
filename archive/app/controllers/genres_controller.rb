@@ -5,7 +5,7 @@ class GenresController < ApplicationController
   def index
     query = params[:q]&.strip
     
-    @genres = policy_scope(Genre).includes(:songs, :artists)
+    @genres = policy_scope(Genre).includes(:songs, :song_artists)
     
     if query.present?
       @genres = @genres.where("name ILIKE ?", "%#{query}%")
@@ -28,7 +28,7 @@ class GenresController < ApplicationController
     page = params[:page]&.to_i || 1
     per_page = 20
     
-    @genres = policy_scope(Genre).includes(:songs, :artists)
+    @genres = policy_scope(Genre).includes(:songs, :song_artists)
     
     if query.present?
       @genres = @genres.where("name ILIKE ?", "%#{query}%")

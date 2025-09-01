@@ -4,9 +4,9 @@
   </td>
   <td>
     <% if artist.country.present? %>
-      <span class="artist-country"><%= artist.country %></span>
+      <span class="artist-country" style="color: #1f2937;"><%= artist.country %></span>
     <% else %>
-      <span class="artist-country">-</span>
+      <span class="artist-country" style="color: #1f2937;">-</span>
     <% end %>
   </td>
   <td>
@@ -14,12 +14,10 @@
   </td>
   <td>
     <% artist.genres.limit(3).each do |genre| %>
-      <span class="badge genre-badge" style="background-color: <%= genre.color %>">
-        <%= genre.name %>
-      </span>
+      <span class="badge bg-info artist-genre"><%= genre.name %></span>
     <% end %>
     <% if artist.genres.count > 3 %>
-      <span class="artist-genre-more">+<%= artist.genres.count - 3 %> more</span>
+      <span class="artist-genre-more" style="color: #1f2937;">+<%= artist.genres.count - 3 %> more</span>
     <% end %>
   </td>
 </tr> 

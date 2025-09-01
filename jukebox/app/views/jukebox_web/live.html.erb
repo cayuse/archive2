@@ -15,9 +15,9 @@
           <!-- Current Song Display (matches /system/player exactly) -->
           <div class="current-song" id="live-current-song-display">
             <div class="song-info" id="live-song-info" style="display: block;">
-              <div class="song-title">No song playing</div>
-              <div class="song-artist"></div>
-              <div class="song-album"></div>
+              <div class="song-title theme-text-primary">No song playing</div>
+              <div class="song-artist theme-text-secondary"></div>
+              <div class="song-album theme-text-muted"></div>
             </div>
             
             <!-- Progress Bar -->
@@ -165,15 +165,15 @@ function updateLiveSongInfo(playerStatus) {
   
   if (playerStatus && playerStatus.song_title) {
     songInfo.innerHTML = `
-      <div class="song-title">${playerStatus.song_title}</div>
-      ${playerStatus.song_artist ? `<div class="song-artist">${playerStatus.song_artist}</div>` : '<div class="song-artist">Unknown Artist</div>'}
-      ${playerStatus.song_album ? `<div class="song-album">${playerStatus.song_album}</div>` : '<div class="song-album">Unknown Album</div>'}
+      <div class="song-title theme-text-primary">${playerStatus.song_title}</div>
+      ${playerStatus.song_artist ? `<div class="song-artist theme-text-secondary">${playerStatus.song_artist}</div>` : '<div class="song-artist theme-text-muted">Unknown Artist</div>'}
+      ${playerStatus.song_album ? `<div class="song-album theme-text-muted">${playerStatus.song_album}</div>` : '<div class="song-album theme-text-muted">Unknown Album</div>'}
     `;
   } else {
     songInfo.innerHTML = `
-      <div class="song-title">No song playing</div>
-      <div class="song-artist"></div>
-      <div class="song-album"></div>
+      <div class="song-title theme-text-primary">No song playing</div>
+      <div class="song-artist theme-text-secondary"></div>
+      <div class="song-album theme-text-muted"></div>
     `;
   }
 }
@@ -229,16 +229,16 @@ function updateUpcomingDisplay(upcomingSongs, loggedIn = false) {
                   <span class="badge bg-secondary">${index + 1}</span>
                 </td>
                 <td>
-                  <strong>${item.song.title}</strong>
+                  <strong style="color: #1f2937;">${item.song.title}</strong>
                 </td>
                 <td>
-                  ${item.song.artist_name || 'Unknown Artist'}
+                  <span style="color: #1f2937;">${item.song.artist_name || 'Unknown Artist'}</span>
                 </td>
                 <td>
-                  ${item.song.album_name || 'Unknown Album'}
+                  <span style="color: #1f2937;">${item.song.album_name || 'Unknown Album'}</span>
                 </td>
                 <td>
-                  ${item.song.duration ? formatDuration(item.song.duration) : '-'}
+                  <span style="color: #1f2937;">${item.song.duration ? formatDuration(item.song.duration) : '-'}</span>
                 </td>
                 <td>
                   <span class="badge ${item.source === 'random' ? 'bg-success' : 'bg-info'}" title="Order #${item.order_number}">
@@ -372,134 +372,4 @@ window.addEventListener('beforeunload', function() {
 });
 </script>
 
-<style>
-/* Exact same styling as /system/player */
-.current-song {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.current-song h3 {
-  color: #6c757d;
-  margin-bottom: 1.5rem;
-  font-size: 1.25rem;
-}
-
-.song-info {
-  margin-bottom: 2rem;
-}
-
-.song-title {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: #212529;
-  margin-bottom: 0.5rem;
-}
-
-.song-artist {
-  font-size: 1.1rem;
-  color: #6c757d;
-  margin-bottom: 0.25rem;
-}
-
-.song-album {
-  font-size: 1rem;
-  color: #6c757d;
-}
-
-.progress-container {
-  margin-bottom: 1rem;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background-color: #e9ecef;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: #007bff;
-  transition: width 0.3s ease;
-}
-
-.time-display {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.875rem;
-  color: #6c757d;
-}
-
-.time-display span {
-  font-family: monospace;
-}
-
-/* Debug display styling */
-.debug-display {
-  margin-top: 2rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.debug-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-
-.debug-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem;
-  background: white;
-  border-radius: 4px;
-  border: 1px solid #dee2e6;
-}
-
-.debug-label {
-  font-weight: 600;
-  color: #495057;
-}
-
-.debug-value {
-  font-family: monospace;
-  color: #6c757d;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.status-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.status-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
-}
-
-.status-label {
-  font-weight: 600;
-  color: #495057;
-}
-
-.status-value {
-  color: #6c757d;
-}
-</style> 
+ 

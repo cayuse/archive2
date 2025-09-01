@@ -3,6 +3,8 @@ class Genre < ApplicationRecord
   has_many :songs, dependent: :nullify
   has_and_belongs_to_many :artists, join_table: :artists_genres
   has_and_belongs_to_many :albums, join_table: :albums_genres
+  # Get artists through songs as fallback
+  has_many :song_artists, -> { distinct }, through: :songs, source: :artist
 
   # Validations
   validates :name, presence: true, length: { maximum: 100 }
