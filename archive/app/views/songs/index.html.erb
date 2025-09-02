@@ -1,4 +1,5 @@
 <div class="container">
+  <% device_type = cookies[:device_type] || 'desktop' # Default to desktop if cookie not set %>
   <div class="row">
     <div class="col-12">
       <!-- Notice Container -->
@@ -6,9 +7,9 @@
       
       <!-- Page Header -->
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">Songs</h1>
+        <h1 class="h3 mb-0 hide-on-narrow">Songs</h1>
         <% if policy(Song.new).upload_audio? %>
-          <%= link_to upload_path, class: "btn btn-primary" do %>
+          <%= link_to upload_path, class: "btn btn-primary hide-on-narrow" do %>
             <i class="fas fa-plus me-2"></i>Upload Song
           <% end %>
         <% end %>
@@ -59,9 +60,9 @@
                   </th>
                   <th>Title</th>
                   <th>Artist</th>
-                  <th>Album</th>
-                  <th>Genre</th>
-                  <th>Duration</th>
+                  <th class="hide-on-narrow">Album</th>
+                  <th class="hide-on-narrow">Genre</th>
+                  <th class="hide-on-narrow">Duration</th>
                   <th>Play</th>
                 </tr>
               </thead>
@@ -77,9 +78,13 @@
               <div class="text-muted">
                 Showing <%= @songs.offset_value + 1 %> to <%= @songs.offset_value + @songs.length %> of <%= @songs.total_count %> songs
               </div>
-                              <div>
+              <div>
+                <% if defined?(device_type) && device_type == 'mobile' %>
+                    <%= link_to_next_page @songs, 'Next Page' %>
+                <% else %>
                   <%= paginate @songs %>
-                </div>
+                <% end %>
+              </div>
             </div>
           <% end %>
         </div>
@@ -89,6 +94,23 @@
 </div>
 
 <script>
+// Set a cookie based on screen size
+document.addEventListener('DOMContentLoaded', function() {
+  const screenWidth = window.innerWidth;
+  let deviceType;
+
+  if (screenWidth < 768) {
+  deviceType = 'mobile';
+  } else if (screenWidth >= 768 && screenWidth < 1200) {
+  deviceType = 'tablet';
+  } else {
+  deviceType = 'desktop';
+  }
+
+  document.cookie = `device_type=${deviceType}; path=/`;
+});
+
+
 // Ensure playlist functions are available immediately
 // Notice system functions
 window.showNotice = function(message, type = 'success') {

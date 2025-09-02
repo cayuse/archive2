@@ -1,4 +1,4 @@
-<tr data-song-id="<%= song.id %>">
+<tr class="song-list-row" data-song-id="<%= song.id %>">
   <% if local_assigns[:show_checkbox] %>
     <td class="song-checkbox">
       <input type="checkbox" 
@@ -32,15 +32,16 @@
     <% end %>
   </td>
   
-  <td>
+  <td class="hide-on-narrow">
     <% if song.album.present? %>
-      <span class="song-album"><%= link_to song.album.title, album_path(song.album), class: "text-decoration-none" %></span>
+      <span class="song-album"><%= link_to song.album.title.truncate_words(3), album_path(song.album), class: "text-decoration-none" %>
+      </span>
     <% else %>
       <span class="song-album">No album</span>
     <% end %>
   </td>
   
-  <td>
+  <td class="hide-on-narrow">
     <% if song.genre.present? %>
       <% 
         # Determine text color based on background brightness
@@ -62,7 +63,7 @@
   </td>
   
   <% if local_assigns[:show_status] %>
-    <td>
+    <td class="hide-on-narrow">
       <% case song.processing_status %>
       <% when 'new' %>
         <span class="badge bg-info song-status">New</span>
@@ -81,7 +82,7 @@
   <% end %>
   
   <% if local_assigns[:show_metadata] %>
-    <td>
+    <td class="hide-on-narrow">
       <% if song.has_complete_metadata? %>
         <span class="badge bg-success song-status">Complete</span>
       <% elsif song.has_partial_metadata? %>
@@ -93,7 +94,7 @@
   <% end %>
   
   <% if local_assigns[:show_error] %>
-    <td>
+    <td class="hide-on-narrow">
       <% if song.processing_error.present? %>
         <small class="song-error" title="<%= song.processing_error %>">
           <%= truncate(song.processing_error, length: 50) %>
@@ -104,7 +105,7 @@
     </td>
   <% end %>
   
-  <td>
+  <td class="hide-on-narrow">
     <% if song.duration.present? %>
       <span class="song-duration"><%= "#{song.duration / 60}:#{(song.duration % 60).to_s.rjust(2, '0')}" %></span>
     <% else %>

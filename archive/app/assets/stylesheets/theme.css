@@ -1,6 +1,63 @@
-/* Default Theme CSS - Database-Driven Variables */
+/* Combined theme.css for archive and jukebox                        */
+/* Put in both places:                                               */
+/* archive2/archive/app/assets/stylesheets/theme.css                 */
+/* and                                                               */
+/* archive2/jukebox/app/assets/stylesheets/theme.css.bak             */
+/*                                                                   */
+/* I would use a soft link but it might break in git                 */
+/* or differing operating systems                                    */
+                                                                     
+                                                                     
+/* Fallback for when no theme is set                                 */
+:root {
+/* Use default theme colors as fallback                      archive */
+  --primary-bg: #0f0f23;
+  --secondary-bg: #1a1a2e;
+  --accent-color: #4f46e5;
+  --accent-hover: #6366f1;                       
+  --accent-active: #3730a3;                      
+  --text-primary: #f8fafc;                       
+  --text-secondary: #cbd5e1;                     
+  --text-muted: #64748b;                         
+  --text-inverse: #ffffff;                       
+  --border-color: #334155;                       
+  --shadow-color: rgba(0, 0, 0, 0.1);            
+  --overlay-color: rgba(0, 0, 0, 0.5);           
+  --success-color: #10b981;                      
+  --warning-color: #f59e0b;                      
+  --danger-color: #ef4444;                       
+  --button-bg: #374151;                          
+  --button-hover: #4b5563;                       
+  --button-active: #1f2937;                      
+  --highlight-color: #3b82f6;                    
+  --link-color: #60a5fa;                         
+  --link-hover: #93c5fd;                         
+  
+/* New theme-exposed text vars                               archive */
+  --heading-color: var(--text-primary);
+  --card-header-text: var(--text-primary);
+  
+/* Spacing and Layout Variables                                      */
+  --spacing-xs: 0.25rem;                                     /* BOTH */
+  --spacing-sm: 0.5rem;                                      /* BOTH */
+  --spacing-md: 1rem;                                        /* BOTH */
+  --spacing-lg: 1.5rem;                                      /* BOTH */
+  --spacing-xl: 2rem;                                        /* BOTH */
+                                                             /* BOTH */
+  --radius-sm: 0.25rem;                                      /* BOTH */
+  --radius-md: 0.5rem;                                       /* BOTH */
+  --radius-lg: 0.75rem;                                      /* BOTH */
+  --radius-xl: 1rem;                                         /* BOTH */
+                                                             /* BOTH */
+  --shadow-sm: 0 1px 2px 0 var(--shadow-color);              /* BOTH */
+  --shadow-md: 0 4px 6px -1px var(--shadow-color);           /* BOTH */
+  --shadow-lg: 0 10px 15px -3px var(--shadow-color);         /* BOTH */
+  
+}
+
+/* Default Theme CSS - Database-Driven Variables             archive */
 [data-theme="default"] {
-  /* 21 Core Color Variables (Database-Driven) */
+  /* 21 Core Color Variables (Database-Driven)               archive */
   --primary-bg: #0f0f23;
   --secondary-bg: #1a1a2e;
   --accent-color: #4f46e5;
@@ -26,60 +83,25 @@
   --heading-color: var(--text-primary);
   --card-header-text: var(--text-primary);
 }
+/*                                                           archive */
 
-/* Fallback for when no theme is set */
-:root {
-  /* Use default theme colors as fallback */
-  --primary-bg: #0f0f23;
-  --secondary-bg: #1a1a2e;
-  --accent-color: #4f46e5;
-  --accent-hover: #6366f1;
-  --accent-active: #3730a3;
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #64748b;
-  --text-inverse: #ffffff;
-  --border-color: #334155;
-  --shadow-color: rgba(0, 0, 0, 0.1);
-  --overlay-color: rgba(0, 0, 0, 0.5);
-  --success-color: #10b981;
-  --warning-color: #f59e0b;
-  --danger-color: #ef4444;
-  --button-bg: #374151;
-  --button-hover: #4b5563;
-  --button-active: #1f2937;
-  --highlight-color: #3b82f6;
-  --link-color: #60a5fa;
-  --link-hover: #93c5fd;
-  /* New theme-exposed text vars */
-  --heading-color: var(--text-primary);
-  --card-header-text: var(--text-primary);
+/* small screen helper */
+@media screen and (max-width: 768px) {
+	.hide-on-narrow {
+		display: none;
+	}
 }
 
-/* Spacing and Layout Variables (Static) */
-:root {
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
-  
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  
-  --shadow-sm: 0 1px 2px 0 var(--shadow-color);
-  --shadow-md: 0 4px 6px -1px var(--shadow-color);
-  --shadow-lg: 0 10px 15px -3px var(--shadow-color);
-}
 
-/* Theme-aware utility classes */
+
+/* Theme-aware utility classes                                  BOTH */
 .theme-text-primary { color: var(--text-primary) !important; }
 .theme-text-secondary { color: var(--text-secondary) !important; }
 .theme-text-muted { color: var(--text-muted) !important; }
 .theme-text-inverse { color: var(--text-inverse) !important; }
-/* Map common utility classes to theme colors */
+/*                                                                   */
+
+/* Map common utility classes to theme colors                   BOTH */
 .text-muted { color: var(--text-muted) !important; }
 .text-secondary { color: var(--text-secondary) !important; }
 .text-primary { color: var(--text-primary) !important; }
@@ -87,38 +109,177 @@
 .text-warning { color: var(--warning-color) !important; }
 .text-danger  { color: var(--danger-color) !important; }
 
-/* Link utilities */
-.btn-link { color: var(--link-color); }
-.btn-link:hover, .btn-link:focus { color: var(--link-hover); }
+/* Force theme colors on specific song elements              jukebox */
+.song-title { color: var(--text-primary) !important; }
+.song-artist { color: var(--text-secondary) !important; }
+.song-album { color: var(--text-muted) !important; }
+.song-duration { color: var(--text-secondary) !important; }
 
-/* Navbar links */
-.navbar .nav-link, .navbar .navbar-brand { color: var(--text-primary) !important; }
-.navbar .nav-link:hover, .navbar .nav-link:focus { color: var(--link-hover) !important; }
+/* Override any table cell text colors that might be interfering     */
+/*                                                           jukebox */
+td.theme-text-primary, 
+td .theme-text-primary,
+span.theme-text-primary { 
+  color: var(--text-primary) !important; 
+}
 
-/* Global heading color controlled by theme */
-h1, h2, h3, h4, h5, h6 { color: var(--heading-color); }
+/*                                                           jukebox */
+td.theme-text-secondary, 
+td .theme-text-secondary,
+span.theme-text-secondary { 
+  color: var(--text-secondary) !important; 
+}
 
-.theme-bg-primary { background-color: var(--primary-bg) !important; }
-.theme-bg-secondary { background-color: var(--secondary-bg) !important; }
+/*                                                           jukebox */
+td.theme-text-muted, 
+td .theme-text-muted,
+span.theme-text-muted { 
+  color: var(--text-muted) !important; 
+}
 
-.theme-border { border-color: var(--border-color) !important; }
 
-.theme-shadow-sm { box-shadow: var(--shadow-sm) !important; }
-.theme-shadow-md { box-shadow: var(--shadow-md) !important; }
-.theme-shadow-lg { box-shadow: var(--shadow-lg) !important; }
+/* Link utilities                 longer definition in jukebox  BOTH */
+/*                                    but class definitions in  BOTH */
+.btn-link { 
+	color: var(--link-color);          /*   !important    in jukebox */
+	/* text-decoration: none !important;                     jukebox */
+}
+.btn-link:hover, .btn-link:focus {
+	 color: var(--link-hover);         /*   !important    in jukebox */
+     /* text-decoration: none !important;                    jukebox */
+ }
 
-/* Form elements */
+/* Song partial - simple readable colors                     jukebox */
+ .song-title.btn-link,
+ .btn.btn-link.song-title,
+ button.btn.btn-link.song-title {
+   color: #93c5fd !important;  /* Use the lighter blue as default */
+   padding: 0 !important;
+   border: none !important;
+   background: none !important;
+   text-align: left !important;
+   text-decoration: none !important;
+   box-shadow: none !important;
+   outline: none !important;
+ }
+
+/*                                                           jukebox */
+ .song-title.btn-link:hover,
+ .btn.btn-link.song-title:hover,
+ button.btn.btn-link.song-title:hover,
+ .song-title.btn-link:focus,
+ .btn.btn-link.song-title:focus,
+ button.btn.btn-link.song-title:focus,
+ .song-title.btn-link:active,
+ .btn.btn-link.song-title:active,
+ button.btn.btn-link.song-title:active {
+   color: #60a5fa !important;  /* Darker blue on hover */
+   text-decoration: none !important;
+   background: none !important;
+   border: none !important;
+   box-shadow: none !important;
+   outline: none !important;
+ }
+/*                                                           jukebox */
+
+/*                                                           jukebox */
+/* Song list link styling                                    jukebox */
+ .song-artist a, .song-album a {
+   color: #60a5fa !important;  /*                 Blue links jukebox */
+ }
+
+/*                                                           jukebox */
+ .song-artist a:hover, .song-album a:hover {
+   color: #93c5fd !important;  /*     Lighter blue on hover  jukebox */
+ }
+
+/*                                                           jukebox */
+/* Song fallback text - simple dark colors                           */
+ .song-title:not(.btn-link), 
+ .song-artist:not(:has(a)), 
+ .song-album:not(:has(a)),
+ .song-genre:not(:has(.badge)),
+ .song-duration {
+/*                Dark gray - readable on light backgrounds  jukebox */
+	    color: #1f2937 !important;  
+ }
+
+/*                                                           jukebox */
+/* Force readable colors on song elements                    jukebox */
+ tr[data-song-id] .song-title:not(.btn-link) {
+   color: #1f2937 !important;  /* Dark text for non-links    jukebox */
+ }
+
+/*                                                           jukebox */
+ tr[data-song-id] .song-artist:not(:has(a)),
+ tr[data-song-id] .song-album:not(:has(a)),
+ tr[data-song-id] .song-duration {
+   color: #1f2937 !important;  /*    Dark text for readable content  */
+ }
+/*                                                           jukebox */
+
+
+/* Navbar styling                                               BOTH */
+.navbar {
+  background: linear-gradient(135deg, 
+    var(--primary-bg) 0%, 
+    var(--secondary-bg) 100%);
+  box-shadow: var(--shadow-md);
+}
+
+
+/* Navbar links                                                 BOTH */
+.navbar .nav-link, .navbar .navbar-brand { 
+	color: var(--text-primary) !important; 
+}
+.navbar .nav-link:hover, .navbar .nav-link:focus { 
+	color: var(--link-hover) !important; 
+}
+/*                                                              BOTH */
+
+/* Global heading color controlled by theme                     BOTH */
+h1, h2, h3, h4, h5, h6 { 
+	color: var(--heading-color); 
+}
+/*                                                              BOTH */
+
+/*                                                              BOTH */
+.theme-bg-primary { 
+	background-color: var(--primary-bg) !important; 
+}
+.theme-bg-secondary { 
+	background-color: var(--secondary-bg) !important; 
+}
+
+.theme-border { 
+	border-color: var(--border-color) !important; 
+}
+
+.theme-shadow-sm { 
+	box-shadow: var(--shadow-sm) !important; 
+}
+.theme-shadow-md { 
+	box-shadow: var(--shadow-md) !important; 
+}
+.theme-shadow-lg { 
+	box-shadow: var(--shadow-lg) !important; 
+}
+/*                                                              BOTH */
+
+/* Form elements                                                BOTH */
 .theme-form-label { color: var(--text-primary); font-weight: 500; }
 .theme-form-help { color: var(--text-muted); font-size: 0.875rem; }
-
-/* Card styling */
+/*                                                              BOTH */
+ 
+/* Card styling                                                 BOTH */
 .theme-card-content { 
   background-color: var(--secondary-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
 }
+/*                                                              BOTH */
 
-/* Button styling */
+/* Button styling                                               BOTH */
 .btn-primary {
   background-color: var(--accent-color);
   border-color: var(--accent-color);
@@ -136,14 +297,16 @@ h1, h2, h3, h4, h5, h6 { color: var(--heading-color); }
   border-color: var(--accent-active);
   color: var(--text-inverse);
 }
+/*                                                              BOTH */
 
-/* Navbar styling */
-.navbar {
-  background: linear-gradient(135deg, var(--primary-bg) 0%, var(--secondary-bg) 100%);
-  box-shadow: var(--shadow-md);
+
+/* Card styling                                                 BOTH */
+.theme-card-content { 
+  background-color: var(--secondary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
 }
 
-/* Card styling */
 .card {
   background-color: var(--secondary-bg);
   border: 1px solid var(--border-color);
@@ -156,8 +319,10 @@ h1, h2, h3, h4, h5, h6 { color: var(--heading-color); }
   border-bottom: 1px solid var(--border-color);
   color: var(--card-header-text);
 }
+/*                                                              BOTH */
 
-/* Form controls */
+
+/* Form controls                                                BOTH */
 .form-control, .form-select {
   background-color: var(--primary-bg);
   border: 1px solid var(--border-color);
@@ -170,8 +335,9 @@ h1, h2, h3, h4, h5, h6 { color: var(--heading-color); }
   color: var(--text-primary);
   box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
 }
+/*                                                              BOTH */
 
-/* Alert styling */
+/* Alert styling                                                BOTH */
 .alert {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
@@ -200,34 +366,40 @@ h1, h2, h3, h4, h5, h6 { color: var(--heading-color); }
   border-color: var(--warning-color);
   color: var(--warning-color);
 }
+/*                                                              BOTH */
 
-/* Badge styling */
+/* Badge styling                                                BOTH */
 .badge {
   font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
 }
 
+/*       removed extraneous class `.bg-success` from jukebox version */
 .badge-success {
   background-color: var(--success-color);
   color: var(--text-inverse);
 }
 
+/*        removed extraneous class `.bg-danger` from jukebox version */
 .badge-danger {
   background-color: var(--danger-color);
   color: var(--text-inverse);
 }
 
+/*       removed extraneous class `.bg-warning` from jukebox version */
 .badge-warning {
   background-color: var(--warning-color);
   color: var(--text-inverse);
 }
 
+/*          removed extraneous class `.bg-info` from jukebox version */
 .badge-info {
   background-color: var(--highlight-color);
   color: var(--text-inverse);
 }
+/*                                                              BOTH */
 
-/* Dropdown styling */
+/* Dropdown styling                                             BOTH */
 .dropdown-menu {
   background-color: var(--secondary-bg);
   border: 1px solid var(--border-color);
@@ -242,8 +414,9 @@ h1, h2, h3, h4, h5, h6 { color: var(--heading-color); }
   background-color: var(--primary-bg);
   color: var(--text-primary);
 }
+/*                                                              BOTH */
 
-/* Link styling */
+/* Link styling                                                 BOTH */
 a {
   color: var(--link-color);
 }
@@ -252,13 +425,67 @@ a:hover {
   color: var(--link-hover);
 }
 
-/* Body and general styling */
+/* Body and general styling                                     BOTH */
 body {
   background-color: var(--primary-bg);
   color: var(--text-primary);
 }
 
-/* Table styling */
+/* make table scroll if too wide for screen */
+div.table-responsive {
+	overflow-x: auto;
+}
+
+/* New Item: tr that's a direct child                                */
+/* of class='song-list-table'                                        */
+.song-list-table tr {
+   /* display: flex;  New Item: trying Grid,                         */
+/*    align-items: center;*/
+    /* to vertical-center items within the grid                      */
+    /* making tr the grid,                                           */
+    /* and center elements within the tr.                            */
+	
+}
+
+.song-list-table tr td {
+	vertical-align: middle;
+}
+
+.song-list-row .song-checkbox {
+	/*	background-color: blue;*/
+}
+
+.song-list-row .song-title {
+	/*	background-color: green;*/
+}
+
+.song-list-row .song-artist {
+	/*	background-color: red;*/
+}
+
+.song-list-row .song-album {
+	/*	background-color: yellow;*/
+}
+
+.song-list-row .song-genre {
+	/* this is the "missing genre" element */
+	/*	background-color: blue;*/
+}
+
+.song-list-row .genre-badge {
+	/*	background-color: blue;*/
+}
+
+.song-list-row .song-duration {
+	/*	background-color: green;*/
+}
+
+.song-list-row .audio-player-container {
+	/*	background-color: red;*/
+	
+}
+
+/* Table styling                                                BOTH */
 .table {
   background-color: var(--secondary-bg);
   color: var(--text-primary);
@@ -272,18 +499,285 @@ body {
 
 .table td {
   border-color: var(--border-color);
+  color: var(--text-primary);  /*         originally only in jukebox */
+}
+/*                                                              BOTH */
+
+/*                                                           jukebox */
+.table-hover tbody tr:hover {
+  background-color: var(--primary-bg);
+  color: var(--text-primary);
+}
+/*                                                           jukebox */
+
+/* Live view table - simple readable colors                  jukebox */
+#upcoming-songs-content .table td {
+  color: #1f2937 !important;  /* Dark readable text */
 }
 
+/* Ensure all text is dark and readable                      jukebox */
+#upcoming-songs-content .table strong,
+#upcoming-songs-content .table span:not(.badge) {
+  color: #1f2937 !important;  
+}
+
+/* Songs index table - fix button colors                     jukebox */
+.song-list-table .song-title.btn-link,
+.song-list-table .btn.btn-link.song-title,
+.song-list-table button.btn.btn-link.song-title,
+table.song-list-table .song-title.btn-link,
+table.song-list-table .btn.btn-link.song-title,
+table.song-list-table button.btn.btn-link.song-title {
+  color: #93c5fd !important;  /* Light blue default */
+}
+
+.song-list-table .song-title.btn-link:hover,
+.song-list-table .btn.btn-link.song-title:hover,
+.song-list-table button.btn.btn-link.song-title:hover,
+table.song-list-table .song-title.btn-link:hover,
+table.song-list-table .btn.btn-link.song-title:hover,
+table.song-list-table button.btn.btn-link.song-title:hover {
+  color: #60a5fa !important;  /* Darker blue on hover */
+}
+/*                                                           jukebox */
+
+
+
+
+
 /* Modal styling */
+/*                                                              BOTH */
 .modal-content {
   background-color: var(--secondary-bg);
   border-color: var(--border-color);
 }
 
+/*                                                              BOTH */
 .modal-header {
   border-bottom-color: var(--border-color);
 }
 
+/*                                                           jukebox */
+.modal-title {
+  color: var(--text-primary);
+}
+
+/*                                                              BOTH */
 .modal-footer {
   border-top-color: var(--border-color);
 }
+
+
+
+/* Live page specific theming                                 jukebox */
+.current-song {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.current-song h3 {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+}
+
+.song-info {
+  margin-bottom: 2rem;
+}
+
+.song-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.song-artist {
+  font-size: 1.0rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.song-album {
+  font-size: 1.0rem;
+  color: var(--text-muted);
+}
+
+.progress-container {
+  margin-bottom: 1rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: var(--accent-color);
+  transition: width 0.3s ease;
+}
+
+.time-display {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.time-display span {
+  font-family: monospace;
+  color: var(--text-muted);
+}
+/*                                                           jukebox */
+
+/* System player specific styling                            jukebox */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--secondary-bg);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.status-label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.status-value {
+  color: var(--text-secondary);
+}
+/*                                                           jukebox */
+
+/* Pagination theming                                        jukebox */
+.pagination .page-link {
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.pagination .page-link:hover {
+  background: var(--primary-bg);
+  border-color: var(--accent-color);
+  color: var(--text-primary);
+}
+
+.pagination .page-item.active .page-link {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  color: var(--text-inverse);
+}
+/*                                                           jukebox */
+
+/* Player controls theming                                   jukebox */
+.player-controls .btn {
+  margin: 0.25rem;
+}
+/*                                                           jukebox */
+
+/* Generic text content theming                              jukebox */
+p, div, span:not(.badge):not(.btn):not(.navbar-brand):not(.nav-link) {
+  color: inherit;
+}
+/*                                                           jukebox */
+
+/* Ensure all direct text content uses theme colors          jukebox */
+.card-body, .card-text {
+  color: var(--text-primary);
+}
+/*                                                           jukebox */
+
+/* Now Playing card - lighter background                     jukebox */
+.card .card-body .current-song {
+  background-color: var(--primary-bg);
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+/* Song info content area - white background                 jukebox */
+.current-song .song-info {
+  background-color: #ffffff !important;
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1rem;
+}
+
+/* Small text and descriptions                               jukebox */
+small, .small {
+  color: var(--text-muted) !important;
+}
+
+/* List items                                                jukebox */
+li {
+  color: var(--text-primary);
+}
+
+/* Strong and emphasis                                      jukebox */
+strong, b {
+  color: var(--text-primary);
+}
+
+em, i:not(.fas):not(.fa) {
+  color: var(--text-secondary);
+}
+/*                                                           jukebox */
+
+/* Nuclear option:                                           jukebox */
+/* Force theme colors on song-related elements everywhere            */
+tr[data-song-id] .song-title,
+tr[data-song-id] .song-artist, 
+tr[data-song-id] .song-album,
+tr[data-song-id] .song-duration {
+  color: var(--text-primary) !important;
+}
+
+tr[data-song-id] .song-artist {
+  color: var(--text-secondary) !important;
+}
+
+tr[data-song-id] .song-album,
+tr[data-song-id] .song-duration {
+  color: var(--text-muted) !important;
+}
+
+/* Force theme colors on live view elements                  jukebox */
+#upcoming-songs-content strong,
+#upcoming-songs-content .theme-text-primary {
+  color: var(--text-primary) !important;
+}
+
+#upcoming-songs-content .theme-text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+#upcoming-songs-content .theme-text-muted {
+  color: var(--text-muted) !important;
+}
+
+/* Override Bootstrap text utilities completely             jukebox */
+.text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+/*                                                           jukebox */
+
+
+
