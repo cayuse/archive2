@@ -1,5 +1,6 @@
 class Api::V1::PlaylistsController < ApplicationController
-  before_action :authenticate_api_user!
+  include EncryptedTokenAuthentication
+  
   before_action :set_playlist, only: [:show, :add_song, :remove_song, :reorder_songs]
   
   def index

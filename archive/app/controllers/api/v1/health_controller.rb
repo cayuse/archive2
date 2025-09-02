@@ -1,6 +1,6 @@
 class Api::V1::HealthController < ApplicationController
-  # In case authenticate_api_user! isn't globally defined, don't raise
-  skip_before_action :authenticate_api_user!, raise: false
+  # Health check should be publicly accessible
+  skip_before_action :authenticate_encrypted_token_user!, raise: false
   
   def show
     # Basic health checks

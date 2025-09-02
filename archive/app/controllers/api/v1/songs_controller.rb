@@ -1,6 +1,7 @@
 class Api::V1::SongsController < ApplicationController
+  include EncryptedTokenAuthentication
+  
   skip_before_action :verify_authenticity_token
-  before_action :authenticate_api_user!
   before_action :ensure_upload_permission!
 
   def index
@@ -392,34 +393,7 @@ class Api::V1::SongsController < ApplicationController
 
   private
 
-  def authenticate_api_user!
-    token = extract_token_from_header
-    
-    if token.blank?
-      render json: { success: false, message: "Missing API token" }, status: :unauthorized
-      return
-    end
 
-    begin
-      payload = JSON.parse(Base64.urlsafe_decode64(token))
-      
-      if payload['exp'] && Time.current.to_i > payload['exp']
-        render json: { success: false, message: "API token expired" }, status: :unauthorized
-        return
-      end
-      
-      @current_api_user = User.find(payload['user_id'])
-      
-      unless @current_api_user
-        render json: { success: false, message: "Invalid API token" }, status: :unauthorized
-        return
-      end
-      
-    rescue => e
-      render json: { success: false, message: "Invalid API token" }, status: :unauthorized
-      return
-    end
-  end
 
   def ensure_upload_permission!
     unless @current_api_user.moderator? || @current_api_user.admin?

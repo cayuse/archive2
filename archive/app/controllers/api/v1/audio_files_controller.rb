@@ -1,5 +1,6 @@
 class Api::V1::AudioFilesController < ApplicationController
-  before_action :authenticate_api_user!
+  include EncryptedTokenAuthentication
+  
   before_action :set_song, only: [:show, :stream, :download]
   
   def show
