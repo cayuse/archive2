@@ -1,6 +1,7 @@
 class Api::V1::PlaylistsController < ApplicationController
   include EncryptedTokenAuthentication
   
+  skip_before_action :verify_authenticity_token
   before_action :set_playlist, only: [:show, :add_song, :remove_song, :reorder_songs]
   
   def index

@@ -19,8 +19,9 @@ module EncryptedTokenAuthentication
       # Decode from Base64
       decoded_token = Base64.urlsafe_decode64(token)
       
-      # Decrypt with Rails master key
-      decrypted_payload = Rails.application.encrypted.decrypt_and_verify(decoded_token)
+      # Decrypt with Rails secret key
+      encryptor = ActiveSupport::MessageEncryptor.new(Rails.application.secret_key_base[0, 32])
+      decrypted_payload = encryptor.decrypt_and_verify(decoded_token)
       
       # Parse JSON payload
       payload = JSON.parse(decrypted_payload)
