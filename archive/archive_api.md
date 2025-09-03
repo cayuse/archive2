@@ -9,14 +9,14 @@ This document defines the comprehensive API specification for the Archive music 
 ### Authentication & Authorization
 - **Token-based Authentication**: All API endpoints require Bearer token authentication
 - **Role-based Access Control**: Three user roles (user, moderator, admin) with different permission levels
-- **Secure Token Management**: Tokens expire after 30 days and can be verified/refreshed
+- **Secure Token Management**: Tokens expire after 2 days and can be verified/refreshed
 
 **Authentication Flow**:
 1. Client sends credentials to `/api/v1/auth/login`
 2. Server validates credentials and returns a Base64-encoded token
 3. Client includes token in all subsequent requests: `Authorization: Bearer <token>`
 4. Server validates token on each request and returns user context
-5. Token expires after 30 days - client must re-authenticate
+5. Token expires after 2 days - client must re-authenticate
 
 ### Response Format
 All API responses follow a consistent JSON structure:
@@ -32,7 +32,6 @@ All API responses follow a consistent JSON structure:
 
 **JSON-First Design**:
 - All API endpoints return JSON by default
-- CSV export is available as an optional format parameter for specific export endpoints
 - Consistent field naming and data types across all endpoints
 - Proper HTTP status codes with JSON error responses
 
@@ -1480,7 +1479,7 @@ render json: {
 - ❌ **Role escalation** - Users can promote themselves to admin
 - ❌ **User impersonation** - Can access any user's data
 - ❌ **No tamper detection** - Tokens can be modified
-- ❌ **No revocation** - Compromised tokens work for 30 days
+- ❌ **No revocation** - Compromised tokens work for 2 days
 
 **DO NOT USE ON PUBLIC INTERNET**
 
@@ -1507,7 +1506,7 @@ payload = {
   user_id: user.id,
   email: user.email,
   role: user.role,
-  exp: 30.days.from_now.to_i,
+  exp: 2.days.from_now.to_i,
   iat: Time.current.to_i,
   jti: SecureRandom.uuid
 }

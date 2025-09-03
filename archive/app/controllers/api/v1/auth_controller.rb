@@ -59,7 +59,7 @@ class Api::V1::AuthController < ApplicationController
       user_id: user.id,
       email: user.email,
       role: user.role,
-      exp: 30.days.from_now.to_i,
+      exp: 2.days.from_now.to_i,
       iat: Time.current.to_i,
       iss: 'archive-api'
     }
