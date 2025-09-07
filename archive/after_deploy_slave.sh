@@ -16,24 +16,8 @@ warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 echo "🔄 Archive Slave Post-Deployment Sync Setup"
 echo "============================================="
 
-# Check if running from archive directory and find exports file
-if [[ -f "../temp_corrected_exports.sh" ]]; then
-    # Running from archive directory - correct location
-    EXPORTS_FILE="../temp_corrected_exports.sh"
-elif [[ -f "temp_corrected_exports.sh" ]]; then
-    # Running from parent directory - also valid
-    EXPORTS_FILE="./temp_corrected_exports.sh"
-else
-    error "Cannot find temp_corrected_exports.sh"
-    error "This script should be run from either:"
-    error "  /home/cayuse/archive2/archive/ (preferred)"
-    error "  /home/cayuse/archive2/"
-    exit 1
-fi
-
-# Source the exports
-info "Loading environment variables from $EXPORTS_FILE..."
-source "$EXPORTS_FILE"
+# Use existing environment; validate required variables below
+info "Validating required environment variables..."
 
 # Verify required environment variables
 REQUIRED_VARS=(
@@ -59,7 +43,7 @@ if [[ "$REPLICATION_MODE" != "logical" ]]; then
     exit 1
 fi
 
-success "Environment variables loaded successfully"
+success "Environment variables validated successfully"
 info "Master: $MASTER_DB_HOST:$MASTER_DB_PORT/$MASTER_DB_NAME"
 info "Slave: local archive_production database"
 info "Replication mode: $REPLICATION_MODE"
@@ -82,8 +66,7 @@ fi
 info "Checking container status..."
 if ! docker compose ps | grep -q "Up"; then
     error "Docker containers are not running. Please run deployment first:"
-    error "  source /home/cayuse/archive2/temp_corrected_exports.sh"
-    error "  cd archive && docker compose up -d"
+    error "  cd /home/cayuse/archive2/archive && docker compose up -d"
     exit 1
 fi
 
