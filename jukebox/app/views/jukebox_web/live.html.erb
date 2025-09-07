@@ -200,6 +200,14 @@ function updateLiveProgress(playerStatus) {
   remainingTime.textContent = formatTime(duration - elapsed);
 }
 
+ // Define a function named truncate that takes two parameters: a string (str) and the number of words to truncate to (no_words)
+function truncate(str, no_words) {
+    // Split the input string into an array of words using the space character (" ") as the delimiter,
+    // then extract a portion of the array containing the specified number of words using the splice method,
+    // and finally join the selected words back into a single string with spaces between them
+    return str.split(" ").splice(0,no_words).join(" ");
+}
+
 // Update upcoming songs display
 function updateUpcomingDisplay(upcomingSongs, loggedIn = false) {
   const content = document.getElementById('upcoming-songs-content');
@@ -216,7 +224,6 @@ function updateUpcomingDisplay(upcomingSongs, loggedIn = false) {
               <th style="width: 50px;">#</th>
               <th>Song</th>
               <th>Artist</th>
-              <th>Album</th>
               <th style="width: 100px;">Duration</th>
               <th style="width: 80px;">Source</th>
               ${loggedIn ? '<th style="width: 80px;">Actions</th>' : ''}
@@ -232,10 +239,7 @@ function updateUpcomingDisplay(upcomingSongs, loggedIn = false) {
                   <strong style="color: #1f2937;">${item.song.title}</strong>
                 </td>
                 <td>
-                  <span style="color: #1f2937;">${item.song.artist_name || 'Unknown Artist'}</span>
-                </td>
-                <td>
-                  <span style="color: #1f2937;">${item.song.album_name || 'Unknown Album'}</span>
+                  <span style="color: #1f2937;">${truncate(item.song.artist_name,3) || 'Unknown Artist'}</span>
                 </td>
                 <td>
                   <span style="color: #1f2937;">${item.song.duration ? formatDuration(item.song.duration) : '-'}</span>

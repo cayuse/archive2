@@ -586,16 +586,16 @@ table.song-list-table button.btn.btn-link.song-title:hover {
 }
 
 .song-title {
-  font-size: 1.2rem;
+  font-size: 1.0rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 0.5rem;
+ /* margin-bottom: 0.5rem;*/
 }
 
 .song-artist {
   font-size: 1.0rem;
   color: var(--text-secondary);
-  margin-bottom: 0.25rem;
+ /*  margin-bottom: 0.25rem;*/
 }
 
 .song-album {
