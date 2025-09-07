@@ -4,6 +4,18 @@
 
 This document defines the comprehensive API specification for the Archive music management system. The API provides programmatic access to all core functionality including authentication, music library management, playlist operations, bulk operations, and audio file streaming.
 
+## Project Scope
+
+This API focuses on two primary goals:
+
+1. Bulk ingest of music files and light metadata fixes
+   - Supported: direct upload, create from blob, bulk upload, bulk create, light bulk update
+   - Not supported: destructive operations (e.g., bulk delete), heavy tag editing workflows
+
+2. Player/Jukebox foundation
+   - Supported: fast search, browse, and playback via progressive streaming with HTTP Range
+   - Out of scope: adaptive streaming (HLS/DASH) and advanced playlist collaboration features
+
 ## API Design Principles
 
 ### Authentication & Authorization
@@ -381,27 +393,7 @@ All API responses follow a consistent JSON structure:
 }
 ```
 
-### DELETE /api/v1/songs/bulk_destroy
-**Purpose**: Delete multiple songs at once (admin only)
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body**:
-```json
-{
-  "song_ids": ["2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a", "a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "message": "Bulk delete completed",
-  "deleted_count": 5,
-  "requested_count": 5
-}
-```
+<!-- Removed: bulk destroy is out of scope for this API -->
 
 ### GET /api/v1/songs/export
 **Purpose**: Export all songs to JSON format (moderator/admin only)
@@ -1114,7 +1106,7 @@ All API responses follow a consistent JSON structure:
 ```
 
 ### GET /api/v1/audio_files/:id/stream
-**Purpose**: Stream audio file with range request support
+**Purpose**: Progressive streaming with HTTP Range support (no HLS/DASH)
 
 **Headers**: `Authorization: Bearer <token>`
 
@@ -1122,12 +1114,16 @@ All API responses follow a consistent JSON structure:
 - `Range: bytes=0-1023` (for partial content requests)
 
 **Response** (200 OK or 206 Partial Content):
-- Content-Type: audio/mpeg (or appropriate audio type)
+- Content-Type: appropriate audio MIME type (e.g., audio/mpeg, audio/mp4, audio/flac)
 - Accept-Ranges: bytes
 - Content-Length: file size (or range size for partial requests)
 - Content-Range: bytes 0-1023/5242880 (for partial requests)
 
 **Stream Response**: Binary audio data
+
+**Notes**:
+- Supports HEAD for metadata only (Content-Type, Content-Length, Accept-Ranges).
+- Authentication required on each request or via short-lived signed URLs.
 
 ### GET /api/v1/audio_files/:id/download
 **Purpose**: Download audio file
