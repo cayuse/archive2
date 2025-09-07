@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🎵 Jukebox Deployment Script"
+echo "Jukebox Deployment Script"
 echo "============================"
 
 # Colors for output

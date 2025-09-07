@@ -64,5 +64,5 @@ end
 "' || echo "Could not verify tables"
 
 echo ""
-echo "🎵 You can now restart the jukebox service:"
+echo "You can now restart the jukebox service:"
 echo "   docker compose restart jukebox"

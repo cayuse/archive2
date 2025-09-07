@@ -10,7 +10,7 @@ SERVICE_FILE="jukebox-player.service"
 SERVICE_PATH="/etc/systemd/system/${SERVICE_FILE}"
 CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "🎵 Jukebox Player Service Installer"
+echo "Jukebox Player Service Installer"
 echo "===================================="
 
 # Check if running as root

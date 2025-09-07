@@ -34,7 +34,7 @@ case "$1" in
         ./install-service.sh
         ;;
     *)
-        echo "🎵 Jukebox Player Management Script"
+        echo "Jukebox Player Management Script"
         echo "===================================="
         echo ""
         echo "Usage: $0 {start|stop|restart|status|logs|install}"

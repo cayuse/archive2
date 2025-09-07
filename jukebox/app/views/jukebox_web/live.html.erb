@@ -1,7 +1,7 @@
 <div class="container">
   <div class="row">
     <div class="col-12">
-      <h1 class="mb-4">🎵 Live Jukebox</h1>
+      <h1 class="mb-4">Live Jukebox</h1>
       
       <!-- Now Playing Card -->
       <div class="card mb-4">
@@ -76,7 +76,7 @@ const liveState = {
 
 // Initialize live view
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🎵 Live view initialized');
+  console.log('Live view initialized');
   startLiveUpdates();
   startUpcomingUpdates();
 });
@@ -150,7 +150,7 @@ function refreshUpcomingSongs() {
 function updateLiveDisplay(data) {
   const playerStatus = data.player_status;
   
-  console.log('🎵 Updating live display:', { playerStatus });
+  console.log('Updating live display:', { playerStatus });
   
   // Update song information from player status (same as system player)
   updateLiveSongInfo(playerStatus);
