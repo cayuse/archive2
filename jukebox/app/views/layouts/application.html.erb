@@ -34,7 +34,9 @@
         <!-- Logo and Brand -->
         <div class="navbar-brand-container">
           <div class="logo-area">
-            <img src="/icon.svg" alt="Logo" height="40">
+            <%= link_to songs_path do %>
+              <img src="/icon.svg" alt="Logo" height="40">
+            <% end %>
           </div>
           <div class="brand-info">
             <a class="navbar-brand" href="<%= root_path %>">🎵 Jukebox</a>
