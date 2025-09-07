@@ -88,12 +88,12 @@ Validation error (422) with field details:
 - Sorting params:
   - `sort` (string, optional; per-resource whitelist)
   - `order` (string, `asc` or `desc`, default depends on `sort`)
-- Allowed primary sorts:
-  - Songs: `title`
-  - Artists: `name`
-  - Albums: `title`
-  - Genres: `name`
-  - Playlists: `name`
+- Allowed primary sorts (per endpoint whitelist):
+  - Songs: `created_at`, `title`, `artist`, `album`, `duration`
+  - Artists: `created_at`, `name`, `song_count`, `album_count`
+  - Albums: `created_at`, `title`, `release_year`, `song_count`
+  - Genres: `created_at`, `name`, `song_count`
+  - Playlists: `created_at`, `name`, `song_count`
 - Default ordering (deterministic):
   - List endpoints (when `sort` not provided): `created_at desc` with `id` as tiebreaker
   - Search endpoints:
@@ -281,9 +281,7 @@ Content-Type: application/problem+json
       "stream_url": "https://example.com/api/v1/audio_files/1/stream"
     }
   ],
-  "total": 1000,
-  "limit": 50,
-  "offset": 0
+  "pagination": { "total": 1000, "limit": 50, "offset": 0, "has_more": true }
 }
 ```
 
@@ -394,7 +392,7 @@ Content-Type: application/problem+json
   "results": [
     {
       "success": true,
-      "id": 1,
+      "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
       "title": "Updated Title"
     }
   ],
@@ -465,7 +463,7 @@ Content-Type: application/problem+json
   "success": true,
   "message": "Song created successfully from blob",
   "song": {
-    "id": 1,
+    "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
     "title": "Song Title",
     "processing_status": "needs_review",
     "created_at": "2023-01-01T00:00:00Z"
@@ -493,7 +491,7 @@ Content-Type: application/problem+json
   "success": true,
   "artists": [
     {
-      "id": 1,
+      "id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
       "name": "Artist Name",
       "country": "USA",
       "formed_year": 1990,
@@ -502,9 +500,7 @@ Content-Type: application/problem+json
       "created_at": "2023-01-01T00:00:00Z"
     }
   ],
-  "total": 100,
-  "limit": 50,
-  "offset": 0
+  "pagination": { "total": 100, "limit": 50, "offset": 0, "has_more": true }
 }
 ```
 
@@ -518,7 +514,7 @@ Content-Type: application/problem+json
 {
   "success": true,
   "artist": {
-    "id": 1,
+    "id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
     "name": "Artist Name",
     "biography": "Artist biography...",
     "country": "USA",
@@ -528,7 +524,7 @@ Content-Type: application/problem+json
     "album_count": 3,
     "songs": [
       {
-        "id": 1,
+        "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
         "title": "Song Title",
         "album": "Album Title",
         "duration": 180
@@ -536,7 +532,7 @@ Content-Type: application/problem+json
     ],
     "albums": [
       {
-        "id": 1,
+        "id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
         "title": "Album Title",
         "release_year": 2023,
         "song_count": 12
@@ -572,7 +568,7 @@ Content-Type: application/problem+json
   "success": true,
   "albums": [
     {
-      "id": 1,
+      "id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
       "title": "Album Title",
       "artist": "Artist Name",
       "release_year": 2023,
@@ -582,9 +578,7 @@ Content-Type: application/problem+json
       "created_at": "2023-01-01T00:00:00Z"
     }
   ],
-  "total": 50,
-  "limit": 50,
-  "offset": 0
+  "pagination": { "total": 50, "limit": 50, "offset": 0, "has_more": false }
 }
 ```
 
@@ -598,10 +592,10 @@ Content-Type: application/problem+json
 {
   "success": true,
   "album": {
-    "id": 1,
+    "id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
     "title": "Album Title",
     "artist": {
-      "id": 1,
+      "id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
       "name": "Artist Name"
     },
     "release_year": 2023,
@@ -611,7 +605,7 @@ Content-Type: application/problem+json
     "song_count": 12,
     "songs": [
       {
-        "id": 1,
+        "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
         "title": "Song Title",
         "track_number": 1,
         "duration": 180,
@@ -647,7 +641,7 @@ Content-Type: application/problem+json
   "success": true,
   "genres": [
     {
-      "id": 1,
+      "id": "9e8d7c6b-5a4f-3210-b1a2-c3d4e5f6a7b8",
       "name": "Rock",
       "color": "#ff0000",
       "description": "Rock music",
@@ -655,9 +649,7 @@ Content-Type: application/problem+json
       "created_at": "2023-01-01T00:00:00Z"
     }
   ],
-  "total": 20,
-  "limit": 50,
-  "offset": 0
+  "pagination": { "total": 20, "limit": 50, "offset": 0, "has_more": false }
 }
 ```
 
@@ -671,14 +663,14 @@ Content-Type: application/problem+json
 {
   "success": true,
   "genre": {
-    "id": 1,
+    "id": "9e8d7c6b-5a4f-3210-b1a2-c3d4e5f6a7b8",
     "name": "Rock",
     "color": "#ff0000",
     "description": "Rock music",
     "song_count": 150,
     "songs": [
       {
-        "id": 1,
+        "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
         "title": "Song Title",
         "artist": "Artist Name",
         "album": "Album Title",
@@ -714,13 +706,13 @@ Content-Type: application/problem+json
   "success": true,
   "playlists": [
     {
-      "id": 1,
+      "id": "11111111-2222-3333-4444-555555555555",
       "name": "My Playlist",
       "description": "A great playlist",
       "is_public": true,
       "song_count": 25,
       "user": {
-        "id": 1,
+        "id": "6f0d9c2a-9d3b-4a68-8f7f-1a2b3c4d5e6f",
         "name": "User Name",
         "email": "user@example.com"
       },
@@ -741,33 +733,33 @@ Content-Type: application/problem+json
 {
   "success": true,
   "playlist": {
-    "id": 1,
+    "id": "11111111-2222-3333-4444-555555555555",
     "name": "My Playlist",
     "description": "A great playlist",
     "is_public": true,
     "song_count": 25,
     "user": {
-      "id": 1,
+      "id": "6f0d9c2a-9d3b-4a68-8f7f-1a2b3c4d5e6f",
       "name": "User Name",
       "email": "user@example.com"
     },
     "songs": [
       {
-        "id": 1,
+        "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
         "title": "Song Title",
         "track_number": 1,
         "duration": 180,
         "position": 1,
         "artist": {
-          "id": 1,
+          "id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
           "name": "Artist Name"
         },
         "album": {
-          "id": 1,
+          "id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
           "title": "Album Title"
         },
         "genre": {
-          "id": 1,
+          "id": "9e8d7c6b-5a4f-3210-b1a2-c3d4e5f6a7b8",
           "name": "Rock"
         },
         "audio_file_url": "https://example.com/rails/active_storage/blobs/...",
@@ -779,29 +771,7 @@ Content-Type: application/problem+json
 }
 ```
 
-### POST /api/v1/playlists/:id/add_song
-**Purpose**: Add a song to a playlist (playlist owner only)
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body**:
-```json
-{
-  "song_id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
-  "position": 5
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "message": "Song added to playlist",
-  "playlist": {
-    /* full playlist object with updated songs */
-  }
-}
-```
+<!-- Removed: playlist mutation endpoints. API is read-only for playlists; management occurs via website UI. -->
 
 ### DELETE /api/v1/playlists/:id/remove_song
 **Purpose**: Remove a song from a playlist (playlist owner only)
@@ -966,7 +936,7 @@ Content-Type: application/problem+json
   "results": {
     "songs": [
       {
-        "id": 1,
+        "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
         "title": "Strait Run",
         "artist": "Artist Name",
         "album": "Album Title",
@@ -977,7 +947,7 @@ Content-Type: application/problem+json
     ],
     "artists": [
       {
-        "id": 1,
+        "id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
         "name": "Strait Run Band",
         "song_count": 5,
         "match_score": null
@@ -985,7 +955,7 @@ Content-Type: application/problem+json
     ],
     "albums": [
       {
-        "id": 1,
+        "id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
         "title": "Strait Run Collection",
         "artist": "Artist Name",
         "song_count": 12,
@@ -1044,7 +1014,7 @@ Content-Type: application/problem+json
   },
   "songs": [
     {
-      "id": 1,
+      "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
       "title": "Strait Run",
       "artist": "Artist Name",
       "album": "Album Title",
@@ -1056,10 +1026,7 @@ Content-Type: application/problem+json
       "stream_url": "https://example.com/api/v1/audio_files/1/stream"
     }
   ],
-  "total": 1,
-  "limit": 50,
-  "offset": 0,
-  "has_more": false
+  "pagination": { "total": 1, "limit": 50, "offset": 0, "has_more": false }
 }
 ```
 
@@ -1086,7 +1053,7 @@ Content-Type: application/problem+json
   "mode": "multi_term",
   "artists": [
     {
-      "id": 1,
+      "id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
       "name": "The Beatles",
       "country": "UK",
       "formed_year": 1960,
@@ -1095,10 +1062,7 @@ Content-Type: application/problem+json
       "match_score": null
     }
   ],
-  "total": 1,
-  "limit": 20,
-  "offset": 0,
-  "has_more": false
+  "pagination": { "total": 1, "limit": 20, "offset": 0, "has_more": false }
 }
 ```
 
@@ -1127,7 +1091,7 @@ Content-Type: application/problem+json
   "mode": "multi_term",
   "albums": [
     {
-      "id": 1,
+      "id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
       "title": "Abbey Road",
       "artist": "The Beatles",
       "release_year": 1969,
@@ -1136,10 +1100,7 @@ Content-Type: application/problem+json
       "match_score": null
     }
   ],
-  "total": 1,
-  "limit": 20,
-  "offset": 0,
-  "has_more": false
+  "pagination": { "total": 1, "limit": 20, "offset": 0, "has_more": false }
 }
 ```
 
@@ -1161,7 +1122,7 @@ Content-Type: application/problem+json
   "suggestions": {
     "songs": [
       {
-        "id": 1,
+        "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
         "title": "Strait Run",
         "artist": "Artist Name",
         "type": "song"
@@ -1169,14 +1130,14 @@ Content-Type: application/problem+json
     ],
     "artists": [
       {
-        "id": 1,
+        "id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
         "name": "Strait Run Band",
         "type": "artist"
       }
     ],
     "albums": [
       {
-        "id": 1,
+        "id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
         "title": "Strait Run Collection",
         "artist": "Artist Name",
         "type": "album"
