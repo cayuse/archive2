@@ -31,14 +31,38 @@ This API focuses on two primary goals:
 5. Token expires after 2 days - client must re-authenticate
 
 ### Response Format
-All API responses follow a consistent JSON structure:
+All successful responses use a consistent JSON structure. Error responses follow RFC 7807 (application/problem+json).
+
+Successful (2xx) response envelope:
 ```json
 {
-  "success": true|false,
+  "success": true,
   "message": "Human-readable message",
   "data": { /* response data */ },
-  "errors": [ /* array of error messages */ ],
   "pagination": { /* pagination info when applicable */ }
+}
+```
+
+Error response (RFC 7807):
+Content-Type: application/problem+json
+```json
+{
+  "type": "about:blank",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "Invalid or expired token",
+  "instance": "/api/v1/auth/verify"
+}
+```
+
+Validation error (422) with field details:
+```json
+{
+  "type": "https://api.example.com/problems/validation-error",
+  "title": "Unprocessable Entity",
+  "status": 422,
+  "detail": "Validation failed",
+  "errors": { "title": ["can't be blank"], "file_format": ["unsupported"] }
 }
 ```
 
@@ -101,6 +125,31 @@ All API responses follow a consistent JSON structure:
   - Accept `sort` and `order` as defined in Pagination & Sorting Standard with relevance-first default for `full_text`.
   - Echo `mode` in the response body.
 
+### Sparse Fields & Includes
+- Purpose: Reduce over-fetching and allow selective embedding of related data.
+- Sparse fields:
+  - `fields` controls top-level fields on the primary resource list/detail.
+  - Per-type overrides for includes via `fields[<type>]`.
+  - Example: `?fields=id,title,artist,album,genre,duration` and `&fields[albums]=id,title`
+- Includes (whitelisted per resource):
+  - Songs may include: `artist,album,genre`
+  - Albums may include: `artist,songs`
+  - Artists may include: `albums,songs`
+  - Genres may include: `songs`
+- Limits and safety:
+  - Pagination applies to the primary collection only.
+  - Embedded collections are bounded by server caps (e.g., first 10); use dedicated endpoints for full pagination.
+  - Reject deep nesting and unknown includes.
+- Deterministic ordering for embeds:
+  - album.songs: `track_number asc, title asc`
+  - artist.albums: `release_year asc, title asc`
+  - artist.songs / genre.songs: `title asc`
+- Examples:
+  - Songs list with minimal fields and embedded names:
+    - `GET /api/v1/songs?fields=id,title,artist,album,genre&include=artist,album&fields[artists]=id,name&fields[albums]=id,title`
+  - Album detail with bounded songs:
+    - `GET /api/v1/albums/:id?include=songs&fields[songs]=id,title,track_number`
+
 ## User Roles & Permissions
 
 ### User (role: 0)
@@ -153,10 +202,13 @@ All API responses follow a consistent JSON structure:
 ```
 
 **Error Response** (401 Unauthorized):
+Content-Type: application/problem+json
 ```json
 {
-  "success": false,
-  "message": "Invalid email or password"
+  "type": "about:blank",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "Invalid email or password"
 }
 ```
 
@@ -281,52 +333,10 @@ All API responses follow a consistent JSON structure:
 }
 ```
 
-### POST /api/v1/songs/bulk_create
-**Purpose**: Create multiple songs at once (moderator/admin only)
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body**:
-```json
-{
-  "songs": [
-    {
-      "title": "Song Title",
-      "track_number": 1,
-      "duration": 180,
-      "file_format": "mp3",
-      "file_size": 5242880,
-      "artist_name": "Artist Name",
-      "album_title": "Album Title",
-      "genre_name": "Rock",
-      "notes": "Optional notes"
-    }
-  ]
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "message": "Bulk create completed",
-  "results": [
-    {
-      "success": true,
-      "id": 1,
-      "title": "Song Title"
-    }
-  ],
-  "summary": {
-    "total": 1,
-    "successful": 1,
-    "failed": 0
-  }
-}
-```
+<!-- Removed: songs bulk_create is out of scope; songs are created only via upload endpoints -->
 
 ### POST /api/v1/songs/bulk_upload
-**Purpose**: Upload audio file with metadata (moderator/admin only)
+**Purpose**: Upload audio file with metadata (moderator/admin only). Song records MUST be created with an attached file.
 
 **Headers**: `Authorization: Bearer <token>`
 
@@ -356,7 +366,7 @@ All API responses follow a consistent JSON structure:
 ```
 
 ### PUT /api/v1/songs/bulk_update
-**Purpose**: Update multiple songs at once (moderator/admin only)
+**Purpose**: Update multiple songs at once (moderator/admin only). Limited to light metadata edits (e.g., `title`, `track_number`, `artist_id`/`album_id`/`genre_id`).
 
 **Headers**: `Authorization: Bearer <token>`
 
@@ -365,9 +375,12 @@ All API responses follow a consistent JSON structure:
 {
   "songs": [
     {
-      "id": 1,
+      "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
       "title": "Updated Title",
-      "artist_name": "Updated Artist"
+      "track_number": 3,
+      "artist_id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
+      "album_id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
+      "genre_id": "9e8d7c6b-5a4f-3210-b1a2-c3d4e5f6a7b8"
     }
   ]
 }
@@ -395,47 +408,7 @@ All API responses follow a consistent JSON structure:
 
 <!-- Removed: bulk destroy is out of scope for this API -->
 
-### GET /api/v1/songs/export
-**Purpose**: Export all songs to JSON format (moderator/admin only)
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `format` (string, optional): Export format (`json`, `csv`, default: `json`)
-- `limit` (integer, optional): Maximum number of songs to export (default: all)
-- `offset` (integer, optional): Number of songs to skip (default: 0)
-- `fields` (string, optional): Comma-separated list of fields to include (default: all)
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "export": {
-    "format": "json",
-    "total_count": 1000,
-    "exported_count": 1000,
-    "generated_at": "2023-01-01T00:00:00Z"
-  },
-  "songs": [
-    {
-      "id": 1,
-      "title": "Song Title",
-      "artist": "Artist Name",
-      "album": "Album Title",
-      "genre": "Rock",
-      "duration": 180,
-      "processing_status": "completed",
-      "created_at": "2023-01-01T00:00:00Z",
-      "updated_at": "2023-01-01T00:00:00Z"
-    }
-  ]
-}
-```
-
-**CSV Export** (when `format=csv`):
-- Returns CSV file download with proper headers
-- Content-Type: `text/csv`
-- Content-Disposition: `attachment; filename="songs_export_YYYYMMDD_HHMMSS.csv"`
+<!-- Removed: songs export is out of scope for public API -->
 
 ### POST /api/v1/songs/direct_upload
 **Purpose**: Get direct upload URL for Active Storage (moderator/admin only)
@@ -574,79 +547,9 @@ All API responses follow a consistent JSON structure:
 }
 ```
 
-### POST /api/v1/artists/bulk_create
-**Purpose**: Create multiple artists at once (moderator/admin only)
+<!-- Removed: artists bulk_create is out of scope; artists are created/linked via song upload/edit -->
 
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body**:
-```json
-{
-  "artists": [
-    {
-      "name": "Artist Name",
-      "country": "USA",
-      "formed_year": 1990,
-      "biography": "Artist biography...",
-      "website": "https://artist.com"
-    }
-  ]
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "message": "Bulk create completed",
-  "results": [
-    {
-      "success": true,
-      "id": 1,
-      "name": "Artist Name"
-    }
-  ],
-  "summary": {
-    "total": 1,
-    "successful": 1,
-    "failed": 0
-  }
-}
-```
-
-### GET /api/v1/artists/export
-**Purpose**: Export all artists to JSON format (moderator/admin only)
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `format` (string, optional): Export format (`json`, `csv`, default: `json`)
-- `limit` (integer, optional): Maximum number of artists to export (default: all)
-- `offset` (integer, optional): Number of artists to skip (default: 0)
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "export": {
-    "format": "json",
-    "total_count": 100,
-    "exported_count": 100,
-    "generated_at": "2023-01-01T00:00:00Z"
-  },
-  "artists": [
-    {
-      "id": 1,
-      "name": "Artist Name",
-      "country": "USA",
-      "formed_year": 1990,
-      "song_count": 25,
-      "album_count": 3,
-      "created_at": "2023-01-01T00:00:00Z"
-    }
-  ]
-}
-```
+<!-- Removed: artists export is out of scope for public API -->
 
 ## Albums Endpoints
 
@@ -720,78 +623,9 @@ All API responses follow a consistent JSON structure:
 }
 ```
 
-### POST /api/v1/albums/bulk_create
-**Purpose**: Create multiple albums at once (moderator/admin only)
+<!-- Removed: albums bulk_create is out of scope; albums are created/linked via song upload/edit -->
 
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body**:
-```json
-{
-  "albums": [
-    {
-      "title": "Album Title",
-      "artist_name": "Artist Name",
-      "release_year": 2023,
-      "total_tracks": 12
-    }
-  ]
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "message": "Bulk create completed",
-  "results": [
-    {
-      "success": true,
-      "id": 1,
-      "title": "Album Title"
-    }
-  ],
-  "summary": {
-    "total": 1,
-    "successful": 1,
-    "failed": 0
-  }
-}
-```
-
-### GET /api/v1/albums/export
-**Purpose**: Export all albums to JSON format (moderator/admin only)
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `format` (string, optional): Export format (`json`, `csv`, default: `json`)
-- `limit` (integer, optional): Maximum number of albums to export (default: all)
-- `offset` (integer, optional): Number of albums to skip (default: 0)
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "export": {
-    "format": "json",
-    "total_count": 50,
-    "exported_count": 50,
-    "generated_at": "2023-01-01T00:00:00Z"
-  },
-  "albums": [
-    {
-      "id": 1,
-      "title": "Album Title",
-      "artist": "Artist Name",
-      "release_year": 2023,
-      "song_count": 12,
-      "cover_image_url": "https://example.com/cover.jpg",
-      "created_at": "2023-01-01T00:00:00Z"
-    }
-  ]
-}
-```
+<!-- Removed: albums export is out of scope for public API -->
 
 ## Genres Endpoints
 
@@ -856,76 +690,9 @@ All API responses follow a consistent JSON structure:
 }
 ```
 
-### POST /api/v1/genres/bulk_create
-**Purpose**: Create multiple genres at once (moderator/admin only)
+<!-- Removed: genres bulk_create is out of scope; genres are created/linked via song upload/edit -->
 
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body**:
-```json
-{
-  "genres": [
-    {
-      "name": "Rock",
-      "color": "#ff0000",
-      "description": "Rock music"
-    }
-  ]
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "message": "Bulk create completed",
-  "results": [
-    {
-      "success": true,
-      "id": 1,
-      "name": "Rock"
-    }
-  ],
-  "summary": {
-    "total": 1,
-    "successful": 1,
-    "failed": 0
-  }
-}
-```
-
-### GET /api/v1/genres/export
-**Purpose**: Export all genres to JSON format (moderator/admin only)
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `format` (string, optional): Export format (`json`, `csv`, default: `json`)
-- `limit` (integer, optional): Maximum number of genres to export (default: all)
-- `offset` (integer, optional): Number of genres to skip (default: 0)
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "export": {
-    "format": "json",
-    "total_count": 20,
-    "exported_count": 20,
-    "generated_at": "2023-01-01T00:00:00Z"
-  },
-  "genres": [
-    {
-      "id": 1,
-      "name": "Rock",
-      "color": "#ff0000",
-      "description": "Rock music",
-      "song_count": 150,
-      "created_at": "2023-01-01T00:00:00Z"
-    }
-  ]
-}
-```
+<!-- Removed: genres export is out of scope for public API -->
 
 ## Playlists Endpoints
 
@@ -1493,8 +1260,8 @@ end
 # app/controllers/api/v1/songs_controller.rb
 def index
   @songs = Song.includes(:artist, :album, :genre)
-               .page(params[:page])
-               .per(params[:per_page] || 50)
+               .limit([params[:limit].to_i, 500].compact.min.presence || 50)
+               .offset(params[:offset].to_i.presence || 0)
   
   render json: @songs, each_serializer: SongSerializer
 end
