@@ -45,6 +45,50 @@ All API responses follow a consistent JSON structure:
 - **Health Check**: `/api/v1/health` provides system status and endpoint availability
 - **Versioning**: API version is included in the URL path for future compatibility
 
+### Pagination & Sorting Standard
+- Pagination params:
+  - `limit` (integer, default: 50, max: 500)
+  - `offset` (integer, default: 0)
+- Sorting params:
+  - `sort` (string, optional; per-resource whitelist)
+  - `order` (string, `asc` or `desc`, default depends on `sort`)
+- Allowed primary sorts:
+  - Songs: `title`
+  - Artists: `name`
+  - Albums: `title`
+  - Genres: `name`
+  - Playlists: `name`
+- Default ordering (deterministic):
+  - List endpoints (when `sort` not provided): `created_at desc` with `id` as tiebreaker
+  - Search endpoints:
+    - `full_text`: `match_score desc, created_at desc` with `id` tiebreaker
+    - `multi_term`: `created_at desc` with `id` tiebreaker
+- Notes:
+  - IDs are UUIDs; use them only as deterministic tie-breakers, not user-facing sorts.
+  - The server clamps `limit` to the max and validates `sort` against the whitelist.
+  - All list/search responses include `pagination: { total, limit, offset, has_more }`.
+
+### Data Types & ID Conventions
+- All resource identifiers are strings containing UUIDs.
+- All `id` fields in responses are strings (UUIDs).
+- All request parameters and bodies that reference resources (e.g., `artist_id`, `album_id`, `genre_id`, `user_id`, `song_id`, arrays like `song_ids`) MUST be strings (UUIDs).
+- Numeric fields (e.g., counts, durations, years, sizes) remain numeric.
+
+### Search Parameters Standard
+- Common params:
+  - `q` (string): Search query (required unless endpoint specifies otherwise)
+  - `mode` (string): `multi_term` (AND term matching) or `full_text` (relevance-ranked). Default: `multi_term`.
+  - `limit` (integer, default: 50, max: 500)
+  - `offset` (integer, default: 0)
+- Global search (`GET /api/v1/search`):
+  - `type` (string): One of `songs`, `artists`, `albums`, `genres`, `all` (default: `all`).
+  - `limit`/`offset` apply per-type when `type=all`.
+  - Sorting is per-type; global endpoint does not accept a single `sort`/`order` parameter.
+- Per-resource search (`/api/v1/search/{resource}`):
+  - Accept resource-specific filters (e.g., `artist_id`, `album_id`, etc.).
+  - Accept `sort` and `order` as defined in Pagination & Sorting Standard with relevance-first default for `full_text`.
+  - Echo `mode` in the response body.
+
 ## User Roles & Permissions
 
 ### User (role: 0)
@@ -88,7 +132,7 @@ All API responses follow a consistent JSON structure:
   "message": "Authentication successful",
   "api_token": "base64_encoded_token",
   "user": {
-    "id": 1,
+    "id": "6f0d9c2a-9d3b-4a68-8f7f-1a2b3c4d5e6f",
     "name": "User Name",
     "email": "user@example.com",
     "role": "moderator"
@@ -128,7 +172,7 @@ All API responses follow a consistent JSON structure:
   "success": true,
   "message": "API token is valid",
   "user": {
-    "id": 1,
+    "id": "6f0d9c2a-9d3b-4a68-8f7f-1a2b3c4d5e6f",
     "name": "User Name",
     "email": "user@example.com",
     "role": "moderator"
@@ -148,9 +192,11 @@ All API responses follow a consistent JSON structure:
 - `offset` (integer, default: 0): Number of songs to skip
 - `q` (string): Search query using multi-term AND logic (splits query into terms, requires ALL terms to be found across ANY field)
 - `status` (string): Filter by processing status (pending, completed, failed, needs_review)
-- `genre_id` (integer): Filter by genre ID
-- `artist_id` (integer): Filter by artist ID
-- `album_id` (integer): Filter by album ID
+- `genre_id` (string): Filter by genre ID (UUID)
+- `artist_id` (string): Filter by artist ID (UUID)
+- `album_id` (string): Filter by album ID (UUID)
+- `sort` (string, optional): One of `created_at`, `title`, `artist`, `album`, `duration`
+- `order` (string, optional): `asc` or `desc` (default: `desc` for `created_at`, `asc` for text sorts)
 
 **Response** (200 OK):
 ```json
@@ -158,7 +204,7 @@ All API responses follow a consistent JSON structure:
   "success": true,
   "songs": [
     {
-      "id": 1,
+      "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
       "title": "Song Title",
       "artist": "Artist Name",
       "album": "Album Title",
@@ -187,7 +233,7 @@ All API responses follow a consistent JSON structure:
 {
   "success": true,
   "song": {
-    "id": 1,
+    "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
     "title": "Song Title",
     "track_number": 1,
     "duration": 180,
@@ -199,19 +245,19 @@ All API responses follow a consistent JSON structure:
     "created_at": "2023-01-01T00:00:00Z",
     "updated_at": "2023-01-01T00:00:00Z",
     "artist": {
-      "id": 1,
+      "id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
       "name": "Artist Name",
       "country": "USA",
       "formed_year": 1990
     },
     "album": {
-      "id": 1,
+      "id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
       "title": "Album Title",
       "release_year": 2023,
       "total_tracks": 12
     },
     "genre": {
-      "id": 1,
+      "id": "9e8d7c6b-5a4f-3210-b1a2-c3d4e5f6a7b8",
       "name": "Rock",
       "color": "#ff0000",
       "description": "Rock music"
@@ -289,7 +335,7 @@ All API responses follow a consistent JSON structure:
   "success": true,
   "message": "Song uploaded successfully",
   "song": {
-    "id": 1,
+    "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
     "title": "Song Title",
     "processing_status": "needs_review",
     "created_at": "2023-01-01T00:00:00Z"
@@ -343,7 +389,7 @@ All API responses follow a consistent JSON structure:
 **Request Body**:
 ```json
 {
-  "song_ids": [1, 2, 3, 4, 5]
+  "song_ids": ["2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a", "a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
 }
 ```
 
@@ -473,6 +519,8 @@ All API responses follow a consistent JSON structure:
 - `limit` (integer, default: 50): Number of artists per page
 - `offset` (integer, default: 0): Number of artists to skip
 - `search` (string): Search query for artist name or country
+- `sort` (string, optional): One of `created_at`, `name`, `song_count`, `album_count`
+- `order` (string, optional): `asc` or `desc` (default: `asc` for `name`)
 
 **Response** (200 OK):
 ```json
@@ -619,7 +667,9 @@ All API responses follow a consistent JSON structure:
 - `limit` (integer, default: 50): Number of albums per page
 - `offset` (integer, default: 0): Number of albums to skip
 - `search` (string): Search query for album title or artist name
-- `artist_id` (integer): Filter by artist ID
+- `artist_id` (string): Filter by artist ID (UUID)
+- `sort` (string, optional): One of `created_at`, `title`, `release_year`, `song_count`
+- `order` (string, optional): `asc` or `desc` (default: `asc` for `title`)
 
 **Response** (200 OK):
 ```json
@@ -762,6 +812,8 @@ All API responses follow a consistent JSON structure:
 - `limit` (integer, default: 50): Number of genres per page
 - `offset` (integer, default: 0): Number of genres to skip
 - `search` (string): Search query for genre name
+- `sort` (string, optional): One of `created_at`, `name`, `song_count`
+- `order` (string, optional): `asc` or `desc` (default: `asc` for `name`)
 
 **Response** (200 OK):
 ```json
@@ -891,9 +943,11 @@ All API responses follow a consistent JSON structure:
 **Headers**: `Authorization: Bearer <token>`
 
 **Query Parameters**:
-- `page` (integer, default: 1): Page number
-- `per_page` (integer, default: 20): Number of playlists per page
-- `user_id` (integer, optional): Filter by user ID (admin only)
+- `limit` (integer, default: 20): Number of playlists per page
+- `offset` (integer, default: 0): Number of playlists to skip
+- `user_id` (string, optional): Filter by user ID (UUID, admin only)
+- `sort` (string, optional): One of `created_at`, `name`, `song_count`
+- `order` (string, optional): `asc` or `desc` (default: `desc` for `created_at`, `asc` for `name`)
 
 **Response** (200 OK):
 ```json
@@ -914,11 +968,7 @@ All API responses follow a consistent JSON structure:
       "created_at": "2023-01-01T00:00:00Z"
     }
   ],
-  "pagination": {
-    "current_page": 1,
-    "total_pages": 5,
-    "total_count": 100
-  }
+  "pagination": { "total": 100, "limit": 20, "offset": 0, "has_more": true }
 }
 ```
 
@@ -978,7 +1028,7 @@ All API responses follow a consistent JSON structure:
 **Request Body**:
 ```json
 {
-  "song_id": 1,
+  "song_id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
   "position": 5
 }
 ```
@@ -1002,7 +1052,7 @@ All API responses follow a consistent JSON structure:
 **Request Body**:
 ```json
 {
-  "song_id": 1
+  "song_id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a"
 }
 ```
 
@@ -1051,7 +1101,7 @@ All API responses follow a consistent JSON structure:
 ```json
 {
   "success": true,
-  "song_id": 1,
+  "song_id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
   "title": "Song Title",
   "artist": "Artist Name",
   "album": "Album Title",
@@ -1212,7 +1262,8 @@ All API responses follow a consistent JSON structure:
 - `duration_max` (integer, optional): Maximum duration in seconds
 - `limit` (integer, default: 50): Number of results per page
 - `offset` (integer, default: 0): Number of results to skip
-- `sort` (string, optional): Sort order (`relevance`, `title`, `artist`, `album`, `created_at`, default: `relevance` for full_text, `created_at` for multi_term)
+- `sort` (string, optional): One of `relevance` (full_text only), `created_at`, `title`, `artist`, `album`, `duration`
+- `order` (string, optional): `asc` or `desc` (default: `relevance desc` for full_text, otherwise `created_at desc`)
 
 **Response** (200 OK):
 ```json
@@ -1261,6 +1312,8 @@ All API responses follow a consistent JSON structure:
 - `has_songs` (boolean, optional): Only artists with songs
 - `limit` (integer, default: 20): Number of results per page
 - `offset` (integer, default: 0): Number of results to skip
+- `sort` (string, optional): One of `relevance` (full_text only), `created_at`, `name`, `song_count`, `album_count`
+- `order` (string, optional): `asc` or `desc` (default: `relevance desc` for full_text, otherwise `name asc`)
 
 **Response** (200 OK):
 ```json
@@ -1300,6 +1353,8 @@ All API responses follow a consistent JSON structure:
 - `has_songs` (boolean, optional): Only albums with songs
 - `limit` (integer, default: 20): Number of results per page
 - `offset` (integer, default: 0): Number of results to skip
+- `sort` (string, optional): One of `relevance` (full_text only), `created_at`, `title`, `release_year`, `song_count`
+- `order` (string, optional): `asc` or `desc` (default: `relevance desc` for full_text, otherwise `title asc`)
 
 **Response** (200 OK):
 ```json
