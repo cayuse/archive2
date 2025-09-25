@@ -44,3 +44,6 @@
 /.devcontainer
 /.kamal
 /.github
+
+# ruby rbenv
+.ruby-version
