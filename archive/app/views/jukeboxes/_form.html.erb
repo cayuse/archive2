@@ -1,0 +1,207 @@
+<%= form_with(model: jukebox, local: true, class: "needs-validation", novalidate: true) do |form| %>
+  <% if jukebox.errors.any? %>
+    <div class="alert alert-danger">
+      <h4><%= pluralize(jukebox.errors.count, "error") %> prohibited this jukebox from being saved:</h4>
+      <ul class="mb-0">
+        <% jukebox.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0 theme-text-primary">Basic Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <%= form.label :name, "Jukebox Name", class: "form-label" %>
+            <%= form.text_field :name, class: "form-control", placeholder: "e.g., Sister's Wedding Reception", required: true %>
+            <div class="form-text">
+              A descriptive name for your jukebox party.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <%= form.label :description, "Description", class: "form-label" %>
+            <%= form.text_area :description, class: "form-control", rows: 3, placeholder: "Optional description for your party..." %>
+          </div>
+
+          <div class="mb-3">
+            <%= form.label :location, "Location", class: "form-label" %>
+            <%= form.text_field :location, class: "form-control", placeholder: "e.g., Living Room, Backyard, Community Center" %>
+          </div>
+
+          <div class="mb-3">
+            <%= form.label :session_id, "Session ID", class: "form-label" %>
+            <%= form.text_field :session_id, class: "form-control", placeholder: "Will be auto-generated from name if left blank" %>
+            <div class="form-text">
+              A unique identifier for guests to join your jukebox. Leave blank to auto-generate from the name.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-header">
+          <h5 class="mb-0 theme-text-primary">Privacy & Access</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <div class="form-check">
+              <%= form.check_box :private, class: "form-check-input" %>
+              <%= form.label :private, "Private Jukebox", class: "form-check-label" %>
+            </div>
+            <div class="form-text">
+              Private jukeboxes won't appear in public listings and are only accessible via direct session ID.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <%= form.label :guest_password, "Guest Password (Optional)", class: "form-label" %>
+            <%= form.text_field :guest_password, class: "form-control", placeholder: "Leave blank for no password" %>
+            <div class="form-text">
+              Optional password for guests to join. This will be visible to you and shared with guests.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-header">
+          <h5 class="mb-0 theme-text-primary">Scheduling</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <%= form.label :scheduled_start, "Scheduled Start", class: "form-label" %>
+                <%= form.datetime_local_field :scheduled_start, class: "form-control" %>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <%= form.label :scheduled_end, "Scheduled End", class: "form-label" %>
+                <%= form.datetime_local_field :scheduled_end, class: "form-control" %>
+              </div>
+            </div>
+          </div>
+          <div class="form-text">
+            Optional scheduling. The jukebox will be available for guests during this time window.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0 theme-text-primary">Audio Settings</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <div class="form-check">
+              <%= form.check_box :crossfade_enabled, class: "form-check-input" %>
+              <%= form.label :crossfade_enabled, "Enable Crossfade", class: "form-check-label" %>
+            </div>
+            <div class="form-text">
+              Smooth transitions between songs.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <%= form.label :crossfade_duration, "Crossfade Duration (ms)", class: "form-label" %>
+            <%= form.number_field :crossfade_duration, class: "form-control", min: 0, max: 30000, step: 100 %>
+            <div class="form-text">
+              Duration of crossfade transition (0-30000ms).
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="form-check">
+              <%= form.check_box :auto_play, class: "form-check-input" %>
+              <%= form.label :auto_play, "Auto Play Next Song", class: "form-check-label" %>
+            </div>
+            <div class="form-text">
+              Automatically play the next song when current song ends.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <%= form.label :min_queue_length, "Minimum Queue Length", class: "form-label" %>
+            <%= form.number_field :min_queue_length, class: "form-control", min: 1, step: 1 %>
+            <div class="form-text">
+              Minimum number of songs to keep in the queue at all times.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <%= form.label :queue_refill_level, "Queue Refill Level", class: "form-label" %>
+            <%= form.number_field :queue_refill_level, class: "form-control", min: 1, step: 1 %>
+            <div class="form-text">
+              When queue drops below this level, automatically add random songs.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-header">
+          <h5 class="mb-0 theme-text-primary">Playlists</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <%= form.label :playlist_ids, "Select Playlists", class: "form-label" %>
+            <div class="form-text mb-2">
+              Choose playlists for random song generation. (Optional)
+            </div>
+            <% Playlist.publicly_visible.order(:name).each do |playlist| %>
+              <div class="form-check">
+                <%= check_box_tag "jukebox[playlist_ids][]", playlist.id, 
+                    jukebox.playlist_ids.include?(playlist.id), 
+                    class: "form-check-input", 
+                    id: "playlist_#{playlist.id}" %>
+                <%= label_tag "playlist_#{playlist.id}", playlist.name, class: "form-check-label" %>
+                <small class="text-muted d-block ms-4">
+                  <%= pluralize(playlist.songs.count, 'song') %>
+                </small>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <%= form.submit class: "btn btn-primary" %>
+            <%= link_to "Cancel", jukebox.persisted? ? jukebox : jukeboxes_path, 
+                class: "btn btn-outline-secondary" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<script>
+// Form validation
+(function() {
+  'use strict';
+  window.addEventListener('load', function() {
+    var forms = document.getElementsByClassName('needs-validation');
+    var validation = Array.prototype.filter.call(forms, function(form) {
+      form.addEventListener('submit', function(event) {
+        if (form.checkValidity() === false) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  }, false);
+})();
+</script>

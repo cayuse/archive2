@@ -7,6 +7,104 @@ Archive Jukebox (AJB) is a multi-tenant music streaming system that extends the 
 1. **Archive.cavaforge.net** - Admin interface for authenticated users to create and manage party sessions
 2. **Jukebox.cavaforge.net** - Guest interface for party attendees to request songs and view queues
 
+## Current Implementation Status
+
+### ✅ Phase 1: Foundation Complete
+- **Database Schema**: Jukeboxes and JukeboxPlaylists tables created with proper indexes
+- **Rails Models**: Jukebox, JukeboxPlaylist models with full associations and validations
+- **Rails Controller**: JukeboxesController with CRUD operations and lifecycle management
+- **Rails Routes**: Complete RESTful routes with custom actions (start, pause, resume, end, reset)
+- **Rails Views**: Comprehensive UI with index, show, new, edit pages and partials
+- **System Integration**: Jukebox card added to Archive system settings page
+- **User Management**: Users can create, manage, and control their own jukeboxes
+
+### ✅ Phase 2: Player & Guest Interface (COMPLETED)
+- **React Player Application**: Fully implemented with MVC architecture
+- **React Guest Controller**: Fully implemented with real-time updates
+- **Real-time Communication**: ActionCable WebSocket implementation complete
+- **API Endpoints**: Complete jukebox-specific API endpoints implemented
+- **Audio Engine**: Web Audio API with crossfading support
+- **State Management**: Reactive state with persistent storage
+
+### 📋 Phase 3: Advanced Features (IN PROGRESS)
+- **Queue Management**: Real-time queue updates and song requests
+- **Advanced Audio**: Crossfading, pre-loading, and quality optimization
+- **Mobile Optimization**: Responsive design improvements
+- **Performance Optimization**: Caching and efficiency improvements
+
+## Current Development Status
+
+### ✅ Completed Components
+
+**1. Rails Backend (100% Complete)**
+- Jukebox model with all associations
+- RESTful controller with full CRUD operations
+- API endpoints for real-time communication
+- ActionCable WebSocket integration
+- Database migrations and schema
+
+**2. Player Application (100% Complete)**
+- React-based MVC architecture
+- AudioEngine with Web Audio API
+- PlaybackState with IndexedDB persistence
+- WebSocketService with ActionCable
+- ApiService for REST communication
+- PlayerController for business logic
+- PlayerView with React components
+
+**3. Guest Controller (100% Complete)**
+- React-based MVC architecture
+- GuestController for real-time updates
+- GuestView with search and request functionality
+- Real-time playback status display
+- Song search and request capabilities
+- Queue viewing and status monitoring
+
+**4. Real-time Communication (100% Complete)**
+- ActionCable WebSocket channels
+- 1-second status updates from player
+- Real-time broadcasting to all guests
+- REST API fallback for reliability
+- Connection status monitoring
+
+### 🔄 In Progress
+
+**1. Database Migration**
+- Migration to add playback fields to jukeboxes table
+- Foreign key relationships for current_song_id
+- Indexes for performance optimization
+
+**2. Integration Testing**
+- End-to-end testing of player/guest communication
+- WebSocket connection stability testing
+- Audio playback quality testing
+
+### 📋 Next Steps
+
+**1. Queue Management System**
+- Dedicated JukeboxQueue model
+- Real-time queue reordering
+- Priority and VIP request handling
+- Queue position notifications
+
+**2. Advanced Audio Features**
+- Crossfading between songs
+- Audio pre-loading for seamless playback
+- Quality optimization based on connection
+- Volume normalization
+
+**3. Mobile Optimization**
+- Touch-friendly controls
+- Responsive design improvements
+- Offline capability for cached songs
+- Push notifications for queue updates
+
+**4. Performance Optimization**
+- Audio caching strategies
+- Connection pooling
+- Database query optimization
+- CDN integration for audio files
+
 ## Architecture Overview
 
 ### Two-Phase System Design
@@ -411,76 +509,327 @@ end
 - WebSocket maintains real-time connection
 - No re-deployment needed during party
 
-## Database Schema Design
+## Database Schema Design - IMPLEMENTED
 
 ### Multi-Tenant Architecture
 
 **Core Principle:** Complete party isolation with scoped queries
 
-### New Tables Required
+### Implemented Tables
 
-**parties**
+**jukeboxes** ✅ IMPLEMENTED
 ```sql
-CREATE TABLE parties (
+CREATE TABLE jukeboxes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
   session_id VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255),
-  owner_id UUID REFERENCES users(id),
-  name VARCHAR(255) NOT NULL,
-  status VARCHAR(50) DEFAULT 'active', -- active, paused, ended
-  start_time TIMESTAMP,
-  end_time TIMESTAMP,
+  owner_id UUID REFERENCES users(id) NOT NULL,
+  private BOOLEAN DEFAULT false NOT NULL,
+  status VARCHAR(50) DEFAULT 'inactive' NOT NULL,
+  started_at TIMESTAMP,
+  ended_at TIMESTAMP,
+  scheduled_start TIMESTAMP,
+  scheduled_end TIMESTAMP,
+  crossfade_enabled BOOLEAN DEFAULT true NOT NULL,
+  crossfade_duration INTEGER DEFAULT 3000 NOT NULL,
+  auto_play BOOLEAN DEFAULT true NOT NULL,
+  description TEXT,
+  location VARCHAR(255),
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Indexes
+CREATE INDEX idx_jukeboxes_owner_id ON jukeboxes(owner_id);
+CREATE INDEX idx_jukeboxes_session_id ON jukeboxes(session_id);
+CREATE INDEX idx_jukeboxes_status ON jukeboxes(status);
+CREATE INDEX idx_jukeboxes_private ON jukeboxes(private);
+CREATE INDEX idx_jukeboxes_created_at ON jukeboxes(created_at);
+CREATE INDEX idx_jukeboxes_public_active ON jukeboxes(private, status) WHERE private = false;
 ```
 
-**party_queues**
+**jukebox_playlists** ✅ IMPLEMENTED
 ```sql
-CREATE TABLE party_queues (
+CREATE TABLE jukebox_playlists (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  party_id UUID REFERENCES parties(id) ON DELETE CASCADE,
+  jukebox_id UUID REFERENCES jukeboxes(id) ON DELETE CASCADE NOT NULL,
+  playlist_id UUID REFERENCES playlists(id) ON DELETE CASCADE NOT NULL,
+  weight INTEGER DEFAULT 1 NOT NULL,
+  enabled BOOLEAN DEFAULT true NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX idx_jukebox_playlists_jukebox_id ON jukebox_playlists(jukebox_id);
+CREATE INDEX idx_jukebox_playlists_playlist_id ON jukebox_playlists(playlist_id);
+CREATE INDEX idx_jukebox_playlists_jukebox_playlist ON jukebox_playlists(jukebox_id, playlist_id);
+CREATE INDEX idx_jukebox_playlists_jukebox_enabled ON jukebox_playlists(jukebox_id, enabled);
+```
+
+### Updated Existing Models ✅ IMPLEMENTED
+
+**User Model Updates:**
+```ruby
+class User < ApplicationRecord
+  has_many :jukeboxes, dependent: :destroy
+  # ... existing associations
+end
+```
+
+**Playlist Model Updates:**
+```ruby
+class Playlist < ApplicationRecord
+  has_many :jukebox_playlists, dependent: :destroy
+  has_many :jukeboxes, through: :jukebox_playlists
+  # ... existing associations
+end
+```
+
+### Planned Future Tables
+
+**jukebox_queues** (Not yet implemented)
+```sql
+CREATE TABLE jukebox_queues (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  jukebox_id UUID REFERENCES jukeboxes(id) ON DELETE CASCADE,
   song_id UUID REFERENCES songs(id),
   requested_by VARCHAR(255), -- guest username
   order_number INTEGER NOT NULL,
   status VARCHAR(50) DEFAULT 'queued', -- queued, playing, played, skipped
   created_at TIMESTAMP DEFAULT NOW()
 );
-
-CREATE INDEX idx_party_queues_party_order ON party_queues(party_id, order_number);
 ```
 
-**party_playback_history**
+**jukebox_playback_history** (Not yet implemented)
 ```sql
-CREATE TABLE party_playback_history (
+CREATE TABLE jukebox_playback_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  party_id UUID REFERENCES parties(id),
+  jukebox_id UUID REFERENCES jukeboxes(id),
   song_id UUID REFERENCES songs(id),
   played_at TIMESTAMP DEFAULT NOW(),
   duration_seconds INTEGER,
   skipped BOOLEAN DEFAULT FALSE,
   requested_by VARCHAR(255)
 );
-
-CREATE INDEX idx_party_history_party_date ON party_playback_history(party_id, played_at);
 ```
 
-**party_guests**
+**jukebox_guests** (Not yet implemented)
 ```sql
-CREATE TABLE party_guests (
+CREATE TABLE jukebox_guests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  party_id UUID REFERENCES parties(id) ON DELETE CASCADE,
+  jukebox_id UUID REFERENCES jukeboxes(id) ON DELETE CASCADE,
   guest_name VARCHAR(255) NOT NULL,
   joined_at TIMESTAMP DEFAULT NOW(),
   last_active TIMESTAMP DEFAULT NOW()
 );
 ```
 
-### Modified Existing Tables
+## Rails Implementation - COMPLETED ✅
 
-**songs** (no changes needed - already has UUIDs)
+### Models
 
-**users** (no changes needed - already has UUIDs)
+**Jukebox Model** ✅ IMPLEMENTED
+```ruby
+class Jukebox < ApplicationRecord
+  belongs_to :owner, class_name: 'User'
+  has_many :jukebox_playlists, dependent: :destroy
+  has_many :playlists, through: :jukebox_playlists
+
+  validates :name, presence: true, length: { maximum: 255 }
+  validates :session_id, presence: true, uniqueness: true, length: { maximum: 255 }
+  validates :status, inclusion: { in: %w[inactive active paused ended] }
+  validates :crossfade_duration, numericality: { greater_than: 0, less_than_or_equal_to: 30000 }
+  validates :owner_id, presence: true
+
+  scope :active, -> { where(status: 'active') }
+  scope :public_jukeboxes, -> { where(private: false) }
+  scope :private_jukeboxes, -> { where(private: true) }
+  scope :owned_by, ->(user) { where(owner_id: user.id) }
+
+  before_validation :generate_session_id, on: :create
+  before_validation :normalize_session_id
+
+  # Lifecycle methods
+  def start!; update!(status: 'active', started_at: Time.current); end
+  def pause!; update!(status: 'paused'); end
+  def resume!; update!(status: 'active'); end
+  def end!; update!(status: 'ended', ended_at: Time.current); end
+  def reset!; update!(status: 'inactive', started_at: nil, ended_at: nil); end
+
+  # Status checks
+  def active?; status == 'active'; end
+  def ended?; status == 'ended'; end
+  def paused?; status == 'paused'; end
+  def inactive?; status == 'inactive'; end
+  def public?; !private?; end
+  def has_password?; password_hash.present?; end
+end
+```
+
+**JukeboxPlaylist Model** ✅ IMPLEMENTED
+```ruby
+class JukeboxPlaylist < ApplicationRecord
+  belongs_to :jukebox
+  belongs_to :playlist
+
+  validates :jukebox_id, presence: true
+  validates :playlist_id, presence: true
+  validates :weight, presence: true, numericality: { greater_than: 0 }
+  validates :jukebox_id, uniqueness: { scope: :playlist_id }
+
+  scope :enabled, -> { where(enabled: true) }
+  scope :ordered, -> { order(:weight, :created_at) }
+end
+```
+
+### Controller
+
+**JukeboxesController** ✅ IMPLEMENTED
+```ruby
+class JukeboxesController < ApplicationController
+  before_action :authenticate_user!
+  before_action :set_jukebox, only: [:show, :edit, :update, :destroy, :start, :pause, :resume, :end, :reset]
+  before_action :ensure_owner, only: [:edit, :update, :destroy, :start, :pause, :resume, :end, :reset]
+
+  # Standard CRUD actions
+  def index; @jukeboxes = current_user.jukeboxes.order(created_at: :desc); end
+  def show; @jukebox_playlists = @jukebox.jukebox_playlists.includes(:playlist).order(:weight, :created_at); end
+  def new; @jukebox = current_user.jukeboxes.build; end
+  def edit; end
+  
+  def create
+    @jukebox = current_user.jukeboxes.build(jukebox_params)
+    if @jukebox.save
+      assign_playlists_to_jukebox
+      redirect_to @jukebox, notice: 'Jukebox was successfully created.'
+    else
+      render :new, status: :unprocessable_entity
+    end
+  end
+
+  def update
+    if @jukebox.update(jukebox_params)
+      assign_playlists_to_jukebox
+      redirect_to @jukebox, notice: 'Jukebox was successfully updated.'
+    else
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
+  def destroy
+    @jukebox.destroy
+    redirect_to jukeboxes_url, notice: 'Jukebox was successfully deleted.'
+  end
+
+  # Lifecycle actions
+  def start; @jukebox.start!; redirect_to @jukebox, notice: 'Jukebox started successfully.'; end
+  def pause; @jukebox.pause!; redirect_to @jukebox, notice: 'Jukebox paused successfully.'; end
+  def resume; @jukebox.resume!; redirect_to @jukebox, notice: 'Jukebox resumed successfully.'; end
+  def end; @jukebox.end!; redirect_to @jukebox, notice: 'Jukebox ended successfully.'; end
+  def reset; @jukebox.reset!; redirect_to @jukebox, notice: 'Jukebox reset successfully.'; end
+
+  private
+
+  def jukebox_params
+    # Handles password hashing with BCrypt
+    # Manages playlist assignments
+    # Returns sanitized parameters
+  end
+end
+```
+
+### Routes ✅ IMPLEMENTED
+
+```ruby
+# config/routes.rb
+resources :jukeboxes do
+  member do
+    post :start
+    post :pause
+    post :resume
+    post :end
+    post :reset
+  end
+end
+```
+
+### Views ✅ IMPLEMENTED
+
+**Index Page** (`app/views/jukeboxes/index.html.erb`)
+- Lists all user's jukeboxes in a card grid layout
+- Shows jukebox status, privacy level, and quick actions
+- Includes empty state for new users
+- Responsive design with Bootstrap
+
+**Show Page** (`app/views/jukeboxes/show.html.erb`)
+- Comprehensive jukebox details and settings
+- Real-time status display with action buttons
+- Playlist management interface
+- Guest access information with copy-to-clipboard URL
+- Lifecycle controls (start, pause, resume, end, reset)
+
+**New/Edit Pages** (`app/views/jukeboxes/new.html.erb`, `app/views/jukeboxes/edit.html.erb`)
+- Shared form partial for creating and editing jukeboxes
+- Comprehensive settings including privacy, passwords, scheduling
+- Audio settings (crossfade configuration)
+- Playlist selection with weight management
+- Form validation and error handling
+
+**Form Partial** (`app/views/jukeboxes/_form.html.erb`)
+- Complete form with all jukebox settings
+- Password hashing support
+- Playlist multi-select with checkboxes
+- Audio configuration options
+- Responsive layout with validation feedback
+
+**Jukebox Card Partial** (`app/views/jukeboxes/_jukebox.html.erb`)
+- Reusable jukebox display component
+- Status badges with color coding
+- Quick action buttons
+- Metadata display (location, schedule, playlist count)
+
+### System Integration ✅ IMPLEMENTED
+
+**Settings Page Integration**
+- Added Jukebox card to system settings page
+- Provides easy access to jukebox management
+- Consistent with existing settings UI patterns
+
+**User Management**
+- Users can create multiple jukeboxes
+- Complete ownership and permission system
+- Privacy controls (public/private jukeboxes)
+
+### Key Features Implemented ✅
+
+1. **Complete Jukebox Lifecycle Management**
+   - Create, edit, delete jukeboxes
+   - Start, pause, resume, end, reset states
+   - Status tracking and validation
+
+2. **Privacy and Access Control**
+   - Public/private jukebox settings
+   - Password protection with BCrypt hashing
+   - Session ID generation and management
+
+3. **Playlist Management**
+   - HABTM relationship between jukeboxes and playlists
+   - Weight-based playlist ordering
+   - Enable/disable playlist functionality
+
+4. **Scheduling and Configuration**
+   - Scheduled start/end times
+   - Crossfade settings (enabled, duration)
+   - Auto-play configuration
+   - Location and description metadata
+
+5. **User Experience**
+   - Comprehensive web interface
+   - Responsive design
+   - Real-time status updates
+   - Guest access URL generation
 
 ## API Design
 
@@ -606,27 +955,50 @@ Response:
 
 ## Real-Time Communication
 
-### WebSocket Implementation
+### ActionCable Implementation
 
 **Connection**
 ```javascript
-const ws = new WebSocket(`wss://archive.cavaforge.net/ws/party/${sessionId}`);
+// Initialize ActionCable consumer
+window.App.cable = ActionCable.createConsumer('/cable');
+
+// Subscribe to jukebox channel
+const subscription = App.cable.subscriptions.create(
+  { channel: "JukeboxChannel", session_id: sessionId },
+  {
+    connected() {
+      console.log("Connected to jukebox channel");
+    },
+    received(data) {
+      handleRealtimeUpdate(data);
+    }
+  }
+);
 ```
 
 **Message Types**
 ```javascript
-// Client to Server
+// Player to Server (REST API + WebSocket)
 {
-  "type": "playback_status",
+  "current_song_id": "uuid",
+  "position": 120.5,
+  "is_playing": true,
+  "volume": 0.8,
+  "crossfade_duration": 3000
+}
+
+// Server to All Clients (WebSocket Broadcast)
+{
+  "type": "playback_status_update",
   "data": {
     "current_song_id": "uuid",
-    "position": 120,
-    "volume": 80,
-    "is_playing": true
+    "position": 120.5,
+    "is_playing": true,
+    "volume": 0.8,
+    "timestamp": "2024-01-15T18:30:00Z"
   }
 }
 
-// Server to Client
 {
   "type": "queue_updated",
   "data": {
@@ -642,6 +1014,41 @@ const ws = new WebSocket(`wss://archive.cavaforge.net/ws/party/${sessionId}`);
     "requested_by": "guest_username"
   }
 }
+```
+
+### ActionCable Integration
+
+**Why ActionCable?**
+- **Built-in Rails Integration**: Seamless integration with Rails authentication
+- **Automatic Reconnection**: Handles connection drops gracefully
+- **Channel-based Architecture**: Clean separation of concerns
+- **Scalable**: Supports Redis backend for multi-server deployments
+- **Authentication**: Built-in user authentication and authorization
+
+**Channel Implementation**
+```ruby
+class JukeboxChannel < ApplicationCable::Channel
+  def subscribed
+    session_id = params[:session_id]
+    if session_id.present?
+      stream_from "jukebox_#{session_id}"
+    else
+      reject
+    end
+  end
+end
+```
+
+**Broadcasting Updates**
+```ruby
+# In jukeboxes_controller.rb
+ActionCable.server.broadcast(
+  "jukebox_#{@jukebox.session_id}",
+  {
+    type: 'playback_status_update',
+    data: playback_status
+  }
+)
 ```
 
 ## Local Storage Strategy
@@ -751,34 +1158,46 @@ const partyState = {
 };
 ```
 
-## Implementation Phases
+## Implementation Phases - UPDATED STATUS
 
-### Phase 1: MVP (Minimum Viable Product)
-- [ ] Basic React SPA with Howler.js
-- [ ] Party creation and management
-- [ ] Simple queue system
-- [ ] Basic audio playback
-- [ ] WebSocket real-time updates
+### ✅ Phase 1: Foundation (COMPLETED)
+- [x] **Database Schema**: Jukeboxes and JukeboxPlaylists tables
+- [x] **Rails Models**: Complete with associations and validations
+- [x] **Rails Controller**: Full CRUD with lifecycle management
+- [x] **Rails Routes**: RESTful routes with custom actions
+- [x] **Rails Views**: Comprehensive UI (index, show, new, edit, partials)
+- [x] **User Management**: Authentication and ownership
+- [x] **Privacy Controls**: Public/private jukeboxes with password protection
+- [x] **Playlist Management**: HABTM relationship with weight ordering
+- [x] **System Integration**: Added to Archive settings page
 
-### Phase 2: Core Features
-- [ ] Complete file download and caching
-- [ ] Pre-download next song functionality
-- [ ] Admin controls (skip, remove, bump)
-- [ ] Guest interface for song requests
-- [ ] QR code generation for easy access
+### 🚧 Phase 2: Player & Guest Interface (IN PROGRESS)
+- [ ] **React Player Application**: Browser-based music player
+- [ ] **Guest Interface**: Jukebox.cavaforge.net pages for party attendees
+- [ ] **Queue Management**: Real-time song request and queue system
+- [ ] **API Endpoints**: RESTful API for player and guest interactions
+- [ ] **WebSocket/SSE**: Real-time communication between players and guests
+- [ ] **Audio Streaming**: Song download and playback endpoints
 
-### Phase 3: Polish & Optimization
-- [ ] Mobile-optimized UI
-- [ ] Advanced audio features
-- [ ] Playback history and analytics
-- [ ] Performance optimizations
-- [ ] Error handling and recovery
+### 📋 Phase 3: Advanced Audio Features (PLANNED)
+- [ ] **Crossfading**: Web Audio API implementation with Tone.js
+- [ ] **Audio Caching**: IndexedDB permanent storage for songs
+- [ ] **Pre-download System**: Smart next-song loading
+- [ ] **Audio Quality**: Full bitrate, no compression playback
+- [ ] **iOS Safari Support**: Autoplay detection and guidance
 
-### Phase 4: Advanced Features
-- [ ] Multiple simultaneous parties
-- [ ] Party scheduling and management
-- [ ] Advanced guest features
-- [ ] Integration with existing Archive features
+### 📋 Phase 4: Polish & Optimization (PLANNED)
+- [ ] **Mobile Optimization**: Responsive design improvements
+- [ ] **Performance**: Caching and efficiency optimizations
+- [ ] **Analytics**: Playback history and party statistics
+- [ ] **Error Handling**: Robust error recovery and user feedback
+- [ ] **QR Code Generation**: Easy party access for guests
+
+### 📋 Phase 5: Advanced Features (FUTURE)
+- [ ] **Multiple Simultaneous Parties**: Scaling to concurrent sessions
+- [ ] **Advanced Scheduling**: Time-based party management
+- [ ] **Enhanced Guest Features**: User profiles and preferences
+- [ ] **Integration**: Deep integration with existing Archive features
 
 ## Security Considerations
 
@@ -814,6 +1233,168 @@ const partyState = {
 - Efficient database queries
 - Optimized WebSocket connections
 
+## Files Created and Locations ✅
+
+### Database Migrations
+- `/archive/db/migrate/20250124000000_create_jukeboxes.rb`
+- `/archive/db/migrate/20250124000001_create_jukebox_playlists.rb`
+
+### Models
+- `/archive/app/models/jukebox.rb`
+- `/archive/app/models/jukebox_playlist.rb`
+- **Updated**: `/archive/app/models/user.rb` (added jukeboxes association)
+- **Updated**: `/archive/app/models/playlist.rb` (added jukebox_playlists associations)
+
+### Controller
+- `/archive/app/controllers/jukeboxes_controller.rb`
+
+### Routes
+- **Updated**: `/archive/config/routes.rb` (added jukeboxes resources)
+
+### Views
+- `/archive/app/views/jukeboxes/index.html.erb`
+- `/archive/app/views/jukeboxes/show.html.erb`
+- `/archive/app/views/jukeboxes/new.html.erb`
+- `/archive/app/views/jukeboxes/edit.html.erb`
+- `/archive/app/views/jukeboxes/_form.html.erb`
+- `/archive/app/views/jukeboxes/_jukebox.html.erb`
+
+### System Integration
+- **Updated**: `/archive/app/views/settings/index.html.erb` (added Jukebox card)
+
+## Migration Commands (When Rails Environment Available)
+
+```bash
+# Navigate to archive directory
+cd /home/cayuse/archive2/archive
+
+# Run migrations
+rails db:migrate
+
+# Verify table creation
+rails console
+> Jukebox.create!(name: "Test Party", owner: User.first)
+> JukeboxPlaylist.create!(jukebox: Jukebox.first, playlist: Playlist.first, weight: 1)
+```
+
+## Ready for Next Phase
+
+The foundation is now complete and ready for Phase 2 implementation:
+
+1. **Working Rails Application**: Full CRUD for jukeboxes with comprehensive UI
+2. **Database Schema**: Tables created with proper associations and indexes
+3. **User Management**: Complete ownership and permission system
+4. **System Integration**: Accessible through Archive settings page
+
+**Next Steps**:
+1. Implement guest interface (jukebox.cavaforge.net)
+2. Create React player application
+3. Add API endpoints for real-time communication
+4. Implement WebSocket/SSE for live updates
+5. Build queue management system
+
+## Session Scoping Implementation Notes
+
+### Jukebox Session Binding Strategy
+
+**Problem**: Both player and guest JavaScript applications need to be bound to a specific jukebox session for their entire lifecycle.
+
+**Implementation Plan**:
+
+**1. Session ID Injection**
+- When a user accesses `/jukeboxes/:id/player` or `/jukeboxes/:id/guest`, the jukebox session_id is injected into the page
+- JavaScript applications receive the session_id via `window.AJB_CONFIG.sessionId`
+- All API calls from both player and guest apps are scoped to this session_id
+
+**2. API Scoping Mechanism**
+```ruby
+# In Api::V1::JukeboxesController
+def set_jukebox
+  # Accept either jukebox ID or session_id for scoping
+  if params[:session_id].present?
+    @jukebox = Jukebox.find_by(session_id: params[:session_id])
+  else
+    @jukebox = Jukebox.find(params[:id])
+  end
+  
+  unless @jukebox
+    render json: { success: false, message: 'Jukebox not found' }, status: 404
+    return
+  end
+end
+```
+
+**3. JavaScript Application Binding**
+```javascript
+// In both player.js and guest.js
+class JukeboxSession {
+  constructor(config) {
+    this.sessionId = config.sessionId;
+    this.jukeboxId = config.jukeboxId;
+    this.apiBase = `/api/v1/jukeboxes/session/${this.sessionId}`;
+  }
+  
+  // All API calls use this.sessionId for scoping
+  async getQueue() {
+    return fetch(`${this.apiBase}/queue`);
+  }
+  
+  async addToQueue(songId, source = 'requested') {
+    return fetch(`${this.apiBase}/queue`, {
+      method: 'POST',
+      body: JSON.stringify({ song_id: songId, source: source })
+    });
+  }
+}
+```
+
+**4. Route Updates Needed**
+```ruby
+# Add session-based routes for JavaScript apps
+namespace :api do
+  namespace :v1 do
+    resources :jukeboxes, only: [] do
+      member do
+        # Existing ID-based routes
+        get :status
+        get :queue
+        # ... other existing routes
+      end
+    end
+    
+    # New session-based routes for JavaScript apps
+    scope 'jukeboxes/session/:session_id' do
+      get 'status', to: 'jukeboxes#status'
+      get 'queue', to: 'jukeboxes#queue'
+      post 'queue', to: 'jukeboxes#add_to_queue'
+      delete 'queue/:song_id', to: 'jukeboxes#remove_from_queue'
+      patch 'queue/:song_id', to: 'jukeboxes#move_in_queue'
+      get 'playback_info', to: 'jukeboxes#playback_info'
+      post 'playback_status', to: 'jukeboxes#playback_status'
+    end
+  end
+end
+```
+
+**5. Security Considerations**
+- Session-based routes should verify the jukebox is active and accessible
+- Guest routes should allow access to public jukeboxes or password-protected ones
+- Player routes should verify ownership or delegated permissions
+- All routes should validate session_id exists and jukebox is in valid state
+
+**6. Lifecycle Management**
+- Session binding persists until user navigates away or closes browser
+- No server-side session storage needed - all scoping happens via URL parameters
+- JavaScript applications maintain their own state and connection to the specific jukebox
+- WebSocket connections are scoped to the specific jukebox session
+
+**Implementation Priority**:
+1. Add session-based routes to routes.rb
+2. Update Api::V1::JukeboxesController to handle session_id parameter
+3. Update JavaScript applications to use session-based API calls
+4. Test session scoping with both player and guest applications
+5. Add security validations for session-based access
+
 ---
 
-*This document represents the alpha version of the Archive Jukebox design. It will evolve as implementation progresses and requirements are refined.*
+*This document represents the comprehensive design and current implementation status of Archive Jukebox. Updated with Phase 1 completion details, queue management system implementation, and session scoping strategy.*

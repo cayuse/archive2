@@ -3,6 +3,8 @@ class Playlist < ApplicationRecord
   belongs_to :user
   has_many :playlists_songs, foreign_key: :playlist_id, class_name: 'PlaylistsSong', dependent: :destroy, primary_key: :id
   has_many :songs, through: :playlists_songs, source: :song
+  has_many :jukebox_playlist_assignments, dependent: :destroy
+  has_many :jukeboxes, through: :jukebox_playlist_assignments
 
   # Validations
   validates :name, presence: true, length: { minimum: 1, maximum: 100 }

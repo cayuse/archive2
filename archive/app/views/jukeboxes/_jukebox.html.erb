@@ -1,0 +1,103 @@
+<div class="col-md-6 col-lg-4 mb-4">
+  <div class="card h-100">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h6 class="mb-0 theme-text-primary">
+        <%= jukebox.private? ? "🔒" : "🌐" %>
+        <%= jukebox.name %>
+      </h6>
+      <span class="badge bg-<%= status_color(jukebox.status) %>">
+        <%= jukebox.status.titleize %>
+      </span>
+    </div>
+    
+    <div class="card-body">
+      <% if jukebox.description.present? %>
+        <p class="card-text theme-text-secondary small">
+          <%= truncate(jukebox.description, length: 100) %>
+        </p>
+      <% end %>
+      
+      <div class="mb-2">
+        <small class="text-muted">
+          <strong>Session ID:</strong> <%= jukebox.session_id %>
+        </small>
+      </div>
+      
+      <% if jukebox.location.present? %>
+        <div class="mb-2">
+          <small class="text-muted">
+            <i class="fas fa-map-marker-alt me-1"></i>
+            <%= jukebox.location %>
+          </small>
+        </div>
+      <% end %>
+      
+      <div class="mb-2">
+        <small class="text-muted">
+          <i class="fas fa-calendar me-1"></i>
+          Created <%= time_ago_in_words(jukebox.created_at) %> ago
+        </small>
+      </div>
+      
+      <% if jukebox.scheduled_start.present? %>
+        <div class="mb-2">
+          <small class="text-muted">
+            <i class="fas fa-clock me-1"></i>
+            Scheduled: <%= jukebox.scheduled_start.strftime("%b %d, %Y %l:%M %p") %>
+          </small>
+        </div>
+      <% end %>
+      
+      <div class="mb-2">
+        <small class="text-muted">
+          <i class="fas fa-list me-1"></i>
+          <%= pluralize(jukebox.enabled_playlists.count, 'playlist') %>
+        </small>
+      </div>
+    </div>
+    
+    <div class="card-footer">
+      <div class="d-flex justify-content-between">
+        <%= link_to "View", jukebox, class: "btn btn-sm btn-outline-primary" %>
+        
+        <div class="btn-group">
+          <% case jukebox.status %>
+          <% when 'inactive' %>
+            <%= button_to "Start", start_jukebox_path(jukebox), 
+                method: :post, class: "btn btn-sm btn-success" %>
+          <% when 'active' %>
+            <%= button_to "Pause", pause_jukebox_path(jukebox), 
+                method: :post, class: "btn btn-sm btn-warning" %>
+          <% when 'paused' %>
+            <%= button_to "Resume", resume_jukebox_path(jukebox), 
+                method: :post, class: "btn btn-sm btn-success" %>
+          <% end %>
+          
+          <% if jukebox.active? || jukebox.paused? %>
+            <%= button_to "End", end_jukebox_path(jukebox), 
+                method: :post, class: "btn btn-sm btn-danger" %>
+          <% elsif jukebox.ended? %>
+            <%= button_to "Reset", reset_jukebox_path(jukebox), 
+                method: :post, class: "btn btn-sm btn-secondary" %>
+          <% end %>
+        </div>
+      </div>
+      
+      <div class="mt-2">
+        <%= link_to "Edit", edit_jukebox_path(jukebox), class: "btn btn-sm btn-outline-secondary" %>
+        <%= link_to "Delete", jukebox, method: :delete, 
+            class: "btn btn-sm btn-outline-danger", 
+            data: { confirm: "Are you sure? This will permanently delete this jukebox." } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% content_for :head do %>
+  <style>
+    .badge.bg-success { background-color: #198754 !important; }
+    .badge.bg-warning { background-color: #ffc107 !important; color: #000 !important; }
+    .badge.bg-danger { background-color: #dc3545 !important; }
+    .badge.bg-secondary { background-color: #6c757d !important; }
+  </style>
+<% end %>

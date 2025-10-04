@@ -3,6 +3,9 @@ Rails.application.routes.draw do
   # require "sidekiq/web"
   # mount Sidekiq::Web => "/sidekiq"
 
+  # Mount ActionCable for WebSocket connections
+  mount ActionCable.server => '/cable'
+
   
   # Theme routes (public access for assets, admin for management)
   get '/themes/:theme.css', to: 'themes#css', as: :theme_css
@@ -88,8 +91,58 @@ Rails.application.routes.draw do
     end
   end
   
+  # Jukeboxes management
+  resources :jukeboxes do
+    member do
+      post :start
+      post :pause
+      post :resume
+      post :end
+      post :reset
+      get :player
+      get :guest
+    end
+  end
+  
   # Upload interface
   resource :upload, only: [:show, :create], controller: 'upload'
+  
+  # API routes
+  namespace :api do
+    namespace :v1 do
+      resources :songs, only: [:show] do
+        member do
+          get :download
+          get :stream
+        end
+      end
+      
+      resources :jukeboxes, only: [] do
+        member do
+          get :status
+          get :queue
+          get :current_song
+          get :next_song
+          get :playback_info
+          post :queue, action: :add_to_queue
+          delete 'queue/:song_id', action: :remove_from_queue
+          patch 'queue/:song_id', action: :move_in_queue
+          post :playback_status
+        end
+      end
+      
+      # Guest access routes (read-only, password-protected)
+      scope 'guest/:jukebox_id' do
+        get 'test', to: 'guest#test'
+        get 'status', to: 'guest#status'
+        get 'current_song', to: 'guest#current_song'
+        get 'queue', to: 'guest#queue'
+        get 'playback_info', to: 'guest#playback_info'
+        get 'search_songs', to: 'guest#search_songs'
+        post 'request_song', to: 'guest#request_song'
+      end
+    end
+  end
   
   # Bulk operations (moderator/admin only)
   resource :bulk_operations, only: [:show] do

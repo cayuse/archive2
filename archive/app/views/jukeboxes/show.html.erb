@@ -1,0 +1,197 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 theme-text-primary">
+          <%= @jukebox.private? ? "🔒" : "🌐" %>
+          <%= @jukebox.name %>
+        </h1>
+        <div>
+          <%= link_to "Back to Jukeboxes", jukeboxes_path, class: "btn btn-outline-secondary" %>
+          <%= link_to "Edit", edit_jukebox_path(@jukebox), class: "btn btn-primary" %>
+        </div>
+      </div>
+
+      <% if notice %>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <%= notice %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      <% end %>
+
+      <div class="row">
+        <div class="col-md-8">
+          <!-- Status Card -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h5 class="mb-0 theme-text-primary">Status</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <p><strong>Status:</strong> 
+                    <span class="badge bg-<%= @jukebox.active? ? 'success' : @jukebox.paused? ? 'warning' : 'secondary' %>">
+                      <%= @jukebox.status.titleize %>
+                    </span>
+                  </p>
+                  <p><strong>Session ID:</strong> <code><%= @jukebox.session_id %></code></p>
+                  <% if @jukebox.has_password? %>
+                    <p><strong>Guest Password:</strong> <code class="text-primary"><%= @jukebox.guest_password %></code></p>
+                  <% else %>
+                    <p><strong>Guest Password:</strong> <span class="text-muted">None set</span></p>
+                  <% end %>
+                </div>
+                <div class="col-md-6">
+                  <% if @jukebox.started_at %>
+                    <p><strong>Started:</strong> <%= @jukebox.started_at.strftime("%b %d, %Y %l:%M %p") %></p>
+                  <% end %>
+                  <% if @jukebox.ended_at %>
+                    <p><strong>Ended:</strong> <%= @jukebox.ended_at.strftime("%b %d, %Y %l:%M %p") %></p>
+                  <% end %>
+                  <% if @jukebox.current_duration %>
+                    <p><strong>Duration:</strong> <%= distance_of_time_in_words(@jukebox.current_duration) %></p>
+                  <% end %>
+                </div>
+              </div>
+              
+              <!-- Action Buttons -->
+              <div class="mt-3">
+                <div class="d-flex flex-wrap gap-2">
+                  <% case @jukebox.status %>
+                  <% when 'inactive' %>
+                    <%= button_to "Start Jukebox", start_jukebox_path(@jukebox), 
+                        method: :post, class: "btn btn-success btn-lg" %>
+                  <% when 'active' %>
+                    <%= button_to "Pause Jukebox", pause_jukebox_path(@jukebox), 
+                        method: :post, class: "btn btn-warning btn-lg" %>
+                  <% when 'paused' %>
+                    <%= button_to "Resume Jukebox", resume_jukebox_path(@jukebox), 
+                        method: :post, class: "btn btn-success btn-lg" %>
+                  <% end %>
+                  
+                  <!-- AJB Player and Guest buttons -->
+                  <%= link_to "Start Jukebox Player", player_jukebox_path(@jukebox), 
+                      class: "btn btn-primary btn-lg", target: "_blank" %>
+                  <%= link_to "Start Jukebox Guest", guest_jukebox_path(@jukebox), 
+                      class: "btn btn-info btn-lg", target: "_blank" %>
+                  
+                  <% if @jukebox.active? || @jukebox.paused? %>
+                    <%= button_to "End Jukebox", end_jukebox_path(@jukebox), 
+                        method: :post, class: "btn btn-danger" %>
+                  <% elsif @jukebox.ended? %>
+                    <%= button_to "Reset Jukebox", reset_jukebox_path(@jukebox), 
+                        method: :post, class: "btn btn-secondary" %>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Settings Card -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h5 class="mb-0 theme-text-primary">Settings</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <p><strong>Crossfade:</strong> <%= @jukebox.crossfade_enabled? ? "Enabled (#{@jukebox.crossfade_duration}ms)" : "Disabled" %></p>
+                  <p><strong>Auto Play:</strong> <%= @jukebox.auto_play? ? "Enabled" : "Disabled" %></p>
+                  <p><strong>Min Queue Length:</strong> <%= @jukebox.min_queue_length %> songs</p>
+                  <p><strong>Queue Refill Level:</strong> <%= @jukebox.queue_refill_level %> songs</p>
+                </div>
+                <div class="col-md-6">
+                  <% if @jukebox.scheduled_start %>
+                    <p><strong>Scheduled Start:</strong> <%= @jukebox.scheduled_start.strftime("%b %d, %Y %l:%M %p") %></p>
+                  <% end %>
+                  <% if @jukebox.scheduled_end %>
+                    <p><strong>Scheduled End:</strong> <%= @jukebox.scheduled_end.strftime("%b %d, %Y %l:%M %p") %></p>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <!-- Playlists Card -->
+          <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0 theme-text-primary">Playlists</h5>
+              <span class="badge bg-primary"><%= @jukebox_playlist_assignments.count %></span>
+            </div>
+            <div class="card-body">
+              <% if @jukebox_playlist_assignments.any? %>
+                <% @jukebox_playlist_assignments.each do |jp| %>
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                      <strong><%= jp.playlist.name %></strong>
+                      <small class="text-muted d-block">
+                        <%= pluralize(jp.playlist.songs.count, 'song') %>
+                        <% if jp.weight != 1 %>
+                          • Weight: <%= jp.weight %>
+                        <% end %>
+                      </small>
+                    </div>
+                    <span class="badge bg-<%= jp.enabled? ? 'success' : 'secondary' %>">
+                      <%= jp.enabled? ? 'Active' : 'Disabled' %>
+                    </span>
+                  </div>
+                <% end %>
+              <% else %>
+                <p class="text-muted">No playlists assigned yet.</p>
+              <% end %>
+            </div>
+          </div>
+
+          <!-- Guest Access Card -->
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0 theme-text-primary">Guest Access</h5>
+            </div>
+            <div class="card-body">
+              <p><strong>Jukebox URL:</strong></p>
+              <div class="input-group mb-3">
+                <input type="text" class="form-control" value="<%= request.base_url.gsub('archive', 'jukebox') %>/<%= @jukebox.session_id %>" readonly>
+                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard(this.previousElementSibling)">
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+              
+              <div class="alert alert-info">
+                <small>
+                  <strong>Note:</strong> Guests can access this jukebox using the session ID: 
+                  <code><%= @jukebox.session_id %></code>
+                  <% if @jukebox.has_password? %>
+                    <br>Password required for access.
+                  <% end %>
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function copyToClipboard(element) {
+  element.select();
+  element.setSelectionRange(0, 99999);
+  document.execCommand('copy');
+  
+  // Show feedback
+  const button = element.nextElementSibling;
+  const originalHTML = button.innerHTML;
+  button.innerHTML = '<i class="fas fa-check"></i>';
+  button.classList.add('btn-success');
+  button.classList.remove('btn-outline-secondary');
+  
+  setTimeout(() => {
+    button.innerHTML = originalHTML;
+    button.classList.remove('btn-success');
+    button.classList.add('btn-outline-secondary');
+  }, 2000);
+}
+</script>

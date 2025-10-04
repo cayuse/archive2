@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AJB Player - <%= @jukebox.name %></title>
+  <%= render 'player_scripts' %>
+  
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+    
+    #ajb-player-root {
+      min-height: 100vh;
+    }
+    
+    .player-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      margin: 20px;
+      padding: 30px;
+    }
+    
+    .player-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .player-title {
+      color: #333;
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    
+    .player-subtitle {
+      color: #666;
+      font-size: 1.1rem;
+    }
+    
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    
+    .status-active { background-color: #28a745; }
+    .status-inactive { background-color: #6c757d; }
+    .status-paused { background-color: #ffc107; }
+  </style>
+</head>
+<body>
+  <div id="ajb-player-root">
+    <div class="player-container">
+      <div class="player-header">
+        <h1 class="player-title">🎵 AJB Player</h1>
+        <p class="player-subtitle">
+          <span class="status-indicator status-<%= @jukebox.status %>"></span>
+          <%= @jukebox.name %> - Session: <%= @jukebox.session_id %>
+        </p>
+      </div>
+      
+      <div id="react-player-app">
+        <!-- React app will mount here -->
+        <div class="text-center">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-3">Loading AJB Player...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize ActionCable (if available)
+    window.App = window.App || {};
+    if (typeof ActionCable !== 'undefined') {
+      window.App.cable = ActionCable.createConsumer('<%= Rails.application.config.action_cable.url || "/cable" %>');
+    }
+    
+    <%
+      # Generate API token directly in the template since controller method isn't working
+      api_token = nil
+      if current_user
+        begin
+          payload = {
+            user_id: current_user.id,
+            email: current_user.email,
+            role: current_user.role,
+            exp: 2.days.from_now.to_i,
+            iat: Time.current.to_i,
+            iss: 'archive-api'
+          }
+          
+          json_payload = payload.to_json
+          encryptor = ActiveSupport::MessageEncryptor.new(Rails.application.secret_key_base[0, 32])
+          encrypted_token = encryptor.encrypt_and_sign(json_payload)
+          api_token = Base64.urlsafe_encode64(encrypted_token)
+        rescue => e
+          Rails.logger.error "Token generation error in template: #{e.message}"
+          api_token = nil
+        end
+      end
+    %>
+    
+    // Configuration for the React app
+    window.AJB_CONFIG = {
+      sessionId: '<%= @jukebox.session_id %>',
+      apiToken: '<%= api_token || 'NO_TOKEN_GENERATED' %>',
+      jukeboxId: '<%= @jukebox.id %>',
+      jukeboxName: '<%= @jukebox.name %>',
+      status: '<%= @jukebox.status %>',
+      crossfadeEnabled: <%= @jukebox.crossfade_enabled %>,
+      crossfadeDuration: <%= @jukebox.crossfade_duration %>,
+      autoPlay: <%= @jukebox.auto_play %>
+    };
+    
+    // Debug: Show what we got from Rails
+    console.log('Rails api_token value:', '<%= api_token || "nil" %>');
+    console.log('Rails api_token length:', '<%= api_token&.length || 0 %>');
+    
+    // Debug logging
+    console.log('AJB_CONFIG.apiToken present:', window.AJB_CONFIG.apiToken ? 'YES' : 'NO');
+    console.log('AJB_CONFIG.apiToken length:', window.AJB_CONFIG.apiToken ? window.AJB_CONFIG.apiToken.length : 0);
+  </script>
+  
+  <!-- Load all AJB modules -->
+  <script src="/javascripts/ajb/models/AudioEngine.js"></script>
+  <script src="/javascripts/ajb/models/PlaybackState.js"></script>
+  <script src="/javascripts/ajb/services/WebSocketService.js"></script>
+  <script src="/javascripts/ajb/services/ApiService.js"></script>
+  <script src="/javascripts/ajb/controllers/PlayerController.js"></script>
+  <script src="/javascripts/ajb/views/PlayerView.js"></script>
+  
+  <!-- Load main app -->
+  <script src="/javascripts/ajb/player.js"></script>
+</body>
+</html>

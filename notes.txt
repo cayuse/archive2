@@ -1,0 +1,21 @@
+
+cd /home/cayuse/archive2/archive && docker run --rm -it -v "$(pwd):/app" -w /app ruby:3.2.5 bash -c "bundle install"
+
+
+to migrate
+docker compose exec archive bin/rails db:migrate RAILS_ENV=production
+docker compose exec archive bin/rails db:migrate RAILS_ENV=production
+
+how to bundle install from scratch
+
+
+to get a console:
+ docker exec -it archive-archive-1 bin/rails c
+
+ some searches to look at queues:
+
+ # Get the jukebox first (find the id first obviously)
+jukebox = Jukebox.find('61dc500c-68f4-4d93-8e52-ea9104110d1a')
+
+# Get all queue items in the correct order (requested first, then random)
+AjbQueueItem.for_jukebox(jukebox).queue_order.includes(:song)

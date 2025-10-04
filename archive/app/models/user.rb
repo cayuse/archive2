@@ -4,6 +4,7 @@ class User < ApplicationRecord
   
   # Associations
   has_many :playlists, dependent: :destroy
+  has_many :jukeboxes, foreign_key: :owner_id, dependent: :destroy
 
   # Enums
   enum :role, { user: 0, moderator: 1, admin: 2 }

@@ -6,6 +6,8 @@ class Song < ApplicationRecord
   belongs_to :user, optional: true
   has_many :playlists_songs, foreign_key: :song_id, class_name: 'PlaylistsSong', dependent: :destroy, primary_key: :id
   has_many :playlists, through: :playlists_songs, source: :playlist
+  has_many :ajb_queue_items, dependent: :destroy
+  has_many :ajb_played_songs, dependent: :destroy
 
   # Active Storage for audio file
   has_one_attached :audio_file

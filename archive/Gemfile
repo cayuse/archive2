@@ -32,6 +32,9 @@ gem "image_processing", "~> 1.2"
 # HTTP client for external API calls
 gem "httparty", "~> 0.21.0"
 
+# WebSocket support for real-time communication
+gem "redis", ">= 4.0.1"
+
 # CSV processing for bulk operations
 gem "csv", "~> 3.2"
 

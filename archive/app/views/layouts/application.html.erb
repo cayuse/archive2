@@ -24,9 +24,7 @@
     <!-- Dynamic Theme CSS - Loaded from database -->
     <link rel="stylesheet" href="<%= theme_css_path %>" media="all" data-theme="<%= current_theme %>">
     <%= javascript_importmap_tags %>
-    <script type="module">
-      import "htmx.org"
-    </script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
   </head>
 
   <body data-theme="<%= current_theme %>">
