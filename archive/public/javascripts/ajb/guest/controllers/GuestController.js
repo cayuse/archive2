@@ -24,9 +24,17 @@ class GuestController {
     console.log('Guest state changed:', state);
   }
 
-  // Authentication
-  async authenticate() {
+  // Authentication. The password typed into the AuthView is passed in here and
+  // applied to the controller + api service before the first request, otherwise
+  // getStatus() would go out with the (null) password the controller was built
+  // with and the server would 401.
+  async authenticate(password = null) {
     try {
+      if (password !== null) {
+        this.password = password;
+        this.apiService.password = password;
+      }
+
       this.state.setLoading(true);
       this.state.clearError();
 

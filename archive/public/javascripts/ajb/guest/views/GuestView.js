@@ -102,9 +102,9 @@ const GuestView = {
     }, []);
 
     // Handle authentication
-    const handleAuthenticate = async () => {
+    const handleAuthenticate = async (password) => {
       if (controller) {
-        await controller.authenticate();
+        await controller.authenticate(password);
       }
     };
 
@@ -151,10 +151,7 @@ const GuestView = {
 
     const handleSubmit = (e) => {
       e.preventDefault();
-      if (window.AJB_GUEST_CONFIG) {
-        window.AJB_GUEST_CONFIG.password = password;
-        onAuthenticate();
-      }
+      onAuthenticate(password);
     };
 
     return React.createElement('div', { className: 'auth-container' },
