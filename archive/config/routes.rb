@@ -94,11 +94,6 @@ Rails.application.routes.draw do
   # Jukeboxes management
   resources :jukeboxes do
     member do
-      post :start
-      post :pause
-      post :resume
-      post :end
-      post :reset
       get :player
       get :guest
     end

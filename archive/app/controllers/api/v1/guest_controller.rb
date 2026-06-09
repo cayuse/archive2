@@ -358,11 +358,12 @@ class Api::V1::GuestController < ApplicationController
   end
 
   def ensure_jukebox_active!
-    # Only allow access if jukebox is active or paused (not inactive or ended)
-    unless @jukebox.status.in?(['active', 'paused'])
-      render json: { 
-        success: false, 
-        message: 'Jukebox is not currently active. Please wait for the host to start the jukebox.' 
+    # The jukebox is reachable to guests only while a player is actively running
+    # (presence-driven). No live player -> nothing to join.
+    unless @jukebox.live?
+      render json: {
+        success: false,
+        message: 'This jukebox is not running right now. Ask the host to open the player.'
       }, status: 403
       return
     end

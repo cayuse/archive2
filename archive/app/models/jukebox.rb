@@ -48,24 +48,21 @@ class Jukebox < ApplicationRecord
     guest_password.present?
   end
 
-  def start!
-    update!(status: 'active', started_at: Time.current)
+  # Presence-driven lifecycle: the jukebox is "live" while a player is actively
+  # running (the player POSTs playback_status periodically while open). When the
+  # player closes, the heartbeat stops and the jukebox goes offline after
+  # LIVE_WINDOW. Config, queue, and history persist regardless — the player is
+  # just a window onto a durable jukebox.
+  LIVE_WINDOW = 30.seconds
+
+  def live?
+    last_status_update.present? && last_status_update > LIVE_WINDOW.ago
   end
 
-  def pause!
-    update!(status: 'paused')
-  end
-
-  def resume!
-    update!(status: 'active')
-  end
-
-  def end!
-    update!(status: 'ended', ended_at: Time.current)
-  end
-
-  def reset!
-    update!(status: 'inactive', started_at: nil, ended_at: nil)
+  # :live (a player is playing), :paused (player open but not playing), :offline.
+  def live_status
+    return :offline unless live?
+    is_playing? ? :live : :paused
   end
 
   def scheduled_duration

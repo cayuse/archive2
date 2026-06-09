@@ -61,25 +61,8 @@
         <%= link_to "View", jukebox, class: "btn btn-sm btn-outline-primary" %>
         
         <div class="btn-group">
-          <% case jukebox.status %>
-          <% when 'inactive' %>
-            <%= button_to "Start", start_jukebox_path(jukebox), 
-                method: :post, class: "btn btn-sm btn-success" %>
-          <% when 'active' %>
-            <%= button_to "Pause", pause_jukebox_path(jukebox), 
-                method: :post, class: "btn btn-sm btn-warning" %>
-          <% when 'paused' %>
-            <%= button_to "Resume", resume_jukebox_path(jukebox), 
-                method: :post, class: "btn btn-sm btn-success" %>
-          <% end %>
-          
-          <% if jukebox.active? || jukebox.paused? %>
-            <%= button_to "End", end_jukebox_path(jukebox), 
-                method: :post, class: "btn btn-sm btn-danger" %>
-          <% elsif jukebox.ended? %>
-            <%= button_to "Reset", reset_jukebox_path(jukebox), 
-                method: :post, class: "btn btn-sm btn-secondary" %>
-          <% end %>
+          <%= link_to "Player", player_jukebox_path(jukebox), class: "btn btn-sm btn-success", target: "_blank" %>
+          <%= link_to "Guest", guest_jukebox_path(jukebox), class: "btn btn-sm btn-outline-primary", target: "_blank" %>
         </div>
       </div>
       

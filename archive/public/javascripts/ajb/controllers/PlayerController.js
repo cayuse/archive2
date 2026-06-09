@@ -27,6 +27,15 @@ class PlayerController {
     this.loadQueue();
     this.loadHistory();
     this.subscribeRealtime();
+    this.startHeartbeat();
+  }
+
+  // Heartbeat: while this player is open it reports status periodically (even
+  // when paused/idle), which keeps the jukebox "live". When the page closes the
+  // heartbeat stops and the jukebox goes offline on the server side.
+  startHeartbeat() {
+    this.updatePlaybackStatus();
+    this.heartbeatInterval = setInterval(() => this.updatePlaybackStatus(), 10000);
   }
 
   setupEventHandlers() {
@@ -350,6 +359,10 @@ class PlayerController {
   // Clean up
   destroy() {
     this.audioEngine.destroy();
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
     if (this.cableSubscription) {
       this.cableSubscription.unsubscribe();
       this.cableSubscription = null;

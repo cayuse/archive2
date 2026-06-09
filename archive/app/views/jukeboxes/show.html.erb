@@ -29,60 +29,40 @@
             <div class="card-body">
               <div class="row">
                 <div class="col-md-6">
-                  <p><strong>Status:</strong> 
-                    <span class="badge bg-<%= @jukebox.active? ? 'success' : @jukebox.paused? ? 'warning' : 'secondary' %>">
-                      <%= @jukebox.status.titleize %>
-                    </span>
+                  <p>
+                    <strong>Status:</strong>
+                    <% case @jukebox.live_status %>
+                    <% when :live %>
+                      <span class="badge bg-success">● Live</span>
+                    <% when :paused %>
+                      <span class="badge bg-warning text-dark">● Live (paused)</span>
+                    <% else %>
+                      <span class="badge bg-secondary">Offline</span>
+                    <% end %>
                   </p>
-                  <p><strong>Session ID:</strong> <code><%= @jukebox.session_id %></code></p>
-                  <% if @jukebox.has_password? %>
-                    <p><strong>Guest Password:</strong> <code class="text-primary"><%= @jukebox.guest_password %></code></p>
-                  <% else %>
-                    <p><strong>Guest Password:</strong> <span class="text-muted">None set</span></p>
-                  <% end %>
+                  <p class="text-muted small mb-0">
+                    The jukebox is live while its player is open. Close the player and it
+                    goes offline — your queue &amp; history are kept for next time.
+                  </p>
                 </div>
                 <div class="col-md-6">
-                  <% if @jukebox.started_at %>
-                    <p><strong>Started:</strong> <%= @jukebox.started_at.strftime("%b %d, %Y %l:%M %p") %></p>
-                  <% end %>
-                  <% if @jukebox.ended_at %>
-                    <p><strong>Ended:</strong> <%= @jukebox.ended_at.strftime("%b %d, %Y %l:%M %p") %></p>
-                  <% end %>
-                  <% if @jukebox.current_duration %>
-                    <p><strong>Duration:</strong> <%= distance_of_time_in_words(@jukebox.current_duration) %></p>
+                  <p><strong>Session ID:</strong> <code><%= @jukebox.session_id %></code></p>
+                  <% if @jukebox.has_password? %>
+                    <p><strong>Guest Code:</strong> <code class="text-primary"><%= @jukebox.guest_password %></code></p>
+                  <% else %>
+                    <p><strong>Guest Code:</strong> <span class="text-muted">None set</span></p>
                   <% end %>
                 </div>
               </div>
-              
-              <!-- Action Buttons -->
-              <div class="mt-3">
-                <div class="d-flex flex-wrap gap-2">
-                  <% case @jukebox.status %>
-                  <% when 'inactive' %>
-                    <%= button_to "Start Jukebox", start_jukebox_path(@jukebox), 
-                        method: :post, class: "btn btn-success btn-lg" %>
-                  <% when 'active' %>
-                    <%= button_to "Pause Jukebox", pause_jukebox_path(@jukebox), 
-                        method: :post, class: "btn btn-warning btn-lg" %>
-                  <% when 'paused' %>
-                    <%= button_to "Resume Jukebox", resume_jukebox_path(@jukebox), 
-                        method: :post, class: "btn btn-success btn-lg" %>
-                  <% end %>
-                  
-                  <!-- AJB Player and Guest buttons -->
-                  <%= link_to "Start Jukebox Player", player_jukebox_path(@jukebox), 
-                      class: "btn btn-primary btn-lg", target: "_blank" %>
-                  <%= link_to "Start Jukebox Guest", guest_jukebox_path(@jukebox), 
-                      class: "btn btn-info btn-lg", target: "_blank" %>
-                  
-                  <% if @jukebox.active? || @jukebox.paused? %>
-                    <%= button_to "End Jukebox", end_jukebox_path(@jukebox), 
-                        method: :post, class: "btn btn-danger" %>
-                  <% elsif @jukebox.ended? %>
-                    <%= button_to "Reset Jukebox", reset_jukebox_path(@jukebox), 
-                        method: :post, class: "btn btn-secondary" %>
-                  <% end %>
-                </div>
+
+              <!-- Launch -->
+              <div class="mt-3 d-flex flex-wrap gap-2">
+                <%= link_to player_jukebox_path(@jukebox), class: "btn btn-success btn-lg", target: "_blank" do %>
+                  <i class="fas fa-play me-1"></i> Start Jukebox (Player)
+                <% end %>
+                <%= link_to guest_jukebox_path(@jukebox), class: "btn btn-outline-primary btn-lg", target: "_blank" do %>
+                  <i class="fas fa-users me-1"></i> Open Guest View
+                <% end %>
               </div>
             </div>
           </div>
@@ -93,22 +73,8 @@
               <h5 class="mb-0 theme-text-primary">Settings</h5>
             </div>
             <div class="card-body">
-              <div class="row">
-                <div class="col-md-6">
-                  <p><strong>Crossfade:</strong> <%= @jukebox.crossfade_enabled? ? "Enabled (#{@jukebox.crossfade_duration}ms)" : "Disabled" %></p>
-                  <p><strong>Auto Play:</strong> <%= @jukebox.auto_play? ? "Enabled" : "Disabled" %></p>
-                  <p><strong>Min Queue Length:</strong> <%= @jukebox.min_queue_length %> songs</p>
-                  <p><strong>Queue Refill Level:</strong> <%= @jukebox.queue_refill_level %> songs</p>
-                </div>
-                <div class="col-md-6">
-                  <% if @jukebox.scheduled_start %>
-                    <p><strong>Scheduled Start:</strong> <%= @jukebox.scheduled_start.strftime("%b %d, %Y %l:%M %p") %></p>
-                  <% end %>
-                  <% if @jukebox.scheduled_end %>
-                    <p><strong>Scheduled End:</strong> <%= @jukebox.scheduled_end.strftime("%b %d, %Y %l:%M %p") %></p>
-                  <% end %>
-                </div>
-              </div>
+              <p><strong>Minimum Queue Length:</strong> <%= @jukebox.min_queue_length %> songs</p>
+              <p class="mb-0"><strong>Queue Refill Level:</strong> <%= @jukebox.queue_refill_level %> songs</p>
             </div>
           </div>
         </div>

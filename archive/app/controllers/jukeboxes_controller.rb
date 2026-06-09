@@ -2,8 +2,8 @@ class JukeboxesController < ApplicationController
   require 'base64'
   before_action :authenticate_user!, except: [:guest]
   before_action :require_host!, except: [:guest]
-  before_action :set_jukebox, only: [:show, :edit, :update, :destroy, :start, :pause, :resume, :end, :reset, :player, :guest]
-  before_action :ensure_owner, only: [:edit, :update, :destroy, :start, :pause, :resume, :end, :reset]
+  before_action :set_jukebox, only: [:show, :edit, :update, :destroy, :player, :guest]
+  before_action :ensure_owner, only: [:edit, :update, :destroy]
 
   def index
     @jukeboxes = current_user.jukeboxes.order(created_at: :desc)
@@ -44,31 +44,6 @@ class JukeboxesController < ApplicationController
   def destroy
     @jukebox.destroy
     redirect_to jukeboxes_url, notice: 'Jukebox was successfully deleted.'
-  end
-
-  def start
-    @jukebox.start!
-    redirect_to @jukebox, notice: 'Jukebox started successfully.'
-  end
-
-  def pause
-    @jukebox.pause!
-    redirect_to @jukebox, notice: 'Jukebox paused successfully.'
-  end
-
-  def resume
-    @jukebox.resume!
-    redirect_to @jukebox, notice: 'Jukebox resumed successfully.'
-  end
-
-  def end
-    @jukebox.end!
-    redirect_to @jukebox, notice: 'Jukebox ended successfully.'
-  end
-
-  def reset
-    @jukebox.reset!
-    redirect_to @jukebox, notice: 'Jukebox reset successfully.'
   end
 
   private
