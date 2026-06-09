@@ -112,22 +112,8 @@ class JukeboxesController < ApplicationController
 
   # AJB Player and Guest interfaces
   def player
-    # Generate API token for the logged-in user
-    Rails.logger.error "=== PLAYER ACTION DEBUG ==="
-    Rails.logger.error "Current user: #{current_user&.email}"
-    Rails.logger.error "About to generate token..."
-    
-    if current_user
-      @api_token = generate_api_token_for_user(current_user)
-      Rails.logger.error "Token generated: #{@api_token.present? ? 'YES' : 'NO'}"
-      Rails.logger.error "Token length: #{@api_token&.length || 0}"
-    else
-      Rails.logger.error "No current_user found!"
-      @api_token = nil
-    end
-    
-    Rails.logger.error "Final @api_token: #{@api_token.inspect}"
-    Rails.logger.error "=== END PLAYER ACTION DEBUG ==="
+    # Generate a short-lived API token for the logged-in host's browser player.
+    @api_token = current_user ? generate_api_token_for_user(current_user) : nil
   end
 
   def guest

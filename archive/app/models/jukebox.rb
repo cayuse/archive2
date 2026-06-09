@@ -80,7 +80,7 @@ class Jukebox < ApplicationRecord
 
   def current_duration
     return nil unless started_at
-    ended_at || Time.current - started_at
+    (ended_at || Time.current) - started_at
   end
 
   def enabled_playlists
