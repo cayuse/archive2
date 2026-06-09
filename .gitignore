@@ -94,3 +94,9 @@ player/.env
 
 # Local handoff/notes (not for commit)
 CLAUDE.md
+
+# Python audio-player virtualenv — a build artifact, never commit it.
+# The player's deps come from jukebox/audio_player/requirements.txt
+# (built into the Docker image, or into a venv created on the server).
+jukebox/audio_player/venv/
+**/venv/
