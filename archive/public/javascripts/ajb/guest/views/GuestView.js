@@ -172,16 +172,16 @@ const GuestView = {
               React.createElement('form', { onSubmit: handleSubmit, autoComplete: 'off' },
                 React.createElement('div', { className: 'mb-3' },
                   React.createElement('input', {
-                    type: 'password',
+                    // type=text (not password): this is a shared party code people
+                    // read off a screen/QR, so masking buys nothing and it stops
+                    // password managers (1Password etc.) from hijacking the field.
+                    type: 'text',
                     className: 'form-control',
-                    placeholder: 'Jukebox Password',
+                    placeholder: 'Jukebox Code',
                     value: password,
                     onChange: (e) => setPassword(e.target.value),
                     required: true,
                     disabled: loading,
-                    // This is an ephemeral, shared party code — tell password
-                    // managers to leave it alone (1Password / LastPass / Bitwarden /
-                    // Dashlane) and don't use a "password"-ish field name.
                     name: 'jukebox-access-code',
                     autoComplete: 'off',
                     'data-1p-ignore': 'true',
