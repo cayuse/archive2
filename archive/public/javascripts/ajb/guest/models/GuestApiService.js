@@ -238,4 +238,31 @@ class GuestApiService {
       throw error;
     }
   }
+
+  // Promote a random song already in the queue into the request queue
+  async promoteSong(songId) {
+    try {
+      const queryString = this.buildQueryString();
+      const url = `${this.baseUrl}/promote_song${queryString ? '?' + queryString : ''}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ song_id: songId })
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        return { success: false, message: data.message || `HTTP ${response.status}` };
+      }
+      return { success: true, message: data.message || 'Song promoted' };
+    } catch (error) {
+      console.error('Error promoting song:', error);
+      return { success: false, message: error.message };
+    }
+  }
 }

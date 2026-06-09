@@ -151,6 +151,37 @@ class ApiService {
     }
   }
 
+  // Promote a random song into the request queue
+  async promoteInQueue(songId) {
+    return this._patchQueue(`${this.baseUrl}/queue/${songId}/promote`);
+  }
+
+  // Bump a song to the top so it plays next
+  async playNextInQueue(songId) {
+    return this._patchQueue(`${this.baseUrl}/queue/${songId}/play_next`);
+  }
+
+  async _patchQueue(url) {
+    try {
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Authorization': `Bearer ${this.apiToken}`
+        },
+        credentials: 'same-origin'
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        return { success: false, message: data.message || `HTTP ${response.status}` };
+      }
+      return data;
+    } catch (error) {
+      console.error('Queue action failed:', error);
+      return { success: false, message: error.message };
+    }
+  }
+
   // Update playback status
   async updatePlaybackStatus(status) {
     try {

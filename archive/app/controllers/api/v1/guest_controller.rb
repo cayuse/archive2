@@ -300,6 +300,22 @@ class Api::V1::GuestController < ApplicationController
     end
   end
 
+  # POST /api/v1/guest/:jukebox_id/promote_song
+  # Guests can promote a random (auto-filled) song into the request queue so it
+  # plays sooner. (Guests cannot bump to the very top — that's host-only.)
+  def promote_song
+    queue_item = @jukebox.ajb_queue_items.find_by(song_id: params[:song_id])
+    unless queue_item
+      return render json: { success: false, message: 'Song is not in the queue' }, status: 404
+    end
+
+    queue_item.update!(source: 'requested')
+    broadcast_queue_update(@jukebox)
+    render json: { success: true, message: 'Song promoted' }
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { success: false, message: 'Could not promote song', errors: e.record.errors.full_messages }, status: 422
+  end
+
   private
 
   def authenticate_guest!

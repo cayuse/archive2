@@ -123,6 +123,8 @@ const PlayerView = {
     const handleSkip = () => controller && controller.skip();
     const handleRestart = () => controller && controller.restart();
     const handleRemove = (songId) => controller && controller.removeFromQueue(songId);
+    const handlePromote = (songId) => controller && controller.promoteInQueue(songId);
+    const handlePlayNext = (songId) => controller && controller.playNextInQueue(songId);
 
     const handleVolumeChange = (e) => {
       const volume = parseFloat(e.target.value);
@@ -169,7 +171,7 @@ const PlayerView = {
       ),
       React.createElement('div', { className: 'row mt-3' },
         React.createElement('div', { className: 'col-md-8' },
-          React.createElement(PlayerView.QueuePanel, { queue: state.queue, onRemove: handleRemove }),
+          React.createElement(PlayerView.QueuePanel, { queue: state.queue, onRemove: handleRemove, onPromote: handlePromote, onPlayNext: handlePlayNext }),
           React.createElement(PlayerView.HistoryPanel, { history: state.history })
         ),
         React.createElement('div', { className: 'col-md-4' },
@@ -316,7 +318,7 @@ const PlayerView = {
   },
 
   // Upcoming queue + incoming guest requests, with remove controls.
-  QueuePanel: function({ queue, onRemove }) {
+  QueuePanel: function({ queue, onRemove, onPromote, onPlayNext }) {
     const body = (!queue || queue.length === 0)
       ? React.createElement('p', { className: 'text-muted small mb-0' },
           'Queue is empty — random songs will fill in from the assigned playlists.')
@@ -330,10 +332,20 @@ const PlayerView = {
                 React.createElement('div', { className: 'text-truncate' }, item.song.title),
                 React.createElement('small', { className: 'text-muted' }, item.song.artist || 'Unknown Artist')
               ),
-              React.createElement('div', { className: 'd-flex align-items-center gap-2 flex-shrink-0' },
+              React.createElement('div', { className: 'd-flex align-items-center gap-1 flex-shrink-0' },
                 item.source === 'requested'
                   ? React.createElement('span', { className: 'badge bg-success', title: 'Guest request' }, 'request')
                   : React.createElement('span', { className: 'badge bg-light text-muted', title: 'Auto-filled' }, 'auto'),
+                React.createElement('button', {
+                  className: 'btn btn-sm btn-outline-primary',
+                  title: 'Play next',
+                  onClick: function() { onPlayNext(item.song.id); }
+                }, React.createElement('i', { className: 'fas fa-angles-up' })),
+                item.source !== 'requested' && React.createElement('button', {
+                  className: 'btn btn-sm btn-outline-secondary',
+                  title: 'Move to request queue',
+                  onClick: function() { onPromote(item.song.id); }
+                }, React.createElement('i', { className: 'fas fa-arrow-up' })),
                 React.createElement('button', {
                   className: 'btn btn-sm btn-outline-danger',
                   title: 'Remove from queue',

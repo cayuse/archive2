@@ -268,7 +268,10 @@ const GuestView = {
           })
         ),
         React.createElement('div', { className: 'col-md-6' },
-          React.createElement(GuestView.QueueDisplay, { queue: state.queue })
+          React.createElement(GuestView.QueueDisplay, {
+            queue: state.queue,
+            onPromote: (songId) => controller && controller.promoteSong(songId)
+          })
         )
       )
     );
@@ -333,7 +336,7 @@ const GuestView = {
   },
 
   // Queue Display
-  QueueDisplay: function({ queue }) {
+  QueueDisplay: function({ queue, onPromote }) {
     return React.createElement('div', { className: 'card' },
       React.createElement('div', { className: 'card-header d-flex justify-content-between align-items-center' },
         React.createElement('h6', { className: 'card-title mb-0' }, 'Upcoming Songs'),
@@ -373,6 +376,15 @@ const GuestView = {
                     ),
                     React.createElement('small', { className: 'text-muted', style: { fontSize: '0.75em' } },
                       `#${item.position}`
+                    ),
+                    item.source !== 'requested' && onPromote && React.createElement('button', {
+                      className: 'btn btn-sm btn-outline-primary mt-1',
+                      style: { fontSize: '0.7em' },
+                      title: 'Bump into the request queue',
+                      onClick: () => onPromote(item.song.id)
+                    },
+                      React.createElement('i', { className: 'fas fa-arrow-up' }),
+                      ' Bump'
                     )
                   )
                 )

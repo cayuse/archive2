@@ -128,6 +128,8 @@ Rails.application.routes.draw do
           post :queue, action: :add_to_queue
           delete 'queue/:song_id', action: :remove_from_queue
           patch 'queue/:song_id', action: :move_in_queue
+          patch 'queue/:song_id/promote', action: :promote_in_queue
+          patch 'queue/:song_id/play_next', action: :play_next_in_queue
           post :playback_status
         end
       end
@@ -142,6 +144,7 @@ Rails.application.routes.draw do
         get 'history', to: 'guest#history'
         get 'search_songs', to: 'guest#search_songs'
         post 'request_song', to: 'guest#request_song'
+        post 'promote_song', to: 'guest#promote_song'
       end
     end
   end

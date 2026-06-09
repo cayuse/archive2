@@ -209,6 +209,17 @@ class GuestController {
     }
   }
 
+  // Promote a random queued song into the request queue
+  async promoteSong(songId) {
+    const result = await this.apiService.promoteSong(songId);
+    if (result.success) {
+      await this.updateQueue();
+    } else {
+      this.state.setError(result.message || 'Could not promote song');
+    }
+    return result;
+  }
+
   // Update play history
   async loadHistory() {
     try {

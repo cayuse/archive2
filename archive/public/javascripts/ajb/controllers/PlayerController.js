@@ -193,6 +193,20 @@ class PlayerController {
     return result;
   }
 
+  async promoteInQueue(songId) {
+    const result = await this.apiService.promoteInQueue(songId);
+    if (result.success) await this.loadQueue();
+    else this.notifyError(result.message || 'Could not promote song');
+    return result;
+  }
+
+  async playNextInQueue(songId) {
+    const result = await this.apiService.playNextInQueue(songId);
+    if (result.success) await this.loadQueue();
+    else this.notifyError(result.message || 'Could not move song');
+    return result;
+  }
+
   async loadHistory() {
     try {
       const result = await this.apiService.getHistory();

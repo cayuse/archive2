@@ -3,7 +3,7 @@ class Api::V1::JukeboxesController < ApplicationController
 
   skip_before_action :verify_authenticity_token
   before_action :authenticate_api_user!
-  before_action :set_jukebox, only: [:status, :queue, :current_song, :playback_info, :history, :add_to_queue, :remove_from_queue, :move_in_queue, :playback_status, :next_song]
+  before_action :set_jukebox, only: [:status, :queue, :current_song, :playback_info, :history, :add_to_queue, :remove_from_queue, :move_in_queue, :promote_in_queue, :play_next_in_queue, :playback_status, :next_song]
 
   def status
     render json: {
@@ -138,6 +138,35 @@ class Api::V1::JukeboxesController < ApplicationController
     queue_item.update!(position: new_position)
     broadcast_queue_update(@jukebox)
     render json: { success: true, message: 'Song moved in queue' }
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { success: false, message: 'Could not move song', errors: e.record.errors.full_messages }, status: 422
+  end
+
+  # Promote a random (auto-filled) item into the requested queue so it jumps
+  # ahead of the remaining random songs.
+  def promote_in_queue
+    queue_item = @jukebox.ajb_queue_items.find_by(song_id: params[:song_id])
+    return render json: { success: false, message: 'Song not found in queue' }, status: 404 unless queue_item
+
+    queue_item.update!(source: 'requested')
+    broadcast_queue_update(@jukebox)
+    render json: { success: true, message: 'Song promoted to the request queue' }
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { success: false, message: 'Could not promote song', errors: e.record.errors.full_messages }, status: 422
+  end
+
+  # Host party trick: bump a song to the very top so it plays next. Make it a
+  # requested item at position 1, shifting everything else down, atomically.
+  def play_next_in_queue
+    queue_item = @jukebox.ajb_queue_items.find_by(song_id: params[:song_id])
+    return render json: { success: false, message: 'Song not found in queue' }, status: 404 unless queue_item
+
+    @jukebox.with_lock do
+      @jukebox.ajb_queue_items.where.not(id: queue_item.id).update_all('position = position + 1')
+      queue_item.update!(source: 'requested', position: 1)
+    end
+    broadcast_queue_update(@jukebox)
+    render json: { success: true, message: 'Song will play next' }
   rescue ActiveRecord::RecordInvalid => e
     render json: { success: false, message: 'Could not move song', errors: e.record.errors.full_messages }, status: 422
   end
