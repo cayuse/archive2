@@ -1,6 +1,7 @@
 class JukeboxesController < ApplicationController
   require 'base64'
   before_action :authenticate_user!, except: [:guest]
+  before_action :require_host!, except: [:guest]
   before_action :set_jukebox, only: [:show, :edit, :update, :destroy, :start, :pause, :resume, :end, :reset, :player, :guest]
   before_action :ensure_owner, only: [:edit, :update, :destroy, :start, :pause, :resume, :end, :reset]
 
@@ -79,6 +80,15 @@ class JukeboxesController < ApplicationController
   def ensure_owner
     unless @jukebox.owner == current_user
       redirect_to jukeboxes_path, alert: 'You can only manage your own jukeboxes.'
+    end
+  end
+
+  # Hosting a jukebox is a moderator+ capability (matches Upload/Maintenance).
+  # Change this single check to adjust who can host (e.g. allow all users, or
+  # require admin, or swap in a per-user capability flag).
+  def require_host!
+    unless current_user&.moderator?
+      redirect_to root_path, alert: 'Hosting a jukebox requires moderator access.'
     end
   end
 

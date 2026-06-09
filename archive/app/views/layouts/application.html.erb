@@ -75,6 +75,11 @@
               </li>
               <% if current_user.moderator? %>
                 <li class="nav-item">
+                  <%= link_to "Jukeboxes", jukeboxes_path, class: "nav-link nav-btn" %>
+                </li>
+              <% end %>
+              <% if current_user.moderator? %>
+                <li class="nav-item">
                   <%= link_to "Upload Song", upload_path, class: "nav-link nav-btn" %>
                 </li>
                 <li class="nav-item">
