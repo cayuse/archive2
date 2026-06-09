@@ -70,6 +70,7 @@ const GuestView = {
               volume: newState.volume,
               queue: newState.queue,
               totalQueueCount: newState.totalQueueCount,
+              history: newState.history,
               jukeboxName: newState.jukeboxName,
               jukeboxStatus: newState.jukeboxStatus,
               searchResults: newState.searchResults,
@@ -111,6 +112,7 @@ const GuestView = {
     // Handle view switching
     const switchToNowPlaying = () => controller && controller.switchToNowPlaying();
     const switchToRequestSongs = () => controller && controller.switchToRequestSongs();
+    const switchToHistory = () => controller && controller.switchToHistory();
 
     if (!controller) {
       return React.createElement('div', { className: 'text-center p-4' },
@@ -133,11 +135,14 @@ const GuestView = {
       React.createElement(GuestView.Header, {
         currentView: state.currentView,
         onSwitchToNowPlaying: switchToNowPlaying,
-        onSwitchToRequestSongs: switchToRequestSongs
+        onSwitchToRequestSongs: switchToRequestSongs,
+        onSwitchToHistory: switchToHistory
       }),
-      state.currentView === 'now-playing' ?
-        React.createElement(GuestView.NowPlayingView, { controller, state }) :
-        React.createElement(GuestView.RequestSongsView, { controller, state }),
+      (state.currentView === 'now-playing'
+        ? React.createElement(GuestView.NowPlayingView, { controller, state })
+        : state.currentView === 'play-history'
+          ? React.createElement(GuestView.HistoryView, { state })
+          : React.createElement(GuestView.RequestSongsView, { controller, state })),
       state.error && React.createElement(GuestView.ErrorMessage, {
         error: state.error,
         onDismiss: () => controller && controller.state.clearError()
@@ -192,7 +197,7 @@ const GuestView = {
   },
 
   // Header with navigation
-  Header: function({ currentView, onSwitchToNowPlaying, onSwitchToRequestSongs }) {
+  Header: function({ currentView, onSwitchToNowPlaying, onSwitchToRequestSongs, onSwitchToHistory }) {
     return React.createElement('div', { className: 'guest-header mb-4' },
       React.createElement('nav', { className: 'navbar navbar-expand-lg navbar-dark bg-primary' },
         React.createElement('div', { className: 'container-fluid' },
@@ -205,10 +210,42 @@ const GuestView = {
             React.createElement('button', {
               className: `nav-link btn btn-link ${currentView === 'request-songs' ? 'active' : ''}`,
               onClick: onSwitchToRequestSongs
-            }, 'Request Songs')
+            }, 'Request Songs'),
+            React.createElement('button', {
+              className: `nav-link btn btn-link ${currentView === 'play-history' ? 'active' : ''}`,
+              onClick: onSwitchToHistory
+            }, 'Play History')
           )
         )
       )
+    );
+  },
+
+  // Play History View — recently played songs for this jukebox.
+  HistoryView: function({ state }) {
+    const history = state.history || [];
+    const body = history.length === 0
+      ? React.createElement('p', { className: 'text-muted text-center' }, 'Nothing has played yet.')
+      : React.createElement('ul', { className: 'list-group' },
+          history.map(function(item) {
+            return React.createElement('li', {
+              key: item.id,
+              className: 'list-group-item d-flex justify-content-between align-items-center'
+            },
+              React.createElement('div', { className: 'text-truncate me-2' },
+                React.createElement('div', { className: 'text-truncate' }, item.song.title),
+                React.createElement('small', { className: 'text-muted' }, item.song.artist || 'Unknown Artist')
+              ),
+              item.source === 'requested'
+                ? React.createElement('span', { className: 'badge bg-success flex-shrink-0', title: 'Guest request' }, 'request')
+                : React.createElement('span', { className: 'badge bg-light text-muted flex-shrink-0', title: 'Auto-filled' }, 'auto')
+            );
+          })
+        );
+
+    return React.createElement('div', { className: 'history-view' },
+      React.createElement('h5', { className: 'mb-3' }, 'Play History'),
+      body
     );
   },
 

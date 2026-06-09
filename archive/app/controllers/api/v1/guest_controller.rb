@@ -144,6 +144,30 @@ class Api::V1::GuestController < ApplicationController
     }
   end
 
+  # GET /api/v1/guest/:jukebox_id/history
+  # Recently played songs for this jukebox (most recent first).
+  def history
+    played = AjbPlayedSong.recently_played_for_jukebox(@jukebox, 50)
+                          .includes(song: [:artist, :album])
+    render json: {
+      success: true,
+      history: played.map { |p|
+        {
+          id: p.id,
+          source: p.source,
+          played_at: p.played_at&.iso8601,
+          song: {
+            id: p.song.id,
+            title: p.song.title,
+            artist: p.song.artist&.name,
+            album: p.song.album&.title,
+            duration: p.song.duration
+          }
+        }
+      }
+    }
+  end
+
   # GET /api/v1/guest/:jukebox_id/search_songs
   def search_songs
     @jukebox = Jukebox.find_by(id: params[:jukebox_id])

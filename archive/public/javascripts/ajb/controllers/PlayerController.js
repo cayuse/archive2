@@ -11,13 +11,15 @@ class PlayerController {
 
     this.isLoading = false;
     this.queue = [];
+    this.history = [];
     this.cableSubscription = null;
 
     this.setupEventHandlers();
     this.startTimeUpdateLoop();
 
-    // Show the host the live queue (incl. guest requests) and keep it current.
+    // Show the host the live queue (incl. guest requests) + recent history.
     this.loadQueue();
+    this.loadHistory();
     this.subscribeRealtime();
   }
 
@@ -90,7 +92,8 @@ class PlayerController {
       if (result.success && result.song) {
         const song = result.song;
         this.playbackState.setCurrentSong(song);
-        this.loadQueue(); // the consumed track left the queue
+        this.loadQueue();   // the consumed track left the queue
+        this.loadHistory(); // ...and became a history entry
 
         const loaded = await this.audioEngine.loadAndPlay(song);
         if (loaded) {
@@ -190,6 +193,22 @@ class PlayerController {
     return result;
   }
 
+  async loadHistory() {
+    try {
+      const result = await this.apiService.getHistory();
+      if (result.success) {
+        this.history = result.history || [];
+        this.notifyHistoryChange();
+      }
+    } catch (error) {
+      console.warn('Failed to load history:', error.message);
+    }
+  }
+
+  notifyHistoryChange() {
+    if (this.onHistoryChange) this.onHistoryChange(this.history);
+  }
+
   // Live queue updates (a guest request / consumed track repaints the list).
   subscribeRealtime() {
     if (!this.sessionId || !(window.App && window.App.cable)) return;
@@ -197,7 +216,10 @@ class PlayerController {
       { channel: 'JukeboxChannel', session_id: this.sessionId },
       {
         received: (message) => {
-          if (message && message.type === 'queue_update') this.loadQueue();
+          if (message && message.type === 'queue_update') {
+            this.loadQueue();
+            this.loadHistory(); // a consumed track became a history entry
+          }
         }
       }
     );

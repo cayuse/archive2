@@ -3,7 +3,7 @@ class Api::V1::JukeboxesController < ApplicationController
 
   skip_before_action :verify_authenticity_token
   before_action :authenticate_api_user!
-  before_action :set_jukebox, only: [:status, :queue, :current_song, :playback_info, :add_to_queue, :remove_from_queue, :move_in_queue, :playback_status, :next_song]
+  before_action :set_jukebox, only: [:status, :queue, :current_song, :playback_info, :history, :add_to_queue, :remove_from_queue, :move_in_queue, :playback_status, :next_song]
 
   def status
     render json: {
@@ -187,6 +187,31 @@ class Api::V1::JukeboxesController < ApplicationController
         volume: @jukebox.volume || 0.8,
         crossfade_duration: @jukebox.crossfade_duration || 3000,
         last_update: @jukebox.last_status_update&.iso8601
+      }
+    }
+  end
+
+  # GET /api/v1/jukeboxes/:id/history
+  # Recently played songs for THIS jukebox (most recent first). Scoped by
+  # jukebox so multiple jukeboxes keep independent histories.
+  def history
+    played = AjbPlayedSong.recently_played_for_jukebox(@jukebox, 50)
+                          .includes(song: [:artist, :album])
+    render json: {
+      success: true,
+      history: played.map { |p|
+        {
+          id: p.id,
+          source: p.source,
+          played_at: p.played_at&.iso8601,
+          song: {
+            id: p.song.id,
+            title: p.song.title,
+            artist: p.song.artist&.name,
+            album: p.song.album&.title,
+            duration: p.song.duration
+          }
+        }
       }
     }
   end
@@ -382,7 +407,7 @@ class Api::V1::JukeboxesController < ApplicationController
   # Read-only actions may be reached on a public jukebox by any authenticated API
   # user; anything that mutates the jukebox or its queue is owner-only. (Rendering
   # in a before_action halts the action chain.)
-  READ_ONLY_ACTIONS = %w[status queue current_song playback_info].freeze
+  READ_ONLY_ACTIONS = %w[status queue current_song playback_info history].freeze
 
   def set_jukebox
     @jukebox = Jukebox.find(params[:id])

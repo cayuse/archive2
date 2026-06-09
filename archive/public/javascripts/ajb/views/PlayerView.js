@@ -12,7 +12,8 @@ const PlayerView = {
       volume: 0.8,
       isLoading: false,
       error: null,
-      queue: []
+      queue: [],
+      history: []
     });
 
     const [controller, setController] = React.useState(null);
@@ -64,6 +65,10 @@ const PlayerView = {
 
           playerController.onQueueChange = (queue) => {
             setState(prev => ({ ...prev, queue }));
+          };
+
+          playerController.onHistoryChange = (history) => {
+            setState(prev => ({ ...prev, history }));
           };
 
           console.log('🔍 Setting controller in state...');
@@ -164,7 +169,8 @@ const PlayerView = {
       ),
       React.createElement('div', { className: 'row mt-3' },
         React.createElement('div', { className: 'col-md-8' },
-          React.createElement(PlayerView.QueuePanel, { queue: state.queue, onRemove: handleRemove })
+          React.createElement(PlayerView.QueuePanel, { queue: state.queue, onRemove: handleRemove }),
+          React.createElement(PlayerView.HistoryPanel, { history: state.history })
         ),
         React.createElement('div', { className: 'col-md-4' },
           React.createElement(PlayerView.JoinPanel)
@@ -344,6 +350,35 @@ const PlayerView = {
           'Up Next ',
           (queue && queue.length > 0) && React.createElement('span', { className: 'badge bg-secondary' }, queue.length)
         ),
+        body
+      )
+    );
+  },
+
+  // Recently played songs for this jukebox (read-only, most recent first).
+  HistoryPanel: function({ history }) {
+    const body = (!history || history.length === 0)
+      ? React.createElement('p', { className: 'text-muted small mb-0' }, 'Nothing has played yet.')
+      : React.createElement('ul', { className: 'list-group list-group-flush' },
+          history.map(function(item) {
+            return React.createElement('li', {
+              key: item.id,
+              className: 'list-group-item d-flex justify-content-between align-items-center px-0'
+            },
+              React.createElement('div', { className: 'text-truncate me-2' },
+                React.createElement('div', { className: 'text-truncate' }, item.song.title),
+                React.createElement('small', { className: 'text-muted' }, item.song.artist || 'Unknown Artist')
+              ),
+              item.source === 'requested'
+                ? React.createElement('span', { className: 'badge bg-success flex-shrink-0', title: 'Guest request' }, 'request')
+                : React.createElement('span', { className: 'badge bg-light text-muted flex-shrink-0', title: 'Auto-filled' }, 'auto')
+            );
+          })
+        );
+
+    return React.createElement('div', { className: 'card mb-3' },
+      React.createElement('div', { className: 'card-body' },
+        React.createElement('h6', { className: 'card-title' }, 'Play History'),
         body
       )
     );

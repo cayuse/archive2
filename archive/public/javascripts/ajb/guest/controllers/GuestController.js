@@ -97,6 +97,7 @@ class GuestController {
       }
       case 'queue_update':
         this.updateQueue();
+        this.loadHistory(); // a consumed track became a history entry
         break;
     }
   }
@@ -208,6 +209,18 @@ class GuestController {
     }
   }
 
+  // Update play history
+  async loadHistory() {
+    try {
+      const result = await this.apiService.getHistory();
+      if (result.success) {
+        this.state.setHistory(result.history || []);
+      }
+    } catch (error) {
+      console.warn('Failed to load history:', error.message);
+    }
+  }
+
   // Navigation
   switchToNowPlaying() {
     this.state.setView('now-playing');
@@ -215,6 +228,11 @@ class GuestController {
 
   switchToRequestSongs() {
     this.state.setView('request-songs');
+  }
+
+  switchToHistory() {
+    this.loadHistory();
+    this.state.setView('play-history');
   }
 
   // Cleanup

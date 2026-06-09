@@ -105,6 +105,32 @@ class GuestApiService {
     }
   }
 
+  // Get recently played songs for this jukebox
+  async getHistory() {
+    try {
+      const queryString = this.buildQueryString();
+      const url = `${this.baseUrl}/history${queryString ? '?' + queryString : ''}`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return { success: true, history: data.history };
+    } catch (error) {
+      console.error('Error getting history:', error);
+      return { success: false, message: error.message };
+    }
+  }
+
   // Get playback info (combined status)
   async getPlaybackInfo() {
     try {

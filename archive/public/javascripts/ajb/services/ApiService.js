@@ -61,6 +61,25 @@ class ApiService {
     }
   }
 
+  // Get recently played songs for this jukebox
+  async getHistory() {
+    try {
+      const response = await fetch(`${this.baseUrl}/history`, {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Authorization': `Bearer ${this.apiToken}`
+        },
+        credentials: 'same-origin'
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting history:', error);
+      return { success: false, message: error.message };
+    }
+  }
+
   // Get jukebox status
   async getStatus() {
     try {
