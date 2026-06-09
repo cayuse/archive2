@@ -222,7 +222,12 @@ class PlayerController {
       const result = await this.apiService.getHistory(page, this.historyPerPage);
       if (result.success) {
         const items = result.history || [];
-        this.history = reset ? items : this.history.concat(items);
+        if (reset) {
+          this.history = items;
+        } else {
+          const known = new Set(this.history.map(h => h.id));
+          this.history = this.history.concat(items.filter(h => !known.has(h.id)));
+        }
         this.historyPage = page;
         this.historyHasMore = result.pagination ? !!result.pagination.has_more : false;
         this.notifyHistoryChange();

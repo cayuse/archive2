@@ -238,7 +238,12 @@ class GuestController {
       const result = await this.apiService.getHistory(page, this.historyPerPage);
       if (result.success) {
         const items = result.history || [];
-        this.historyItems = reset ? items : this.historyItems.concat(items);
+        if (reset) {
+          this.historyItems = items;
+        } else {
+          const known = new Set(this.historyItems.map(h => h.id));
+          this.historyItems = this.historyItems.concat(items.filter(h => !known.has(h.id)));
+        }
         this.historyPage = page;
         this.historyHasMore = result.pagination ? !!result.pagination.has_more : false;
         this.state.setHistory(this.historyItems, this.historyHasMore);
