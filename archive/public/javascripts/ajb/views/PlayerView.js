@@ -366,10 +366,7 @@ const PlayerView = {
 
     return React.createElement('div', { className: 'card mb-3' },
       React.createElement('div', { className: 'card-body' },
-        React.createElement('h6', { className: 'card-title' },
-          'Up Next ',
-          (queue && queue.length > 0) && React.createElement('span', { className: 'badge bg-secondary' }, queue.length)
-        ),
+        React.createElement('h6', { className: 'card-title' }, 'Up Next'),
         body
       )
     );
