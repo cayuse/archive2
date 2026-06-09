@@ -1,4 +1,6 @@
 class Api::V1::GuestController < ApplicationController
+  include JukeboxBroadcasts
+
   skip_before_action :verify_authenticity_token
   before_action :authenticate_guest!   # Enforce jukebox guest-password auth
   before_action :set_jukebox           # Load @jukebox (404s if missing)
@@ -242,7 +244,8 @@ class Api::V1::GuestController < ApplicationController
         song: song,
         source: 'requested'
       )
-      
+      broadcast_queue_update(@jukebox)
+
       render json: {
         success: true,
         message: 'Song requested successfully',

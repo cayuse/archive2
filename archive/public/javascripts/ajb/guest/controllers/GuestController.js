@@ -1,12 +1,14 @@
 // Guest Controller - Business logic for the guest interface
 class GuestController {
-  constructor(jukeboxId, password = null) {
+  constructor(jukeboxId, password = null, sessionId = null) {
     this.jukeboxId = jukeboxId;
     this.password = password;
+    this.sessionId = sessionId;
     this.apiService = new GuestApiService(jukeboxId, password);
     this.state = new GuestState();
     this.updateInterval = null;
-    
+    this.cableSubscription = null;
+
     this.setupEventHandlers();
   }
 
@@ -44,9 +46,11 @@ class GuestController {
           volume: result.jukebox.volume || 0.8
         });
         
-        // Start periodic updates
+        // Live updates over ActionCable, with a slow poll as a safety net.
+        this.subscribeRealtime();
+        this.refreshNow();
         this.startPeriodicUpdates();
-        
+
         return { success: true };
       }
     } catch (error) {
@@ -57,7 +61,45 @@ class GuestController {
     }
   }
 
-  // Start periodic updates for real-time data
+  // Subscribe to live jukebox updates over ActionCable. Now-playing changes and
+  // queue changes are pushed instantly; the periodic poll below is only a
+  // fallback for when the socket is unavailable or a message is missed.
+  subscribeRealtime() {
+    if (!this.sessionId || !(window.App && window.App.cable)) {
+      console.warn('Live updates unavailable; relying on periodic polling.');
+      return;
+    }
+    this.cableSubscription = window.App.cable.subscriptions.create(
+      { channel: 'JukeboxChannel', session_id: this.sessionId },
+      {
+        received: (message) => this.handleRealtimeMessage(message),
+        connected: () => console.log('Jukebox live updates connected'),
+        disconnected: () => console.log('Jukebox live updates disconnected')
+      }
+    );
+  }
+
+  handleRealtimeMessage(message) {
+    if (!message || !message.type) return;
+    switch (message.type) {
+      case 'playback_status_update': {
+        const d = message.data || {};
+        this.state.setCurrentSong(d.current_song || null, d.position || 0, d.is_playing || false);
+        break;
+      }
+      case 'queue_update':
+        this.updateQueue();
+        break;
+    }
+  }
+
+  // One-shot refresh used right after auth so the UI paints immediately.
+  async refreshNow() {
+    await this.updatePlaybackInfo();
+    await this.updateQueue();
+  }
+
+  // Slow safety-net poll (live updates do the heavy lifting via subscribeRealtime).
   startPeriodicUpdates() {
     if (this.updateInterval) {
       clearInterval(this.updateInterval);
@@ -66,11 +108,11 @@ class GuestController {
     this.updateInterval = setInterval(async () => {
       try {
         await this.updatePlaybackInfo();
-        await this.updateQueue(); // Also update queue periodically
+        await this.updateQueue();
       } catch (error) {
         console.warn('Periodic update failed:', error.message);
       }
-    }, 2000); // Update every 2 seconds
+    }, 15000); // Fallback refresh every 15s
   }
 
   stopPeriodicUpdates() {
@@ -105,8 +147,9 @@ class GuestController {
         this.state.setQueue(result.queue, result.total_count);
       }
     } catch (error) {
-      console.error('Failed to update queue:', error.message);
-      this.state.setError('Failed to load queue');
+      // Don't surface a global error from the background poll — it would repaint
+      // (and re-show) the error banner repeatedly. Just log it.
+      console.warn('Failed to update queue:', error.message);
     }
   }
 
@@ -169,6 +212,10 @@ class GuestController {
   // Cleanup
   destroy() {
     this.stopPeriodicUpdates();
+    if (this.cableSubscription) {
+      this.cableSubscription.unsubscribe();
+      this.cableSubscription = null;
+    }
   }
 
   // Get current state

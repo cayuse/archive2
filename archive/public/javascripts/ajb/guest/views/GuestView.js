@@ -40,7 +40,8 @@ const GuestView = {
       if (window.AJB_GUEST_CONFIG && window.AJB_GUEST_CONFIG.jukeboxId) {
         const guestController = new GuestController(
           window.AJB_GUEST_CONFIG.jukeboxId,
-          window.AJB_GUEST_CONFIG.password
+          window.AJB_GUEST_CONFIG.password,
+          window.AJB_GUEST_CONFIG.sessionId
         );
         
         setController(guestController);

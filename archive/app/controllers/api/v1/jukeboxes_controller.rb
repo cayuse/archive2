@@ -1,4 +1,6 @@
 class Api::V1::JukeboxesController < ApplicationController
+  include JukeboxBroadcasts
+
   skip_before_action :verify_authenticity_token
   before_action :authenticate_api_user!
   before_action :set_jukebox, only: [:status, :queue, :current_song, :playback_info, :add_to_queue, :remove_from_queue, :move_in_queue, :playback_status, :next_song]
@@ -88,6 +90,7 @@ class Api::V1::JukeboxesController < ApplicationController
     end
 
     queue_item = @jukebox.ajb_queue_items.create!(song: song, source: source)
+    broadcast_queue_update(@jukebox)
 
     render json: {
       success: true,
@@ -116,6 +119,7 @@ class Api::V1::JukeboxesController < ApplicationController
     
     if queue_item
       queue_item.destroy
+      broadcast_queue_update(@jukebox)
       render json: { success: true, message: 'Song removed from queue' }
     else
       render json: { success: false, message: 'Song not found in queue' }, status: 404
@@ -132,6 +136,7 @@ class Api::V1::JukeboxesController < ApplicationController
     end
 
     queue_item.update!(position: new_position)
+    broadcast_queue_update(@jukebox)
     render json: { success: true, message: 'Song moved in queue' }
   rescue ActiveRecord::RecordInvalid => e
     render json: { success: false, message: 'Could not move song', errors: e.record.errors.full_messages }, status: 422
@@ -154,14 +159,9 @@ class Api::V1::JukeboxesController < ApplicationController
       @jukebox.update!(update_params)
       Rails.logger.info "Jukebox update successful"
       
-      # Broadcast status update to all connected clients via WebSocket (if ActionCable is available)
-      begin
-        broadcast_status_update
-      rescue => e
-        Rails.logger.warn "WebSocket broadcast failed: #{e.message}"
-        # Don't fail the request if broadcast fails
-      end
-      
+      # Push the new now-playing state to subscribed guests.
+      broadcast_playback_update(@jukebox)
+
       render json: { success: true, message: 'Playback status updated' }
     rescue ActiveRecord::RecordInvalid => e
       Rails.logger.error "Playback status update failed: #{e.message}"
@@ -304,6 +304,7 @@ class Api::V1::JukeboxesController < ApplicationController
     end
 
     if song
+      broadcast_queue_update(@jukebox)
       render json: {
         success: true,
         song: {
@@ -392,24 +393,6 @@ class Api::V1::JukeboxesController < ApplicationController
     unless owner || public_read
       render json: { success: false, message: 'Access denied' }, status: 403
     end
-  end
-
-  def broadcast_status_update
-    # Broadcast to WebSocket clients
-    ActionCable.server.broadcast(
-      "jukebox_#{@jukebox.session_id}",
-      {
-        type: 'playback_status_update',
-        data: {
-          current_song_id: @jukebox.current_song_id,
-          position: @jukebox.current_position,
-          is_playing: @jukebox.is_playing,
-          volume: @jukebox.volume,
-          crossfade_duration: @jukebox.crossfade_duration,
-          timestamp: Time.current.iso8601
-        }
-      }
-    )
   end
 
 end
