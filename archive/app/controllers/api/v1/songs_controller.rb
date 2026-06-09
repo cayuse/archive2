@@ -8,7 +8,12 @@ class Api::V1::SongsController < ApplicationController
   DEFAULT_SORT_COLUMN = 'created_at'
 
   skip_before_action :verify_authenticity_token
-  skip_before_action :authenticate_encrypted_token_user!, only: []  # Require auth for all actions
+  # Media reads (show/download/stream) are fetched by the browser player's
+  # <audio> element, which CANNOT send a Bearer header — so for those actions we
+  # accept a logged-in session OR an API token (see authenticate_media_request!).
+  # Every other action stays strictly token-authenticated.
+  skip_before_action :authenticate_encrypted_token_user!, only: [:show, :download, :stream]
+  before_action :authenticate_media_request!, only: [:show, :download, :stream]
   before_action :set_song, only: [:show, :download, :stream]
   before_action :ensure_upload_permission!, only: [:bulk_upload, :bulk_create, :bulk_update, :direct_upload, :create_from_blob]
 
@@ -233,6 +238,14 @@ class Api::V1::SongsController < ApplicationController
   end
 
   private
+
+  # Allow media reads from either a logged-in browser session (the player's
+  # <audio> element sends the session cookie) or a valid API token (external
+  # clients). Falls through to the normal token check when there's no session.
+  def authenticate_media_request!
+    return if current_user
+    authenticate_encrypted_token_user!
+  end
 
   def set_song
     @song = Song.includes(:artist, :album, :genre).find(params[:id])
