@@ -70,79 +70,39 @@
         </div>
       </div>
 
-      <div class="card mt-4">
-        <div class="card-header">
-          <h5 class="mb-0 theme-text-primary">Scheduling</h5>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-6">
-              <div class="mb-3">
-                <%= form.label :scheduled_start, "Scheduled Start", class: "form-label" %>
-                <%= form.datetime_local_field :scheduled_start, class: "form-control" %>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="mb-3">
-                <%= form.label :scheduled_end, "Scheduled End", class: "form-label" %>
-                <%= form.datetime_local_field :scheduled_end, class: "form-control" %>
-              </div>
-            </div>
-          </div>
-          <div class="form-text">
-            Optional scheduling. The jukebox will be available for guests during this time window.
-          </div>
-        </div>
-      </div>
     </div>
 
     <div class="col-md-4">
       <div class="card">
-        <div class="card-header">
-          <h5 class="mb-0 theme-text-primary">Audio Settings</h5>
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 theme-text-primary">Advanced</h5>
+          <button class="btn btn-sm btn-outline-secondary" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#advancedSettings"
+                  aria-expanded="false" aria-controls="advancedSettings">
+            Show
+          </button>
         </div>
-        <div class="card-body">
-          <div class="mb-3">
-            <div class="form-check">
-              <%= form.check_box :crossfade_enabled, class: "form-check-input" %>
-              <%= form.label :crossfade_enabled, "Enable Crossfade", class: "form-check-label" %>
-            </div>
-            <div class="form-text">
-              Smooth transitions between songs.
-            </div>
-          </div>
+        <div class="collapse" id="advancedSettings">
+          <div class="card-body">
+            <%# Crossfade isn't implemented; keep a valid value so model validation passes. %>
+            <%= form.hidden_field :crossfade_duration, value: (jukebox.crossfade_duration.presence || 3000) %>
 
-          <div class="mb-3">
-            <%= form.label :crossfade_duration, "Crossfade Duration (ms)", class: "form-label" %>
-            <%= form.number_field :crossfade_duration, class: "form-control", min: 0, max: 30000, step: 100 %>
-            <div class="form-text">
-              Duration of crossfade transition (0-30000ms).
+            <div class="mb-3">
+              <%= form.label :min_queue_length, "Minimum Queue Length", class: "form-label" %>
+              <%= form.number_field :min_queue_length, class: "form-control", min: 1, step: 1,
+                    value: (jukebox.min_queue_length.presence || 5) %>
+              <div class="form-text">
+                Keep at least this many songs queued (auto-filled from your playlists).
+              </div>
             </div>
-          </div>
 
-          <div class="mb-3">
-            <div class="form-check">
-              <%= form.check_box :auto_play, class: "form-check-input" %>
-              <%= form.label :auto_play, "Auto Play Next Song", class: "form-check-label" %>
-            </div>
-            <div class="form-text">
-              Automatically play the next song when current song ends.
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <%= form.label :min_queue_length, "Minimum Queue Length", class: "form-label" %>
-            <%= form.number_field :min_queue_length, class: "form-control", min: 1, step: 1 %>
-            <div class="form-text">
-              Minimum number of songs to keep in the queue at all times.
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <%= form.label :queue_refill_level, "Queue Refill Level", class: "form-label" %>
-            <%= form.number_field :queue_refill_level, class: "form-control", min: 1, step: 1 %>
-            <div class="form-text">
-              When queue drops below this level, automatically add random songs.
+            <div class="mb-3">
+              <%= form.label :queue_refill_level, "Queue Refill Level", class: "form-label" %>
+              <%= form.number_field :queue_refill_level, class: "form-control", min: 1, step: 1,
+                    value: (jukebox.queue_refill_level.presence || 10) %>
+              <div class="form-text">
+                When the queue drops below this, top it up with random songs.
+              </div>
             </div>
           </div>
         </div>
@@ -158,7 +118,11 @@
             <div class="form-text mb-2">
               Choose playlists for random song generation. (Optional)
             </div>
-            <% Playlist.publicly_visible.order(:name).each do |playlist| %>
+            <% available_playlists = Playlist.where("user_id = ? OR is_public = ?", current_user.id, true).order(:name) %>
+            <% if available_playlists.none? %>
+              <p class="text-muted small mb-0">No playlists yet — create one under <strong>Playlists</strong> to give the jukebox music to auto-fill from.</p>
+            <% end %>
+            <% available_playlists.each do |playlist| %>
               <div class="form-check">
                 <%= check_box_tag "jukebox[playlist_ids][]", playlist.id, 
                     jukebox.playlist_ids.include?(playlist.id), 
