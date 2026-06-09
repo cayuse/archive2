@@ -28,6 +28,22 @@ class PlayerController {
     this.loadHistory();
     this.subscribeRealtime();
     this.startHeartbeat();
+    this.setupVisibilityRecovery();
+  }
+
+  // When the host's screen/tab comes back (unlocked phone, refocused window),
+  // recover from a playback stall automatically. iOS Safari frequently defers
+  // audio that was asked to start while the screen was locked — without this
+  // the host has to manually stop/start to get sound back.
+  setupVisibilityRecovery() {
+    this._onVisible = () => {
+      if (document.visibilityState === 'visible' || document.hasFocus()) {
+        this.audioEngine.nudgeIfStalled();
+      }
+    };
+    document.addEventListener('visibilitychange', this._onVisible);
+    window.addEventListener('focus', this._onVisible);
+    window.addEventListener('pageshow', this._onVisible);
   }
 
   // Heartbeat: while this player is open it reports status periodically (even
@@ -366,6 +382,12 @@ class PlayerController {
     if (this.cableSubscription) {
       this.cableSubscription.unsubscribe();
       this.cableSubscription = null;
+    }
+    if (this._onVisible) {
+      document.removeEventListener('visibilitychange', this._onVisible);
+      window.removeEventListener('focus', this._onVisible);
+      window.removeEventListener('pageshow', this._onVisible);
+      this._onVisible = null;
     }
   }
 }

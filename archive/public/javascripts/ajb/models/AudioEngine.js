@@ -7,6 +7,15 @@ class AudioEngine {
     this.isPaused = false;
     this.isStopped = true;
     this.currentVolume = 0.8; // Persistent volume setting (default 80%)
+
+    // Stall recovery. On iOS Safari a play() issued while the screen is locked
+    // (e.g. the moment a track auto-advances) can be silently deferred: the
+    // <audio> loads but never starts, so position sits at 0 forever. We track
+    // whether we *intend* to be playing and use a watchdog + unlock/visibility
+    // retries to recover without the host having to manually stop/start.
+    this._wantPlaying = false;
+    this._playWatchdog = null;
+    this._playRetries = 0;
     
     // Initialize Howler
     if (typeof Howl === 'undefined') {
@@ -23,7 +32,10 @@ class AudioEngine {
   async loadAndPlay(song) {
     try {
       this.currentSong = song;
-      
+      this._wantPlaying = true;
+      this._playRetries = 0;
+      this._clearPlayWatchdog();
+
       // Clean up previous sound
       if (this.sound) {
         this.sound.unload();
@@ -47,6 +59,8 @@ class AudioEngine {
           this.isPlaying = true;
           this.isPaused = false;
           this.isStopped = false;
+          this._playRetries = 0;
+          this._clearPlayWatchdog();
           this.setMediaSessionPlaybackState('playing');
           console.log('Audio: Started playing');
           if (this.onPlay) this.onPlay();
@@ -80,14 +94,29 @@ class AudioEngine {
           this.isStopped = true;
           this.setMediaSessionPlaybackState('none');
           if (this.onError) this.onError(error);
+        },
+        onplayerror: (id, error) => {
+          // The <audio> element couldn't start — almost always a locked audio
+          // context on iOS (screen asleep when the track auto-advanced).
+          // Resume on the first unlock, and let the watchdog keep retrying.
+          console.warn('Audio: play blocked, will retry on unlock', error);
+          if (this.sound) {
+            this.sound.once('unlock', () => {
+              if (this._wantPlaying && !this.isPlaying && this.sound) {
+                try { this.sound.play(); } catch (e) {}
+              }
+            });
+          }
+          this._armPlayWatchdog();
         }
       });
 
       // Surface the track on the OS lock screen / control center.
       this.updateMediaSessionMetadata(song);
 
-      // Play the sound
+      // Play the sound, and watch for the case where onplay never fires.
       this.sound.play();
+      this._armPlayWatchdog();
       return true;
     } catch (error) {
       console.error('Failed to load and play song:', error);
@@ -98,21 +127,70 @@ class AudioEngine {
   // Play current song
   play() {
     if (this.sound && (this.isPaused || this.isStopped)) {
+      this._wantPlaying = true;
+      this._playRetries = 0;
       this.sound.play();
+      this._armPlayWatchdog();
     }
   }
 
   // Pause current song
   pause() {
     if (this.sound && this.isPlaying) {
+      this._wantPlaying = false;
+      this._clearPlayWatchdog();
       this.sound.pause();
     }
   }
 
   // Stop current song
   stop() {
+    this._wantPlaying = false;
+    this._clearPlayWatchdog();
     if (this.sound) {
       this.sound.stop();
+    }
+  }
+
+  // --- Stall recovery -------------------------------------------------------
+
+  // After we ask the audio to play, confirm it actually started. If onplay
+  // hasn't fired shortly, the browser deferred/blocked it (lock screen,
+  // autoplay policy, transient stall) — retry a bounded number of times. As
+  // soon as the OS allows audio one of these retries catches.
+  _armPlayWatchdog() {
+    this._clearPlayWatchdog();
+    this._playWatchdog = setTimeout(() => {
+      this._playWatchdog = null;
+      if (!this._wantPlaying || this.isPlaying || !this.sound) return;
+      if (this._playRetries >= 8) {
+        // Give up auto-retrying; unlock + visibility handlers remain as a net.
+        console.warn('Audio: still stalled after retries; awaiting unlock/visibility');
+        return;
+      }
+      this._playRetries += 1;
+      console.warn(`Audio: playback stalled at start, retry ${this._playRetries}`);
+      try { this.sound.play(); } catch (e) {}
+      this._armPlayWatchdog();
+    }, 2500);
+  }
+
+  _clearPlayWatchdog() {
+    if (this._playWatchdog) {
+      clearTimeout(this._playWatchdog);
+      this._playWatchdog = null;
+    }
+  }
+
+  // Called when the page regains focus/visibility. If we should be playing but
+  // the audio never actually started (the "advanced but silent" stall), kick
+  // it — this automates the manual stop/start the host would otherwise need.
+  nudgeIfStalled() {
+    if (this._wantPlaying && this.sound && !this.isPlaying) {
+      console.warn('Audio: nudging stalled playback after visibility/focus regain');
+      this._playRetries = 0;
+      try { this.sound.play(); } catch (e) {}
+      this._armPlayWatchdog();
     }
   }
 
@@ -237,6 +315,8 @@ class AudioEngine {
 
   // Clean up
   destroy() {
+    this._wantPlaying = false;
+    this._clearPlayWatchdog();
     if (this.sound) {
       this.sound.unload();
       this.sound = null;
