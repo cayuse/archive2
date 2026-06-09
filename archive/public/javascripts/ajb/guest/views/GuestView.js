@@ -169,7 +169,7 @@ const GuestView = {
               React.createElement('p', { className: 'card-text mb-4' },
                 'Enter the jukebox password to join and see what\'s playing'
               ),
-              React.createElement('form', { onSubmit: handleSubmit },
+              React.createElement('form', { onSubmit: handleSubmit, autoComplete: 'off' },
                 React.createElement('div', { className: 'mb-3' },
                   React.createElement('input', {
                     type: 'password',
@@ -178,7 +178,17 @@ const GuestView = {
                     value: password,
                     onChange: (e) => setPassword(e.target.value),
                     required: true,
-                    disabled: loading
+                    disabled: loading,
+                    // This is an ephemeral, shared party code — tell password
+                    // managers to leave it alone (1Password / LastPass / Bitwarden /
+                    // Dashlane) and don't use a "password"-ish field name.
+                    name: 'jukebox-access-code',
+                    autoComplete: 'off',
+                    'data-1p-ignore': 'true',
+                    'data-lpignore': 'true',
+                    'data-bwignore': 'true',
+                    'data-dashlane-ignore': 'true',
+                    'data-form-type': 'other'
                   })
                 ),
                 React.createElement('button', {
