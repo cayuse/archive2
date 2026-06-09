@@ -95,6 +95,10 @@ player/.env
 # Local handoff/notes (not for commit)
 CLAUDE.md
 
+# Manual backup files (e.g. docker-compose.yml.bak.20260604)
+*.bak
+*.bak.*
+
 # Python audio-player virtualenv — a build artifact, never commit it.
 # The player's deps come from jukebox/audio_player/requirements.txt
 # (built into the Docker image, or into a venv created on the server).
