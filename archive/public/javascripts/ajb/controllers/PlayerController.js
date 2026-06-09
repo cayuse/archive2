@@ -10,6 +10,8 @@ class PlayerController {
     this.apiService = new ApiService(jukeboxId, apiToken);
 
     this.isLoading = false;
+    this.pauseAfterSong = false;   // armed: hold when the current track ends
+    this.awaitingResume = false;   // held between songs, waiting for the host
     this.queue = [];
     this.history = [];
     this.historyPage = 0;
@@ -43,7 +45,14 @@ class PlayerController {
 
     this.audioEngine.onEnd = () => {
       this.playbackState.setPlaybackStatus(false, false, true);
-      this.playNextSong();
+      if (this.pauseAfterSong) {
+        // Hold between songs (e.g. for an announcement) instead of advancing.
+        this.pauseAfterSong = false;
+        this.awaitingResume = true;
+        this.notifyPauseMode();
+      } else {
+        this.playNextSong();
+      }
     };
 
     this.audioEngine.onError = (error) => {
@@ -86,7 +95,13 @@ class PlayerController {
   // Play the next song
   async playNextSong() {
     if (this.isLoading) return;
-    
+
+    // Advancing clears any pending "pause after song" hold.
+    if (this.awaitingResume) {
+      this.awaitingResume = false;
+      this.notifyPauseMode();
+    }
+
     this.isLoading = true;
     this.notifyLoading(true);
 
@@ -119,11 +134,26 @@ class PlayerController {
 
   // Play button
   async play() {
+    if (this.awaitingResume) {
+      // Resume after a "pause after song" hold → continue to the next track.
+      await this.playNextSong();
+      return;
+    }
     if (!this.playbackState.currentSong) {
       await this.playNextSong();
     } else {
       this.audioEngine.play();
     }
+  }
+
+  // Arm/disarm "pause after current song".
+  togglePauseAfterSong() {
+    this.pauseAfterSong = !this.pauseAfterSong;
+    this.notifyPauseMode();
+  }
+
+  notifyPauseMode() {
+    if (this.onPauseModeChange) this.onPauseModeChange(this.pauseAfterSong, this.awaitingResume);
   }
 
   // Pause button

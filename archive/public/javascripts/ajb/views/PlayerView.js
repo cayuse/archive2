@@ -14,7 +14,9 @@ const PlayerView = {
       error: null,
       queue: [],
       history: [],
-      historyHasMore: false
+      historyHasMore: false,
+      pauseArmed: false,
+      awaitingResume: false
     });
 
     const [controller, setController] = React.useState(null);
@@ -70,6 +72,10 @@ const PlayerView = {
 
           playerController.onHistoryChange = (history, historyHasMore) => {
             setState(prev => ({ ...prev, history, historyHasMore }));
+          };
+
+          playerController.onPauseModeChange = (pauseArmed, awaitingResume) => {
+            setState(prev => ({ ...prev, pauseArmed, awaitingResume }));
           };
 
           console.log('🔍 Setting controller in state...');
@@ -128,6 +134,7 @@ const PlayerView = {
     const handlePlayNext = (songId) => controller && controller.playNextInQueue(songId);
     const handleLoadMoreHistory = () => controller && controller.loadMoreHistory();
     const handleReRequest = (songId) => controller && controller.requestFromHistory(songId);
+    const handleTogglePauseAfter = () => controller && controller.togglePauseAfterSong();
 
     const handleVolumeChange = (e) => {
       const volume = parseFloat(e.target.value);
@@ -155,16 +162,19 @@ const PlayerView = {
           })
         ),
         React.createElement('div', { className: 'col-md-4' },
-          React.createElement(PlayerView.Controls, { 
+          React.createElement(PlayerView.Controls, {
             isPlaying: state.isPlaying,
             isPaused: state.isPaused,
             isStopped: state.isStopped,
             isLoading: state.isLoading,
+            pauseArmed: state.pauseArmed,
+            awaitingResume: state.awaitingResume,
             onPlay: handlePlay,
             onPause: handlePause,
             onStop: handleStop,
             onSkip: handleSkip,
-            onRestart: handleRestart
+            onRestart: handleRestart,
+            onTogglePauseAfter: handleTogglePauseAfter
           }),
           React.createElement(PlayerView.VolumeControl, {
             volume: state.volume,
@@ -237,10 +247,14 @@ const PlayerView = {
   },
 
   // Player Controls
-  Controls: function({ isPlaying, isPaused, isStopped, isLoading, onPlay, onPause, onStop, onSkip, onRestart }) {
+  Controls: function({ isPlaying, isPaused, isStopped, isLoading, pauseArmed, awaitingResume, onPlay, onPause, onStop, onSkip, onRestart, onTogglePauseAfter }) {
     return React.createElement('div', { className: 'card mb-3' },
       React.createElement('div', { className: 'card-body' },
         React.createElement('h6', { className: 'card-title' }, 'Controls'),
+        awaitingResume && React.createElement('div', { className: 'alert alert-warning py-2 text-center mb-3' },
+          React.createElement('i', { className: 'fas fa-pause me-1' }),
+          'Paused between songs — press Play to continue'
+        ),
         React.createElement('div', { className: 'd-flex justify-content-center gap-2 mb-3' },
           React.createElement('button', { 
             className: 'btn btn-outline-secondary btn-sm',
@@ -270,14 +284,25 @@ const PlayerView = {
             title: 'Stop'
           }, React.createElement('i', { className: 'fas fa-stop' })),
           
-          React.createElement('button', { 
+          React.createElement('button', {
             className: 'btn btn-outline-secondary btn-sm',
             onClick: onSkip,
             disabled: isLoading,
             title: 'Skip song (>>|)'
           }, React.createElement('i', { className: 'fas fa-step-forward' }))
         ),
-        
+
+        React.createElement('div', { className: 'd-grid mb-2' },
+          React.createElement('button', {
+            className: pauseArmed ? 'btn btn-warning btn-sm' : 'btn btn-outline-secondary btn-sm',
+            onClick: onTogglePauseAfter,
+            title: 'Pause after the current song finishes (for announcements)'
+          },
+            React.createElement('i', { className: 'fas fa-hourglass-half me-1' }),
+            pauseArmed ? 'Will pause after song' : 'Pause after song'
+          )
+        ),
+
         isLoading && React.createElement('div', { className: 'text-center' },
           React.createElement('div', { className: 'spinner-border spinner-border-sm text-primary', role: 'status' },
             React.createElement('span', { className: 'visually-hidden' }, 'Loading...')
