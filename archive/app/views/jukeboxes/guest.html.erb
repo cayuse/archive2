@@ -34,12 +34,11 @@
   console.log('AJB Guest Config:', window.AJB_GUEST_CONFIG);
 </script>
 
-<!-- React and ReactDOM -->
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-<!-- Bootstrap for styling -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- React and ReactDOM (self-hosted so the guest page works offline / on a LAN).
+     Bootstrap CSS/JS and Font Awesome come from the application layout, also
+     self-hosted. -->
+<script src="/vendor/ajb/react.production.min.js"></script>
+<script src="/vendor/ajb/react-dom.production.min.js"></script>
 
 <!-- Load all guest modules -->
 <script src="/javascripts/ajb/guest/models/GuestApiService.js"></script>
