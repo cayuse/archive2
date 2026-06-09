@@ -29,6 +29,7 @@ class GuestState {
       
       // UI State
       currentView: 'now-playing', // 'now-playing' or 'request-songs'
+      offline: false,             // jukebox has no live player → show closed screen
       loading: false,
       error: null,
       
@@ -101,6 +102,10 @@ class GuestState {
 
   setView(view) {
     this.setState({ currentView: view });
+  }
+
+  setOffline(value = true) {
+    this.setState({ offline: value });
   }
 
   setLoading(loading) {

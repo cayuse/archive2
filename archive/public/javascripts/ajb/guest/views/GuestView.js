@@ -61,6 +61,7 @@ const GuestView = {
             const newStateToSet = {
               ...prev,
               authenticated: newState.authenticated,
+              offline: newState.offline,
               loading: newState.loading,
               error: newState.error,
               currentView: newState.currentView,
@@ -124,6 +125,10 @@ const GuestView = {
       );
     }
 
+    if (state.offline) {
+      return React.createElement(GuestView.ClosedView);
+    }
+
     if (!state.authenticated) {
       return React.createElement(GuestView.AuthView, {
         onAuthenticate: handleAuthenticate,
@@ -148,6 +153,20 @@ const GuestView = {
         error: state.error,
         onDismiss: () => controller && controller.state.clearError()
       })
+    );
+  },
+
+  // Shown when the jukebox has no live player (host closed it).
+  ClosedView: function() {
+    const cfg = window.AJB_GUEST_CONFIG || {};
+    const name = cfg.jukeboxName || 'This jukebox';
+    return React.createElement('div', { className: 'text-center', style: { padding: '4rem 1.5rem' } },
+      React.createElement('div', { style: { fontSize: '4.5rem', lineHeight: 1 } }, '🎉'),
+      React.createElement('h1', { className: 'mt-4 mb-2' }, `${name} is closed`),
+      React.createElement('p', { className: 'lead text-muted mb-4' }, 'Thanks for coming! 👋'),
+      React.createElement('p', { className: 'text-muted small' },
+        'The host stopped the music. If they start it back up, just reload this page to rejoin.'
+      )
     );
   },
 

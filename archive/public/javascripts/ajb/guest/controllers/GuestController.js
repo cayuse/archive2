@@ -46,6 +46,10 @@ class GuestController {
       this.state.clearError();
 
       const result = await this.apiService.getStatus();
+      if (result.offline) {
+        this.handleOffline();
+        return { success: false, offline: true };
+      }
       if (result.success) {
         this.state.setAuthentication(this.jukeboxId, this.password);
         this.state.setState({
@@ -68,12 +72,26 @@ class GuestController {
 
         return { success: true };
       }
+
+      // Not success and not offline → bad code / not found / etc.
+      this.state.setError(result.message || 'Could not join the jukebox');
+      return { success: false };
     } catch (error) {
       this.state.setError(error.message);
       return { success: false, error: error.message };
     } finally {
       this.state.setLoading(false);
     }
+  }
+
+  // The jukebox went (or is) offline: stop everything and show the closed view.
+  handleOffline() {
+    this.stopPeriodicUpdates();
+    if (this.cableSubscription) {
+      this.cableSubscription.unsubscribe();
+      this.cableSubscription = null;
+    }
+    this.state.setOffline(true);
   }
 
   // Subscribe to live jukebox updates over ActionCable. Now-playing changes and
@@ -142,6 +160,7 @@ class GuestController {
   async updatePlaybackInfo() {
     try {
       const result = await this.apiService.getPlaybackInfo();
+      if (result.offline) { this.handleOffline(); return; }
       if (result.success) {
         const playback = result.playback;
         this.state.setCurrentSong(
@@ -159,6 +178,7 @@ class GuestController {
   async updateQueue() {
     try {
       const result = await this.apiService.getQueue();
+      if (result.offline) { this.handleOffline(); return; }
       if (result.success) {
         this.state.setQueue(result.queue, result.total_count);
       }

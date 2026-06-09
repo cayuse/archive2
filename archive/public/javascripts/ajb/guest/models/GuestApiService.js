@@ -32,12 +32,13 @@ class GuestApiService {
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Invalid password or jukebox access denied');
-        } else if (response.status === 403) {
-          throw new Error('Jukebox is not currently active');
+        if (response.status === 403) {
+          // Jukebox has no live player right now (presence-driven lifecycle).
+          return { success: false, offline: true };
+        } else if (response.status === 401) {
+          return { success: false, unauthorized: true, message: 'Invalid code or jukebox access denied' };
         } else if (response.status === 404) {
-          throw new Error('Jukebox not found');
+          return { success: false, notFound: true, message: 'Jukebox not found' };
         }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -94,6 +95,8 @@ class GuestApiService {
       });
 
       if (!response.ok) {
+        const off = this._offlineIf403(response);
+        if (off) return off;
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
@@ -103,6 +106,10 @@ class GuestApiService {
       console.error('Error getting queue:', error);
       throw error;
     }
+  }
+
+  _offlineIf403(response) {
+    return response.status === 403 ? { success: false, offline: true } : null;
   }
 
   // Get a page of play history for this jukebox (most recent first)
@@ -148,6 +155,8 @@ class GuestApiService {
       });
 
       if (!response.ok) {
+        const off = this._offlineIf403(response);
+        if (off) return off;
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
