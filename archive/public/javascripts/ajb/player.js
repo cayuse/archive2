@@ -1,8 +1,8 @@
 // AJB Player App - Main entry point
 // This is a React-based Single Page Application that runs entirely in the browser
 
-// UPDATE CODE = 7
-console.log('🎵 AJB Player JavaScript loaded - UPDATE CODE = 7');
+// UPDATE CODE = 8
+console.log('🎵 AJB Player JavaScript loaded - UPDATE CODE = 8 (background audio + MediaSession)');
 
 const { useState, useEffect } = React;
 

@@ -70,6 +70,8 @@ class PlayerController {
         const currentTime = this.audioEngine.getCurrentTime();
         const duration = this.audioEngine.getDuration();
         this.playbackState.updateTime(currentTime, duration);
+        // Keep the lock-screen scrubber in sync.
+        this.audioEngine.updateMediaSessionPosition();
       }
     }, 1000); // Update every second
   }

@@ -12,6 +12,11 @@ class AudioEngine {
     if (typeof Howl === 'undefined') {
       throw new Error('Howler.js is required but not loaded');
     }
+
+    // Wire up OS-level media controls (lock screen / control center) so playback
+    // is treated as a background-audio session and keeps going when the screen
+    // sleeps. Handlers are registered once and reused for every track.
+    this.setupMediaSession();
   }
 
   // Load and play a song
@@ -24,10 +29,16 @@ class AudioEngine {
         this.sound.unload();
       }
 
-      // Create new Howl instance
+      // Create new Howl instance.
+      // html5: true forces playback through an HTML5 <audio> element instead of
+      // the Web Audio API. iOS/iPadOS suspends the Web Audio context when the
+      // screen locks (killing playback), but allows an <audio> element to keep
+      // playing in the background — so this is what lets the jukebox survive a
+      // sleeping phone/tablet. Prefer the Range-capable stream endpoint.
       this.sound = new Howl({
-        src: [song.download_url],
+        src: [song.stream_url || song.download_url],
         format: ['mp3', 'm4a', 'ogg'],
+        html5: true,
         volume: this.currentVolume, // Apply persistent volume setting
         onload: () => {
           console.log('Audio: Loaded successfully');
@@ -36,12 +47,14 @@ class AudioEngine {
           this.isPlaying = true;
           this.isPaused = false;
           this.isStopped = false;
+          this.setMediaSessionPlaybackState('playing');
           console.log('Audio: Started playing');
           if (this.onPlay) this.onPlay();
         },
         onpause: () => {
           this.isPlaying = false;
           this.isPaused = true;
+          this.setMediaSessionPlaybackState('paused');
           console.log('Audio: Paused');
           if (this.onPause) this.onPause();
         },
@@ -49,6 +62,7 @@ class AudioEngine {
           this.isPlaying = false;
           this.isPaused = false;
           this.isStopped = true;
+          this.setMediaSessionPlaybackState('none');
           console.log('Audio: Stopped');
           if (this.onStop) this.onStop();
         },
@@ -64,9 +78,13 @@ class AudioEngine {
           this.isPlaying = false;
           this.isPaused = false;
           this.isStopped = true;
+          this.setMediaSessionPlaybackState('none');
           if (this.onError) this.onError(error);
         }
       });
+
+      // Surface the track on the OS lock screen / control center.
+      this.updateMediaSessionMetadata(song);
 
       // Play the sound
       this.sound.play();
@@ -152,6 +170,69 @@ class AudioEngine {
   // Get duration
   getDuration() {
     return this.sound ? this.sound.duration() : 0;
+  }
+
+  // --- MediaSession (OS lock-screen / background-audio integration) ---
+
+  // Register the OS media-key / lock-screen action handlers once. These let the
+  // user control playback from the lock screen or control center, and signal to
+  // iOS/Android that this is an audio app that should keep running in the
+  // background.
+  setupMediaSession() {
+    if (!('mediaSession' in navigator)) return;
+
+    const set = (action, handler) => {
+      try {
+        navigator.mediaSession.setActionHandler(action, handler);
+      } catch (e) {
+        // Some browsers don't support every action; ignore the unsupported ones.
+      }
+    };
+
+    set('play', () => this.play());
+    set('pause', () => this.pause());
+    set('stop', () => this.stop());
+    set('nexttrack', () => this.skip());
+    set('previoustrack', () => this.restart());
+  }
+
+  // Push the current track's info to the lock screen.
+  updateMediaSessionMetadata(song) {
+    if (!('mediaSession' in navigator) || !song) return;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: song.title || 'Unknown Title',
+        artist: song.artist || 'Unknown Artist',
+        album: song.album || ''
+      });
+    } catch (e) {
+      console.warn('MediaSession metadata update failed:', e);
+    }
+  }
+
+  setMediaSessionPlaybackState(state) {
+    if (!('mediaSession' in navigator)) return;
+    try {
+      navigator.mediaSession.playbackState = state; // 'playing' | 'paused' | 'none'
+    } catch (e) {
+      // Non-critical.
+    }
+  }
+
+  // Feed the lock-screen scrubber the current position. Called from the time loop.
+  updateMediaSessionPosition() {
+    if (!('mediaSession' in navigator) || typeof navigator.mediaSession.setPositionState !== 'function') return;
+    const duration = this.getDuration();
+    if (!duration || !isFinite(duration)) return;
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: duration,
+        position: Math.min(this.getCurrentTime(), duration),
+        playbackRate: 1
+      });
+    } catch (e) {
+      // Non-critical.
+    }
   }
 
   // Clean up
