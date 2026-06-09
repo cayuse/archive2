@@ -12,6 +12,10 @@ class PlayerController {
     this.isLoading = false;
     this.queue = [];
     this.history = [];
+    this.historyPage = 0;
+    this.historyHasMore = true;
+    this.historyLoading = false;
+    this.historyPerPage = 25;
     this.cableSubscription = null;
 
     this.setupEventHandlers();
@@ -92,8 +96,8 @@ class PlayerController {
       if (result.success && result.song) {
         const song = result.song;
         this.playbackState.setCurrentSong(song);
-        this.loadQueue();   // the consumed track left the queue
-        this.loadHistory(); // ...and became a history entry
+        this.loadQueue();          // the consumed track left the queue
+        this.refreshNewestHistory(); // ...and became a history entry
 
         const loaded = await this.audioEngine.loadAndPlay(song);
         if (loaded) {
@@ -207,20 +211,60 @@ class PlayerController {
     return result;
   }
 
-  async loadHistory() {
+  // Load a page of history. reset=true starts over at page 1 (replace);
+  // reset=false appends the next page (infinite scroll).
+  async loadHistory(reset = true) {
+    if (this.historyLoading) return;
+    if (!reset && !this.historyHasMore) return;
+    this.historyLoading = true;
+    const page = reset ? 1 : this.historyPage + 1;
     try {
-      const result = await this.apiService.getHistory();
+      const result = await this.apiService.getHistory(page, this.historyPerPage);
       if (result.success) {
-        this.history = result.history || [];
+        const items = result.history || [];
+        this.history = reset ? items : this.history.concat(items);
+        this.historyPage = page;
+        this.historyHasMore = result.pagination ? !!result.pagination.has_more : false;
         this.notifyHistoryChange();
       }
     } catch (error) {
       console.warn('Failed to load history:', error.message);
+    } finally {
+      this.historyLoading = false;
     }
   }
 
+  loadMoreHistory() {
+    return this.loadHistory(false);
+  }
+
+  // Prepend any newly-played songs to the top without disturbing the scroll
+  // position / already-loaded pages.
+  async refreshNewestHistory() {
+    const result = await this.apiService.getHistory(1, this.historyPerPage);
+    if (result.success) {
+      const known = new Set(this.history.map(h => h.id));
+      const fresh = (result.history || []).filter(h => !known.has(h.id));
+      if (fresh.length) {
+        this.history = fresh.concat(this.history);
+        this.notifyHistoryChange();
+      }
+    }
+  }
+
+  // Re-request a song from history (host "play it again"); adds it to the queue.
+  async requestFromHistory(songId) {
+    const result = await this.apiService.addToQueue(songId, 'requested');
+    if (result.success) {
+      await this.loadQueue();
+    } else {
+      this.notifyError(result.message || 'Could not re-request song');
+    }
+    return result;
+  }
+
   notifyHistoryChange() {
-    if (this.onHistoryChange) this.onHistoryChange(this.history);
+    if (this.onHistoryChange) this.onHistoryChange(this.history, this.historyHasMore);
   }
 
   // Live queue updates (a guest request / consumed track repaints the list).
@@ -232,7 +276,7 @@ class PlayerController {
         received: (message) => {
           if (message && message.type === 'queue_update') {
             this.loadQueue();
-            this.loadHistory(); // a consumed track became a history entry
+            this.refreshNewestHistory(); // a consumed track became a history entry
           }
         }
       }

@@ -19,6 +19,7 @@ class GuestState {
 
       // Play history
       history: [],
+      historyHasMore: false,
       
       // Search
       searchResults: [],
@@ -81,8 +82,8 @@ class GuestState {
     this.setState({ queue, totalQueueCount: totalCount });
   }
 
-  setHistory(history) {
-    this.setState({ history });
+  setHistory(history, hasMore = false) {
+    this.setState({ history, historyHasMore: hasMore });
   }
 
   setSearchResults(results, pagination, query) {

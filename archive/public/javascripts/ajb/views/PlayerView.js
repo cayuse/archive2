@@ -13,7 +13,8 @@ const PlayerView = {
       isLoading: false,
       error: null,
       queue: [],
-      history: []
+      history: [],
+      historyHasMore: false
     });
 
     const [controller, setController] = React.useState(null);
@@ -67,8 +68,8 @@ const PlayerView = {
             setState(prev => ({ ...prev, queue }));
           };
 
-          playerController.onHistoryChange = (history) => {
-            setState(prev => ({ ...prev, history }));
+          playerController.onHistoryChange = (history, historyHasMore) => {
+            setState(prev => ({ ...prev, history, historyHasMore }));
           };
 
           console.log('🔍 Setting controller in state...');
@@ -125,6 +126,8 @@ const PlayerView = {
     const handleRemove = (songId) => controller && controller.removeFromQueue(songId);
     const handlePromote = (songId) => controller && controller.promoteInQueue(songId);
     const handlePlayNext = (songId) => controller && controller.playNextInQueue(songId);
+    const handleLoadMoreHistory = () => controller && controller.loadMoreHistory();
+    const handleReRequest = (songId) => controller && controller.requestFromHistory(songId);
 
     const handleVolumeChange = (e) => {
       const volume = parseFloat(e.target.value);
@@ -172,7 +175,12 @@ const PlayerView = {
       React.createElement('div', { className: 'row mt-3' },
         React.createElement('div', { className: 'col-md-8' },
           React.createElement(PlayerView.QueuePanel, { queue: state.queue, onRemove: handleRemove, onPromote: handlePromote, onPlayNext: handlePlayNext }),
-          React.createElement(PlayerView.HistoryPanel, { history: state.history })
+          React.createElement(PlayerView.HistoryPanel, {
+            history: state.history,
+            hasMore: state.historyHasMore,
+            onLoadMore: handleLoadMoreHistory,
+            onReRequest: handleReRequest
+          })
         ),
         React.createElement('div', { className: 'col-md-4' },
           React.createElement(PlayerView.JoinPanel)
@@ -367,9 +375,17 @@ const PlayerView = {
     );
   },
 
-  // Recently played songs for this jukebox (read-only, most recent first).
-  HistoryPanel: function({ history }) {
-    const body = (!history || history.length === 0)
+  // Play history for this jukebox (most recent first), infinite-scrolling, with
+  // a re-request ("play it again") button per song.
+  HistoryPanel: function({ history, hasMore, onLoadMore, onReRequest }) {
+    const handleScroll = function(e) {
+      const el = e.target;
+      if (hasMore && (el.scrollHeight - el.scrollTop - el.clientHeight) < 80) {
+        onLoadMore();
+      }
+    };
+
+    const rows = (!history || history.length === 0)
       ? React.createElement('p', { className: 'text-muted small mb-0' }, 'Nothing has played yet.')
       : React.createElement('ul', { className: 'list-group list-group-flush' },
           history.map(function(item) {
@@ -381,9 +397,16 @@ const PlayerView = {
                 React.createElement('div', { className: 'text-truncate' }, item.song.title),
                 React.createElement('small', { className: 'text-muted' }, item.song.artist || 'Unknown Artist')
               ),
-              item.source === 'requested'
-                ? React.createElement('span', { className: 'badge bg-success flex-shrink-0', title: 'Guest request' }, 'request')
-                : React.createElement('span', { className: 'badge bg-light text-muted flex-shrink-0', title: 'Auto-filled' }, 'auto')
+              React.createElement('div', { className: 'd-flex align-items-center gap-1 flex-shrink-0' },
+                item.source === 'requested'
+                  ? React.createElement('span', { className: 'badge bg-success', title: 'Guest request' }, 'request')
+                  : React.createElement('span', { className: 'badge bg-light text-muted', title: 'Auto-filled' }, 'auto'),
+                React.createElement('button', {
+                  className: 'btn btn-sm btn-outline-primary',
+                  title: 'Play again (re-add to queue)',
+                  onClick: function() { onReRequest(item.song.id); }
+                }, React.createElement('i', { className: 'fas fa-rotate-right' }))
+              )
             );
           })
         );
@@ -391,7 +414,13 @@ const PlayerView = {
     return React.createElement('div', { className: 'card mb-3' },
       React.createElement('div', { className: 'card-body' },
         React.createElement('h6', { className: 'card-title' }, 'Play History'),
-        body
+        React.createElement('div', {
+          style: { maxHeight: '320px', overflowY: 'auto' },
+          onScroll: handleScroll
+        },
+          rows,
+          hasMore && React.createElement('div', { className: 'text-center text-muted small py-2' }, 'Scroll for more…')
+        )
       )
     );
   },

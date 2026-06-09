@@ -9,6 +9,13 @@ class GuestController {
     this.updateInterval = null;
     this.cableSubscription = null;
 
+    // Play-history pagination (infinite scroll)
+    this.historyItems = [];
+    this.historyPage = 0;
+    this.historyHasMore = true;
+    this.historyLoading = false;
+    this.historyPerPage = 25;
+
     this.setupEventHandlers();
   }
 
@@ -97,7 +104,7 @@ class GuestController {
       }
       case 'queue_update':
         this.updateQueue();
-        this.loadHistory(); // a consumed track became a history entry
+        this.refreshNewestHistory(); // a consumed track became a history entry
         break;
     }
   }
@@ -220,15 +227,43 @@ class GuestController {
     return result;
   }
 
-  // Update play history
-  async loadHistory() {
+  // Update play history. reset=true reloads from page 1; reset=false appends
+  // the next page (infinite scroll).
+  async loadHistory(reset = true) {
+    if (this.historyLoading) return;
+    if (!reset && !this.historyHasMore) return;
+    this.historyLoading = true;
+    const page = reset ? 1 : this.historyPage + 1;
     try {
-      const result = await this.apiService.getHistory();
+      const result = await this.apiService.getHistory(page, this.historyPerPage);
       if (result.success) {
-        this.state.setHistory(result.history || []);
+        const items = result.history || [];
+        this.historyItems = reset ? items : this.historyItems.concat(items);
+        this.historyPage = page;
+        this.historyHasMore = result.pagination ? !!result.pagination.has_more : false;
+        this.state.setHistory(this.historyItems, this.historyHasMore);
       }
     } catch (error) {
       console.warn('Failed to load history:', error.message);
+    } finally {
+      this.historyLoading = false;
+    }
+  }
+
+  loadMoreHistory() {
+    return this.loadHistory(false);
+  }
+
+  // Prepend newly-played songs without disturbing scroll / loaded pages.
+  async refreshNewestHistory() {
+    const result = await this.apiService.getHistory(1, this.historyPerPage);
+    if (result.success) {
+      const known = new Set(this.historyItems.map(h => h.id));
+      const fresh = (result.history || []).filter(h => !known.has(h.id));
+      if (fresh.length) {
+        this.historyItems = fresh.concat(this.historyItems);
+        this.state.setHistory(this.historyItems, this.historyHasMore);
+      }
     }
   }
 

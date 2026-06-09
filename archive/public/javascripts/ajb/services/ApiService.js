@@ -61,10 +61,10 @@ class ApiService {
     }
   }
 
-  // Get recently played songs for this jukebox
-  async getHistory() {
+  // Get a page of play history for this jukebox (most recent first)
+  async getHistory(page = 1, perPage = 25) {
     try {
-      const response = await fetch(`${this.baseUrl}/history`, {
+      const response = await fetch(`${this.baseUrl}/history?page=${page}&per_page=${perPage}`, {
         method: 'GET',
         headers: {
           'X-Requested-With': 'XMLHttpRequest',
@@ -178,6 +178,30 @@ class ApiService {
       return data;
     } catch (error) {
       console.error('Queue action failed:', error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  // Add a song to the queue (used to re-request a song from history)
+  async addToQueue(songId, source = 'requested') {
+    try {
+      const response = await fetch(`${this.baseUrl}/queue`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Authorization': `Bearer ${this.apiToken}`
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ song_id: songId, source: source })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        return { success: false, message: data.message || `HTTP ${response.status}` };
+      }
+      return data;
+    } catch (error) {
+      console.error('Error adding to queue:', error);
       return { success: false, message: error.message };
     }
   }

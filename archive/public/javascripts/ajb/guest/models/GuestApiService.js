@@ -105,11 +105,12 @@ class GuestApiService {
     }
   }
 
-  // Get recently played songs for this jukebox
-  async getHistory() {
+  // Get a page of play history for this jukebox (most recent first)
+  async getHistory(page = 1, perPage = 25) {
     try {
-      const queryString = this.buildQueryString();
-      const url = `${this.baseUrl}/history${queryString ? '?' + queryString : ''}`;
+      const params = new URLSearchParams({ page: page, per_page: perPage });
+      if (this.password) params.append('password', this.password);
+      const url = `${this.baseUrl}/history?${params.toString()}`;
 
       const response = await fetch(url, {
         method: 'GET',
@@ -124,7 +125,7 @@ class GuestApiService {
       }
 
       const data = await response.json();
-      return { success: true, history: data.history };
+      return { success: true, history: data.history, pagination: data.pagination };
     } catch (error) {
       console.error('Error getting history:', error);
       return { success: false, message: error.message };

@@ -144,26 +144,21 @@ class Api::V1::GuestController < ApplicationController
     }
   end
 
-  # GET /api/v1/guest/:jukebox_id/history
-  # Recently played songs for this jukebox (most recent first).
+  # GET /api/v1/guest/:jukebox_id/history?page=&per_page=
+  # Paginated play history for this jukebox (most recent first).
   def history
-    played = AjbPlayedSong.recently_played_for_jukebox(@jukebox, 50)
-                          .includes(song: [:artist, :album])
+    page = (params[:page] || 1).to_i
+    per_page = (params[:per_page] || 25).to_i.clamp(1, 100)
+    played = AjbPlayedSong.history_for(@jukebox).page(page).per(per_page)
     render json: {
       success: true,
-      history: played.map { |p|
-        {
-          id: p.id,
-          source: p.source,
-          played_at: p.played_at&.iso8601,
-          song: {
-            id: p.song.id,
-            title: p.song.title,
-            artist: p.song.artist&.name,
-            album: p.song.album&.title,
-            duration: p.song.duration
-          }
-        }
+      history: played.map(&:history_payload),
+      pagination: {
+        current_page: played.current_page,
+        total_pages: played.total_pages,
+        total_count: played.total_count,
+        per_page: per_page,
+        has_more: played.next_page.present?
       }
     }
   end

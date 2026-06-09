@@ -21,6 +21,27 @@ class AjbPlayedSong < ApplicationRecord
     recently_played_for_jukebox(jukebox, limit).pluck(:song_id)
   end
 
+  # Ordered, eager-loaded relation for the play-history views (paginate this).
+  scope :history_for, ->(jukebox) {
+    for_jukebox(jukebox).order(played_at: :desc).includes(song: [:artist, :album])
+  }
+
+  # JSON shape used by the player/guest play-history views.
+  def history_payload
+    {
+      id: id,
+      source: source,
+      played_at: played_at&.iso8601,
+      song: {
+        id: song.id,
+        title: song.title,
+        artist: song.artist&.name,
+        album: song.album&.title,
+        duration: song.duration
+      }
+    }
+  end
+
   # Instance methods
   def requested?
     source == 'requested'

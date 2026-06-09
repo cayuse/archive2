@@ -71,6 +71,7 @@ const GuestView = {
               queue: newState.queue,
               totalQueueCount: newState.totalQueueCount,
               history: newState.history,
+              historyHasMore: newState.historyHasMore,
               jukeboxName: newState.jukeboxName,
               jukeboxStatus: newState.jukeboxStatus,
               searchResults: newState.searchResults,
@@ -141,7 +142,7 @@ const GuestView = {
       (state.currentView === 'now-playing'
         ? React.createElement(GuestView.NowPlayingView, { controller, state })
         : state.currentView === 'play-history'
-          ? React.createElement(GuestView.HistoryView, { state })
+          ? React.createElement(GuestView.HistoryView, { controller, state })
           : React.createElement(GuestView.RequestSongsView, { controller, state })),
       state.error && React.createElement(GuestView.ErrorMessage, {
         error: state.error,
@@ -221,9 +222,20 @@ const GuestView = {
     );
   },
 
-  // Play History View — recently played songs for this jukebox.
-  HistoryView: function({ state }) {
+  // Play History View — infinite-scrolling, with a re-request ("play it again")
+  // button per song.
+  HistoryView: function({ controller, state }) {
     const history = state.history || [];
+    const hasMore = !!state.historyHasMore;
+
+    const handleScroll = function(e) {
+      const el = e.target;
+      if (hasMore && (el.scrollHeight - el.scrollTop - el.clientHeight) < 80) {
+        controller && controller.loadMoreHistory();
+      }
+    };
+    const reRequest = (songId) => controller && controller.requestSong(songId);
+
     const body = history.length === 0
       ? React.createElement('p', { className: 'text-muted text-center' }, 'Nothing has played yet.')
       : React.createElement('ul', { className: 'list-group' },
@@ -236,16 +248,29 @@ const GuestView = {
                 React.createElement('div', { className: 'text-truncate' }, item.song.title),
                 React.createElement('small', { className: 'text-muted' }, item.song.artist || 'Unknown Artist')
               ),
-              item.source === 'requested'
-                ? React.createElement('span', { className: 'badge bg-success flex-shrink-0', title: 'Guest request' }, 'request')
-                : React.createElement('span', { className: 'badge bg-light text-muted flex-shrink-0', title: 'Auto-filled' }, 'auto')
+              React.createElement('div', { className: 'd-flex align-items-center gap-2 flex-shrink-0' },
+                item.source === 'requested'
+                  ? React.createElement('span', { className: 'badge bg-success', title: 'Guest request' }, 'request')
+                  : React.createElement('span', { className: 'badge bg-light text-muted', title: 'Auto-filled' }, 'auto'),
+                React.createElement('button', {
+                  className: 'btn btn-sm btn-outline-primary',
+                  title: 'Request again',
+                  onClick: function() { reRequest(item.song.id); }
+                }, React.createElement('i', { className: 'fas fa-rotate-right' }))
+              )
             );
           })
         );
 
     return React.createElement('div', { className: 'history-view' },
       React.createElement('h5', { className: 'mb-3' }, 'Play History'),
-      body
+      React.createElement('div', {
+        style: { maxHeight: '60vh', overflowY: 'auto' },
+        onScroll: handleScroll
+      },
+        body,
+        hasMore && React.createElement('div', { className: 'text-center text-muted small py-2' }, 'Scroll for more…')
+      )
     );
   },
 
