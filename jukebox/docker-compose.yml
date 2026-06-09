@@ -93,10 +93,40 @@ services:
   # Host MPD preferred; no mpd container
 
   # Python Jukebox Player Controller
+  # -----------------------------------------------------------------------------
+  # Runs audio_player/player.py. It is REDIS-DRIVEN (no HTTP API): it reads
+  # commands/state from Redis (db 1) on the shared archive_default network, and
+  # reaches the HOST's MPD (TCP 6600) and the jukebox Rails app (3001) via
+  # host.docker.internal. It serves no inbound port, so none is published.
+  # Break-fix on the server:
+  #   docker compose up -d --build jukebox-player
+  #   docker compose restart jukebox-player
+  #   docker compose logs -f jukebox-player
+  # -----------------------------------------------------------------------------
+  jukebox-player:
+    build:
+      context: ./audio_player
+      dockerfile: Dockerfile
+    image: jukebox-player:latest
+    restart: unless-stopped
+    environment:
+      REDIS_HOST: ${ARCHIVE_REDIS_HOST:-redis}
+      REDIS_PORT: ${ARCHIVE_REDIS_PORT:-6379}
+      REDIS_DB: 1
+      # player.py reaches host MPD (6600) and host Rails (3001) via this name
+      JUKEBOX_LOG_FILE: /var/log/jukebox_player.log
+    volumes:
+      - jukebox_player_logs:/var/log
+    extra_hosts:
+      # Lets the container resolve the Linux host for MPD (6600) and Rails (3001)
+      - "host.docker.internal:host-gateway"
+    networks:
+      - archive_net
 
 volumes:
   # Logs volume; storage is a bind mount via HOST_STORAGE_PATH
   jukebox_logs:
+  jukebox_player_logs:
 
 networks:
   # Shared network created by Archive compose. Required for service discovery.

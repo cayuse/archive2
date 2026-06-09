@@ -1,8 +1,9 @@
 FROM python:3.11-slim
 
-# Install system dependencies
+# System deps. NOTE: audio playback uses the HOST's MPD (reached over TCP at
+# host.docker.internal:6600), so we do NOT install the mpd daemon here — only
+# the redis CLI (handy for debugging) and curl for healthchecks.
 RUN apt-get update && apt-get install -y \
-    mpd \
     redis-tools \
     curl \
     && rm -rf /var/lib/apt/lists/*
@@ -17,16 +18,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy player script
 COPY player.py .
 
-# Create log directory
+# Create log directory (mounted as a volume in compose)
 RUN mkdir -p /var/log
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
-ENV HTTP_PORT=5000
 
-# Expose HTTP API port
-EXPOSE 5000
+# Redis-driven controller: no inbound HTTP port to expose.
 
 # Run the player
 CMD ["python", "player.py"]
