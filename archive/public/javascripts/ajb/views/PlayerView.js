@@ -11,7 +11,8 @@ const PlayerView = {
       duration: 0,
       volume: 0.8,
       isLoading: false,
-      error: null
+      error: null,
+      queue: []
     });
 
     const [controller, setController] = React.useState(null);
@@ -22,8 +23,7 @@ const PlayerView = {
       console.log('🔍 window.AJB_CONFIG:', window.AJB_CONFIG);
       console.log('🔍 jukeboxId present:', !!window.AJB_CONFIG?.jukeboxId);
       console.log('🔍 apiToken present:', !!window.AJB_CONFIG?.apiToken);
-      console.log('🔍 apiToken value:', window.AJB_CONFIG?.apiToken);
-      
+
       if (window.AJB_CONFIG && window.AJB_CONFIG.jukeboxId) {
         console.log('🔍 AJB_CONFIG exists and has jukeboxId, proceeding...');
         
@@ -39,7 +39,7 @@ const PlayerView = {
         });
         
         try {
-          const playerController = new PlayerController(window.AJB_CONFIG.jukeboxId, window.AJB_CONFIG.apiToken);
+          const playerController = new PlayerController(window.AJB_CONFIG.jukeboxId, window.AJB_CONFIG.apiToken, window.AJB_CONFIG.sessionId);
           console.log('🔍 PlayerController created successfully:', playerController);
           
           // Set up event handlers
@@ -61,7 +61,11 @@ const PlayerView = {
           playerController.onTimeUpdate = (currentTime, duration) => {
             setState(prev => ({ ...prev, currentTime, duration }));
           };
-          
+
+          playerController.onQueueChange = (queue) => {
+            setState(prev => ({ ...prev, queue }));
+          };
+
           console.log('🔍 Setting controller in state...');
           setController(playerController);
           console.log('🔍 Controller set successfully');
@@ -113,6 +117,7 @@ const PlayerView = {
     const handleStop = () => controller && controller.stop();
     const handleSkip = () => controller && controller.skip();
     const handleRestart = () => controller && controller.restart();
+    const handleRemove = (songId) => controller && controller.removeFromQueue(songId);
 
     const handleVolumeChange = (e) => {
       const volume = parseFloat(e.target.value);
@@ -151,13 +156,21 @@ const PlayerView = {
             onSkip: handleSkip,
             onRestart: handleRestart
           }),
-          React.createElement(PlayerView.VolumeControl, { 
+          React.createElement(PlayerView.VolumeControl, {
             volume: state.volume,
             onChange: handleVolumeChange
           })
         )
       ),
-      state.error && React.createElement(PlayerView.ErrorMessage, { 
+      React.createElement('div', { className: 'row mt-3' },
+        React.createElement('div', { className: 'col-md-8' },
+          React.createElement(PlayerView.QueuePanel, { queue: state.queue, onRemove: handleRemove })
+        ),
+        React.createElement('div', { className: 'col-md-4' },
+          React.createElement(PlayerView.JoinPanel)
+        )
+      ),
+      state.error && React.createElement(PlayerView.ErrorMessage, {
         error: state.error,
         onDismiss: () => setState(prev => ({ ...prev, error: null }))
       })
@@ -293,6 +306,79 @@ const PlayerView = {
         onClick: onDismiss,
         'aria-label': 'Close'
       })
+    );
+  },
+
+  // Upcoming queue + incoming guest requests, with remove controls.
+  QueuePanel: function({ queue, onRemove }) {
+    const body = (!queue || queue.length === 0)
+      ? React.createElement('p', { className: 'text-muted small mb-0' },
+          'Queue is empty — random songs will fill in from the assigned playlists.')
+      : React.createElement('ul', { className: 'list-group list-group-flush' },
+          queue.map(function(item) {
+            return React.createElement('li', {
+              key: item.id,
+              className: 'list-group-item d-flex justify-content-between align-items-center px-0'
+            },
+              React.createElement('div', { className: 'text-truncate me-2' },
+                React.createElement('div', { className: 'text-truncate' }, item.song.title),
+                React.createElement('small', { className: 'text-muted' }, item.song.artist || 'Unknown Artist')
+              ),
+              React.createElement('div', { className: 'd-flex align-items-center gap-2 flex-shrink-0' },
+                item.source === 'requested'
+                  ? React.createElement('span', { className: 'badge bg-success', title: 'Guest request' }, 'request')
+                  : React.createElement('span', { className: 'badge bg-light text-muted', title: 'Auto-filled' }, 'auto'),
+                React.createElement('button', {
+                  className: 'btn btn-sm btn-outline-danger',
+                  title: 'Remove from queue',
+                  onClick: function() { onRemove(item.song.id); }
+                }, React.createElement('i', { className: 'fas fa-times' }))
+              )
+            );
+          })
+        );
+
+    return React.createElement('div', { className: 'card mb-3' },
+      React.createElement('div', { className: 'card-body' },
+        React.createElement('h6', { className: 'card-title' },
+          'Up Next ',
+          (queue && queue.length > 0) && React.createElement('span', { className: 'badge bg-secondary' }, queue.length)
+        ),
+        body
+      )
+    );
+  },
+
+  // QR code + URL + password so guests can join from their phones.
+  JoinPanel: function() {
+    const cfg = window.AJB_CONFIG || {};
+    const guestUrl = window.location.origin + '/jukeboxes/' + cfg.jukeboxId + '/guest';
+    const qrRef = React.useRef(null);
+
+    React.useEffect(function() {
+      if (qrRef.current && typeof QRCode !== 'undefined') {
+        qrRef.current.innerHTML = '';
+        new QRCode(qrRef.current, {
+          text: guestUrl,
+          width: 180,
+          height: 180,
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+    }, [guestUrl]);
+
+    return React.createElement('div', { className: 'card mb-3' },
+      React.createElement('div', { className: 'card-body text-center' },
+        React.createElement('h6', { className: 'card-title' }, 'Guests: scan to join'),
+        React.createElement('div', { ref: qrRef, className: 'd-inline-block p-2 bg-white rounded' }),
+        React.createElement('div', { className: 'mt-2 text-truncate' },
+          React.createElement('a', { href: guestUrl, target: '_blank', rel: 'noopener', className: 'small' }, guestUrl)
+        ),
+        cfg.hasPassword && React.createElement('div', { className: 'mt-2' },
+          React.createElement('span', { className: 'text-muted small' }, 'Password: '),
+          React.createElement('code', { className: 'fs-6' }, cfg.guestPassword)
+        )
+      )
     );
   },
 

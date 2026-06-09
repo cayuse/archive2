@@ -1,23 +1,24 @@
 // AJB PlayerController - Business logic for the player
 class PlayerController {
-  constructor(jukeboxId, apiToken) {
-    console.log('🔍 PlayerController constructor called with:', { jukeboxId, apiTokenLength: apiToken?.length });
+  constructor(jukeboxId, apiToken, sessionId = null) {
     this.jukeboxId = jukeboxId;
     this.apiToken = apiToken;
-    
-    console.log('🔍 Creating AudioEngine...');
+    this.sessionId = sessionId;
+
     this.audioEngine = new AudioEngine();
-    
-    console.log('🔍 Creating PlaybackState...');
     this.playbackState = new PlaybackState();
-    
-    console.log('🔍 Creating ApiService...');
     this.apiService = new ApiService(jukeboxId, apiToken);
-    
+
     this.isLoading = false;
-    
+    this.queue = [];
+    this.cableSubscription = null;
+
     this.setupEventHandlers();
     this.startTimeUpdateLoop();
+
+    // Show the host the live queue (incl. guest requests) and keep it current.
+    this.loadQueue();
+    this.subscribeRealtime();
   }
 
   setupEventHandlers() {
@@ -89,7 +90,8 @@ class PlayerController {
       if (result.success && result.song) {
         const song = result.song;
         this.playbackState.setCurrentSong(song);
-        
+        this.loadQueue(); // the consumed track left the queue
+
         const loaded = await this.audioEngine.loadAndPlay(song);
         if (loaded) {
           console.log(`Playing: ${song.title} by ${song.artist}`);
@@ -164,6 +166,47 @@ class PlayerController {
     this.playbackState.setVolume(volume);
   }
 
+  // --- Queue management: the host's view of upcoming songs + guest requests ---
+
+  async loadQueue() {
+    try {
+      const result = await this.apiService.getQueue();
+      if (result.success) {
+        this.queue = result.queue || [];
+        this.notifyQueueChange();
+      }
+    } catch (error) {
+      console.warn('Failed to load queue:', error.message);
+    }
+  }
+
+  async removeFromQueue(songId) {
+    const result = await this.apiService.removeFromQueue(songId);
+    if (result.success) {
+      await this.loadQueue();
+    } else {
+      this.notifyError(result.message || 'Could not remove song from queue');
+    }
+    return result;
+  }
+
+  // Live queue updates (a guest request / consumed track repaints the list).
+  subscribeRealtime() {
+    if (!this.sessionId || !(window.App && window.App.cable)) return;
+    this.cableSubscription = window.App.cable.subscriptions.create(
+      { channel: 'JukeboxChannel', session_id: this.sessionId },
+      {
+        received: (message) => {
+          if (message && message.type === 'queue_update') this.loadQueue();
+        }
+      }
+    );
+  }
+
+  notifyQueueChange() {
+    if (this.onQueueChange) this.onQueueChange(this.queue);
+  }
+
   // Event callbacks (to be set by view)
   notifyLoading(isLoading) {
     if (this.onLoading) {
@@ -192,5 +235,9 @@ class PlayerController {
   // Clean up
   destroy() {
     this.audioEngine.destroy();
+    if (this.cableSubscription) {
+      this.cableSubscription.unsubscribe();
+      this.cableSubscription = null;
+    }
   }
 }

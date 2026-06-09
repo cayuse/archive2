@@ -86,6 +86,52 @@ class ApiService {
     }
   }
 
+  // Remove a song from the queue
+  async removeFromQueue(songId) {
+    try {
+      const response = await fetch(`${this.baseUrl}/queue/${songId}`, {
+        method: 'DELETE',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Authorization': `Bearer ${this.apiToken}`
+        },
+        credentials: 'same-origin'
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        return { success: false, message: data.message || `HTTP ${response.status}` };
+      }
+      return data;
+    } catch (error) {
+      console.error('Error removing from queue:', error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  // Move a song to a new position in the queue
+  async moveInQueue(songId, position) {
+    try {
+      const response = await fetch(`${this.baseUrl}/queue/${songId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Authorization': `Bearer ${this.apiToken}`
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ position })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        return { success: false, message: data.message || `HTTP ${response.status}` };
+      }
+      return data;
+    } catch (error) {
+      console.error('Error moving in queue:', error);
+      return { success: false, message: error.message };
+    }
+  }
+
   // Update playback status
   async updatePlaybackStatus(status) {
     try {
