@@ -94,29 +94,29 @@ class Api::V1::SongsController < ApplicationController
   end
 
   def stream
-    # Support HTTP Range requests for progressive download
-    if request.headers['Range']
-      range = request.headers['Range']
-      file_size = @song.audio_file.byte_size
-      
-      # Parse range header
-      if range =~ /bytes=(\d+)-(\d*)/
-        start_byte = $1.to_i
-        end_byte = $2.empty? ? file_size - 1 : $2.to_i
-        
-        response.headers['Content-Range'] = "bytes #{start_byte}-#{end_byte}/#{file_size}"
-        response.headers['Accept-Ranges'] = 'bytes'
-        response.headers['Content-Length'] = (end_byte - start_byte + 1).to_s
-        
-        # Stream partial content
-        send_data @song.audio_file.download(start_byte, end_byte - start_byte + 1),
-                  status: 206,
-                  type: @song.audio_file.content_type
-      end
+    # Audio playback. Browsers issue HTTP Range requests for <audio>, so honour
+    # them (needed for seeking + the lock-screen scrubber). ActiveStorage's
+    # #download returns the whole blob and takes no args, so we slice the
+    # requested range in Ruby.
+    data = @song.audio_file.download
+    file_size = data.bytesize
+    range = request.headers['Range']
+
+    if range && range =~ /bytes=(\d+)-(\d*)/
+      start_byte = $1.to_i
+      end_byte   = $2.empty? ? file_size - 1 : [$2.to_i, file_size - 1].min
+      start_byte = 0 if start_byte >= file_size
+      response.headers['Content-Range'] = "bytes #{start_byte}-#{end_byte}/#{file_size}"
+      response.headers['Accept-Ranges'] = 'bytes'
+      send_data data.byteslice(start_byte, end_byte - start_byte + 1),
+                status: :partial_content,
+                type: @song.audio_file.content_type,
+                disposition: 'inline'
     else
-      # Stream full file
-      send_data @song.audio_file.download,
-                type: @song.audio_file.content_type
+      response.headers['Accept-Ranges'] = 'bytes'
+      send_data data,
+                type: @song.audio_file.content_type,
+                disposition: 'inline'
     end
   end
 

@@ -41,8 +41,8 @@ class Api::V1::JukeboxesController < ApplicationController
             artist: item.song.artist&.name,
             album: item.song.album&.title,
             duration: item.song.duration,
-            download_url: api_v1_song_download_url(item.song),
-            stream_url: api_v1_song_stream_url(item.song)
+            download_url: download_api_v1_song_url(item.song),
+            stream_url: stream_api_v1_song_url(item.song)
           },
           created_at: item.created_at
         }
@@ -66,8 +66,8 @@ class Api::V1::JukeboxesController < ApplicationController
           artist: current_item.song.artist&.name,
           album: current_item.song.album&.title,
           duration: current_item.song.duration,
-          download_url: api_v1_song_download_url(current_item.song),
-          stream_url: api_v1_song_stream_url(current_item.song)
+          download_url: download_api_v1_song_url(current_item.song),
+          stream_url: stream_api_v1_song_url(current_item.song)
         },
         position: current_item.position,
         source: current_item.source,
