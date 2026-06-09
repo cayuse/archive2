@@ -91,3 +91,6 @@ player/.env
 # System service files (deployment-specific)
 *.sock
 *.pid
+
+# Local handoff/notes (not for commit)
+CLAUDE.md
