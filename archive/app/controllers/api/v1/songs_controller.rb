@@ -1,6 +1,12 @@
 class Api::V1::SongsController < ApplicationController
   include EncryptedTokenAuthentication
-  
+
+  # Columns a client is allowed to sort by. Anything else falls back to
+  # the default below — this prevents user input from being interpolated
+  # raw into an ORDER BY clause (SQL injection).
+  ALLOWED_SORT_COLUMNS = %w[created_at title duration track_number processing_status].freeze
+  DEFAULT_SORT_COLUMN = 'created_at'
+
   skip_before_action :verify_authenticity_token
   skip_before_action :authenticate_encrypted_token_user!, only: []  # Require auth for all actions
   before_action :set_song, only: [:show, :download, :stream]
@@ -12,10 +18,11 @@ class Api::V1::SongsController < ApplicationController
     limit = params[:limit]&.to_i || 50
     limit = [[limit, 1].max, 100].min # Clamp between 1 and 100
     
-    # Parse sorting params
-    sort_by = params[:sort_by] || 'created_at'
+    # Parse sorting params. sort_by must be an allowlisted column name and
+    # sort_order is constrained to asc/desc, so neither can inject SQL.
+    sort_by = ALLOWED_SORT_COLUMNS.include?(params[:sort_by]) ? params[:sort_by] : DEFAULT_SORT_COLUMN
     sort_order = params[:sort_order]&.downcase == 'asc' ? 'asc' : 'desc'
-    
+
     # Get songs with pagination
     songs = Song.includes(:artist, :album, :genre)
                 .order("#{sort_by} #{sort_order}")

@@ -1,8 +1,8 @@
 class Api::V1::GuestController < ApplicationController
   skip_before_action :verify_authenticity_token
-  # before_action :authenticate_guest!  # Temporarily disabled for debugging
-  # before_action :set_jukebox  # Temporarily disabled
-  # before_action :ensure_jukebox_active!  # Temporarily disabled for debugging
+  before_action :authenticate_guest!   # Enforce jukebox guest-password auth
+  before_action :set_jukebox           # Load @jukebox (404s if missing)
+  before_action :ensure_jukebox_active! # Only active/paused jukeboxes are reachable
 
   # GET /api/v1/guest/:jukebox_id/test
   def test
