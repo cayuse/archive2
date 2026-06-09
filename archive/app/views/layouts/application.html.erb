@@ -73,7 +73,7 @@
               <li class="nav-item">
                 <%= link_to "Playlists", playlists_path, class: "nav-link nav-btn" %>
               </li>
-              <% if current_user.moderator? %>
+              <% if current_user.can_host_jukebox? %>
                 <li class="nav-item">
                   <%= link_to "Jukeboxes", jukeboxes_path, class: "nav-link nav-btn" %>
                 </li>

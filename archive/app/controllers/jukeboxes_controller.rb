@@ -87,8 +87,8 @@ class JukeboxesController < ApplicationController
   # Change this single check to adjust who can host (e.g. allow all users, or
   # require admin, or swap in a per-user capability flag).
   def require_host!
-    unless current_user&.moderator?
-      redirect_to root_path, alert: 'Hosting a jukebox requires moderator access.'
+    unless current_user&.can_host_jukebox?
+      redirect_to root_path, alert: 'Hosting a jukebox requires the DJ, moderator, or admin role.'
     end
   end
 

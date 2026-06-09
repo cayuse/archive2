@@ -6,8 +6,12 @@ class User < ApplicationRecord
   has_many :playlists, dependent: :destroy
   has_many :jukeboxes, foreign_key: :owner_id, dependent: :destroy
 
-  # Enums
-  enum :role, { user: 0, moderator: 1, admin: 2 }
+  # Enums.
+  # NOTE: roles are capability-based (see the predicate methods below), not a
+  # strict numeric hierarchy. `dj` is a lightweight role that can host AJB
+  # jukeboxes but has no moderator powers — added at value 3 so existing
+  # user/moderator/admin records (0/1/2) need no migration.
+  enum :role, { user: 0, moderator: 1, admin: 2, dj: 3 }
   
   # Validations
   validates :email, presence: true, uniqueness: true, 
@@ -38,6 +42,15 @@ class User < ApplicationRecord
   
   def user?
     role == 'user'
+  end
+
+  def dj?
+    role == 'dj'
+  end
+
+  # Who may create/host AJB jukeboxes: DJs, moderators, and admins.
+  def can_host_jukebox?
+    dj? || moderator? || admin?
   end
   
   private
