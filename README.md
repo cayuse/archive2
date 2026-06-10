@@ -186,4 +186,29 @@ The app includes a comprehensive user management system with:
 10. **Permission errors**: Ensure user has appropriate role for the action
 11. **JavaScript issues**: Ensure Turbo is properly installed with `bin/importmap pin @hotwired/turbo-rails`
 12. **Delete functionality**: Uses `button_to` for reliable DELETE requests with confirmation dialogs
-13. **Bootstrap styling**: Uses Bootstrap 5 CDN for responsive design and modern components 
+13. **Bootstrap styling**: Uses Bootstrap 5 CDN for responsive design and modern components
+
+## License
+
+Archive
+Copyright (C) 2026 David (github.com/cayuse)
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>. The full text is
+in the [`LICENSE`](LICENSE) file.
+
+Because Archive is typically run as a network service, the AGPL's §13 applies:
+if you run a modified version and let others interact with it over a network,
+you must offer those users the corresponding source.
+
+Third-party components (Rails, React, Howler.js, Bootstrap, qrcode.js, etc.)
+remain under their own permissive licenses; their notices are retained. 
