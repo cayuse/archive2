@@ -28,6 +28,8 @@
   </head>
 
   <body data-theme="<%= current_theme %>">
+    <%# Player/guest pages set :hide_main_nav — they bring their own simplified header. %>
+    <% unless content_for?(:hide_main_nav) %>
     <nav class="navbar navbar-expand-lg navbar-dark">
       <div class="container-fluid">
         <!-- Logo and Brand -->
@@ -126,6 +128,7 @@
         </div>
       </div>
     </nav>
+    <% end %>
 
     <main class="container">
       <%= yield %>
