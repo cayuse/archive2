@@ -450,7 +450,11 @@ const PlayerView = {
   // QR code + URL + password so guests can join from their phones.
   JoinPanel: function() {
     const cfg = window.AJB_CONFIG || {};
-    const guestUrl = window.location.origin + '/jukeboxes/' + cfg.jukeboxId + '/guest';
+    // Short, shareable URL (/j/<slug>); falls back to the canonical path if the
+    // slug isn't present for some reason.
+    const guestUrl = cfg.sessionId
+      ? window.location.origin + '/j/' + cfg.sessionId
+      : window.location.origin + '/jukeboxes/' + cfg.jukeboxId + '/guest';
     const qrRef = React.useRef(null);
 
     React.useEffect(function() {

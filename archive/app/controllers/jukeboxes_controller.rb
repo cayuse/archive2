@@ -1,7 +1,7 @@
 class JukeboxesController < ApplicationController
   require 'base64'
-  before_action :authenticate_user!, except: [:guest]
-  before_action :require_host!, except: [:guest]
+  before_action :authenticate_user!, except: [:guest, :guest_short]
+  before_action :require_host!, except: [:guest, :guest_short]
   before_action :set_jukebox, only: [:show, :edit, :update, :destroy, :player, :guest]
   before_action :ensure_owner, only: [:edit, :update, :destroy]
 
@@ -104,6 +104,14 @@ class JukeboxesController < ApplicationController
   def guest
     # Guest interface - no authentication required, just jukebox access
     # The guest will authenticate using jukebox ID and password via JavaScript
+  end
+
+  # Pretty short URL (/j/<slug>): resolve the slug to its jukebox and serve the
+  # same guest page. Everything downstream still keys on @jukebox.id (the UUID).
+  def guest_short
+    @jukebox = Jukebox.find_by(session_id: params[:code].to_s.downcase.strip)
+    return render plain: 'Jukebox not found.', status: :not_found unless @jukebox
+    render :guest
   end
 
   private

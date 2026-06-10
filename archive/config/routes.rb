@@ -92,6 +92,11 @@ Rails.application.routes.draw do
   end
   
   # Jukeboxes management
+  # Short, shareable guest-join URL: /j/<slug> resolves the human-friendly
+  # session_id slug to the jukebox and serves the guest page. The UUID stays the
+  # functional id everywhere; this is just a pretty front door for sharing/QR.
+  get 'j/:code', to: 'jukeboxes#guest_short', as: :short_guest
+
   resources :jukeboxes do
     member do
       get :player

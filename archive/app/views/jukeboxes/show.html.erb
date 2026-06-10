@@ -117,15 +117,25 @@
             <div class="card-body">
               <p><strong>Guest URL:</strong></p>
               <div class="input-group mb-3">
-                <input type="text" class="form-control" value="<%= guest_jukebox_url(@jukebox) %>" readonly>
+                <input type="text" class="form-control" value="<%= short_guest_url(@jukebox.session_id) %>" readonly>
                 <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard(this.previousElementSibling)">
                   <i class="fas fa-copy"></i>
                 </button>
               </div>
 
+              <div class="text-center mb-3">
+                <div id="guest-qr" class="d-inline-block p-2 bg-white rounded"></div>
+                <div class="mt-2">
+                  <a id="guest-qr-download" class="btn btn-sm btn-outline-secondary"
+                     download="<%= @jukebox.session_id %>-qr.png">
+                    <i class="fas fa-download me-1"></i>Download QR
+                  </a>
+                </div>
+              </div>
+
               <div class="alert alert-info">
                 <small>
-                  <strong>Note:</strong> Share this link with guests. They'll enter the Guest Code
+                  <strong>Note:</strong> Share the link or QR with guests. They'll enter the Guest Code
                   <code class="text-primary"><%= @jukebox.guest_password %></code> to join.
                 </small>
               </div>
@@ -156,4 +166,25 @@ function copyToClipboard(element) {
     button.classList.add('btn-outline-secondary');
   }, 2000);
 }
+</script>
+
+<!-- Guest-join QR (encodes the short /j/<slug> URL; printable for a flyer). -->
+<script src="/vendor/ajb/qrcode.min.js"></script>
+<script>
+  (function () {
+    var el = document.getElementById('guest-qr');
+    if (!el || typeof QRCode === 'undefined') return;
+    var url = <%= short_guest_url(@jukebox.session_id).to_json.html_safe %>;
+    new QRCode(el, { text: url, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+    // Point the download button at the rendered image.
+    var dl = document.getElementById('guest-qr-download');
+    if (dl) {
+      setTimeout(function () {
+        var canvas = el.querySelector('canvas');
+        var img = el.querySelector('img');
+        if (canvas) { dl.href = canvas.toDataURL('image/png'); }
+        else if (img && img.src) { dl.href = img.src; }
+      }, 300);
+    }
+  })();
 </script>
