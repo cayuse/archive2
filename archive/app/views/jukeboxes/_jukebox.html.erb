@@ -5,9 +5,14 @@
         <%= jukebox.private? ? "🔒" : "🌐" %>
         <%= jukebox.name %>
       </h6>
-      <span class="badge bg-<%= status_color(jukebox.status) %>">
-        <%= jukebox.status.titleize %>
-      </span>
+      <% case jukebox.live_status %>
+      <% when :live %>
+        <span class="badge bg-success">● Live</span>
+      <% when :paused %>
+        <span class="badge bg-warning text-dark">● Live (paused)</span>
+      <% else %>
+        <span class="badge bg-secondary">Offline</span>
+      <% end %>
     </div>
     
     <div class="card-body">
@@ -16,12 +21,6 @@
           <%= truncate(jukebox.description, length: 100) %>
         </p>
       <% end %>
-      
-      <div class="mb-2">
-        <small class="text-muted">
-          <strong>Session ID:</strong> <%= jukebox.session_id %>
-        </small>
-      </div>
       
       <% if jukebox.location.present? %>
         <div class="mb-2">
