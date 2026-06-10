@@ -115,9 +115,17 @@
               <h5 class="mb-0 theme-text-primary">Guest Access</h5>
             </div>
             <div class="card-body">
-              <p><strong>Guest URL:</strong></p>
+              <p class="mb-1"><strong>Short URL</strong> <span class="text-muted small">(easy to type / for flyers)</span></p>
               <div class="input-group mb-3">
                 <input type="text" class="form-control" value="<%= short_guest_url(@jukebox.session_id) %>" readonly>
+                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard(this.previousElementSibling)">
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+
+              <p class="mb-1"><strong>Full URL</strong></p>
+              <div class="input-group mb-3">
+                <input type="text" class="form-control" value="<%= guest_jukebox_url(@jukebox) %>" readonly>
                 <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard(this.previousElementSibling)">
                   <i class="fas fa-copy"></i>
                 </button>

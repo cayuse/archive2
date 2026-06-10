@@ -35,6 +35,16 @@
             <%= form.text_field :location, class: "form-control", placeholder: "e.g., Living Room, Backyard, Community Center" %>
           </div>
 
+          <div class="mb-3">
+            <%= form.label :session_id, "Short URL Name", class: "form-label" %>
+            <%= form.text_field :session_id, class: "form-control", placeholder: "e.g. wedding — leave blank to auto-generate from the name" %>
+            <div class="form-text">
+              Used in the short guest link: <code><%= request.base_url %>/j/your-name</code>.
+              Letters, numbers and dashes only (spaces become dashes); must be unique.
+              Leave blank to auto-generate from the jukebox name.
+            </div>
+          </div>
+
         </div>
       </div>
 

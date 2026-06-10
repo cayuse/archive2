@@ -23,7 +23,7 @@ class Jukebox < ApplicationRecord
   scope :private_jukeboxes, -> { where(private: true) }
   scope :owned_by, ->(user) { where(owner_id: user.id) }
 
-  before_validation :generate_session_id, on: :create
+  before_validation :generate_session_id
   before_validation :normalize_session_id
   # Jukeboxes are always private: guests join via the per-jukebox password, and
   # the read-only API stays owner-only. The "private" toggle was removed from the
@@ -102,10 +102,10 @@ class Jukebox < ApplicationRecord
     base_name = name.downcase.gsub(/[^a-z0-9\s]/, '').gsub(/\s+/, '-').strip
     base_name = 'jukebox' if base_name.empty?
     
-    # Ensure uniqueness
+    # Ensure uniqueness (excluding ourselves, so re-saving doesn't collide).
     counter = 1
     candidate = base_name
-    while Jukebox.exists?(session_id: candidate)
+    while Jukebox.where(session_id: candidate).where.not(id: id).exists?
       candidate = "#{base_name}-#{counter}"
       counter += 1
     end
