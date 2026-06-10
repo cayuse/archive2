@@ -16,7 +16,15 @@ class AudioEngine {
     this._wantPlaying = false;
     this._playWatchdog = null;
     this._playRetries = 0;
-    
+
+    // Progress watchdog state. Separate from the play() watchdog: this catches
+    // the case where Howler reports "playing" (onplay fired) but the <audio>
+    // element's currentTime never advances — position pinned while is_playing
+    // stays true. Recovered by reloading the track.
+    this._lastProgressPos = null;
+    this._progressStallTicks = 0;
+    this._progressRecoveries = 0;
+
     // Initialize Howler
     if (typeof Howl === 'undefined') {
       throw new Error('Howler.js is required but not loaded');
@@ -35,6 +43,12 @@ class AudioEngine {
       this._wantPlaying = true;
       this._playRetries = 0;
       this._clearPlayWatchdog();
+      // Reset progress tracking for the new (or reloaded) track. _progressRecoveries
+      // is intentionally NOT reset here — it's cleared once playback actually
+      // advances (in checkProgress), so reload attempts on the same stuck track
+      // are counted and can escalate to a skip.
+      this._lastProgressPos = null;
+      this._progressStallTicks = 0;
 
       // Clean up previous sound
       if (this.sound) {
@@ -192,6 +206,51 @@ class AudioEngine {
       try { this.sound.play(); } catch (e) {}
       this._armPlayWatchdog();
     }
+  }
+
+  // Progress watchdog. Howler can report "playing" (onplay fired) while the
+  // underlying <audio> element is wedged and currentTime never advances — the
+  // iOS auto-advance/lock freeze where is_playing stays true but position is
+  // pinned (at 0 after a song change, or mid-track). The play() watchdog above
+  // only covers the "never started" case (isPlaying false), so this handles the
+  // "playing but frozen" case. Called ~once/second from the controller's time
+  // loop — JS keeps ticking while the page is foregrounded, which is exactly
+  // when these freezes occur (the server still sees heartbeats during them).
+  checkProgress() {
+    if (!this._wantPlaying || !this.isPlaying || !this.sound) {
+      this._lastProgressPos = null;
+      this._progressStallTicks = 0;
+      return;
+    }
+    const pos = this.getCurrentTime();
+    const dur = this.getDuration();
+    // Near the natural end — let onend drive the advance; don't false-trip.
+    if (dur && isFinite(dur) && pos >= dur - 0.6) {
+      this._lastProgressPos = pos;
+      this._progressStallTicks = 0;
+      return;
+    }
+    if (this._lastProgressPos !== null && Math.abs(pos - this._lastProgressPos) < 0.05) {
+      this._progressStallTicks += 1;
+      if (this._progressStallTicks >= 4) { // ~4s "playing" with zero movement
+        this._progressStallTicks = 0;
+        if (this._progressRecoveries < 3 && this.currentSong) {
+          this._progressRecoveries += 1;
+          console.warn(`Audio: playing but frozen at ${pos.toFixed(2)}s — reloading track (attempt ${this._progressRecoveries})`);
+          this.loadAndPlay(this.currentSong);
+        } else {
+          // Reloads didn't unstick it — keep the party moving by skipping ahead.
+          console.warn('Audio: still frozen after reloads — skipping to next track');
+          this._progressRecoveries = 0;
+          if (this.onEnd) this.onEnd();
+        }
+      }
+    } else {
+      // Advancing normally — clear the stall + recovery counters.
+      this._progressStallTicks = 0;
+      this._progressRecoveries = 0;
+    }
+    this._lastProgressPos = pos;
   }
 
   // Skip to beginning of current song

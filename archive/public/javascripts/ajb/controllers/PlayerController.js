@@ -107,6 +107,8 @@ class PlayerController {
   // Start time update loop
   startTimeUpdateLoop() {
     setInterval(() => {
+      // Detect/recover "playing but frozen" stalls (has its own internal guards).
+      this.audioEngine.checkProgress();
       if (this.audioEngine.isPlaying) {
         const currentTime = this.audioEngine.getCurrentTime();
         const duration = this.audioEngine.getDuration();
