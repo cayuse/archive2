@@ -117,7 +117,7 @@
       sessionId: '<%= @jukebox.session_id %>',
       apiToken: '<%= api_token || 'NO_TOKEN_GENERATED' %>',
       jukeboxId: '<%= @jukebox.id %>',
-      jukeboxName: '<%= @jukebox.name %>',
+      jukeboxName: '<%= j @jukebox.name %>',
       status: '<%= @jukebox.status %>',
       crossfadeEnabled: <%= @jukebox.crossfade_enabled %>,
       crossfadeDuration: <%= @jukebox.crossfade_duration %>,

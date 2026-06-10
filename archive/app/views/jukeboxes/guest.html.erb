@@ -25,7 +25,7 @@
   // Configuration for the guest React app
   window.AJB_GUEST_CONFIG = {
     jukeboxId: '<%= @jukebox.id %>',
-    jukeboxName: '<%= @jukebox.name %>',
+    jukeboxName: '<%= j @jukebox.name %>',
     sessionId: '<%= @jukebox.session_id %>',
     status: '<%= @jukebox.status %>',
     hasPassword: <%= @jukebox.has_password? %>,
