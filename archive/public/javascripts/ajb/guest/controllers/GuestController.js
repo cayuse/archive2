@@ -98,12 +98,12 @@ class GuestController {
   // queue changes are pushed instantly; the periodic poll below is only a
   // fallback for when the socket is unavailable or a message is missed.
   subscribeRealtime() {
-    if (!this.sessionId || !(window.App && window.App.cable)) {
+    if (!this.jukeboxId || !(window.App && window.App.cable)) {
       console.warn('Live updates unavailable; relying on periodic polling.');
       return;
     }
     this.cableSubscription = window.App.cable.subscriptions.create(
-      { channel: 'JukeboxChannel', session_id: this.sessionId },
+      { channel: 'JukeboxChannel', jukebox_id: this.jukeboxId },
       {
         received: (message) => this.handleRealtimeMessage(message),
         connected: () => console.log('Jukebox live updates connected'),

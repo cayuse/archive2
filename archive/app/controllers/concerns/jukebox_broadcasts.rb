@@ -1,16 +1,16 @@
 # frozen_string_literal: true
 
 # Helpers for pushing live jukebox updates to subscribed browsers over
-# ActionCable. Clients subscribe to JukeboxChannel with the jukebox's
-# session_id and receive { type: ... } messages. All broadcasts are best-effort:
-# a cable failure must never break the underlying request.
+# ActionCable. Clients subscribe to JukeboxChannel with the jukebox's UUID and
+# receive { type: ... } messages. All broadcasts are best-effort: a cable
+# failure must never break the underlying request.
 module JukeboxBroadcasts
   extend ActiveSupport::Concern
 
   private
 
   def jukebox_stream(jukebox)
-    "jukebox_#{jukebox.session_id}"
+    "jukebox_#{jukebox.id}"
   end
 
   # Tell subscribers the queue changed; they re-fetch it through their normal

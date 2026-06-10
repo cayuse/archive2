@@ -329,9 +329,9 @@ class PlayerController {
 
   // Live queue updates (a guest request / consumed track repaints the list).
   subscribeRealtime() {
-    if (!this.sessionId || !(window.App && window.App.cable)) return;
+    if (!this.jukeboxId || !(window.App && window.App.cable)) return;
     this.cableSubscription = window.App.cable.subscriptions.create(
-      { channel: 'JukeboxChannel', session_id: this.sessionId },
+      { channel: 'JukeboxChannel', jukebox_id: this.jukeboxId },
       {
         received: (message) => {
           if (message && message.type === 'queue_update') {
