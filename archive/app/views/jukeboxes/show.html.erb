@@ -46,7 +46,6 @@
                   </p>
                 </div>
                 <div class="col-md-6">
-                  <p><strong>Session ID:</strong> <code><%= @jukebox.session_id %></code></p>
                   <% if @jukebox.has_password? %>
                     <p><strong>Guest Code:</strong> <code class="text-primary"><%= @jukebox.guest_password %></code></p>
                   <% else %>
@@ -116,21 +115,18 @@
               <h5 class="mb-0 theme-text-primary">Guest Access</h5>
             </div>
             <div class="card-body">
-              <p><strong>Jukebox URL:</strong></p>
+              <p><strong>Guest URL:</strong></p>
               <div class="input-group mb-3">
-                <input type="text" class="form-control" value="<%= request.base_url.gsub('archive', 'jukebox') %>/<%= @jukebox.session_id %>" readonly>
+                <input type="text" class="form-control" value="<%= guest_jukebox_url(@jukebox) %>" readonly>
                 <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard(this.previousElementSibling)">
                   <i class="fas fa-copy"></i>
                 </button>
               </div>
-              
+
               <div class="alert alert-info">
                 <small>
-                  <strong>Note:</strong> Guests can access this jukebox using the session ID: 
-                  <code><%= @jukebox.session_id %></code>
-                  <% if @jukebox.has_password? %>
-                    <br>Password required for access.
-                  <% end %>
+                  <strong>Note:</strong> Share this link with guests. They'll enter the Guest Code
+                  <code class="text-primary"><%= @jukebox.guest_password %></code> to join.
                 </small>
               </div>
             </div>
