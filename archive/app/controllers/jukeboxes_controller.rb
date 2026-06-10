@@ -69,7 +69,7 @@ class JukeboxesController < ApplicationController
 
   def jukebox_params
     params.require(:jukebox).permit(
-      :name, :description, :location, :private, :guest_password,
+      :name, :description, :location, :guest_password,
       :scheduled_start, :scheduled_end, :crossfade_enabled,
       :crossfade_duration, :auto_play, :min_queue_length,
       :queue_refill_level

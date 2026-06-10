@@ -23,6 +23,10 @@ class Jukebox < ApplicationRecord
 
   before_validation :generate_session_id, on: :create
   before_validation :normalize_session_id
+  # Jukeboxes are always private: guests join via the per-jukebox password, and
+  # the read-only API stays owner-only. The "private" toggle was removed from the
+  # UI; this pins the value (and normalizes any older public rows on next save).
+  before_validation { self.private = true }
 
   def active?
     status == 'active'

@@ -51,16 +51,6 @@
         </div>
         <div class="card-body">
           <div class="mb-3">
-            <div class="form-check">
-              <%= form.check_box :private, class: "form-check-input" %>
-              <%= form.label :private, "Private Jukebox", class: "form-check-label" %>
-            </div>
-            <div class="form-text">
-              Private jukeboxes won't appear in public listings and are only accessible via direct session ID.
-            </div>
-          </div>
-
-          <div class="mb-3">
             <%= form.label :guest_password, "Guest Password (Optional)", class: "form-label" %>
             <%= form.text_field :guest_password, class: "form-control", placeholder: "Leave blank for no password" %>
             <div class="form-text">
