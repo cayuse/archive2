@@ -29,8 +29,6 @@ class PlayerController {
     this.subscribeRealtime();
     this.startHeartbeat();
     this.setupVisibilityRecovery();
-    this._wakeLock = null;
-    this.requestWakeLock();
   }
 
   // When the host's screen/tab comes back (unlocked phone, refocused window),
@@ -41,38 +39,11 @@ class PlayerController {
     this._onVisible = () => {
       if (document.visibilityState === 'visible' || document.hasFocus()) {
         this.audioEngine.nudgeIfStalled();
-        // The OS drops the wake lock whenever the page is hidden; re-take it.
-        this.requestWakeLock();
       }
     };
     document.addEventListener('visibilitychange', this._onVisible);
     window.addEventListener('focus', this._onVisible);
     window.addEventListener('pageshow', this._onVisible);
-  }
-
-  // Hold a Screen Wake Lock so the device acting as the "speaker" doesn't
-  // auto-lock/sleep — which is what makes iOS Safari pause the audio. Far more
-  // reliable than recovering after the fact. Supported on iOS Safari 16.4+;
-  // silently no-ops where unavailable. The lock is auto-released when the page
-  // is hidden, so we re-request it on every visibility regain (above).
-  async requestWakeLock() {
-    try {
-      if (!('wakeLock' in navigator)) return;
-      if (document.visibilityState !== 'visible') return;
-      if (this._wakeLock) return; // already held
-      this._wakeLock = await navigator.wakeLock.request('screen');
-      this._wakeLock.addEventListener('release', () => { this._wakeLock = null; });
-      console.log('Screen wake lock acquired — display will stay awake.');
-    } catch (e) {
-      // Denied (e.g. low battery) or unsupported — not fatal.
-      this._wakeLock = null;
-    }
-  }
-
-  releaseWakeLock() {
-    try {
-      if (this._wakeLock) { this._wakeLock.release(); this._wakeLock = null; }
-    } catch (e) { /* ignore */ }
   }
 
   // Heartbeat: while this player is open it reports status periodically (even
@@ -420,6 +391,5 @@ class PlayerController {
       window.removeEventListener('pageshow', this._onVisible);
       this._onVisible = null;
     }
-    this.releaseWakeLock();
   }
 }
