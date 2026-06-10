@@ -95,6 +95,11 @@ class JukeboxesController < ApplicationController
     end
   end
 
+  # The Player/Guest/short-guest pages are public-facing actions reached via
+  # routes — declare them public so Ruby's `private` above never swallows them
+  # (Rails raises ActionNotFound for a private method just like a missing one).
+  public
+
   # AJB Player and Guest interfaces
   def player
     # Generate a short-lived API token for the logged-in host's browser player.
