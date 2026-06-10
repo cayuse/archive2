@@ -6,6 +6,8 @@ class Jukebox < ApplicationRecord
   has_many :ajb_played_songs, dependent: :destroy
 
   validates :name, presence: true, length: { maximum: 255 }
+  # Guests always join with a password — a jukebox can't exist without one.
+  validates :guest_password, presence: true
   validates :session_id, presence: true, uniqueness: true, length: { maximum: 255 }
   validates :status, inclusion: { in: %w[inactive active paused ended] }
   validates :crossfade_duration, numericality: { greater_than: 0, less_than_or_equal_to: 30000 }
