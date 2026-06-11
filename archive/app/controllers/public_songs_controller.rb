@@ -3,19 +3,19 @@ class PublicSongsController < ApplicationController
   # granted *solely* by a signed, expiring token minted on a song's show page
   # (see SongsController#show / the share-link UI).
   #
-  # The token is a Rails signed_id — an HMAC-signed blob (signed with
-  # secret_key_base) carrying the song's id, a :play purpose, and an expiry. It
-  # can't be forged or repurposed, it self-expires, and each link exposes exactly
-  # one song. Nothing is persisted; there's no table and no link to revoke (rotate
-  # secret_key_base to invalidate every outstanding token at once).
+  # The token is a compact HMAC-signed blob (see SongPlayToken) carrying the
+  # song's id and an expiry. It can't be forged, it self-expires, and each link
+  # exposes exactly one song. Nothing is persisted; there's no table and no link
+  # to revoke individually (bump SongPlayToken::PURPOSE to invalidate all).
 
   # GET /s/:token
   def play
-    song = Song.find_signed(params[:token], purpose: :play)
+    song_id = SongPlayToken.verify(params[:token])
+    song = song_id && Song.find_by(id: song_id)
 
     unless song&.audio_file&.attached?
-      # find_signed returns nil for a tampered/expired token; cover the
-      # detached-file case too. Deliberately vague — don't reveal which.
+      # verify returns nil for a tampered/expired token; cover the missing-song
+      # and detached-file cases too. Deliberately vague — don't reveal which.
       return render plain: "This play link is invalid or has expired.", status: :not_found
     end
 
