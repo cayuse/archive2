@@ -1,0 +1,26 @@
+<%# Server-rendered "jukebox is closed" screen. Used when the jukebox has no live
+    player (guest opened a closed jukebox, or the host stopped the music). Rendered
+    in plain ERB on purpose: the name goes through normal HTML escaping (which the
+    browser decodes correctly), so there's none of the JS-string round-trip /
+    device-cache fragility the React closed view had. Reuses the .guest-* styles. %>
+<div id="ajb-guest-root">
+  <div class="guest-container">
+    <div class="guest-header">
+      <h1 class="guest-title">🎵 Guest View</h1>
+      <p class="guest-subtitle">
+        <span class="status-indicator"></span>
+        <%= @jukebox.name %>
+      </p>
+    </div>
+
+    <div class="text-center" style="padding: 4rem 1.5rem;">
+      <div style="font-size: 4.5rem; line-height: 1;">🎉</div>
+      <h1 class="mt-4 mb-2"><%= @jukebox.name %> is closed</h1>
+      <p class="lead text-muted mb-4">Thanks for coming! 👋</p>
+      <p class="text-muted small">
+        The host stopped the music. If they start it back up,
+        <a href="<%= request.fullpath %>">reload this page</a> to rejoin.
+      </p>
+    </div>
+  </div>
+</div>
