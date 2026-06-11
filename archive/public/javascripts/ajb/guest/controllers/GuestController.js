@@ -84,14 +84,19 @@ class GuestController {
     }
   }
 
-  // The jukebox went (or is) offline: stop everything and show the closed view.
+  // The jukebox went (or is) offline. Stop everything and reload, so the
+  // server-rendered closed page (see _closed.html.erb) takes over — one closed
+  // screen, in plain ERB, instead of a JS-rendered one with escaping/cache
+  // pitfalls. On reload the server re-checks live? and shows the SPA again if
+  // the host has restarted.
   handleOffline() {
     this.stopPeriodicUpdates();
     if (this.cableSubscription) {
       this.cableSubscription.unsubscribe();
       this.cableSubscription = null;
     }
-    this.state.setOffline(true);
+    this.state.setOffline(true); // harmless; reload supersedes the in-app view
+    window.location.reload();
   }
 
   // Subscribe to live jukebox updates over ActionCable. Now-playing changes and
