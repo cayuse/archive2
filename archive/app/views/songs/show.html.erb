@@ -200,8 +200,23 @@
                 <p class="theme-text-secondary"><%= number_to_human_size(@song.audio_file.byte_size) %></p>
                 
                 <% if policy(@song).download_audio? %>
-                  <%= link_to "Download", rails_blob_path(@song.audio_file, disposition: "attachment"), 
+                  <%= link_to "Download", rails_blob_path(@song.audio_file, disposition: "attachment"),
                              class: "btn btn-outline-light btn-sm" %>
+
+                  <%# Shareable play link: a signed, self-expiring token (no account
+                      needed to play). Minted fresh on each page load -> 5 days from now. %>
+                  <% share_url = public_song_url(token: @song.signed_id(expires_in: 5.days, purpose: :play)) %>
+                  <div class="mt-3">
+                    <label for="share-play-link" class="form-label theme-text-secondary small mb-1">
+                      Shareable play link
+                      <span class="text-muted">(plays in any browser &middot; expires in 5 days)</span>
+                    </label>
+                    <div class="input-group input-group-sm">
+                      <input type="text" class="form-control" id="share-play-link"
+                             value="<%= share_url %>" readonly onclick="this.select()">
+                      <button class="btn btn-outline-light" type="button" id="copy-play-link">Copy</button>
+                    </div>
+                  </div>
                 <% end %>
               </div>
             </div>
@@ -228,4 +243,28 @@
       <% end %>
     </div>
   </div>
-</div> 
+</div>
+
+<script>
+  // Copy-to-clipboard for the shareable play link.
+  (function () {
+    var btn = document.getElementById('copy-play-link');
+    var input = document.getElementById('share-play-link');
+    if (!btn || !input) return;
+    btn.addEventListener('click', function () {
+      input.select();
+      var done = function () {
+        var original = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(function () { btn.textContent = original; }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(input.value).then(done).catch(function () {
+          document.execCommand('copy'); done();
+        });
+      } else {
+        document.execCommand('copy'); done();
+      }
+    });
+  })();
+</script>

@@ -97,6 +97,12 @@ Rails.application.routes.draw do
   # functional id everywhere; this is just a pretty front door for sharing/QR.
   get 'j/:code', to: 'jukeboxes#guest_short', as: :short_guest
 
+  # Public, tokenized single-song play link: /s/<signed-token>. No login — the
+  # token is a signed, self-expiring Rails signed_id (purpose: :play) minted on
+  # the song show page. Streams the audio inline (plays in-browser) and is also
+  # the URL a standalone player/device can stream. See PublicSongsController.
+  get 's/:token', to: 'public_songs#play', as: :public_song
+
   resources :jukeboxes do
     member do
       get :player
