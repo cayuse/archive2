@@ -70,6 +70,7 @@ class PlayerController {
 
     this.audioEngine.onEnd = () => {
       this.playbackState.setPlaybackStatus(false, false, true);
+      this.updatePlaybackStatus('track_end');
       if (this.pauseAfterSong) {
         // Hold between songs (e.g. for an announcement) instead of advancing.
         this.pauseAfterSong = false;
@@ -89,6 +90,11 @@ class PlayerController {
     this.audioEngine.onSkip = () => {
       this.playNextSong();
     };
+
+    // Pipe the AudioEngine's internal recovery events (stall reload/skip, play
+    // blocked, nudge) into the diagnostic heartbeat so they show up in the
+    // server log — the only way to see them on a locked phone.
+    this.audioEngine.onDiag = (event) => this.updatePlaybackStatus(event);
 
     // Playback state events
     this.playbackState.onStateChange = (state) => {
@@ -131,6 +137,7 @@ class PlayerController {
 
     this.isLoading = true;
     this.notifyLoading(true);
+    this.updatePlaybackStatus('advance_start');
 
     try {
       const result = await this.apiService.getNextSong();
@@ -144,6 +151,7 @@ class PlayerController {
         const loaded = await this.audioEngine.loadAndPlay(song);
         if (loaded) {
           console.log(`Playing: ${song.title} by ${song.artist}`);
+          this.updatePlaybackStatus('advance_done');
         } else {
           this.notifyError('Failed to load song');
         }
@@ -204,14 +212,16 @@ class PlayerController {
   }
 
   // Update playback status on server
-  async updatePlaybackStatus() {
+  async updatePlaybackStatus(event = 'heartbeat') {
     try {
       const state = this.playbackState.getState();
       await this.apiService.updatePlaybackStatus({
         current_song_id: state.currentSong ? state.currentSong.id : null,
         position: state.currentTime,
         is_playing: state.isPlaying,
-        volume: state.volume
+        volume: state.volume,
+        event: event,
+        diag: this.audioEngine.getDiagnostics()
       });
     } catch (error) {
       console.warn('Playback status update failed (this is non-critical):', error.message);

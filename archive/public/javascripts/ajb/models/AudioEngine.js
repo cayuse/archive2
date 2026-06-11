@@ -25,6 +25,11 @@ class AudioEngine {
     this._progressStallTicks = 0;
     this._progressRecoveries = 0;
 
+    // Optional hook: the controller sets this to pipe internal recovery events
+    // (play blocked, stall reload/skip, nudge) straight into the diagnostic
+    // heartbeat, so they're visible in the server log even on a locked phone.
+    this.onDiag = null;
+
     // Initialize Howler
     if (typeof Howl === 'undefined') {
       throw new Error('Howler.js is required but not loaded');
@@ -114,6 +119,7 @@ class AudioEngine {
           // context on iOS (screen asleep when the track auto-advanced).
           // Resume on the first unlock, and let the watchdog keep retrying.
           console.warn('Audio: play blocked, will retry on unlock', error);
+          this._emitDiag('play_blocked');
           if (this.sound) {
             this.sound.once('unlock', () => {
               if (this._wantPlaying && !this.isPlaying && this.sound) {
@@ -180,6 +186,7 @@ class AudioEngine {
       if (this._playRetries >= 8) {
         // Give up auto-retrying; unlock + visibility handlers remain as a net.
         console.warn('Audio: still stalled after retries; awaiting unlock/visibility');
+        this._emitDiag('play_giveup');
         return;
       }
       this._playRetries += 1;
@@ -202,6 +209,7 @@ class AudioEngine {
   nudgeIfStalled() {
     if (this._wantPlaying && this.sound && !this.isPlaying) {
       console.warn('Audio: nudging stalled playback after visibility/focus regain');
+      this._emitDiag('nudge');
       this._playRetries = 0;
       try { this.sound.play(); } catch (e) {}
       this._armPlayWatchdog();
@@ -237,10 +245,12 @@ class AudioEngine {
         if (this._progressRecoveries < 3 && this.currentSong) {
           this._progressRecoveries += 1;
           console.warn(`Audio: playing but frozen at ${pos.toFixed(2)}s — reloading track (attempt ${this._progressRecoveries})`);
+          this._emitDiag('stall_reload');
           this.loadAndPlay(this.currentSong);
         } else {
           // Reloads didn't unstick it — keep the party moving by skipping ahead.
           console.warn('Audio: still frozen after reloads — skipping to next track');
+          this._emitDiag('stall_skip');
           this._progressRecoveries = 0;
           if (this.onEnd) this.onEnd();
         }
@@ -307,6 +317,66 @@ class AudioEngine {
   // Get duration
   getDuration() {
     return this.sound ? this.sound.duration() : 0;
+  }
+
+  // --- Diagnostics ----------------------------------------------------------
+
+  // A low-level snapshot of what the player is actually doing, shipped with the
+  // heartbeat so it lands in the server log. The point is to watch track-edge
+  // behaviour on a *locked* phone (where there's no console): is the next track
+  // buffered ahead of the playhead (bufAhead), did the <audio> element stall
+  // (ready/net), are the recovery watchdogs firing (retries/recoveries)?
+  // Always safe to call; never throws.
+  getDiagnostics() {
+    const r = (n) => (typeof n === 'number' && isFinite(n)) ? Math.round(n * 100) / 100 : null;
+    const pos = this.getCurrentTime();
+    const dur = this.getDuration();
+    const d = {
+      want: this._wantPlaying,
+      playing: this.isPlaying,
+      paused: this.isPaused,
+      stopped: this.isStopped,
+      retries: this._playRetries,
+      stallTicks: this._progressStallTicks,
+      recoveries: this._progressRecoveries,
+      pos: r(pos),
+      dur: r(dur),
+      remaining: (typeof dur === 'number' && isFinite(dur) && dur > 0) ? r(dur - pos) : null
+    };
+    try {
+      if (this.sound) {
+        d.howl = this.sound.state(); // 'unloaded' | 'loading' | 'loaded'
+        // Reach the underlying HTML5 <audio> element (html5: true mode) for the
+        // facts Howler doesn't surface: buffering and network/ready state.
+        const inner = this.sound._sounds && this.sound._sounds[0];
+        const node = inner && inner._node;
+        if (node) {
+          d.ready = node.readyState;     // 0 NOTHING .. 4 ENOUGH_DATA
+          d.net = node.networkState;     // 0 EMPTY, 1 IDLE, 2 LOADING, 3 NO_SOURCE
+          d.nodePaused = node.paused;
+          if (node.buffered && node.buffered.length) {
+            const end = node.buffered.end(node.buffered.length - 1);
+            d.bufEnd = r(end);
+            d.bufAhead = r(end - pos); // seconds buffered past the playhead
+          } else {
+            d.bufAhead = 0;
+          }
+        }
+      }
+    } catch (e) {
+      d.err = String((e && e.message) || e);
+    }
+    if (typeof document !== 'undefined') d.vis = document.visibilityState;
+    return d;
+  }
+
+  // Fire an out-of-band diagnostic heartbeat tagged with what just happened
+  // (a stall, a blocked play, a skip), so the edge is captured between the
+  // regular 10s heartbeats. No-op if the controller hasn't wired onDiag.
+  _emitDiag(event) {
+    if (this.onDiag) {
+      try { this.onDiag(event); } catch (e) { /* diagnostics must never break playback */ }
+    }
   }
 
   // --- MediaSession (OS lock-screen / background-audio integration) ---

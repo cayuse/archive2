@@ -187,7 +187,17 @@ class Api::V1::JukeboxesController < ApplicationController
     begin
       @jukebox.update!(update_params)
       Rails.logger.info "Jukebox update successful"
-      
+
+      # Diagnostic breadcrumb (NOT persisted, no schema change): lets us watch
+      # what a locked phone's player is doing at track edges via the server log.
+      # Grep "[AJB diag]". `event` tags what triggered this heartbeat
+      # (heartbeat/track_end/advance_start/advance_done/stall_*/play_blocked/...).
+      if params[:event].present? || params[:diag].present?
+        diag = params[:diag]
+        diag_json = diag.respond_to?(:to_unsafe_h) ? diag.to_unsafe_h.to_json : diag.to_json
+        Rails.logger.info("[AJB diag] jukebox=#{@jukebox.id} event=#{params[:event]} diag=#{diag_json}")
+      end
+
       # Push the new now-playing state to subscribed guests.
       broadcast_playback_update(@jukebox)
 
