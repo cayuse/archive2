@@ -94,6 +94,7 @@ player/.env
 
 # Local handoff/notes (not for commit)
 CLAUDE.md
+SECURITY_FINDINGS.md
 
 # Manual backup files (e.g. docker-compose.yml.bak.20260604)
 *.bak
