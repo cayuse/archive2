@@ -12,7 +12,9 @@ class Api::V1::AudioFilesController < ApplicationController
       album: @song.album&.title,
       duration: @song.duration,
       file_format: @song.file_format,
-      file_size: @song.file_size,
+      file_size: @song.audio_file.byte_size,
+      # Active Storage's stored MD5 (base64) — lets clients verify downloads.
+      checksum: @song.audio_file.checksum,
       stream_url: stream_api_v1_audio_file_url(@song),
       download_url: download_api_v1_audio_file_url(@song)
     }
@@ -49,7 +51,7 @@ class Api::V1::AudioFilesController < ApplicationController
     
     response.headers['Content-Type'] = @song.audio_file.content_type
     response.headers['Content-Disposition'] = "attachment; filename=\"#{filename}\""
-    response.headers['Content-Length'] = @song.audio_file.byte_size
+    response.headers['Content-Length'] = @song.audio_file.byte_size.to_s
     
     # Stream the file for download
     stream_file(@song.audio_file)
