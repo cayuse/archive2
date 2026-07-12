@@ -5,6 +5,36 @@ class Api::V1::JukeboxesController < ApplicationController
   before_action :authenticate_api_user!
   before_action :set_jukebox, only: [:status, :queue, :current_song, :playback_info, :history, :add_to_queue, :remove_from_queue, :move_in_queue, :promote_in_queue, :play_next_in_queue, :playback_status, :next_song]
 
+  # List the authenticated user's own jukeboxes so player clients can offer
+  # a picker instead of needing a pasted UUID.
+  def index
+    jukeboxes = Jukebox.where(owner: @current_api_user)
+                       .includes(jukebox_playlist_assignments: :playlist)
+                       .order(:name)
+    render json: {
+      success: true,
+      jukeboxes: jukeboxes.map do |jukebox|
+        {
+          id: jukebox.id,
+          name: jukebox.name,
+          session_id: jukebox.session_id,
+          status: jukebox.status,
+          crossfade_enabled: jukebox.crossfade_enabled,
+          crossfade_duration: jukebox.crossfade_duration,
+          auto_play: jukebox.auto_play,
+          queue_count: jukebox.ajb_queue_items.count,
+          playlists: jukebox.jukebox_playlist_assignments.map do |assignment|
+            {
+              id: assignment.playlist_id,
+              name: assignment.playlist&.name,
+              enabled: assignment.enabled
+            }
+          end
+        }
+      end
+    }
+  end
+
   def status
     render json: {
       success: true,

@@ -123,7 +123,7 @@ Rails.application.routes.draw do
         end
       end
       
-      resources :jukeboxes, only: [] do
+      resources :jukeboxes, only: [:index] do
         member do
           get :status
           get :queue
