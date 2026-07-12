@@ -215,6 +215,7 @@ class Api::V1::PlaylistsController < ApplicationController
           title: song.title,
           track_number: song.track_number,
           duration: song.duration,
+          file_format: song.file_format,
           # Use explicit SQL to avoid UUID association issues
           position: PlaylistsSong.where(playlist_id: playlist.id, song_id: song.id).first&.position,
           artist: {
@@ -229,8 +230,10 @@ class Api::V1::PlaylistsController < ApplicationController
             id: song.genre&.id,
             name: song.genre&.name
           },
-          audio_file_url: song.audio_file.attached? ? song.audio_file.url : nil,
-          stream_url: song.audio_file.attached? ? api_v1_audio_file_stream_url(song) : nil
+          # Route helpers, not blob.url: the Disk service can't build URLs
+          # here (no ActiveStorage::Current.url_options in API context).
+          audio_file_url: song.audio_file.attached? ? download_api_v1_audio_file_url(song) : nil,
+          stream_url: song.audio_file.attached? ? stream_api_v1_audio_file_url(song) : nil
         }
       end
     end

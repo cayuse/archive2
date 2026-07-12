@@ -13,8 +13,8 @@ class Api::V1::AudioFilesController < ApplicationController
       duration: @song.duration,
       file_format: @song.file_format,
       file_size: @song.file_size,
-      stream_url: api_v1_audio_file_stream_url(@song),
-      download_url: api_v1_audio_file_download_url(@song)
+      stream_url: stream_api_v1_audio_file_url(@song),
+      download_url: download_api_v1_audio_file_url(@song)
     }
   end
   
