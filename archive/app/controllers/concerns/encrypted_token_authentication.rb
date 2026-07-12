@@ -1,12 +1,25 @@
 module EncryptedTokenAuthentication
   extend ActiveSupport::Concern
-  
+
   included do
     before_action :authenticate_encrypted_token_user!
+    # Declared after PunditAuthorization's handler, so it wins for API
+    # controllers: token clients get JSON errors, not HTML redirects.
+    rescue_from Pundit::NotAuthorizedError, with: :api_user_not_authorized
   end
-  
+
   private
-  
+
+  # Pundit policies must evaluate against the token user, not the (absent)
+  # session user, or token clients only ever see public records.
+  def pundit_user
+    @current_api_user || current_user
+  end
+
+  def api_user_not_authorized
+    render json: { success: false, message: "Not authorized" }, status: :forbidden
+  end
+
   def authenticate_encrypted_token_user!
     token = extract_token_from_header
     

@@ -1,18 +1,25 @@
 class Api::V1::AuthController < ApplicationController
   skip_before_action :verify_authenticity_token
-  before_action :authenticate_api_user!, only: [:verify, :logout]
+  before_action :authenticate_api_user!, only: [:verify, :logout, :refresh]
+
+  # Clients may ask for a longer-lived token (mobile apps); capped so a
+  # leaked token still ages out.
+  DEFAULT_TOKEN_TTL = 2.days
+  MAX_TOKEN_TTL = 30.days
 
   def login
     user = User.find_by(email: params[:email])
     
     if user&.authenticate(params[:password])
       # Generate API token
-      api_token = generate_api_token(user)
+      ttl = requested_token_ttl
+      api_token = generate_api_token(user, ttl: ttl)
       
       render json: {
         success: true,
         message: "Authentication successful",
         api_token: api_token,
+        expires_at: ttl.from_now.to_i,
         user: {
           id: user.id,
           name: user.name,
@@ -26,6 +33,23 @@ class Api::V1::AuthController < ApplicationController
         message: "Invalid email or password"
       }, status: :unauthorized
     end
+  end
+
+  # Exchange a valid (unexpired) token for a fresh one, so an active client
+  # never has to store the password-login flow's credentials long-term.
+  def refresh
+    ttl = requested_token_ttl
+    render json: {
+      success: true,
+      api_token: generate_api_token(@current_api_user, ttl: ttl),
+      expires_at: ttl.from_now.to_i,
+      user: {
+        id: @current_api_user.id,
+        name: @current_api_user.name,
+        email: @current_api_user.email,
+        role: @current_api_user.role
+      }
+    }, status: :ok
   end
 
   def logout
@@ -53,13 +77,19 @@ class Api::V1::AuthController < ApplicationController
 
   private
 
-  def generate_api_token(user)
+  def requested_token_ttl
+    requested = params[:expires_in].to_i
+    return DEFAULT_TOKEN_TTL if requested <= 0
+    [requested.seconds, MAX_TOKEN_TTL].min
+  end
+
+  def generate_api_token(user, ttl: DEFAULT_TOKEN_TTL)
     # Create payload with user info and expiration
     payload = {
       user_id: user.id,
       email: user.email,
       role: user.role,
-      exp: 2.days.from_now.to_i,
+      exp: ttl.from_now.to_i,
       iat: Time.current.to_i,
       iss: 'archive-api'
     }

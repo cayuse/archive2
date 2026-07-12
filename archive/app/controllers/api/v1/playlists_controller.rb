@@ -2,7 +2,7 @@ class Api::V1::PlaylistsController < ApplicationController
   include EncryptedTokenAuthentication
   
   skip_before_action :verify_authenticity_token
-  before_action :set_playlist, only: [:show, :add_song, :remove_song, :reorder_songs]
+  before_action :set_playlist, only: [:show, :update, :destroy, :add_song, :add_songs, :remove_song, :reorder_songs]
   
   def index
     @playlists = policy_scope(Playlist)
@@ -29,6 +29,68 @@ class Api::V1::PlaylistsController < ApplicationController
     }
   end
   
+  # Create a playlist, optionally seeded with an ordered song selection —
+  # this is the backend for "make playlist from selection" in clients.
+  def create
+    @playlist = Playlist.new(
+      name: params.require(:name),
+      description: params[:description],
+      is_public: ActiveModel::Type::Boolean.new.cast(params[:is_public]) || false,
+      user: pundit_user
+    )
+    authorize @playlist
+
+    if @playlist.save
+      append_songs(Array(params[:song_ids]))
+      render json: {
+        success: true,
+        message: "Playlist created",
+        playlist: playlist_json(@playlist, include_songs: true)
+      }, status: :created
+    else
+      render json: { success: false, errors: @playlist.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  def update
+    authorize @playlist
+
+    attrs = {}
+    attrs[:name] = params[:name] if params[:name].present?
+    attrs[:description] = params[:description] if params.key?(:description)
+    attrs[:is_public] = ActiveModel::Type::Boolean.new.cast(params[:is_public]) if params.key?(:is_public)
+
+    if @playlist.update(attrs)
+      render json: { success: true, playlist: playlist_json(@playlist) }
+    else
+      render json: { success: false, errors: @playlist.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  def destroy
+    authorize @playlist
+    @playlist.destroy
+    render json: { success: true, message: "Playlist deleted" }
+  end
+
+  # Bulk append (skips songs already present, preserves given order)
+  def add_songs
+    authorize @playlist, :manage_songs?
+
+    song_ids = Array(params[:song_ids])
+    if song_ids.empty?
+      render json: { success: false, error: "No song_ids provided" }, status: :bad_request
+      return
+    end
+
+    added = append_songs(song_ids)
+    render json: {
+      success: true,
+      message: "#{added} song(s) added to playlist",
+      playlist: playlist_json(@playlist, include_songs: true)
+    }
+  end
+
   def add_song
     authorize @playlist, :manage_songs?
     
@@ -106,7 +168,26 @@ class Api::V1::PlaylistsController < ApplicationController
   end
   
   private
-  
+
+  # Appends songs after the current max position, skipping duplicates and
+  # unknown ids. Returns the number actually added.
+  def append_songs(song_ids)
+    return 0 if song_ids.empty?
+
+    existing = PlaylistsSong.where(playlist_id: @playlist.id).pluck(:song_id).to_set
+    valid_ids = Song.where(id: song_ids - existing.to_a).pluck(:id).to_set
+    next_position = (PlaylistsSong.where(playlist_id: @playlist.id).maximum(:position) || 0) + 1
+
+    added = 0
+    song_ids.each do |song_id|
+      next unless valid_ids.include?(song_id)
+      PlaylistsSong.create!(playlist_id: @playlist.id, song_id: song_id, position: next_position)
+      next_position += 1
+      added += 1
+    end
+    added
+  end
+
   def set_playlist
     @playlist = Playlist.includes(:user, :songs).find(params[:id])
   end

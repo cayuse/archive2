@@ -30,9 +30,23 @@ class Api::V1::SongsController < ApplicationController
 
     # Get songs with pagination
     songs = Song.includes(:artist, :album, :genre)
-                .order("#{sort_by} #{sort_order}")
-                .page(page)
-                .per(limit)
+
+    # Multi-term AND search across title/artist/album/genre (same semantics
+    # as the web UI's /songs/search, but token-authenticated).
+    if params[:search].present?
+      songs = songs.left_outer_joins(:artist, :album, :genre)
+      params[:search].split(/\s+/).reject(&:blank?).first(10).each do |term|
+        pattern = "%#{Song.sanitize_sql_like(term)}%"
+        songs = songs.where(
+          "songs.title ILIKE :p OR artists.name ILIKE :p OR albums.title ILIKE :p OR genres.name ILIKE :p",
+          p: pattern
+        )
+      end
+    end
+
+    songs = songs.order("#{sort_by} #{sort_order}")
+                 .page(page)
+                 .per(limit)
     
     render json: {
       success: true,
@@ -65,7 +79,7 @@ class Api::V1::SongsController < ApplicationController
     if include_binary
       # Return binary data directly
       send_data @song.audio_file.download, 
-                filename: "#{@song.artist.name} - #{@song.title}.#{@song.file_format}",
+                filename: "#{@song.artist&.name || 'Unknown'} - #{@song.title}.#{@song.file_format}",
                 type: @song.audio_file.content_type
     else
       # Return JSON metadata
@@ -74,9 +88,9 @@ class Api::V1::SongsController < ApplicationController
         song: {
           id: @song.id,
           title: @song.title,
-          artist: @song.artist.name,
-          album: @song.album.title,
-          genre: @song.genre.name,
+          artist: @song.artist&.name,
+          album: @song.album&.title,
+          genre: @song.genre&.name,
           duration: @song.duration,
           file_format: @song.file_format,
           file_size: @song.audio_file.byte_size,
@@ -89,7 +103,7 @@ class Api::V1::SongsController < ApplicationController
 
   def download
     send_data @song.audio_file.download,
-              filename: "#{@song.artist.name} - #{@song.title}.#{@song.file_format}",
+              filename: "#{@song.artist&.name || 'Unknown'} - #{@song.title}.#{@song.file_format}",
               type: @song.audio_file.content_type
   end
 

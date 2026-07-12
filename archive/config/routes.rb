@@ -170,6 +170,7 @@ Rails.application.routes.draw do
       # Authentication for API
       post '/auth/login', to: 'auth#login'
       post '/auth/logout', to: 'auth#logout'
+      post '/auth/refresh', to: 'auth#refresh'
       get '/auth/verify', to: 'auth#verify'
       
 
@@ -212,9 +213,10 @@ Rails.application.routes.draw do
       end
       
       # Playlist operations (for music player integration)
-      resources :playlists, only: [:index, :show] do
+      resources :playlists, only: [:index, :show, :create, :update, :destroy] do
         member do
           post :add_song
+          post :add_songs
           delete :remove_song
           put :reorder_songs
         end
