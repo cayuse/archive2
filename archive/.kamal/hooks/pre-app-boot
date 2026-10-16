@@ -6,7 +6,7 @@
 # `docker start archive-archive-1`. Postgres and Redis are never touched.
 # A few seconds of 502s per deploy.
 set -e
-[ "$KAMAL_DESTINATION" = "rehearsal" ] && user=cayuse || user=sauce
+[ "$KAMAL_DESTINATION" = "staging" ] && user=cayuse || user=sauce
 
 for host in $(echo "$KAMAL_HOSTS" | tr ',' ' '); do
   ssh "$user@$host" '

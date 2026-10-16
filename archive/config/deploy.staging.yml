@@ -1,5 +1,7 @@
-# Rehearsal destination: deploys to gameforge itself against a restored copy
-# of the production DB (see KAMAL_DEPLOY.md "Rehearsal"). Never touches bigballs.
+# Staging destination: deploys to gameforge itself on 127.0.0.1:3900. Needs
+# local containers archive-db-1 / archive-redis-1 on a docker network named
+# archive_default (e.g. a restored backup; see KAMAL_DEPLOY.md "Staging").
+# Never touches bigballs.
 servers:
   web:
     hosts:
@@ -22,5 +24,5 @@ env:
     ASSUME_SSL: "false"
     ALLOW_ALL_HOSTS: "true"
 volumes:
-  - "/tmp/archive-rehearsal/storage:/rails/storage"
-  - "archive_rehearsal_logs:/rails/log"
+  - "/srv/archive-staging/storage:/rails/storage"
+  - "archive_staging_logs:/rails/log"

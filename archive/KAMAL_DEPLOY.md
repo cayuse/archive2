@@ -55,7 +55,8 @@ scp -r cayuse@192.168.17.109:archive-backups/<stamp> ~/archive-backups/
 - To the previous Kamal version: `kamal rollback <version>` (`kamal app containers` lists them).
 - All the way back to compose: `kamal app stop` then on bigballs `docker start archive-archive-1`.
 
-## Rehearsal (gameforge, never touches bigballs)
-`kamal deploy -d rehearsal` deploys to gameforge itself on 127.0.0.1:3900 against a
-restored DB copy in local containers named archive-db-1 / archive-redis-1 on a local
-`archive_default` network (restore steps: Backup section, then pg_restore into it).
+## Staging (gameforge, never touches bigballs)
+`kamal deploy -d staging` deploys to gameforge itself on 127.0.0.1:3900. It expects local
+containers named archive-db-1 / archive-redis-1 on a local `archive_default` network
+(e.g. a backup restored with pg_restore) and storage at /srv/archive-staging/storage.
+This setup was used to rehearse the first cutover (2026-10-16); the containers were removed afterwards.

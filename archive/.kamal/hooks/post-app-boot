@@ -4,7 +4,7 @@
 # detach it: it only needs archive_default (archive-db-1, archive-redis-1).
 # The detachment persists across container restarts.
 set -e
-[ "$KAMAL_DESTINATION" = "rehearsal" ] && user=cayuse || user=sauce
+[ "$KAMAL_DESTINATION" = "staging" ] && user=cayuse || user=sauce
 dest=${KAMAL_DESTINATION:+--filter label=destination=$KAMAL_DESTINATION}
 
 for host in $(echo "$KAMAL_HOSTS" | tr ',' ' '); do
