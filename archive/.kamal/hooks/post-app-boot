@@ -1,0 +1,18 @@
+#!/bin/sh
+# Kamal always attaches app containers to the shared "kamal" network, which
+# other apps (and sauce-postgis) live on. Archive doesn't use kamal-proxy, so
+# detach it: it only needs archive_default (archive-db-1, archive-redis-1).
+# The detachment persists across container restarts.
+set -e
+[ "$KAMAL_DESTINATION" = "rehearsal" ] && user=cayuse || user=sauce
+dest=${KAMAL_DESTINATION:+--filter label=destination=$KAMAL_DESTINATION}
+
+for host in $(echo "$KAMAL_HOSTS" | tr ',' ' '); do
+  ssh "$user@$host" "
+    for c in \$(docker ps -q --filter label=service=archive --filter label=role=web $dest); do
+      if docker inspect \$c --format '{{json .NetworkSettings.Networks}}' | grep -q '\"kamal\"'; then
+        docker network disconnect kamal \$c && echo \"post-app-boot: detached \$c from kamal network\"
+      fi
+    done
+  "
+done

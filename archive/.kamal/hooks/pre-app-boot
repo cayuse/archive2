@@ -1,0 +1,19 @@
+#!/bin/sh
+# The app publishes a FIXED host port (no kamal-proxy on bigballs), so whatever
+# holds it must release it before the new container boots: the previous Kamal
+# container, or (first cutover only) the old docker-compose app container
+# archive-archive-1. That one is STOPPED, never removed, so rollback is
+# `docker start archive-archive-1`. Postgres and Redis are never touched.
+# A few seconds of 502s per deploy.
+set -e
+[ "$KAMAL_DESTINATION" = "rehearsal" ] && user=cayuse || user=sauce
+
+for host in $(echo "$KAMAL_HOSTS" | tr ',' ' '); do
+  ssh "$user@$host" '
+    docker ps -q --filter label=service=archive --filter label=role=web | xargs -r docker stop
+    if [ -n "$(docker ps -q --filter name=^/archive-archive-1$)" ]; then
+      echo "pre-app-boot: stopping legacy compose container archive-archive-1 (kept for rollback)"
+      docker stop archive-archive-1
+    fi
+  '
+done

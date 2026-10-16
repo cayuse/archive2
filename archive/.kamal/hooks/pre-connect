@@ -1,0 +1,9 @@
+#!/bin/sh
+# Refuse to deploy if any secret would resolve empty. Kamal's dotenv parser
+# turns a failed $(...) into an empty string without complaint, which would
+# boot the app with no DB URL / master key.
+set -e
+for v in RAILS_MASTER_KEY POSTGRES_PASSWORD AWS_SES_SMTP_USERNAME AWS_SES_SMTP_PASSWORD; do
+  .kamal/read-secret "$v" >/dev/null
+done
+[ -n "$(sed -n 's/^KAMAL_REGISTRY_PASSWORD=//p' /home/sauce/secrets/jeedata/ghcr.env)" ] || { echo "pre-connect: GHCR token missing" >&2; exit 1; }

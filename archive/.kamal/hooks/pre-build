@@ -1,0 +1,9 @@
+#!/bin/sh
+# The image must contain config/credentials.yml.enc (gitignored, so it only
+# exists in a working copy). Without it Rails dies at boot with
+# "Missing secret_key_base".
+set -e
+[ -s config/credentials.yml.enc ] || {
+  echo "pre-build: config/credentials.yml.enc missing. Copy it from bigballs:" >&2
+  echo "  scp cayuse@192.168.17.109:archive2/archive/config/credentials.yml.enc config/" >&2
+  exit 1; }

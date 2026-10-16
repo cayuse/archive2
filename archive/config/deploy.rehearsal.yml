@@ -1,0 +1,26 @@
+# Rehearsal destination: deploys to gameforge itself against a restored copy
+# of the production DB (see KAMAL_DEPLOY.md "Rehearsal"). Never touches bigballs.
+servers:
+  web:
+    hosts:
+      - 127.0.0.1
+    proxy: false
+    options:
+      network: archive_default
+      publish:
+        - "127.0.0.1:3900:3000"
+      health-cmd: "curl -fsS http://localhost:3000/up || exit 1"
+      health-interval: 5s
+      health-start-period: 10s
+ssh:
+  user: cayuse
+env:
+  clear:
+    APP_HOST: localhost
+    APP_PROTOCOL: http
+    FORCE_SSL: "false"
+    ASSUME_SSL: "false"
+    ALLOW_ALL_HOSTS: "true"
+volumes:
+  - "/tmp/archive-rehearsal/storage:/rails/storage"
+  - "archive_rehearsal_logs:/rails/log"
