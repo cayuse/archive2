@@ -1,0 +1,19 @@
+# OwnTone: the AirPlay 2 output engine for the headless jukebox (see
+# HEADLESS_JUKEBOX_RESEARCH.md). Runs on bigballs under ~/owntone as cayuse.
+#
+# Host networking is required: mDNS discovery of AirPlay speakers, PTP timing
+# (UDP 319/320) and the RTP control/timing ports all need the real LAN stack.
+# Web UI + JSON API: http://192.168.17.109:3689   websocket: 3688
+services:
+  owntone:
+    image: docker.io/owntone/owntone:latest
+    container_name: owntone
+    network_mode: host
+    environment:
+      - UID=1000
+      - GID=100
+    volumes:
+      - ./config:/etc/owntone
+      - ./media:/srv/media
+      - ./cache:/var/cache/owntone
+    restart: unless-stopped
