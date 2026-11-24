@@ -2,6 +2,9 @@ class Artist < ApplicationRecord
   # Associations
   has_many :songs, dependent: :nullify
   has_many :albums, dependent: :nullify
+  has_many :song_artist_credits, dependent: :destroy
+  # Every song the artist is credited on, including features on other artists' songs
+  has_many :credited_songs, through: :song_artist_credits, source: :song
   has_and_belongs_to_many :genres, join_table: :artists_genres
   # Get genres through songs as fallback
   has_many :song_genres, -> { distinct }, through: :songs, source: :genre
@@ -41,6 +44,11 @@ class Artist < ApplicationRecord
   # Instance methods
   def display_name
     name
+  end
+
+  # Songs where this is the main artist, plus songs the artist is credited on (features).
+  def all_songs
+    Song.where(artist_id: id).or(Song.where(id: song_artist_credits.select(:song_id)))
   end
 
   def song_count

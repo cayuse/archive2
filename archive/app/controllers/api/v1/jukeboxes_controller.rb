@@ -3,7 +3,7 @@ class Api::V1::JukeboxesController < ApplicationController
 
   skip_before_action :verify_authenticity_token
   before_action :authenticate_api_user!
-  before_action :set_jukebox, only: [:status, :queue, :current_song, :playback_info, :history, :add_to_queue, :remove_from_queue, :move_in_queue, :promote_in_queue, :play_next_in_queue, :playback_status, :next_song]
+  before_action :set_jukebox, only: [:status, :queue, :current_song, :playback_info, :history, :add_to_queue, :remove_from_queue, :move_in_queue, :promote_in_queue, :play_next_in_queue, :playback_status, :next_song, :radio_settings]
 
   # List the authenticated user's own jukeboxes so player clients can offer
   # a picker instead of needing a pasted UUID.
@@ -111,6 +111,29 @@ class Api::V1::JukeboxesController < ApplicationController
     end
   end
 
+  # POST /api/v1/jukeboxes/station   [song_id]
+  # The caller's personal station (created on first use). With song_id, restarts it from that song.
+  def station
+    unless @current_api_user.can_host_jukebox?
+      return render json: { success: false, message: 'Not allowed to host a jukebox' }, status: 403
+    end
+    jukebox = Jukebox.station_for(@current_api_user)
+    if params[:song_id].present?
+      jukebox.start_from!(Song.find(params[:song_id]))
+      broadcast_queue_update(jukebox)
+    end
+    render json: { success: true, jukebox: station_json(jukebox) }
+  rescue ActiveRecord::RecordNotFound
+    render json: { success: false, message: 'Song not found' }, status: 404
+  end
+
+  # PATCH /api/v1/jukeboxes/:id/radio_settings   genre=any|adjacent|strict, <dial>=-1..1, reset_steer=true
+  def radio_settings
+    @jukebox.update_radio_settings!(params.permit(:genre, :reset_steer, *SongAudioFeature::DIALS))
+    broadcast_queue_update(@jukebox)
+    render json: { success: true, jukebox: station_json(@jukebox) }
+  end
+
   def add_to_queue
     song = Song.find(params[:song_id])
     source = params[:source].presence_in(%w[requested random]) || 'requested'
@@ -119,6 +142,7 @@ class Api::V1::JukeboxesController < ApplicationController
       return render json: { success: false, message: 'Song is already in the queue' }, status: 409
     end
 
+    @jukebox.retune! if source == 'requested'   # radio: the request re-aims the station
     queue_item = @jukebox.ajb_queue_items.create!(song: song, source: source)
     broadcast_queue_update(@jukebox)
 
@@ -291,6 +315,11 @@ class Api::V1::JukeboxesController < ApplicationController
     need = [target - current, 0].max
     return if need <= 0
 
+    if @jukebox.fill_mode == 'radio'
+      need -= add_radio_songs!(need)
+      return if need <= 0
+    end
+
     # Get playlist IDs from jukebox's assigned playlists
     playlist_ids = @jukebox.jukebox_playlist_assignments
                            .enabled
@@ -363,6 +392,52 @@ class Api::V1::JukeboxesController < ApplicationController
 
     Rails.logger.info "Added #{added} random songs to jukebox #{@jukebox.id} queue (target: #{target}, current: #{current + added})"
   end
+  # Radio auto-fill: queue songs that sound like the latest request (or the last song in line).
+  # Stays inside the assigned playlists when there are any, otherwise uses the whole library.
+  # Returns how many were added; the caller tops up the rest at random.
+  def add_radio_songs!(need)
+    seed_id = @jukebox.ajb_queue_items.requested.order(position: :desc).pick(:song_id) ||
+              @jukebox.ajb_played_songs.where(source: 'requested').order(played_at: :desc).pick(:song_id) ||
+              @jukebox.ajb_queue_items.order(position: :desc).pick(:song_id) ||
+              @jukebox.ajb_played_songs.order(played_at: :desc).pick(:song_id)
+    seed = seed_id && Song.find_by(id: seed_id)
+    return 0 unless seed
+
+    playlist_ids = @jukebox.jukebox_playlist_assignments.enabled.pluck(:playlist_id)
+    allowed = playlist_ids.any? ? PlaylistsSong.where(playlist_id: playlist_ids).pluck(:song_id) : nil
+    exclude = @jukebox.ajb_played_songs.recent(50).pluck(:song_id) + @jukebox.ajb_queue_items.pluck(:song_id)
+
+    # A tight genre setting can run dry (small genres have few sound-alikes). Rather than let the
+    # music stop, loosen the genre limit step by step for this top-up only.
+    added = 0
+    modes = [ @jukebox.radio_genre_mode, "adjacent", "any" ].uniq
+    modes = modes.drop_while { |m| m != @jukebox.radio_genre_mode }
+    modes.each do |mode|
+      break if added >= need
+      SongRadio.new(seed: seed, exclude_ids: exclude, allowed_ids: allowed, user: @jukebox.owner,
+                    steer: @jukebox.radio_steer, genre_mode: mode).next_songs(need - added).each do |song|
+        next unless @jukebox.ajb_queue_items.create(song_id: song.id, source: 'random').persisted?
+        added += 1
+        exclude << song.id
+      end
+    end
+
+    # Last resort for a station with no playlists (seed never analysed, or everything nearby was
+    # played recently): any analysed music, so the stream keeps going.
+    if added < need && allowed.nil?
+      Song.joins(:audio_feature).where("song_audio_features.speech < ?", SongRadio::SPEECH_CUTOFF)
+          .where.not(id: exclude + [ seed.id ]).order(Arel.sql("RANDOM()")).limit(need - added).pluck(:id).each do |song_id|
+        added += 1 if @jukebox.ajb_queue_items.create(song_id: song_id, source: 'random').persisted?
+      end
+    end
+    Rails.logger.info "Radio fill: added #{added} of #{need} songs to jukebox #{@jukebox.id} from seed #{seed.id}"
+    added
+  rescue => e
+    Rails.logger.error "Radio fill failed for jukebox #{@jukebox.id}: #{e.message}"
+    0
+  end
+  private :add_radio_songs!
+
   # Not an action — only called internally by next_song.
   private :ensure_min_queue_length!
 
@@ -403,7 +478,9 @@ class Api::V1::JukeboxesController < ApplicationController
           album: song.album&.title,
           duration: song.duration,
           download_url: download_api_v1_song_url(song),
-          stream_url: stream_api_v1_song_url(song)
+          stream_url: stream_api_v1_song_url(song),
+          # tokenized, no-login link for players that cannot send headers (OwnTone / AirPlay)
+          play_url: public_song_url(token: SongPlayToken.generate(song.id, expires_in: 12.hours))
         },
         source: source,
         played_at: Time.current.iso8601
@@ -472,6 +549,15 @@ class Api::V1::JukeboxesController < ApplicationController
   # user; anything that mutates the jukebox or its queue is owner-only. (Rendering
   # in a before_action halts the action chain.)
   READ_ONLY_ACTIONS = %w[status queue current_song playback_info history].freeze
+
+  def station_json(jukebox)
+    {
+      id: jukebox.id, name: jukebox.name, session_id: jukebox.session_id, fill_mode: jukebox.fill_mode,
+      station: jukebox.station?, guest_password: jukebox.guest_password,
+      radio: { genre: jukebox.radio_genre_mode, steer: jukebox.radio_steer },
+      queue_length: jukebox.ajb_queue_items.count
+    }
+  end
 
   def set_jukebox
     @jukebox = Jukebox.find(params[:id])

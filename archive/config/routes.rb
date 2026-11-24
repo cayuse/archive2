@@ -62,6 +62,11 @@ Rails.application.routes.draw do
       get :maintenance
       post :bulk_update
     end
+    member do
+      get :radio
+      post :rate
+      post :play_radio
+    end
   end
   
   # Album search for autocomplete
@@ -124,7 +129,11 @@ Rails.application.routes.draw do
       end
       
       resources :jukeboxes, only: [:index] do
+        collection do
+          post :station
+        end
         member do
+          patch :radio_settings
           get :status
           get :queue
           get :current_song
@@ -177,6 +186,10 @@ Rails.application.routes.draw do
       
       # Bulk song operations (admin/moderator only)
       resources :songs, only: [:index, :show] do
+        member do
+          get :radio
+          post :rate
+        end
         collection do
           post :bulk_create
           put :bulk_update

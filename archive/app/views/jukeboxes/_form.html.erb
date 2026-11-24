@@ -97,6 +97,18 @@
                 When the queue drops below this, top it up with random songs.
               </div>
             </div>
+
+            <div class="mb-3">
+              <%= form.label :fill_mode, "Auto-fill Style", class: "form-label" %>
+              <%= form.select :fill_mode,
+                    [ [ "Random from assigned playlists", "random" ],
+                      [ "Radio: songs that sound like what is playing", "radio" ] ],
+                    {}, class: "form-select" %>
+              <div class="form-text">
+                Radio follows the sound of the last request. With playlists assigned it stays inside them;
+                with none assigned it draws on the whole library.
+              </div>
+            </div>
           </div>
         </div>
       </div>

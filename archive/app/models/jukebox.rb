@@ -14,6 +14,69 @@ class Jukebox < ApplicationRecord
   validates :owner_id, presence: true
   validates :min_queue_length, presence: true, numericality: { greater_than: 0 }
   validates :queue_refill_level, presence: true, numericality: { greater_than: 0 }
+  FILL_MODES = %w[random radio].freeze
+  validates :fill_mode, inclusion: { in: FILL_MODES }
+
+  # A user's personal station: a jukebox on radio auto-fill with no playlists, so it draws on the
+  # whole library. Found by this session_id prefix; created on first use.
+  STATION_PREFIX = "station-".freeze
+
+  def self.station_for(user)
+    code = "#{STATION_PREFIX}#{user.id.to_s.delete('-').first(12)}"
+    find_by(owner_id: user.id, session_id: code) || create!(
+      owner: user, session_id: code, name: "My Station", fill_mode: "radio",
+      guest_password: SecureRandom.alphanumeric(8).downcase,
+      min_queue_length: 2, queue_refill_level: 4
+    )
+  end
+
+  def radio?
+    fill_mode == "radio"
+  end
+
+  def station?
+    session_id.to_s.start_with?(STATION_PREFIX)
+  end
+
+  def radio_genre_mode
+    radio_settings["genre"].presence || "any"
+  end
+
+  def radio_steer
+    (radio_settings["steer"] || {}).slice(*SongAudioFeature::DIALS)
+  end
+
+  # Store steer/genre from params-like input: { genre: "adjacent", energy: 0.6, ... }. Dials not
+  # mentioned keep their value; a dial set to 0 is removed.
+  def update_radio_settings!(attrs)
+    attrs = attrs.to_h.stringify_keys
+    settings = radio_settings.deep_dup
+    settings["genre"] = attrs["genre"] if SongRadio::GENRE_MODES.include?(attrs["genre"])
+    steer = (settings["steer"] || {}).slice(*SongAudioFeature::DIALS)
+    steer = {} if attrs["reset_steer"].to_s == "true"
+    SongAudioFeature::DIALS.each do |dial|
+      next unless attrs.key?(dial)
+      value = attrs[dial].to_f.clamp(-1.0, 1.0)
+      value.zero? ? steer.delete(dial) : steer[dial] = value
+    end
+    settings["steer"] = steer
+    update!(radio_settings: settings)
+    retune!
+  end
+
+  # Start the station over from one song: empty the queue and put the song at the front.
+  def start_from!(song)
+    transaction do
+      ajb_queue_items.delete_all
+      ajb_queue_items.create!(song: song, source: "requested")
+    end
+  end
+
+  # On a radio jukebox, drop the auto-filled songs that have not played yet, so the next top-up
+  # follows the newest request or setting. Requests themselves are never dropped.
+  def retune!
+    ajb_queue_items.where(source: "random").delete_all if radio?
+  end
 
   # Add associations for current song
   belongs_to :current_song, class_name: 'Song', optional: true

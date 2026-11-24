@@ -11,13 +11,13 @@ class ArtistsController < ApplicationController
       @artists = @artists.where("name ILIKE ?", "%#{query}%")
     end
     
-    @artists = @artists.order(:name)
+    @artists = @artists.order(Arel.sql("COALESCE(artists.sort_name, artists.name)"))
                        .page(params[:page])
                        .per(params[:per_page] || 20)
   end
   
   def show
-    @songs = @artist.songs.includes(:album, :genre)
+    @songs = @artist.all_songs.includes(:artist, :album, :genre)
                    .order(:title)
                    .page(params[:page])
                    .per(params[:per_page] || 50)
@@ -34,7 +34,7 @@ class ArtistsController < ApplicationController
       @artists = @artists.where("name ILIKE ?", "%#{query}%")
     end
     
-    @artists = @artists.order(:name).page(page).per(per_page)
+    @artists = @artists.order(Arel.sql("COALESCE(artists.sort_name, artists.name)")).page(page).per(per_page)
     
     respond_to do |format|
       format.html { render partial: 'artists/artist_list', locals: { artists: @artists } }

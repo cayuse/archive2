@@ -27,8 +27,8 @@
                     
                     <dt class="col-sm-4">Release Date:</dt>
                     <dd class="col-sm-8">
-                      <% if @album.release_date.present? %>
-                        <%= @album.release_date.strftime("%Y-%m-%d") %>
+                      <% if @album.release_display.present? %>
+                        <%= @album.release_display %>
                       <% else %>
                         <span class="theme-text-muted">Not set</span>
                       <% end %>

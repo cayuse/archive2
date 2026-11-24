@@ -8,6 +8,14 @@ class Song < ApplicationRecord
   has_many :playlists, through: :playlists_songs, source: :playlist
   has_many :ajb_queue_items, dependent: :destroy
   has_many :ajb_played_songs, dependent: :destroy
+  has_one :file_tag, class_name: "SongFileTag", dependent: :destroy
+  has_many :artist_credits, -> { order(:position) }, class_name: "SongArtistCredit", dependent: :destroy
+  has_many :credited_artists, through: :artist_credits, source: :artist
+  has_many :ratings, class_name: "SongRating", dependent: :destroy
+  has_one :audio_feature, class_name: "SongAudioFeature", dependent: :destroy
+  has_one :embedding, class_name: "SongEmbedding", dependent: :destroy
+  has_many :song_neighbors, -> { order(:rank) }, dependent: :destroy
+  has_many :similar_songs, through: :song_neighbors, source: :neighbor
 
   # Active Storage for audio file
   has_one_attached :audio_file
@@ -72,6 +80,12 @@ class Song < ApplicationRecord
   # Instance methods
   def display_title
     title
+  end
+
+  # The artist line as credited on the recording ("Toby Keith feat. Willie Nelson"),
+  # falling back to the main artist's name.
+  def artist_display
+    artist_credit.presence || artist&.name
   end
 
   def audio_file_type

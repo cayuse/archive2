@@ -22,8 +22,8 @@
     <span class="album-song-count badge bg-secondary"><%= album.songs.count %></span>
   </td>
   <td>
-    <% if album.release_date.present? %>
-      <span class="album-release-date" style="color: #1f2937;"><%= album.release_date.strftime("%Y-%m-%d") %></span>
+    <% if album.release_display.present? %>
+      <span class="album-release-date" style="color: #1f2937;"><%= album.release_display %></span>
     <% else %>
       <span class="album-release-date" style="color: #1f2937;">-</span>
     <% end %>

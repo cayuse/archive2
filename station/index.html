@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Archive Station</title>
+<style>
+  :root { --bg:#14161a; --card:#1e2127; --line:#30343c; --text:#e8eaed; --muted:#9aa0a6; --accent:#4f9cf9; --good:#3fb97f; --bad:#e5645a; }
+  @media (prefers-color-scheme: light) { :root { --bg:#f4f5f7; --card:#fff; --line:#d9dce1; --text:#1c1e21; --muted:#5f6368; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.4 system-ui, sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:16px; }
+  h1 { font-size:20px; margin:8px 0 16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:16px; }
+  .now .title { font-size:22px; font-weight:600; }
+  .muted { color:var(--muted); font-size:14px; }
+  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:12px; }
+  button { font:inherit; padding:8px 14px; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--text); cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  button.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+  button.good.on { background:var(--good); border-color:var(--good); }
+  button.bad { border-color:var(--bad); color:var(--bad); }
+  button:disabled { opacity:.45; cursor:default; }
+  input[type=search] { flex:1; min-width:180px; font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--text); }
+  input[type=range] { flex:1; min-width:140px; }
+  ul { list-style:none; margin:8px 0 0; padding:0; }
+  li { display:flex; gap:8px; align-items:center; justify-content:space-between; padding:8px 0; border-top:1px solid var(--line); }
+  li span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .err { color:var(--bad); margin-top:8px; }
+  .tag { font-size:12px; border:1px solid var(--line); border-radius:6px; padding:1px 6px; color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Archive Station <span id="status" class="tag">…</span></h1>
+
+  <div class="card now">
+    <div class="muted" id="jukebox">Nothing playing</div>
+    <div class="title" id="title">—</div>
+    <div class="muted" id="artist"></div>
+    <div class="row">
+      <button id="resume" class="primary">Play my station</button>
+      <button id="stop" class="bad">Stop</button>
+      <button id="skip">Skip</button>
+      <button id="up" class="good" title="More like this">&#128077;</button>
+      <button id="down" title="Never play this for me (and skip it)">&#128078;</button>
+    </div>
+    <div class="row"><span class="muted">Volume</span><input type="range" id="volume" min="0" max="100"><span id="volval" class="muted"></span></div>
+    <div class="row" id="outputs"></div>
+    <div class="err" id="error"></div>
+  </div>
+
+  <div class="card">
+    <strong>Start from a song, or request one</strong>
+    <div class="row"><input type="search" id="q" placeholder="Search title, artist, album…"><button id="go">Search</button></div>
+    <ul id="results"></ul>
+  </div>
+
+  <div class="card">
+    <strong>Tune the station</strong>
+    <div class="row" id="genre">
+      <span class="muted">Genre</span>
+      <button data-genre="any">Any</button><button data-genre="adjacent">Same and similar</button><button data-genre="strict">Same only</button>
+    </div>
+    <div class="row" id="steer">
+      <span class="muted">Lean</span>
+      <button data-dial="energy" data-v="0.6">More energy</button><button data-dial="energy" data-v="-0.6">Mellower</button>
+      <button data-dial="happiness" data-v="0.6">Happier</button><button data-dial="happiness" data-v="-0.6">Darker</button>
+      <button data-dial="acousticness" data-v="0.6">Acoustic</button><button data-dial="electronic" data-v="0.6">Electronic</button>
+      <button data-dial="danceability" data-v="0.6">Danceable</button><button data-dial="instrumental" data-v="0.8">Instrumental</button>
+      <button id="reset">Reset</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <strong>Coming up</strong>
+    <ul id="upcoming"></ul>
+    <div class="muted" id="guest"></div>
+  </div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+let state = {}, dragging = false;
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const j = await r.json();
+  if (!r.ok) { $('error').textContent = j.error || 'Request failed'; throw new Error(j.error); }
+  return j;
+}
+const act = async (path, body = {}) => { render(await api(path, body)); };
+
+function render(s) {
+  state = s;
+  const cur = s.current, jb = s.jukebox;
+  $('status').textContent = s.playing ? (cur ? 'playing' : 'starting…') : 'stopped';
+  $('jukebox').textContent = jb ? (jb.name || 'Jukebox') + (s.playing ? '' : ' (stopped)') : 'Nothing playing';
+  $('title').textContent = cur ? cur.title : '—';
+  $('artist').textContent = cur ? [cur.artist, cur.album].filter(Boolean).join(' · ') : '';
+  $('error').textContent = s.error || '';
+  ['stop','skip'].forEach(id => $(id).disabled = !s.playing);
+  ['up','down'].forEach(id => $(id).disabled = !cur);
+  $('resume').textContent = s.playing ? 'Restart my station' : 'Play my station';
+  if (!dragging) { $('volume').value = s.volume; $('volval').textContent = s.volume; }
+  $('outputs').innerHTML = '<span class="muted">Speakers</span>' + (s.outputs || []).map(o =>
+    `<button class="${o.selected ? 'on' : ''}" data-out="${esc(o.id)}" data-sel="${o.selected}">${esc(o.name)} <span class="tag">${esc(o.type)}</span></button>`).join('');
+  const radio = (jb && jb.radio) || {};
+  document.querySelectorAll('#genre button').forEach(b => b.classList.toggle('on', (radio.genre || 'any') === b.dataset.genre));
+  document.querySelectorAll('#steer button[data-dial]').forEach(b =>
+    b.classList.toggle('on', Number((radio.steer || {})[b.dataset.dial] || 0) === Number(b.dataset.v)));
+  document.querySelectorAll('#genre button, #steer button').forEach(b => b.disabled = !jb || jb.station === false);
+  $('upcoming').innerHTML = (s.upcoming || []).map(u =>
+    `<li><span>${esc(u.title)} <span class="muted">${esc(u.artist || '')}</span></span><span class="tag">${u.source === 'requested' ? 'request' : 'station'}</span></li>`).join('')
+    || '<li class="muted">Nothing queued yet</li>';
+  $('guest').textContent = jb && jb.session_id ? `Guests can request at ${s.archive_url}/j/${jb.session_id} (password: ${jb.guest_password})` : '';
+}
+
+async function search() {
+  const q = $('q').value.trim(); if (!q) return;
+  const { songs } = await api('/api/search?q=' + encodeURIComponent(q));
+  $('results').innerHTML = songs.map(x =>
+    `<li><span>${esc(x.title)} <span class="muted">${esc(x.artist || '')}${x.album ? ' · ' + esc(x.album) : ''}</span></span>
+     <span><button data-start="${x.id}" class="primary">Start here</button> <button data-req="${x.id}" ${state.playing ? '' : 'disabled'}>Request</button></span></li>`).join('')
+    || '<li class="muted">No matches</li>';
+}
+
+$('go').onclick = search;
+$('q').onkeydown = e => { if (e.key === 'Enter') search(); };
+$('results').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.start) act('/api/start', { song_id: b.dataset.start });
+  if (b.dataset.req) act('/api/request', { song_id: b.dataset.req });
+};
+$('resume').onclick = () => act('/api/start', {});
+$('stop').onclick = () => act('/api/stop');
+$('skip').onclick = () => act('/api/skip');
+$('up').onclick = () => state.current && act('/api/rate', { song_id: state.current.id, value: 1 });
+$('down').onclick = () => state.current && act('/api/rate', { song_id: state.current.id, value: -1 });
+$('volume').oninput = () => { dragging = true; $('volval').textContent = $('volume').value; };
+$('volume').onchange = async () => { await act('/api/volume', { volume: Number($('volume').value) }); dragging = false; };
+$('outputs').onclick = e => { const b = e.target.closest('button[data-out]'); if (b) act('/api/output', { id: b.dataset.out, selected: b.dataset.sel !== 'true' }); };
+$('genre').onclick = e => { const b = e.target.closest('button[data-genre]'); if (b) act('/api/settings', { genre: b.dataset.genre }); };
+$('steer').onclick = e => {
+  const b = e.target.closest('button[data-dial]'); if (!b) return;
+  act('/api/settings', { [b.dataset.dial]: b.classList.contains('on') ? 0 : Number(b.dataset.v) });
+};
+$('reset').onclick = () => act('/api/settings', { reset_steer: 'true', genre: 'any' });
+
+const poll = async () => { try { render(await api('/api/state')); } catch (e) {} };
+poll(); setInterval(poll, 4000);
+</script>
+</body>
+</html>

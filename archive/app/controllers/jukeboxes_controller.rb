@@ -72,7 +72,7 @@ class JukeboxesController < ApplicationController
       :name, :description, :location, :session_id, :guest_password,
       :scheduled_start, :scheduled_end, :crossfade_enabled,
       :crossfade_duration, :auto_play, :min_queue_length,
-      :queue_refill_level
+      :queue_refill_level, :fill_mode
     )
   end
 

@@ -16,7 +16,7 @@
     </td>
     <td>
       <% if song.artist.present? %>
-        <span class="playlist-song-artist"><%= song.artist.name %></span>
+        <span class="playlist-song-artist"><%= song.artist_display %></span>
       <% else %>
         <span class="playlist-song-artist">-</span>
       <% end %>

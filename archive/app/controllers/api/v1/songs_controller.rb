@@ -14,7 +14,7 @@ class Api::V1::SongsController < ApplicationController
   # Every other action stays strictly token-authenticated.
   skip_before_action :authenticate_encrypted_token_user!, only: [:show, :download, :stream]
   before_action :authenticate_media_request!, only: [:show, :download, :stream]
-  before_action :set_song, only: [:show, :download, :stream]
+  before_action :set_song, only: [:show, :download, :stream, :radio, :rate]
   before_action :ensure_upload_permission!, only: [:bulk_upload, :bulk_create, :bulk_update, :direct_upload, :create_from_blob]
 
   def index
@@ -132,6 +132,35 @@ class Api::V1::SongsController < ApplicationController
                 type: @song.audio_file.content_type,
                 disposition: 'inline'
     end
+  end
+
+  # GET /api/v1/songs/:id/radio
+  # A stream of songs that sound like this one.
+  #   count        how many songs (default 20, max 100)
+  #   exclude_ids  ids already played or queued (array, or comma separated)
+  #   energy, danceability, happiness, aggression, acousticness, electronic, instrumental
+  #                each -1..1: push the stream up or down on that dial
+  #   genre        any (default) | adjacent | strict
+  # The caller's own thumbs up/down are applied automatically.
+  def radio
+    exclude = Array(params[:exclude_ids]).flat_map { |v| v.to_s.split(",") }.reject(&:blank?).first(500)
+    steer = params.permit(*SongAudioFeature::DIALS).to_h
+    songs = SongRadio.new(seed: @song, exclude_ids: exclude, steer: steer, genre_mode: params[:genre],
+                          user: @current_api_user)
+                     .next_songs((params[:count] || 20).to_i.clamp(1, 100))
+    render json: {
+      success: true,
+      seed: radio_song_json(@song),
+      analyzed: @song.audio_feature.present?,
+      steer: steer,
+      songs: songs.map { |s| radio_song_json(s) }
+    }
+  end
+
+  # POST /api/v1/songs/:id/rate   value=1 (thumbs up), -1 (thumbs down) or 0 (clear)
+  def rate
+    render json: { success: true, song_id: @song.id,
+                   value: SongRating.rate!(user: @current_api_user, song: @song, value: params[:value]) }
   end
 
   def bulk_upload
@@ -263,6 +292,21 @@ class Api::V1::SongsController < ApplicationController
 
   def set_song
     @song = Song.includes(:artist, :album, :genre).find(params[:id])
+  end
+
+  def radio_song_json(song)
+    feature = song.audio_feature
+    {
+      id: song.id,
+      title: song.title,
+      artist: song.artist_display,
+      artist_id: song.artist_id,
+      album: song.album&.title,
+      album_id: song.album_id,
+      genre: song.genre&.name,
+      duration: song.duration,
+      dials: feature ? SongAudioFeature::DIALS.index_with { |d| feature[d] } : nil
+    }
   end
   
   def ensure_upload_permission!

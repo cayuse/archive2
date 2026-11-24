@@ -1,0 +1,21 @@
+# Archive Station: the headless jukebox player. Feeds OwnTone (AirPlay) from an archive jukebox.
+# Host networking so it can reach OwnTone on localhost and bind its control page to the LAN address only.
+#
+#   cp .env.example .env   # fill in the account
+#   docker compose up -d
+#   open http://<BIND_HOST>:8337 from any machine on the LAN
+services:
+  station:
+    image: python:3.12-alpine
+    container_name: archive-station
+    network_mode: host
+    working_dir: /app
+    command: ["python", "-u", "station.py"]
+    env_file: .env
+    environment:
+      - STATE_FILE=/data/station_state.json
+    volumes:
+      - ./station.py:/app/station.py:ro
+      - ./index.html:/app/index.html:ro
+      - ./data:/data
+    restart: unless-stopped

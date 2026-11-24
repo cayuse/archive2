@@ -1,6 +1,6 @@
 class SongsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_song, only: [:show, :edit, :update, :destroy]
+  before_action :set_song, only: [:show, :edit, :update, :destroy, :radio, :rate, :play_radio]
   before_action :authorize_song!, only: [:show, :edit, :update, :destroy]
   
   def index
@@ -13,6 +13,35 @@ class SongsController < ApplicationController
   
   def show
     # Show song details
+  end
+
+  # A stream of songs that sound like this one. Steer with ?energy=0.5&acousticness=-1 (each -1..1).
+  def radio
+    authorize @song, :show?
+    @steer = params.permit(*SongAudioFeature::DIALS).to_h
+    @genre_mode = SongRadio::GENRE_MODES.include?(params[:genre]) ? params[:genre] : "any"
+    @songs = SongRadio.new(seed: @song, steer: @steer, genre_mode: @genre_mode, user: current_user)
+                      .next_songs((params[:count] || 25).to_i.clamp(1, 100))
+    @ratings = SongRating.where(user_id: current_user.id, song_id: @songs.map(&:id) + [ @song.id ]).pluck(:song_id, :value).to_h
+  end
+
+  # POST /songs/:id/play_radio
+  # "Play from here": restart the user's personal station from this song and open the browser player.
+  def play_radio
+    authorize @song, :show?
+    unless current_user.can_host_jukebox?
+      return redirect_to radio_song_path(@song), alert: "Your account cannot run a player."
+    end
+    station = Jukebox.station_for(current_user)
+    station.update_radio_settings!(params.permit(:genre, *SongAudioFeature::DIALS).to_h.merge("reset_steer" => "true"))
+    station.start_from!(@song)
+    redirect_to player_jukebox_path(station)
+  end
+
+  # POST /songs/:id/rate  value=1 (thumbs up), -1 (thumbs down) or 0 (clear)
+  def rate
+    authorize @song, :show?
+    render json: { success: true, song_id: @song.id, value: SongRating.rate!(user: current_user, song: @song, value: params[:value]) }
   end
   
   def search

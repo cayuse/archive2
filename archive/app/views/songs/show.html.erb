@@ -19,6 +19,11 @@
                          data: { confirm: "Are you sure?" }, 
                          class: "btn btn-danger" %>
           <% end %>
+          <% if current_user&.can_host_jukebox? %>
+            <%= button_to "Play from here", play_radio_song_path(@song), method: :post, class: "btn btn-success",
+                  title: "Start your station from this song and open the player", form: { class: "d-inline" } %>
+          <% end %>
+          <%= link_to "Radio", radio_song_path(@song), class: "btn btn-outline-primary", title: "Songs that sound like this one" %>
           <%= link_to "Back to Songs", songs_path, class: "btn btn-outline-secondary" %>
         </div>
       </div>
@@ -71,7 +76,7 @@
                     <dt class="col-sm-4 theme-text-primary">Artist:</dt>
                     <dd class="col-sm-8 theme-text-primary">
                       <% if @song.artist.present? %>
-                        <%= @song.artist.name %>
+                        <%= @song.artist_display %>
                       <% else %>
                         <span class="theme-text-secondary">Not set</span>
                       <% end %>

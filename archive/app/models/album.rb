@@ -43,6 +43,11 @@ class Album < ApplicationRecord
     title
   end
 
+  # Full date when known, otherwise just the year.
+  def release_display
+    release_date&.strftime("%Y-%m-%d") || release_year&.to_s
+  end
+
   def song_count
     songs.count
   end
