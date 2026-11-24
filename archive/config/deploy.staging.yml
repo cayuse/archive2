@@ -1,0 +1,28 @@
+# Staging destination: deploys to gameforge itself on 127.0.0.1:3900. Needs
+# local containers archive-db-1 / archive-redis-1 on a docker network named
+# archive_default (e.g. a restored backup; see KAMAL_DEPLOY.md "Staging").
+# Never touches bigballs.
+servers:
+  web:
+    hosts:
+      - 127.0.0.1
+    proxy: false
+    options:
+      network: archive_default
+      publish:
+        - "127.0.0.1:3900:3000"
+      health-cmd: "curl -fsS http://localhost:3000/up || exit 1"
+      health-interval: 5s
+      health-start-period: 10s
+ssh:
+  user: cayuse
+env:
+  clear:
+    APP_HOST: localhost
+    APP_PROTOCOL: http
+    FORCE_SSL: "false"
+    ASSUME_SSL: "false"
+    ALLOW_ALL_HOSTS: "true"
+volumes:
+  - "/srv/archive-staging/storage:/rails/storage"
+  - "archive_staging_logs:/rails/log"
