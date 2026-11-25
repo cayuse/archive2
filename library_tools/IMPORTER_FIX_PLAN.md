@@ -131,8 +131,10 @@ carries MusicBrainz ids.
 - Fills: artist name / sort name / disambiguation / type; album release group, type, status,
   country, label, catalogue number, barcode, disc and track totals, original year.
 
-Not verified from here: whether the app container can reach port 5433 as deployed by Kamal. Check
-that before designing around it.
+Reachability (owner, 2026-11-24): the app and the mirror run on the same host under the same Kamal
+deploys, so the app container either reaches port 5433 already or can be made to. Treat the mirror
+as available; adjusting the deploy config or Docker network to connect them is in scope. The
+fallback above still applies for when the mirror is down or mid-update.
 
 ### Step 4. Make the client scripts honest
 
