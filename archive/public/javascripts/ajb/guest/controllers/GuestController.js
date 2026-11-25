@@ -52,6 +52,7 @@ class GuestController {
       if (result.success) {
         this.state.setAuthentication(this.jukeboxId, this.password);
         this.state.setState({
+          role: result.jukebox.role === 'admin' ? 'admin' : 'guest',
           jukeboxName: result.jukebox.name,
           jukeboxStatus: result.jukebox.status,
           currentSong: result.jukebox.current_song_id ? {
@@ -245,6 +246,7 @@ class GuestController {
         await this.updateQueue();
         const notices = {
           added: `Added “${title}” to the queue`,
+          already_queued: `“${title}” is already in the queue`,
           bumped: `Bumped “${title}” up the queue`,
           already_requested: `“${title}” is already requested`
         };
@@ -266,6 +268,28 @@ class GuestController {
       this.showNotice(`Bumped “${title}” up the queue`);
     } else {
       this.state.setError(result.message || 'Could not promote song');
+    }
+    return result;
+  }
+
+  // Admin code only: take a song out of the queue.
+  async removeSong(songId, title = 'Song') {
+    const result = await this.apiService.removeSong(songId);
+    if (result.success) {
+      await this.updateQueue();
+      this.showNotice(`Removed “${title}”`);
+    } else {
+      this.state.setError(result.message || 'Could not remove song');
+    }
+    return result;
+  }
+
+  // Admin code only: play, pause or skip on the host's player. The new state
+  // comes back through the normal playback updates.
+  async sendPlayerCommand(command) {
+    const result = await this.apiService.playerCommand(command);
+    if (!result.success) {
+      this.state.setError(result.message || 'Could not reach the player');
     }
     return result;
   }

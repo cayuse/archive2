@@ -1,4 +1,4 @@
-\restrict bbsn2agcECXQ1dSXG9vC1uNh59GTbkBaOPkaEvGPXcQmfs6ZkqttnheNSb8PvIJ
+\restrict 9UcXULBXrfh7cuDQRaRumXlQRqtkx8q8Fj5LHfE10ngkG4Zs0izjccPMyqxawcR
 
 -- Dumped from database version 15.20 (Debian 15.20-1.pgdg13+1)
 -- Dumped by pg_dump version 15.20 (Debian 15.20-0+deb12u1)
@@ -389,6 +389,7 @@ CREATE TABLE public.jukeboxes (
     guest_password character varying,
     fill_mode character varying DEFAULT 'random'::character varying NOT NULL,
     radio_settings jsonb DEFAULT '{}'::jsonb NOT NULL,
+    admin_password character varying,
     CONSTRAINT check_positive_min_queue_length CHECK ((min_queue_length > 0)),
     CONSTRAINT check_positive_queue_refill_level CHECK ((queue_refill_level > 0))
 );
@@ -2060,94 +2061,15 @@ ALTER TABLE ONLY public.songs
 
 
 --
---
-
-
-
---
---
-
-
-
---
---
-
-
-
---
---
-
-
-
---
---
-
-
-
---
---
-
-
-
---
---
-
-
-
---
---
-
-
-
---
---
-
-
-
---
---
-
-
-
---
---
-
-
-
---
---
-
-
-
---
---
-
-
-
---
---
-
-
-
---
---
-
-
-
---
---
-
-
-
---
 -- PostgreSQL database dump complete
 --
 
-\unrestrict bbsn2agcECXQ1dSXG9vC1uNh59GTbkBaOPkaEvGPXcQmfs6ZkqttnheNSb8PvIJ
+\unrestrict 9UcXULBXrfh7cuDQRaRumXlQRqtkx8q8Fj5LHfE10ngkG4Zs0izjccPMyqxawcR
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261126000000'),
 ('20261125190000'),
 ('20261124230108'),
 ('20261124223537'),

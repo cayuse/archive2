@@ -280,4 +280,29 @@ class GuestApiService {
       return { success: false, message: error.message };
     }
   }
+
+  // Admin-code actions. Both return { success, message } rather than throwing.
+  async adminRequest(method, path, body = null) {
+    try {
+      const queryString = this.buildQueryString();
+      const response = await fetch(`${this.baseUrl}/${path}${queryString ? '?' + queryString : ''}`, {
+        method,
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
+        body: body ? JSON.stringify(body) : undefined
+      });
+      const data = await response.json().catch(() => ({}));
+      return { success: response.ok, message: data.message || (response.ok ? '' : `HTTP ${response.status}`) };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  removeSong(songId) {
+    return this.adminRequest('DELETE', `queue/${songId}`);
+  }
+
+  playerCommand(command) {
+    return this.adminRequest('POST', 'player_command', { command });
+  }
 }

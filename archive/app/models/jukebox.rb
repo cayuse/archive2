@@ -9,6 +9,10 @@ class Jukebox < ApplicationRecord
   validates :name, presence: true, length: { maximum: 255 }
   # Guests always join with a password — a jukebox can't exist without one.
   validates :guest_password, presence: true
+  # Optional second code: guests who join with it get the admin controls. It
+  # must differ from the guest code, or the code alone couldn't tell them apart.
+  validates :admin_password, comparison: { other_than: :guest_password, message: "must be different from the guest code" },
+                             allow_blank: true
   validates :session_id, presence: true, uniqueness: true, length: { maximum: 255 }
   validates :status, inclusion: { in: %w[inactive active paused ended] }
   validates :crossfade_duration, numericality: { greater_than: 0, less_than_or_equal_to: 30000 }
@@ -204,6 +208,14 @@ class Jukebox < ApplicationRecord
 
   def has_password?
     guest_password.present?
+  end
+
+  # Which role a join code grants on the guest page: :admin, :guest or nil.
+  def guest_role_for(code)
+    return nil if code.blank?
+    return :admin if admin_password.present? && ActiveSupport::SecurityUtils.secure_compare(admin_password, code)
+    return :guest if ActiveSupport::SecurityUtils.secure_compare(guest_password.to_s, code)
+    nil
   end
 
   # Presence-driven lifecycle: the jukebox is "live" while a player is actively

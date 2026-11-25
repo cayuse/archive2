@@ -171,6 +171,9 @@ Rails.application.routes.draw do
         get 'search_songs', to: 'guest#search_songs'
         post 'request_song', to: 'guest#request_song'
         post 'promote_song', to: 'guest#promote_song'
+        # Admin-code guests only
+        delete 'queue/:song_id', to: 'guest#remove_song'
+        post 'player_command', to: 'guest#player_command'
       end
     end
   end

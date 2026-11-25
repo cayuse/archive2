@@ -5,6 +5,9 @@ class Api::V1::GuestController < ApplicationController
   before_action :authenticate_guest!   # Enforce jukebox guest-password auth
   before_action :set_jukebox           # Load @jukebox (404s if missing)
   before_action :ensure_jukebox_active! # Only active/paused jukeboxes are reachable
+  before_action :require_guest_admin!, only: [:promote_song, :remove_song, :player_command]
+
+  PLAYER_COMMANDS = %w[play pause skip].freeze
 
   # GET /api/v1/guest/:jukebox_id/test
   def test
@@ -36,6 +39,7 @@ class Api::V1::GuestController < ApplicationController
         name: @jukebox.name,
         session_id: @jukebox.session_id,
         status: @jukebox.status,
+        role: @guest_role,
         current_song_id: @jukebox.current_song_id,
         current_position: @jukebox.current_position,
         is_playing: @jukebox.is_playing,
@@ -248,12 +252,14 @@ class Api::V1::GuestController < ApplicationController
     begin
       song = Song.find(params[:song_id])
       
-      # Already queued: a request for an auto-filled song bumps it into the
-      # request group; a song someone already requested is a no-op, not an error.
+      # Already queued is a no-op, not an error. Only an admin-code guest may
+      # reorder the queue, so only their request bumps an auto-filled song.
       existing_item = @jukebox.ajb_queue_items.find_by(song: song)
       if existing_item
         if existing_item.source == 'requested'
           render json: { success: true, outcome: 'already_requested', message: 'Song is already requested' }
+        elsif @guest_role != :admin
+          render json: { success: true, outcome: 'already_queued', message: 'Song is already in the queue' }
         else
           existing_item.update!(source: 'requested')
           broadcast_queue_update(@jukebox)
@@ -302,8 +308,8 @@ class Api::V1::GuestController < ApplicationController
   end
 
   # POST /api/v1/guest/:jukebox_id/promote_song
-  # Guests can promote a random (auto-filled) song into the request queue so it
-  # plays sooner. (Guests cannot bump to the very top — that's host-only.)
+  # Admin-code guests can promote a random (auto-filled) song into the request
+  # queue so it plays sooner.
   def promote_song
     queue_item = @jukebox.ajb_queue_items.find_by(song_id: params[:song_id])
     unless queue_item
@@ -317,7 +323,37 @@ class Api::V1::GuestController < ApplicationController
     render json: { success: false, message: 'Could not promote song', errors: e.record.errors.full_messages }, status: 422
   end
 
+  # DELETE /api/v1/guest/:jukebox_id/queue/:song_id (admin code only)
+  def remove_song
+    queue_item = @jukebox.ajb_queue_items.find_by(song_id: params[:song_id])
+    unless queue_item
+      return render json: { success: false, message: 'Song is not in the queue' }, status: 404
+    end
+
+    queue_item.destroy
+    broadcast_queue_update(@jukebox)
+    render json: { success: true, message: 'Song removed' }
+  end
+
+  # POST /api/v1/guest/:jukebox_id/player_command (admin code only)
+  # The music plays in the host's browser, so this relays the command to it
+  # over the jukebox channel; the player reports the new state on its heartbeat.
+  def player_command
+    command = params[:command].to_s
+    unless PLAYER_COMMANDS.include?(command)
+      return render json: { success: false, message: 'Unknown command' }, status: 422
+    end
+
+    broadcast_player_command(@jukebox, command)
+    render json: { success: true, command: command }
+  end
+
   private
+
+  def require_guest_admin!
+    return if @guest_role == :admin
+    render json: { success: false, message: 'Admin code required' }, status: 403
+  end
 
   def authenticate_guest!
     jukebox_id = params[:jukebox_id]
@@ -335,18 +371,16 @@ class Api::V1::GuestController < ApplicationController
       return
     end
 
-    # Check if jukebox has a password
-    if jukebox.has_password?
-      if password.blank?
-        render json: { success: false, message: 'Password required for this jukebox' }, status: 401
-        return
-      end
+    if password.blank?
+      render json: { success: false, message: 'Password required for this jukebox' }, status: 401
+      return
+    end
 
-      # Verify password (plain text comparison)
-      unless jukebox.guest_password == password
-        render json: { success: false, message: 'Invalid password' }, status: 401
-        return
-      end
+    # The code decides the role: admin code -> :admin, guest code -> :guest.
+    @guest_role = jukebox.guest_role_for(password)
+    unless @guest_role
+      render json: { success: false, message: 'Invalid password' }, status: 401
+      return
     end
 
     # Store authenticated jukebox for use in other methods

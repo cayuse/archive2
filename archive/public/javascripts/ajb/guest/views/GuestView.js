@@ -4,7 +4,7 @@ const h = React.createElement;
 const GuestView = {
   // State keys the UI renders from; anything else in GuestState is ignored here.
   UI_KEYS: [
-    'authenticated', 'offline', 'loading', 'error', 'notice', 'currentView',
+    'authenticated', 'role', 'offline', 'loading', 'error', 'notice', 'currentView',
     'currentSong', 'currentPosition', 'isPlaying', 'queue', 'totalQueueCount',
     'history', 'historyHasMore', 'jukeboxName',
     'searchResults', 'searchQuery', 'searchLoading', 'searchPagination'
@@ -72,6 +72,7 @@ const GuestView = {
     return h('div', { className: 'guest-app' },
       h(GuestView.Header, {
         jukeboxName,
+        isAdmin: state.role === 'admin',
         isPlaying: !!state.isPlaying,
         hasSong: !!state.currentSong,
         currentView: state.currentView,
@@ -152,7 +153,7 @@ const GuestView = {
   },
 
   // One compact bar: jukebox name + live state, then the three tabs.
-  Header: function({ jukeboxName, isPlaying, hasSong, currentView, onSwitch }) {
+  Header: function({ jukeboxName, isAdmin, isPlaying, hasSong, currentView, onSwitch }) {
     const tabs = [
       ['now-playing', 'fa-music', 'Now Playing'],
       ['request-songs', 'fa-magnifying-glass', 'Request'],
@@ -163,6 +164,7 @@ const GuestView = {
     return h('header', { className: 'guest-header' },
       h('div', { className: 'guest-header-top' },
         h('span', { className: 'guest-header-name' }, jukeboxName),
+        isAdmin && h('span', { className: 'guest-tag guest-role' }, 'Admin'),
         h('span', { className: `guest-pill ${isPlaying ? 'is-playing' : ''}` },
           h('span', { className: 'guest-pill-dot' }), stateLabel)
       ),
@@ -188,17 +190,40 @@ const GuestView = {
       controller.updateQueue();
     }, [controller]);
 
+    const isAdmin = state.role === 'admin';
+
     return h('div', { className: 'guest-now' },
-      h(GuestView.CurrentSongDisplay, {
-        song: state.currentSong,
-        position: parseFloat(state.currentPosition) || 0,
-        isPlaying: !!state.isPlaying
-      }),
+      h('div', { className: 'guest-now-side' },
+        h(GuestView.CurrentSongDisplay, {
+          song: state.currentSong,
+          position: parseFloat(state.currentPosition) || 0,
+          isPlaying: !!state.isPlaying
+        }),
+        isAdmin && h(GuestView.Transport, {
+          isPlaying: !!state.isPlaying,
+          onCommand: (command) => controller.sendPlayerCommand(command)
+        })
+      ),
       h(GuestView.QueueDisplay, {
         queue: state.queue || [],
         totalCount: state.totalQueueCount || 0,
-        onPromote: (song) => controller.promoteSong(song.id, song.title)
+        isAdmin,
+        onPromote: (song) => controller.promoteSong(song.id, song.title),
+        onRemove: (song) => controller.removeSong(song.id, song.title)
       })
+    );
+  },
+
+  // Admin code only: remote control for the host's player.
+  Transport: function({ isPlaying, onCommand }) {
+    return h('section', { className: 'guest-card guest-transport', 'aria-label': 'Player controls' },
+      h('button', {
+        type: 'button',
+        className: 'guest-btn guest-btn-primary',
+        onClick: () => onCommand(isPlaying ? 'pause' : 'play')
+      }, h('i', { className: `fas ${isPlaying ? 'fa-pause' : 'fa-play'}` }), isPlaying ? ' Pause' : ' Play'),
+      h('button', { type: 'button', className: 'guest-btn guest-btn-ghost', onClick: () => onCommand('skip') },
+        h('i', { className: 'fas fa-forward-step' }), ' Skip')
     );
   },
 
@@ -272,7 +297,7 @@ const GuestView = {
   },
 
   // Upcoming songs, numbered in the order they will play
-  QueueDisplay: function({ queue, totalCount, onPromote }) {
+  QueueDisplay: function({ queue, totalCount, isAdmin, onPromote, onRemove }) {
     return h('section', { className: 'guest-card guest-queue' },
       h('div', { className: 'guest-card-head' },
         h('h2', { className: 'guest-card-title' }, 'Up next'),
@@ -290,14 +315,21 @@ const GuestView = {
                   h('div', { className: 'guest-row-sub' },
                     `${item.song.artist || 'Unknown artist'} · ${GuestState.formatTime(item.song.duration || 0)}`)
                 ),
-                requested
-                  ? h('span', { className: 'guest-tag' }, 'Requested')
-                  : h('button', {
-                      type: 'button',
-                      className: 'guest-btn guest-btn-ghost',
-                      title: 'Move this song ahead of the auto-picked ones',
-                      onClick: () => onPromote(item.song)
-                    }, h('i', { className: 'fas fa-arrow-up' }), ' Bump')
+                requested && h('span', { className: 'guest-tag' }, 'Requested'),
+                isAdmin && !requested && h('button', {
+                  type: 'button',
+                  className: 'guest-btn guest-btn-ghost',
+                  title: 'Move this song ahead of the auto-picked ones',
+                  'aria-label': `Bump ${item.song.title}`,
+                  onClick: () => onPromote(item.song)
+                }, h('i', { className: 'fas fa-arrow-up' })),
+                isAdmin && h('button', {
+                  type: 'button',
+                  className: 'guest-btn guest-btn-ghost guest-btn-danger',
+                  title: 'Remove from the queue',
+                  'aria-label': `Remove ${item.song.title}`,
+                  onClick: () => onRemove(item.song)
+                }, h('i', { className: 'fas fa-trash' }))
               );
             })
           )
@@ -352,6 +384,7 @@ const GuestView = {
             key: song.id,
             song,
             queuedAs: queueSource[song.id],
+            isAdmin: state.role === 'admin',
             onRequest: () => controller.requestSong(song.id, song.title)
           }))
         ),
@@ -391,7 +424,7 @@ const GuestView = {
 
   // One search result. The button reflects where the song already stands in
   // the queue, so a request never ends in an "already queued" error.
-  SearchResultRow: function({ song, queuedAs, onRequest }) {
+  SearchResultRow: function({ song, queuedAs, isAdmin, onRequest }) {
     const [busy, setBusy] = React.useState(false);
     const request = async () => {
       setBusy(true);
@@ -404,6 +437,9 @@ const GuestView = {
     let action;
     if (queuedAs === 'requested') {
       action = h('span', { className: 'guest-tag is-done' }, h('i', { className: 'fas fa-check' }), ' Requested');
+    } else if (queuedAs && !isAdmin) {
+      // Only an admin code can reorder the queue, so a guest just sees it's coming.
+      action = h('span', { className: 'guest-tag is-quiet' }, 'In queue');
     } else if (queuedAs) {
       action = h('button', { type: 'button', className: 'guest-btn guest-btn-ghost', disabled: busy, onClick: request },
         h('i', { className: 'fas fa-arrow-up' }), ' Bump');

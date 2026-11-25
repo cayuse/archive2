@@ -48,6 +48,9 @@
                 <div class="col-md-6">
                   <% if @jukebox.has_password? %>
                     <p><strong>Guest Code:</strong> <code class="text-primary"><%= @jukebox.guest_password %></code></p>
+                    <% if @jukebox.admin_password.present? %>
+                      <p><strong>Admin Code:</strong> <code class="text-primary"><%= @jukebox.admin_password %></code></p>
+                    <% end %>
                   <% else %>
                     <p><strong>Guest Code:</strong> <span class="text-muted">None set</span></p>
                   <% end %>

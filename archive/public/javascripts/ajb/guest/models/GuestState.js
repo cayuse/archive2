@@ -6,6 +6,7 @@ class GuestState {
       authenticated: false,
       jukeboxId: null,
       password: null,
+      role: 'guest',              // 'guest' or 'admin', decided by the join code
       
       // Current playback
       currentSong: null,

@@ -60,6 +60,13 @@
               Required. Guests enter this to join. It's visible to you to share with them.
             </div>
           </div>
+          <div class="mb-3">
+            <%= form.label :admin_password, "Admin Code", class: "form-label" %>
+            <%= form.text_field :admin_password, class: "form-control", placeholder: "Optional: joins with extra controls" %>
+            <div class="form-text">
+              Optional. Anyone who joins with this code instead can also bump and remove songs, pause and skip.
+            </div>
+          </div>
         </div>
       </div>
 

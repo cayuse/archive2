@@ -216,6 +216,17 @@
   color: var(--g-success);
 }
 
+.ajb-guest .guest-tag.is-quiet {
+  border-color: var(--g-border);
+  color: var(--g-text-2);
+}
+
+.ajb-guest .guest-role {
+  margin-right: auto;
+  border-color: var(--g-accent-hover);
+  color: var(--g-text);
+}
+
 .ajb-guest .guest-empty {
   padding: 2rem 1rem;
   color: var(--g-text-2);
@@ -251,6 +262,11 @@
   color: var(--g-text);
 }
 .ajb-guest .guest-btn-ghost:hover:not(:disabled) { border-color: var(--g-accent-hover); }
+
+.ajb-guest .guest-btn-danger:hover:not(:disabled) {
+  border-color: var(--g-danger);
+  color: var(--g-danger);
+}
 
 .ajb-guest .guest-btn-block { display: block; width: 100%; }
 
@@ -357,6 +373,18 @@
   color: var(--g-text-2);
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
+}
+
+.ajb-guest .guest-now-side {
+  display: grid;
+  gap: 1rem;
+}
+
+.ajb-guest .guest-transport {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 0.75rem;
+  padding: 0.75rem;
 }
 
 /* ---- Request ---- */
@@ -499,9 +527,12 @@
     gap: 1.5rem;
   }
 
-  .ajb-guest .guest-current {
+  .ajb-guest .guest-now-side {
     position: sticky;
     top: 7.5rem;
+  }
+
+  .ajb-guest .guest-current {
     flex-direction: column;
     padding: 1.5rem;
   }

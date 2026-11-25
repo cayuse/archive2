@@ -371,13 +371,26 @@ class PlayerController {
       { channel: 'JukeboxChannel', jukebox_id: this.jukeboxId },
       {
         received: (message) => {
-          if (message && message.type === 'queue_update') {
+          if (!message) return;
+          if (message.type === 'queue_update') {
             this.loadQueue();
             this.refreshNewestHistory(); // a consumed track became a history entry
+          } else if (message.type === 'player_command') {
+            this.handleRemoteCommand(message.command);
           }
         }
       }
     );
+  }
+
+  // Transport commands relayed from an admin-code guest's phone.
+  handleRemoteCommand(command) {
+    const actions = {
+      play: () => this.play(),
+      pause: () => this.pause(),
+      skip: () => this.skip()
+    };
+    if (actions[command]) actions[command]();
   }
 
   notifyQueueChange() {

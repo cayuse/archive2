@@ -90,7 +90,7 @@ fill(upbeat, seeded.joins(:genre).where(genres: { name: ["Rock", "Hip Hop", "Ele
 fill(mellow, seeded.joins(:genre).where(genres: { name: ["Jazz", "Classical", "Blues", "Folk", "Country"] }))
 
 jukebox = Jukebox.find_or_initialize_by(session_id: "dev-party")
-jukebox.update!(name: "Dev Party", owner: admin, guest_password: "guest", status: "active")
+jukebox.update!(name: "Dev Party", owner: admin, guest_password: "guest", admin_password: "boss", status: "active")
 [everything, upbeat].each do |playlist|
   JukeboxPlaylistAssignment.find_or_create_by!(jukebox: jukebox, playlist: playlist)
 end
