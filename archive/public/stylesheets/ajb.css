@@ -47,7 +47,6 @@
 .ajb .ajb-header-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 0.75rem;
   margin-bottom: 0.5rem;
 }
@@ -109,6 +108,17 @@
   font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* On phones the label sits under the icon, so three tabs fit without wrapping. */
+@media (max-width: 479px) {
+  .ajb .ajb-tab {
+    flex-direction: column;
+    gap: 0.2rem;
+    min-height: 3.25rem;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+  }
 }
 
 .ajb .ajb-tab:hover { color: var(--g-text); }
@@ -221,11 +231,26 @@
   color: var(--g-text-2);
 }
 
-.ajb .ajb-role {
-  margin-right: auto;
+.ajb .ajb-header .ajb-tag {
   border-color: var(--g-accent-hover);
   color: var(--g-text);
 }
+
+.ajb .ajb-header-gap { flex: 1; }
+
+.ajb .ajb-leave {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: -0.5rem -0.5rem -0.5rem 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--g-text-2);
+  cursor: pointer;
+}
+
+.ajb .ajb-leave:hover { color: var(--g-text); }
 
 .ajb .ajb-empty {
   padding: 2rem 1rem;
@@ -422,6 +447,15 @@
   background: none;
   color: var(--g-text-2);
   cursor: pointer;
+}
+
+/* Search results and history are single lists: keep the line length readable
+   on wide screens instead of stretching rows edge to edge. */
+.ajb .ajb-request,
+.ajb .ajb-history {
+  width: 100%;
+  max-width: 46rem;
+  margin: 0 auto;
 }
 
 /* ---- Messages ---- */

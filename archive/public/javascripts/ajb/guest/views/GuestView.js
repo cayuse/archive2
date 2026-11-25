@@ -14,6 +14,8 @@ const GuestView = {
   GuestApp: function() {
     const [state, setState] = React.useState({ authenticated: false, currentView: 'now-playing' });
     const [controller, setController] = React.useState(null);
+    // True while rejoining with a remembered code, so the join form doesn't flash.
+    const [resuming, setResuming] = React.useState(true);
 
     React.useEffect(() => {
       const config = window.AJB_GUEST_CONFIG;
@@ -34,6 +36,8 @@ const GuestView = {
         });
       });
 
+      guestController.resumeSession().finally(() => setResuming(false));
+
       return () => {
         unsubscribe();
         guestController.destroy();
@@ -43,7 +47,7 @@ const GuestView = {
     const config = window.AJB_GUEST_CONFIG || {};
     const jukeboxName = state.jukeboxName || config.jukeboxName || 'Jukebox';
 
-    if (!controller) {
+    if (!controller || (resuming && !state.authenticated)) {
       return h('div', { className: 'ajb-loading' },
         h('div', { className: 'spinner-border', role: 'status' }),
         h('p', null, 'Loading…')
@@ -76,6 +80,7 @@ const GuestView = {
         isPlaying: !!state.isPlaying,
         hasSong: !!state.currentSong,
         currentView: state.currentView,
+        onLeave: () => controller.leave(),
         onSwitch: {
           'now-playing': () => controller.switchToNowPlaying(),
           'request-songs': () => controller.switchToRequestSongs(),
@@ -153,7 +158,7 @@ const GuestView = {
   },
 
   // One compact bar: jukebox name + live state, then the three tabs.
-  Header: function({ jukeboxName, isAdmin, isPlaying, hasSong, currentView, onSwitch }) {
+  Header: function({ jukeboxName, isAdmin, isPlaying, hasSong, currentView, onSwitch, onLeave }) {
     const tabs = [
       ['now-playing', 'fa-music', 'Now Playing'],
       ['request-songs', 'fa-magnifying-glass', 'Request'],
@@ -164,9 +169,17 @@ const GuestView = {
     return h('header', { className: 'ajb-header' },
       h('div', { className: 'ajb-header-top' },
         h('span', { className: 'ajb-header-name' }, jukeboxName),
-        isAdmin && h('span', { className: 'ajb-tag ajb-role' }, 'Admin'),
+        isAdmin && h('span', { className: 'ajb-tag' }, 'Admin'),
+        h('span', { className: 'ajb-header-gap' }),
         h('span', { className: `ajb-pill ${isPlaying ? 'is-playing' : ''}` },
-          h('span', { className: 'ajb-pill-dot' }), stateLabel)
+          h('span', { className: 'ajb-pill-dot' }), stateLabel),
+        h('button', {
+          type: 'button',
+          className: 'ajb-leave',
+          title: 'Leave (enter a different code)',
+          'aria-label': 'Leave this jukebox',
+          onClick: onLeave
+        }, h('i', { className: 'fas fa-right-from-bracket' }))
       ),
       h('nav', { className: 'ajb-tabs', role: 'tablist' },
         tabs.map(([view, icon, label]) =>
@@ -431,7 +444,7 @@ const GuestView = {
       await onRequest();
       setBusy(false);
     };
-    const details = [song.artist || 'Unknown artist', song.album, GuestState.formatTime(song.duration || 0)]
+    const details = [song.artist || 'Unknown artist', GuestState.formatTime(song.duration || 0), song.album]
       .filter(Boolean).join(' · ');
 
     let action;
@@ -473,29 +486,38 @@ const GuestView = {
       return () => observer.disconnect();
     }, [hasMore, history.length, controller]);
 
-    return h('section', { className: 'ajb-card' },
+    // The song on air is recorded as played the moment it starts.
+    const playingId = state.currentSong && state.isPlaying ? state.currentSong.id : null;
+    const playedAt = (iso) => iso
+      ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+      : null;
+
+    return h('section', { className: 'ajb-card ajb-history' },
       h('div', { className: 'ajb-card-head' },
-        h('h2', { className: 'ajb-card-title' }, 'Played')
+        h('h2', { className: 'ajb-card-title' }, 'Played'),
+        history.length > 0 && h('span', { className: 'ajb-muted ajb-small' }, 'Tap ↻ to hear one again')
       ),
       history.length === 0
         ? h('p', { className: 'ajb-empty' }, 'Nothing has played yet.')
         : h('ul', { className: 'ajb-list' },
-            history.map((item) =>
-              h('li', { key: item.id, className: 'ajb-row' },
+            history.map((item, index) => {
+              const onAir = index === 0 && item.song.id === playingId;
+              const sub = [item.song.artist || 'Unknown artist', playedAt(item.played_at)].filter(Boolean).join(' · ');
+              return h('li', { key: item.id, className: 'ajb-row' },
                 h('div', { className: 'ajb-row-text' },
                   h('div', { className: 'ajb-row-title' }, item.song.title),
-                  h('div', { className: 'ajb-row-sub' }, item.song.artist || 'Unknown artist')
+                  h('div', { className: 'ajb-row-sub' }, sub)
                 ),
-                item.source === 'requested' && h('span', { className: 'ajb-tag' }, 'Requested'),
-                h('button', {
+                item.source === 'requested' && h('span', { className: 'ajb-tag ajb-hide-narrow' }, 'Requested'),
+                onAir ? h('span', { className: 'ajb-tag is-done' }, 'Playing now') : h('button', {
                   type: 'button',
                   className: 'ajb-btn ajb-btn-ghost',
                   title: 'Request again',
                   'aria-label': `Request ${item.song.title} again`,
                   onClick: () => controller.requestSong(item.song.id, item.song.title)
                 }, h('i', { className: 'fas fa-rotate-right' }))
-              )
-            )
+              );
+            })
           ),
       hasMore && h('div', { ref: sentinel, className: 'ajb-empty ajb-small' }, 'Loading more…')
     );

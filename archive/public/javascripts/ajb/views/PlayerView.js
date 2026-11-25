@@ -150,7 +150,8 @@ const PlayerView = {
     return el('header', { className: 'ajb-header ajb-player-header' },
       el('div', { className: 'ajb-header-top' },
         el('span', { className: 'ajb-header-name' }, name || 'AJB Player'),
-        el('span', { className: 'ajb-tag ajb-role' }, 'Host'),
+        el('span', { className: 'ajb-tag' }, 'Host'),
+        el('span', { className: 'ajb-header-gap' }),
         el('span', { className: `ajb-pill ${isPlaying ? 'is-playing' : ''}` },
           el('span', { className: 'ajb-pill-dot' }), status)
       )

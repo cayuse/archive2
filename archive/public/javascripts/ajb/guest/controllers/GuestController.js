@@ -51,6 +51,7 @@ class GuestController {
       }
       if (result.success) {
         this.state.setAuthentication(this.jukeboxId, this.password);
+        this.rememberCode(this.password);
         this.state.setState({
           role: result.jukebox.role === 'admin' ? 'admin' : 'guest',
           jukeboxName: result.jukebox.name,
@@ -69,6 +70,7 @@ class GuestController {
         this.subscribeRealtime();
         this.refreshNow();
         this.startPeriodicUpdates();
+        if (!this.onVisibilityChange) this.watchVisibility();
 
         return { success: true };
       }
@@ -82,6 +84,66 @@ class GuestController {
     } finally {
       this.state.setLoading(false);
     }
+  }
+
+  // The join code is kept in this browser so a reload does not ask for it
+  // again. Phones reload the page when they wake from sleep or return from
+  // another app, which used to drop guests back at the join screen.
+  storageKey() {
+    return `ajb-guest-code:${this.jukeboxId}`;
+  }
+
+  storedCode() {
+    try {
+      return window.localStorage.getItem(this.storageKey());
+    } catch (error) {
+      return null; // storage blocked (private mode): fall back to asking
+    }
+  }
+
+  rememberCode(code) {
+    try {
+      window.localStorage.setItem(this.storageKey(), code);
+    } catch (error) { /* storage blocked: the code just won't survive a reload */ }
+  }
+
+  forgetCode() {
+    try {
+      window.localStorage.removeItem(this.storageKey());
+    } catch (error) { /* nothing stored */ }
+  }
+
+  // Rejoin with the remembered code, if there is one. A code the host has
+  // since changed is forgotten, and the join screen shows without an error.
+  async resumeSession() {
+    const code = this.storedCode();
+    if (!code) return false;
+    const result = await this.authenticate(code);
+    if (!result.success && !result.offline) {
+      this.forgetCode();
+      this.state.clearError();
+    }
+    return !!result.success;
+  }
+
+  // Back to the join screen, e.g. to switch between the guest and admin code.
+  leave() {
+    this.forgetCode();
+    this.destroy();
+    this.password = null;
+    this.apiService.password = null;
+    this.state.setState({ authenticated: false, role: 'guest', currentView: 'now-playing', error: null });
+  }
+
+  // Timers and the socket are suspended while a phone sleeps, so catch up as
+  // soon as the page is visible again instead of waiting for the next poll.
+  watchVisibility() {
+    this.onVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && this.state.getState().authenticated) {
+        this.refreshNow();
+      }
+    };
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
   }
 
   // The jukebox went (or is) offline. Stop everything and reload, so the
@@ -356,6 +418,10 @@ class GuestController {
   // Cleanup
   destroy() {
     this.stopPeriodicUpdates();
+    if (this.onVisibilityChange) {
+      document.removeEventListener('visibilitychange', this.onVisibilityChange);
+      this.onVisibilityChange = null;
+    }
     if (this.cableSubscription) {
       this.cableSubscription.unsubscribe();
       this.cableSubscription = null;
