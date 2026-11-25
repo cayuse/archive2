@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Entrypoint for docker-compose.live.yml: restore the production dump on first
+# boot, bring its schema up to this checkout, add a local login, start the server.
+set -euo pipefail
+
+bundle check >/dev/null || bundle install
+bin/rails db:create
+
+if ! bin/rails runner 'exit ActiveRecord::Base.connection.table_exists?("songs")'; then
+  echo "Restoring /dump/archive.dump (a few minutes)..."
+  # --no-publications: the dump carries production's replication publication.
+  pg_restore --dbname="$DATABASE_URL" --no-owner --no-privileges --no-publications --jobs=4 /dump/archive.dump
+fi
+
+# Apply this checkout's pending migrations without rewriting db/structure.sql
+# (that file is the dev schema; db:migrate would re-dump it from this database).
+bin/rails runner 'ActiveRecord::Base.connection_pool.migration_context.migrate'
+bin/rails runner db/live_seeds.rb
+
+# Own pid file: the dev stack shares this directory and uses tmp/pids/server.pid.
+exec bin/rails server -b 0.0.0.0 -p 3000 -P /tmp/live-server.pid
