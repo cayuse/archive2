@@ -2,13 +2,13 @@
     player (guest opened a closed jukebox, or the host stopped the music). Rendered
     in plain ERB on purpose: the name goes through normal HTML escaping (which the
     browser decodes correctly), so there's none of the JS-string round-trip /
-    device-cache fragility the React closed view had. Styled by ajb_guest.css. %>
-<div id="ajb-guest-root" class="ajb-guest">
-  <div class="guest-closed">
-    <div class="guest-closed-emoji">🎉</div>
+    device-cache fragility the React closed view had. Styled by ajb.css. %>
+<div id="ajb-guest-root" class="ajb">
+  <div class="ajb-closed">
+    <div class="ajb-closed-emoji">🎉</div>
     <h1><%= @jukebox.name %> is closed</h1>
-    <p class="guest-muted">Thanks for coming! 👋</p>
-    <p class="guest-muted guest-small">
+    <p class="ajb-muted">Thanks for coming! 👋</p>
+    <p class="ajb-muted ajb-small">
       The host stopped the music. If they start it back up, just reload this page to rejoin.
     </p>
   </div>

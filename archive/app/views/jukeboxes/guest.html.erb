@@ -3,9 +3,9 @@
 <%# Only boot the React SPA when the jukebox is actually live. When it's closed,
     render a plain server-side page (see _closed) — no JS, no escaping pitfalls. %>
 <% if @jukebox.live? %>
-<div id="ajb-guest-root" class="ajb-guest">
+<div id="ajb-guest-root" class="ajb">
   <div id="react-guest-app">
-    <div class="guest-loading">
+    <div class="ajb-loading">
       <div class="spinner-border" role="status"></div>
       <p>Loading…</p>
     </div>
@@ -42,7 +42,7 @@
 </script>
 
 <!-- Load all guest modules (bump ajb_v on any change to bust device caches) -->
-<% ajb_v = "20261126-roles" %>
+<% ajb_v = "20261126-ajb-css" %>
 <script src="/javascripts/ajb/guest/models/GuestApiService.js?v=<%= ajb_v %>"></script>
 <script src="/javascripts/ajb/guest/models/GuestState.js?v=<%= ajb_v %>"></script>
 <script src="/javascripts/ajb/guest/controllers/GuestController.js?v=<%= ajb_v %>"></script>
@@ -54,4 +54,4 @@
   <%= render 'closed' %>
 <% end %>
 
-<link rel="stylesheet" href="/stylesheets/ajb_guest.css?v=20261126">
+<link rel="stylesheet" href="/stylesheets/ajb.css?v=20261126b">

@@ -44,7 +44,7 @@ const GuestView = {
     const jukeboxName = state.jukeboxName || config.jukeboxName || 'Jukebox';
 
     if (!controller) {
-      return h('div', { className: 'guest-loading' },
+      return h('div', { className: 'ajb-loading' },
         h('div', { className: 'spinner-border', role: 'status' }),
         h('p', null, 'Loading…')
       );
@@ -69,7 +69,7 @@ const GuestView = {
       'play-history': GuestView.HistoryView
     };
 
-    return h('div', { className: 'guest-app' },
+    return h('div', { className: 'ajb-app' },
       h(GuestView.Header, {
         jukeboxName,
         isAdmin: state.role === 'admin',
@@ -86,10 +86,10 @@ const GuestView = {
         error: state.error,
         onDismiss: () => controller.state.clearError()
       }),
-      h('main', { className: 'guest-main' },
+      h('main', { className: 'ajb-main' },
         h(views[state.currentView] || GuestView.NowPlayingView, { controller, state })
       ),
-      state.notice && h('div', { className: 'guest-toast', role: 'status' }, state.notice)
+      state.notice && h('div', { className: 'ajb-toast', role: 'status' }, state.notice)
     );
   },
 
@@ -97,11 +97,11 @@ const GuestView = {
   ClosedView: function() {
     const cfg = window.AJB_GUEST_CONFIG || {};
     const name = cfg.jukeboxName || 'This jukebox';
-    return h('div', { className: 'guest-closed' },
-      h('div', { className: 'guest-closed-emoji' }, '🎉'),
+    return h('div', { className: 'ajb-closed' },
+      h('div', { className: 'ajb-closed-emoji' }, '🎉'),
       h('h1', null, `${name} is closed`),
-      h('p', { className: 'guest-muted' }, 'Thanks for coming! 👋'),
-      h('p', { className: 'guest-muted guest-small' },
+      h('p', { className: 'ajb-muted' }, 'Thanks for coming! 👋'),
+      h('p', { className: 'ajb-muted ajb-small' },
         'The host stopped the music. If they start it back up, just reload this page to rejoin.'
       )
     );
@@ -116,18 +116,18 @@ const GuestView = {
       onAuthenticate(password);
     };
 
-    return h('div', { className: 'guest-auth' },
-      h('div', { className: 'guest-card guest-auth-card' },
-        h('div', { className: 'guest-auth-icon' }, '🎵'),
-        h('h1', { className: 'guest-auth-title' }, jukeboxName),
-        h('p', { className: 'guest-muted' }, 'Enter the jukebox code to see what’s playing and request songs.'),
+    return h('div', { className: 'ajb-auth' },
+      h('div', { className: 'ajb-card ajb-auth-card' },
+        h('div', { className: 'ajb-auth-icon' }, '🎵'),
+        h('h1', { className: 'ajb-auth-title' }, jukeboxName),
+        h('p', { className: 'ajb-muted' }, 'Enter the jukebox code to see what’s playing and request songs.'),
         h('form', { onSubmit: handleSubmit, autoComplete: 'off' },
           h('input', {
             // type=text (not password): this is a shared party code people
             // read off a screen/QR, so masking buys nothing and it stops
             // password managers (1Password etc.) from hijacking the field.
             type: 'text',
-            className: 'guest-input',
+            className: 'ajb-input',
             placeholder: 'Jukebox code',
             'aria-label': 'Jukebox code',
             value: password,
@@ -144,10 +144,10 @@ const GuestView = {
             'data-dashlane-ignore': 'true',
             'data-form-type': 'other'
           }),
-          h('button', { type: 'submit', className: 'guest-btn guest-btn-primary guest-btn-block', disabled: loading },
+          h('button', { type: 'submit', className: 'ajb-btn ajb-btn-primary ajb-btn-block', disabled: loading },
             loading ? 'Connecting…' : 'Join')
         ),
-        error && h('div', { className: 'guest-alert', role: 'alert' }, error)
+        error && h('div', { className: 'ajb-alert', role: 'alert' }, error)
       )
     );
   },
@@ -161,21 +161,21 @@ const GuestView = {
     ];
     const stateLabel = isPlaying ? 'Playing' : (hasSong ? 'Paused' : 'Idle');
 
-    return h('header', { className: 'guest-header' },
-      h('div', { className: 'guest-header-top' },
-        h('span', { className: 'guest-header-name' }, jukeboxName),
-        isAdmin && h('span', { className: 'guest-tag guest-role' }, 'Admin'),
-        h('span', { className: `guest-pill ${isPlaying ? 'is-playing' : ''}` },
-          h('span', { className: 'guest-pill-dot' }), stateLabel)
+    return h('header', { className: 'ajb-header' },
+      h('div', { className: 'ajb-header-top' },
+        h('span', { className: 'ajb-header-name' }, jukeboxName),
+        isAdmin && h('span', { className: 'ajb-tag ajb-role' }, 'Admin'),
+        h('span', { className: `ajb-pill ${isPlaying ? 'is-playing' : ''}` },
+          h('span', { className: 'ajb-pill-dot' }), stateLabel)
       ),
-      h('nav', { className: 'guest-tabs', role: 'tablist' },
+      h('nav', { className: 'ajb-tabs', role: 'tablist' },
         tabs.map(([view, icon, label]) =>
           h('button', {
             key: view,
             type: 'button',
             role: 'tab',
             'aria-selected': currentView === view,
-            className: `guest-tab ${currentView === view ? 'is-active' : ''}`,
+            className: `ajb-tab ${currentView === view ? 'is-active' : ''}`,
             onClick: onSwitch[view]
           }, h('i', { className: `fas ${icon}` }), h('span', null, label))
         )
@@ -192,8 +192,8 @@ const GuestView = {
 
     const isAdmin = state.role === 'admin';
 
-    return h('div', { className: 'guest-now' },
-      h('div', { className: 'guest-now-side' },
+    return h('div', { className: 'ajb-now' },
+      h('div', { className: 'ajb-now-side' },
         h(GuestView.CurrentSongDisplay, {
           song: state.currentSong,
           position: parseFloat(state.currentPosition) || 0,
@@ -216,13 +216,13 @@ const GuestView = {
 
   // Admin code only: remote control for the host's player.
   Transport: function({ isPlaying, onCommand }) {
-    return h('section', { className: 'guest-card guest-transport', 'aria-label': 'Player controls' },
+    return h('section', { className: 'ajb-card ajb-transport', 'aria-label': 'Player controls' },
       h('button', {
         type: 'button',
-        className: 'guest-btn guest-btn-primary',
+        className: 'ajb-btn ajb-btn-primary',
         onClick: () => onCommand(isPlaying ? 'pause' : 'play')
       }, h('i', { className: `fas ${isPlaying ? 'fa-pause' : 'fa-play'}` }), isPlaying ? ' Pause' : ' Play'),
-      h('button', { type: 'button', className: 'guest-btn guest-btn-ghost', onClick: () => onCommand('skip') },
+      h('button', { type: 'button', className: 'ajb-btn ajb-btn-ghost', onClick: () => onCommand('skip') },
         h('i', { className: 'fas fa-forward-step' }), ' Skip')
     );
   },
@@ -230,23 +230,23 @@ const GuestView = {
   // Current song card with a progress bar
   CurrentSongDisplay: function({ song, position, isPlaying }) {
     if (!song) {
-      return h('section', { className: 'guest-card guest-current is-empty' },
-        h('div', { className: 'guest-current-art' }, h('i', { className: 'fas fa-music' })),
-        h('div', { className: 'guest-current-body' },
-          h('h2', { className: 'guest-current-title' }, 'Nothing playing'),
-          h('p', { className: 'guest-muted' }, 'Waiting for the host to start the music…')
+      return h('section', { className: 'ajb-card ajb-current is-empty' },
+        h('div', { className: 'ajb-current-art' }, h('i', { className: 'fas fa-music' })),
+        h('div', { className: 'ajb-current-body' },
+          h('h2', { className: 'ajb-current-title' }, 'Nothing playing'),
+          h('p', { className: 'ajb-muted' }, 'Waiting for the host to start the music…')
         )
       );
     }
 
-    return h('section', { className: 'guest-card guest-current' },
-      h('div', { className: `guest-current-art ${isPlaying ? 'is-playing' : ''}` },
+    return h('section', { className: 'ajb-card ajb-current' },
+      h('div', { className: `ajb-current-art ${isPlaying ? 'is-playing' : ''}` },
         h('i', { className: `fas ${isPlaying ? 'fa-volume-high' : 'fa-pause'}` })),
-      h('div', { className: 'guest-current-body' },
-        h('div', { className: 'guest-eyebrow' }, isPlaying ? 'Now playing' : 'Paused'),
-        h('h2', { className: 'guest-current-title' }, song.title || 'Unknown title'),
-        h('p', { className: 'guest-current-artist' }, song.artist || 'Unknown artist'),
-        song.album && h('p', { className: 'guest-muted guest-small' }, song.album),
+      h('div', { className: 'ajb-current-body' },
+        h('div', { className: 'ajb-eyebrow' }, isPlaying ? 'Now playing' : 'Paused'),
+        h('h2', { className: 'ajb-current-title' }, song.title || 'Unknown title'),
+        h('p', { className: 'ajb-current-artist' }, song.artist || 'Unknown artist'),
+        song.album && h('p', { className: 'ajb-muted ajb-small' }, song.album),
         h(GuestView.ProgressBar, {
           // Remount per song so the ticker restarts from the new track's position.
           key: song.id,
@@ -276,20 +276,20 @@ const GuestView = {
     const current = duration > 0 ? Math.min(shown, duration) : shown;
     const percent = duration > 0 ? (current / duration) * 100 : 0;
 
-    return h('div', { className: 'guest-progress' },
+    return h('div', { className: 'ajb-progress' },
       h('div', {
-        className: 'guest-progress-track',
+        className: 'ajb-progress-track',
         role: 'progressbar',
         'aria-valuemin': 0,
         'aria-valuemax': 100,
         'aria-valuenow': Math.round(percent)
       },
         h('div', {
-          className: `guest-progress-fill ${isPlaying ? 'is-playing' : ''}`,
+          className: `ajb-progress-fill ${isPlaying ? 'is-playing' : ''}`,
           style: { width: `${percent}%` }
         })
       ),
-      h('div', { className: 'guest-progress-times' },
+      h('div', { className: 'ajb-progress-times' },
         h('span', null, GuestState.formatTime(current)),
         h('span', null, `-${GuestState.formatTime(Math.max(duration - current, 0))}`)
       )
@@ -298,34 +298,34 @@ const GuestView = {
 
   // Upcoming songs, numbered in the order they will play
   QueueDisplay: function({ queue, totalCount, isAdmin, onPromote, onRemove }) {
-    return h('section', { className: 'guest-card guest-queue' },
-      h('div', { className: 'guest-card-head' },
-        h('h2', { className: 'guest-card-title' }, 'Up next'),
-        h('span', { className: 'guest-count' }, totalCount || queue.length)
+    return h('section', { className: 'ajb-card ajb-queue' },
+      h('div', { className: 'ajb-card-head' },
+        h('h2', { className: 'ajb-card-title' }, 'Up next'),
+        h('span', { className: 'ajb-count' }, totalCount || queue.length)
       ),
       queue.length === 0
-        ? h('p', { className: 'guest-empty' }, 'The queue is empty. Request a song to get things going.')
-        : h('ol', { className: 'guest-list' },
+        ? h('p', { className: 'ajb-empty' }, 'The queue is empty. Request a song to get things going.')
+        : h('ol', { className: 'ajb-list' },
             queue.map((item, index) => {
               const requested = item.source === 'requested';
-              return h('li', { key: item.song.id, className: `guest-row ${requested ? 'is-requested' : ''}` },
-                h('span', { className: 'guest-row-index' }, index + 1),
-                h('div', { className: 'guest-row-text' },
-                  h('div', { className: 'guest-row-title' }, item.song.title),
-                  h('div', { className: 'guest-row-sub' },
+              return h('li', { key: item.song.id, className: `ajb-row ${requested ? 'is-requested' : ''}` },
+                h('span', { className: 'ajb-row-index' }, index + 1),
+                h('div', { className: 'ajb-row-text' },
+                  h('div', { className: 'ajb-row-title' }, item.song.title),
+                  h('div', { className: 'ajb-row-sub' },
                     `${item.song.artist || 'Unknown artist'} · ${GuestState.formatTime(item.song.duration || 0)}`)
                 ),
-                requested && h('span', { className: 'guest-tag' }, 'Requested'),
+                requested && h('span', { className: 'ajb-tag' }, 'Requested'),
                 isAdmin && !requested && h('button', {
                   type: 'button',
-                  className: 'guest-btn guest-btn-ghost',
+                  className: 'ajb-btn ajb-btn-ghost',
                   title: 'Move this song ahead of the auto-picked ones',
                   'aria-label': `Bump ${item.song.title}`,
                   onClick: () => onPromote(item.song)
                 }, h('i', { className: 'fas fa-arrow-up' })),
                 isAdmin && h('button', {
                   type: 'button',
-                  className: 'guest-btn guest-btn-ghost guest-btn-danger',
+                  className: 'ajb-btn ajb-btn-ghost ajb-btn-danger',
                   title: 'Remove from the queue',
                   'aria-label': `Remove ${item.song.title}`,
                   onClick: () => onRemove(item.song)
@@ -363,23 +363,23 @@ const GuestView = {
 
     let body;
     if (!text.trim()) {
-      body = h('p', { className: 'guest-empty' },
+      body = h('p', { className: 'ajb-empty' },
         'Search by song, artist, album or genre. Requests play before the auto-picked songs.');
     } else if (results.length === 0 && (searching || text.trim() !== query)) {
-      body = h('p', { className: 'guest-empty' },
+      body = h('p', { className: 'ajb-empty' },
         h('span', { className: 'spinner-border spinner-border-sm', role: 'status' }), ' Searching…');
     } else if (results.length === 0) {
-      body = h('p', { className: 'guest-empty' }, `No songs found for “${query}”. Try fewer or different words.`);
+      body = h('p', { className: 'ajb-empty' }, `No songs found for “${query}”. Try fewer or different words.`);
     } else {
       body = h(React.Fragment, null,
-        h('div', { className: 'guest-card-head' },
-          h('h2', { className: 'guest-card-title' }, 'Results'),
-          pagination && h('span', { className: 'guest-count' },
+        h('div', { className: 'ajb-card-head' },
+          h('h2', { className: 'ajb-card-title' }, 'Results'),
+          pagination && h('span', { className: 'ajb-count' },
             pagination.total_count > results.length
               ? `${results.length} of ${pagination.total_count}`
               : `${results.length}`)
         ),
-        h('ul', { className: 'guest-list' },
+        h('ul', { className: 'ajb-list' },
           results.map((song) => h(GuestView.SearchResultRow, {
             key: song.id,
             song,
@@ -390,19 +390,19 @@ const GuestView = {
         ),
         pagination && pagination.has_more && h('button', {
           type: 'button',
-          className: 'guest-btn guest-btn-ghost guest-btn-block guest-more',
+          className: 'ajb-btn ajb-btn-ghost ajb-btn-block ajb-more',
           disabled: searching,
           onClick: () => controller.loadMoreSearchResults()
         }, searching ? 'Loading…' : 'Load more')
       );
     }
 
-    return h('div', { className: 'guest-request' },
-      h('div', { className: 'guest-search' },
-        h('i', { className: 'fas fa-magnifying-glass guest-search-icon' }),
+    return h('div', { className: 'ajb-request' },
+      h('div', { className: 'ajb-search' },
+        h('i', { className: 'fas fa-magnifying-glass ajb-search-icon' }),
         h('input', {
           type: 'search',
-          className: 'guest-input guest-search-input',
+          className: 'ajb-input ajb-search-input',
           placeholder: 'Search songs, artists, albums…',
           'aria-label': 'Search songs',
           value: text,
@@ -413,12 +413,12 @@ const GuestView = {
         }),
         text && h('button', {
           type: 'button',
-          className: 'guest-search-clear',
+          className: 'ajb-search-clear',
           'aria-label': 'Clear search',
           onClick: () => runSearch('')
         }, h('i', { className: 'fas fa-xmark' }))
       ),
-      h('section', { className: 'guest-card' }, body)
+      h('section', { className: 'ajb-card' }, body)
     );
   },
 
@@ -436,22 +436,22 @@ const GuestView = {
 
     let action;
     if (queuedAs === 'requested') {
-      action = h('span', { className: 'guest-tag is-done' }, h('i', { className: 'fas fa-check' }), ' Requested');
+      action = h('span', { className: 'ajb-tag is-done' }, h('i', { className: 'fas fa-check' }), ' Requested');
     } else if (queuedAs && !isAdmin) {
       // Only an admin code can reorder the queue, so a guest just sees it's coming.
-      action = h('span', { className: 'guest-tag is-quiet' }, 'In queue');
+      action = h('span', { className: 'ajb-tag is-quiet' }, 'In queue');
     } else if (queuedAs) {
-      action = h('button', { type: 'button', className: 'guest-btn guest-btn-ghost', disabled: busy, onClick: request },
+      action = h('button', { type: 'button', className: 'ajb-btn ajb-btn-ghost', disabled: busy, onClick: request },
         h('i', { className: 'fas fa-arrow-up' }), ' Bump');
     } else {
-      action = h('button', { type: 'button', className: 'guest-btn guest-btn-primary', disabled: busy, onClick: request },
+      action = h('button', { type: 'button', className: 'ajb-btn ajb-btn-primary', disabled: busy, onClick: request },
         busy ? 'Adding…' : 'Request');
     }
 
-    return h('li', { className: 'guest-row' },
-      h('div', { className: 'guest-row-text' },
-        h('div', { className: 'guest-row-title' }, song.title),
-        h('div', { className: 'guest-row-sub' }, details)
+    return h('li', { className: 'ajb-row' },
+      h('div', { className: 'ajb-row-text' },
+        h('div', { className: 'ajb-row-title' }, song.title),
+        h('div', { className: 'ajb-row-sub' }, details)
       ),
       action
     );
@@ -473,23 +473,23 @@ const GuestView = {
       return () => observer.disconnect();
     }, [hasMore, history.length, controller]);
 
-    return h('section', { className: 'guest-card' },
-      h('div', { className: 'guest-card-head' },
-        h('h2', { className: 'guest-card-title' }, 'Played')
+    return h('section', { className: 'ajb-card' },
+      h('div', { className: 'ajb-card-head' },
+        h('h2', { className: 'ajb-card-title' }, 'Played')
       ),
       history.length === 0
-        ? h('p', { className: 'guest-empty' }, 'Nothing has played yet.')
-        : h('ul', { className: 'guest-list' },
+        ? h('p', { className: 'ajb-empty' }, 'Nothing has played yet.')
+        : h('ul', { className: 'ajb-list' },
             history.map((item) =>
-              h('li', { key: item.id, className: 'guest-row' },
-                h('div', { className: 'guest-row-text' },
-                  h('div', { className: 'guest-row-title' }, item.song.title),
-                  h('div', { className: 'guest-row-sub' }, item.song.artist || 'Unknown artist')
+              h('li', { key: item.id, className: 'ajb-row' },
+                h('div', { className: 'ajb-row-text' },
+                  h('div', { className: 'ajb-row-title' }, item.song.title),
+                  h('div', { className: 'ajb-row-sub' }, item.song.artist || 'Unknown artist')
                 ),
-                item.source === 'requested' && h('span', { className: 'guest-tag' }, 'Requested'),
+                item.source === 'requested' && h('span', { className: 'ajb-tag' }, 'Requested'),
                 h('button', {
                   type: 'button',
-                  className: 'guest-btn guest-btn-ghost',
+                  className: 'ajb-btn ajb-btn-ghost',
                   title: 'Request again',
                   'aria-label': `Request ${item.song.title} again`,
                   onClick: () => controller.requestSong(item.song.id, item.song.title)
@@ -497,15 +497,15 @@ const GuestView = {
               )
             )
           ),
-      hasMore && h('div', { ref: sentinel, className: 'guest-empty guest-small' }, 'Loading more…')
+      hasMore && h('div', { ref: sentinel, className: 'ajb-empty ajb-small' }, 'Loading more…')
     );
   },
 
   // Error Message
   ErrorMessage: function({ error, onDismiss }) {
-    return h('div', { className: 'guest-alert', role: 'alert' },
+    return h('div', { className: 'ajb-alert', role: 'alert' },
       h('span', null, error),
-      h('button', { type: 'button', className: 'guest-alert-close', onClick: onDismiss, 'aria-label': 'Dismiss' },
+      h('button', { type: 'button', className: 'ajb-alert-close', onClick: onDismiss, 'aria-label': 'Dismiss' },
         h('i', { className: 'fas fa-xmark' }))
     );
   }

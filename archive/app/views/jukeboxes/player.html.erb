@@ -7,75 +7,14 @@
   <title>AJB Player - <%= @jukebox.name %></title>
   <%= render 'player_scripts' %>
   
-  <style>
-    body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      margin: 0;
-      padding: 0;
-    }
-    
-    #ajb-player-root {
-      min-height: 100vh;
-    }
-    
-    .player-container {
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      margin: 20px;
-      padding: 30px;
-    }
-    
-    .player-header {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    
-    .player-title {
-      color: #333;
-      font-size: 2rem;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-    
-    .player-subtitle {
-      color: #666;
-      font-size: 1.1rem;
-    }
-    
-    .status-indicator {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      margin-right: 8px;
-    }
-    
-    .status-active { background-color: #28a745; }
-    .status-inactive { background-color: #6c757d; }
-    .status-paused { background-color: #ffc107; }
-  </style>
+  <link rel="stylesheet" href="/stylesheets/ajb.css?v=20261126c">
 </head>
-<body>
-  <div id="ajb-player-root">
-    <div class="player-container">
-      <div class="player-header">
-        <h1 class="player-title">🎵 AJB Player</h1>
-        <p class="player-subtitle">
-          <span class="status-indicator status-<%= @jukebox.status %>"></span>
-          <%= @jukebox.name %>
-        </p>
-      </div>
-      
-      <div id="react-player-app">
-        <!-- React app will mount here -->
-        <div class="text-center">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-          <p class="mt-3">Loading AJB Player...</p>
-        </div>
+<body class="ajb-page">
+  <div id="ajb-player-root" class="ajb">
+    <div id="react-player-app">
+      <div class="ajb-loading">
+        <div class="spinner-border" role="status"></div>
+        <p>Loading player…</p>
       </div>
     </div>
   </div>
@@ -127,20 +66,12 @@
       radio: <%= @jukebox.radio? %>,
       tuneUrl: <%= raw((@jukebox.station? ? station_path(@jukebox) : nil).to_json) %>
     };
-    
-    // Debug: Show what we got from Rails
-    console.log('Rails api_token value:', '<%= api_token || "nil" %>');
-    console.log('Rails api_token length:', '<%= api_token&.length || 0 %>');
-    
-    // Debug logging
-    console.log('AJB_CONFIG.apiToken present:', window.AJB_CONFIG.apiToken ? 'YES' : 'NO');
-    console.log('AJB_CONFIG.apiToken length:', window.AJB_CONFIG.apiToken ? window.AJB_CONFIG.apiToken.length : 0);
   </script>
   
   <!-- Load all AJB modules.
        These are plain static files (not asset-pipelined), so bump ajb_v whenever
        any of them changes to force browsers/iOS to fetch the new code. -->
-  <% ajb_v = "20261126-remote" %>
+  <% ajb_v = "20261126-player-ui" %>
   <script src="/javascripts/ajb/models/AudioEngine.js?v=<%= ajb_v %>"></script>
   <script src="/javascripts/ajb/models/PlaybackState.js?v=<%= ajb_v %>"></script>
   <script src="/javascripts/ajb/services/ApiService.js?v=<%= ajb_v %>"></script>
