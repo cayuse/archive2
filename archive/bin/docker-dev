@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Entrypoint for docker-compose.dev.yml: install gems, build the database on
+# first boot (schema from db/structure.sql, then seed data), start the server.
+set -euo pipefail
+
+bundle check >/dev/null || bundle install
+bin/rails db:create
+
+if ! bin/rails runner 'exit ActiveRecord::Base.connection.table_exists?("songs")'; then
+  bin/rails db:schema:load
+fi
+
+bin/rails db:seed
+bin/rails runner db/dev_seeds.rb
+
+rm -f tmp/pids/server.pid
+exec bin/rails server -b 0.0.0.0 -p 3000

@@ -35,6 +35,7 @@ utilities/__pycache__/
 
 # Docker and container files
 Dockerfile.*
+!archive/Dockerfile.dev
 .dockerignore
 docker-compose.override.yml
 archive/container
@@ -58,6 +59,7 @@ jukebox/container
 
 # Database dumps
 *.sql
+!archive/db/structure.sql
 *.sqlite
 *.sqlite3
 *.db
