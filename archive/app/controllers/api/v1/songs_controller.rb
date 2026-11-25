@@ -15,7 +15,7 @@ class Api::V1::SongsController < ApplicationController
   skip_before_action :authenticate_encrypted_token_user!, only: [:show, :download, :stream]
   before_action :authenticate_media_request!, only: [:show, :download, :stream]
   before_action :set_song, only: [:show, :download, :stream, :radio, :rate]
-  before_action :ensure_upload_permission!, only: [:bulk_upload, :bulk_create, :bulk_update, :direct_upload, :create_from_blob]
+  before_action :ensure_upload_permission!, only: [:bulk_upload]
 
   def index
     # Parse pagination params
