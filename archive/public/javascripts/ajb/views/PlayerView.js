@@ -383,11 +383,9 @@ const PlayerView = {
   JoinPanel: function() {
     const el = React.createElement;
     const cfg = window.AJB_CONFIG || {};
-    // Short, shareable URL (/j/<slug>); falls back to the canonical path if the
-    // slug isn't present for some reason.
-    const guestUrl = cfg.sessionId
-      ? window.location.origin + '/j/' + cfg.sessionId
-      : window.location.origin + '/jukeboxes/' + cfg.jukeboxId + '/guest';
+    // The server builds the short /j/<slug> link (with a phone-reachable address
+    // when the page is open on localhost); fall back to this page's origin.
+    const guestUrl = cfg.guestUrl || (window.location.origin + '/j/' + cfg.sessionId);
     const qrRef = React.useRef(null);
 
     React.useEffect(() => {

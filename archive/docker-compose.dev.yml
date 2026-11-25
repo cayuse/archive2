@@ -6,6 +6,8 @@
 # First boot loads db/structure.sql and seeds 25 generated songs (db/dev_seeds.rb).
 # Login: admin@musicarchive.com / admin123. Jukebox "Dev Party", guest password "guest".
 # Postgres is not published to the host, so it cannot clash with a local server.
+# Set AJB_LAN_HOST to this machine's network address (macOS: ipconfig getifaddr en0)
+# so guest QR codes work from a phone when the player is opened on localhost.
 name: archive-dev
 
 services:
@@ -33,6 +35,7 @@ services:
       POSTGRES_HOST: db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
+      AJB_LAN_HOST: ${AJB_LAN_HOST:-}
     ports:
       - "${ARCHIVE_DEV_PORT:-3000}:3000"
     volumes:

@@ -13,6 +13,8 @@
 # boot only. ARCHIVE_LIVE_STORAGE is the directory that holds Active Storage's
 # two-letter folders (the server's storage root), e.g. a mounted SMB share.
 # Login: live-test@example.test / admin123. Jukebox "Live Test", codes guest / boss.
+# Set AJB_LAN_HOST to this machine's network address (macOS: ipconfig getifaddr en0)
+# so guest QR codes work from a phone when the player is opened on localhost.
 name: archive-live
 
 services:
@@ -38,6 +40,7 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://postgres:password@db/archive_live
+      AJB_LAN_HOST: ${AJB_LAN_HOST:-}
     ports:
       - "${ARCHIVE_LIVE_PORT:-3002}:3000"
     volumes:
