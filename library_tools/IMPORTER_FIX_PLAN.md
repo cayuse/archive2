@@ -197,3 +197,97 @@ No importer tests exist. Minimum set, using small fixture files or canned scanne
 2. Should an exact duplicate upload be refused, flagged, or accepted?
 3. Should the app ever write corrected tags back into the audio files? Everything above assumes no:
    files are read-only.
+
+## 6. Dropbox intake (added 2026-11-24, server side)
+
+Goal: a directory on bigballs where files, folders or zips are dropped (over the SMB share),
+and a job every minute that imports whatever has arrived, with no risk of two runs touching the
+same file and a clear answer to "what happened to the thing I dropped".
+
+### 6.1 Layout
+
+`/datatank/archive/dropbox` on bigballs, mounted into the app container at `/rails/dropbox`
+(read/write; it is the only directory under `/datatank/archive` the app writes to as files). This
+is the directory to expose on the read/write SMB share, not `psql_storage`.
+
+```
+dropbox/
+  incoming/           humans drop here: single files, folders, zips
+  work/<run-id>/      claimed by one run; run-id = <utc stamp>-<host>-<pid>
+  done/<yyyy-mm-dd>/  originals after a successful import (kept N days, then pruned)
+  duplicates/         files already in the library (same checksum); left for the human to see
+  failed/<run-id>/    the file plus <name>.error.txt
+```
+
+### 6.2 Claiming: atomic rename, not symlinks or pids in names
+
+A run claims a file by renaming it from `incoming/` into its own `work/<run-id>/` directory.
+`rename(2)` within one filesystem is atomic: if two runs race for the same file, exactly one
+rename succeeds and the other gets ENOENT and moves on. Ownership is then simply "it is in my
+work directory". No marker files, no symlinks, no pid in filenames, nothing to clean up on the
+happy path. (One ZFS dataset holds the whole tree, so the rename never becomes a copy.)
+
+On top of that, the cron entry runs under `flock -n`, so under normal conditions there is only
+ever one run. The rename rule is the safety net for the abnormal case, not the mechanism you rely
+on every minute.
+
+Only "settled" entries are claimed: nothing modified for at least 2 minutes (for a folder, its
+newest file), and names that look like an in-progress copy are skipped (`.part`, `.crdownload`,
+`~$...`, dotfiles). This is what protects against claiming a file Windows is still copying over
+SMB; mtime keeps moving while the copy runs.
+
+### 6.3 A run, step by step
+
+1. **Sweep.** For each `work/<run-id>` whose run is dead (pid gone on this host, or older than
+   6 hours), move its contents back to `incoming/` once (recorded as a retry) or, on the second
+   time, to `failed/`. Crash recovery is therefore just directory inspection.
+2. **Claim** settled entries from `incoming/` (rename into `work/<run-id>/`), recording an
+   `intake_items` row per entry: run id, original path, size, status `claimed`.
+3. **Expand zips** inside the work directory (rubyzip): reject `..` paths, cap entry count and
+   total size, keep the zip's folder structure as relative paths.
+4. **Walk** for audio files (extension list, then ffprobe to confirm). Per file:
+   - checksum with Active Storage's own algorithm (base64 MD5, what `active_storage_blobs.checksum`
+     holds) and look it up; a hit is a **duplicate**: move to `duplicates/`, row `duplicate`
+     with the existing song id, nothing imported;
+   - otherwise create the `Song`, attach the file from its path (`attach(io:, filename:,
+     content_type:)`), set `original_filename`, and run the importer from step 1 of this plan
+     (`AudioFileProcessingJob.perform_now`), exactly as a web upload does. Store the relative
+     path on the row: folder structure is the album grouping a later album-aware tag pass wants;
+   - on exception: file to `failed/<run-id>/`, error text beside it, row `failed`, continue with
+     the next file. One bad file never blocks the batch.
+5. **Finish.** Originals to `done/<date>/` (relative paths preserved), row `imported` with the
+   song id, work directory removed. The run row records counts and duration.
+
+One code path: the web upload, the API bulk upload and the dropbox should all call the same
+"ingest this file" method once step 1 lands, so the dropbox is not a third copy of the importer.
+
+### 6.4 Tables
+
+`intake_runs` (id, run_id, started_at, finished_at, host, pid, counts) and `intake_items` (run,
+original_path, relative_path, size, checksum, status claimed/imported/duplicate/failed, song_id,
+error, timestamps). They give a page in the archive ("Intake") listing each run and what became
+of every file, so nobody has to read logs or poke around `done/`. They also answer the plan's open
+question 2 for this path: duplicates are flagged and kept, never silently imported and never a
+failure.
+
+### 6.5 Scheduling
+
+The app has no job backend in production (`queue_adapter` is `inline`), so the cheapest reliable
+scheduler is host cron on bigballs, finding the current Kamal container by label (names change
+every deploy):
+
+```
+* * * * * cayuse flock -n /run/lock/archive-intake.lock sh -c 'docker exec $(docker ps -q --filter label=service=archive --filter label=role=web | head -1) bin/rails intake:run' >> /var/log/archive-intake.log 2>&1
+```
+
+Later options, in order of preference: a Kamal `cron` role (a second container from the same
+image running `cron -f` with a crontab baked into the image; versioned with the deploy), or
+Solid Queue with a recurring task if a job backend is added for other reasons.
+
+### 6.6 Things to decide
+
+- Retention of `done/` (suggest 30 days) and whether `duplicates/` is pruned at all.
+- Whether a zip's top-level folder name should be kept as the album hint even when the files
+  inside carry album tags (suggest: tags win, folder is a fallback, matching rule 2.4).
+- Whether the dropbox should accept non-audio files at all (suggest: ignore and leave them in
+  `failed/` with "not audio", so a stray file is visible rather than silently eaten).

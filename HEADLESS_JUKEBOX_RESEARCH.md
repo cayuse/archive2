@@ -281,6 +281,41 @@ is the only audio path, and new endpoints (a WiiM outside, more bars) are just m
 entries in OwnTone's outputs list that the jukebox's speaker panel can select and group.
 No pairing-free speaker needs anything beyond being on the LAN.
 
+## 9. Tagging incoming and untagged songs (researched 2026-11-24)
+
+Problem: ~8,300 songs carry no MusicBrainz/AcoustID tags (the repair only used ids already in
+the files), so duplicates of the same recording are invisible to everything but the audio
+embedding, and the radio follows a song with its own duplicate. Uploads still go through
+`AudioFileProcessingJob`, which reads five tags with ffprobe.
+
+Can Picard do it programmatically? Not in a supported way as of Picard 3.0.5:
+- `picard -e LOAD/CLUSTER/LOOKUP/SCAN/SAVE_MATCHED/QUIT` exists (since 2.9) but needs the GUI
+  running; on a server that means `xvfb-run`, one slow launch per batch, no structured result.
+- A headless core (`HeadlessTagger`, `picard-cli`) was merged upstream on 2026-11-01 and a
+  `picard-cli shell` is in review for 3.1; nothing released yet. Worth re-checking in 2027.
+- No Picard-as-library; no official Docker image (mikenye/picard is a VNC GUI).
+
+What works headless today:
+- **beets** 2.14 with the `chroma` + `musicbrainz` plugins: `beet import -qsC -l log file`,
+  in place (`copy: no, move: no, write: yes`), auto-accepts strong matches only, album-aware
+  in album mode. Skips are only visible in the log, not the exit code.
+- **Custom worker**: `fpcalc` (libchromaprint-tools) → AcoustID lookup (free app key, 3 req/s)
+  → pick recording by score and source count → MusicBrainz release lookup (1 req/s, proper
+  User-Agent) → write tags with mutagen using Picard's tag mapping. The branch's
+  `scan_tags.py` is already mutagen-based, so this is an extension of the existing scanner.
+- SongKong (commercial, headless CLI) and a few album-folder watchers exist; not a fit.
+
+Recommended shape: one `tagger` container (python + chromaprint + ffmpeg + mutagen +
+pyacoustid) with a `tag <file> --json` entry point. Used by the upload job for each new file
+and by a rake task for the 8,300 backlog. Accuracy expectation: recording/artist ids are
+reliable for released music; album/date from a single-file match is a guess unless the
+file's album tag confirms it, so keep album-level fields provisional.
+
+Gotcha: rewriting tags in a file changes its bytes, and Active Storage keeps the blob
+checksum. `blob.open` verifies it. So the worker must either write the tagged file back as a
+new blob (replace the attachment) or update `active_storage_blobs.checksum`/`byte_size`
+after the write. Never edit in `psql_storage` without doing one of those.
+
 ## 7. Open questions for you
 
 - Which AirPlay receivers are actually in scope: just the JBL bar, or HomePods / Apple TV
