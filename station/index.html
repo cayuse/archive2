@@ -23,6 +23,10 @@
   button:disabled { opacity:.45; cursor:default; }
   input[type=search] { flex:1; min-width:180px; font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--text); }
   input[type=range] { flex:1; min-width:140px; }
+  select { font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--text); max-width:100%; }
+  label.check { display:flex; gap:6px; align-items:center; font-size:14px; color:var(--muted); }
+  .ends { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); }
+  a { color:var(--accent); }
   ul { list-style:none; margin:8px 0 0; padding:0; }
   li { display:flex; gap:8px; align-items:center; justify-content:space-between; padding:8px 0; border-top:1px solid var(--line); }
   li span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -39,11 +43,16 @@
     <div class="title" id="title">—</div>
     <div class="muted" id="artist"></div>
     <div class="row">
-      <button id="resume" class="primary">Play my station</button>
+      <select id="stations" title="Your stations"></select>
+      <button id="resume" class="primary">Play</button>
       <button id="stop" class="bad">Stop</button>
       <button id="skip">Skip</button>
-      <button id="up" class="good" title="More like this">&#128077;</button>
-      <button id="down" title="Never play this for me (and skip it)">&#128078;</button>
+    </div>
+    <div class="row" id="feedback">
+      <button data-kind="up" class="good" title="More like this on this station">&#128077; More like this</button>
+      <button data-kind="down" title="Not on this station (skips it)">&#128078; Not here</button>
+      <button data-kind="tired" title="Shelve it for a month on all your stations (skips it). Not counted as dislike.">&#128564; Sick of it</button>
+      <button data-kind="never" title="Never play this for me, anywhere (skips it)">&#128683;</button>
     </div>
     <div class="row"><span class="muted">Volume</span><input type="range" id="volume" min="0" max="100"><span id="volval" class="muted"></span></div>
     <div class="row" id="outputs"></div>
@@ -51,7 +60,7 @@
   </div>
 
   <div class="card">
-    <strong>Start from a song, or request one</strong>
+    <strong>Start a new station from a song, or request one on this station</strong>
     <div class="row"><input type="search" id="q" placeholder="Search title, artist, album…"><button id="go">Search</button></div>
     <ul id="results"></ul>
   </div>
@@ -62,14 +71,22 @@
       <span class="muted">Genre</span>
       <button data-genre="any">Any</button><button data-genre="adjacent">Same and similar</button><button data-genre="strict">Same only</button>
     </div>
+    <div class="row">
+      <span class="muted">Intensity</span><input type="range" id="intensity" min="-1" max="1" step="0.1">
+      <label class="check"><input type="checkbox" id="intensity-auto"> follow the seeds</label>
+    </div>
+    <div class="ends"><span>mellow</span><span>high</span></div>
+    <div class="row"><span class="muted">Variety</span><input type="range" id="variety" min="0" max="1" step="0.1"></div>
+    <div class="ends"><span>steady</span><span>rises and falls</span></div>
     <div class="row" id="steer">
       <span class="muted">Lean</span>
-      <button data-dial="energy" data-v="0.6">More energy</button><button data-dial="energy" data-v="-0.6">Mellower</button>
       <button data-dial="happiness" data-v="0.6">Happier</button><button data-dial="happiness" data-v="-0.6">Darker</button>
+      <button data-dial="aggression" data-v="-0.6">Gentler</button><button data-dial="aggression" data-v="0.6">Harder</button>
       <button data-dial="acousticness" data-v="0.6">Acoustic</button><button data-dial="electronic" data-v="0.6">Electronic</button>
       <button data-dial="danceability" data-v="0.6">Danceable</button><button data-dial="instrumental" data-v="0.8">Instrumental</button>
       <button id="reset">Reset</button>
     </div>
+    <div class="muted" id="tune-link" style="margin-top:12px"></div>
   </div>
 
   <div class="card">
@@ -80,7 +97,7 @@
 </main>
 <script>
 const $ = id => document.getElementById(id);
-let state = {}, dragging = false;
+let state = {}, dragging = false, tuning = false, stations = [];
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 async function api(path, body) {
@@ -100,8 +117,11 @@ function render(s) {
   $('artist').textContent = cur ? [cur.artist, cur.album].filter(Boolean).join(' · ') : '';
   $('error').textContent = s.error || '';
   ['stop','skip'].forEach(id => $(id).disabled = !s.playing);
-  ['up','down'].forEach(id => $(id).disabled = !cur);
-  $('resume').textContent = s.playing ? 'Restart my station' : 'Play my station';
+  document.querySelectorAll('#feedback button').forEach(b => {
+    b.disabled = !cur || !jb;
+    b.classList.toggle('on', !!cur && s.standing === b.dataset.kind);
+  });
+  renderStations();
   if (!dragging) { $('volume').value = s.volume; $('volval').textContent = s.volume; }
   $('outputs').innerHTML = '<span class="muted">Speakers</span>' + (s.outputs || []).map(o =>
     `<button class="${o.selected ? 'on' : ''}" data-out="${esc(o.id)}" data-sel="${o.selected}">${esc(o.name)} <span class="tag">${esc(o.type)}</span></button>`).join('');
@@ -109,19 +129,37 @@ function render(s) {
   document.querySelectorAll('#genre button').forEach(b => b.classList.toggle('on', (radio.genre || 'any') === b.dataset.genre));
   document.querySelectorAll('#steer button[data-dial]').forEach(b =>
     b.classList.toggle('on', Number((radio.steer || {})[b.dataset.dial] || 0) === Number(b.dataset.v)));
-  document.querySelectorAll('#genre button, #steer button').forEach(b => b.disabled = !jb || jb.station === false);
+  document.querySelectorAll('#genre button, #steer button, #intensity, #intensity-auto, #variety').forEach(b => b.disabled = !jb || jb.station === false);
+  if (!tuning) {
+    const auto = radio.intensity === null || radio.intensity === undefined;
+    $('intensity-auto').checked = auto;
+    $('intensity').value = auto ? 0 : radio.intensity;
+    if (auto) $('intensity').disabled = true;
+    $('variety').value = radio.variety === undefined ? 0.5 : radio.variety;
+  }
+  $('tune-link').innerHTML = jb && jb.station ? `Seeds, liked and shelved songs: <a href="${esc(s.archive_url)}/stations/${esc(jb.id)}" target="_blank" rel="noopener">tune this station in the archive</a>` : '';
   $('upcoming').innerHTML = (s.upcoming || []).map(u =>
     `<li><span>${esc(u.title)} <span class="muted">${esc(u.artist || '')}</span></span><span class="tag">${u.source === 'requested' ? 'request' : 'station'}</span></li>`).join('')
     || '<li class="muted">Nothing queued yet</li>';
   $('guest').textContent = jb && jb.session_id ? `Guests can request at ${s.archive_url}/j/${jb.session_id} (password: ${jb.guest_password})` : '';
 }
 
+function renderStations() {
+  const current = state.jukebox && state.jukebox.id;
+  const known = stations.some(x => x.id === current);
+  const list = known || !state.jukebox ? stations : stations.concat([state.jukebox]);
+  const html = list.map(x => `<option value="${esc(x.id)}">${esc(x.name || 'Station')}</option>`).join('');
+  if ($('stations').dataset.html !== html) { $('stations').innerHTML = html; $('stations').dataset.html = html; }
+  if (current && document.activeElement !== $('stations')) $('stations').value = current;
+}
+async function loadStations() { try { stations = (await api('/api/stations')).stations || []; renderStations(); } catch (e) {} }
+
 async function search() {
   const q = $('q').value.trim(); if (!q) return;
   const { songs } = await api('/api/search?q=' + encodeURIComponent(q));
   $('results').innerHTML = songs.map(x =>
     `<li><span>${esc(x.title)} <span class="muted">${esc(x.artist || '')}${x.album ? ' · ' + esc(x.album) : ''}</span></span>
-     <span><button data-start="${x.id}" class="primary">Start here</button> <button data-req="${x.id}" ${state.playing ? '' : 'disabled'}>Request</button></span></li>`).join('')
+     <span><button data-start="${x.id}" class="primary" title="Make a new station built around this song">New station</button> <button data-req="${x.id}" ${state.playing ? '' : 'disabled'} title="Play it next on the current station">Request</button></span></li>`).join('')
     || '<li class="muted">No matches</li>';
 }
 
@@ -129,14 +167,22 @@ $('go').onclick = search;
 $('q').onkeydown = e => { if (e.key === 'Enter') search(); };
 $('results').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
-  if (b.dataset.start) act('/api/start', { song_id: b.dataset.start });
+  if (b.dataset.start) act('/api/start', { song_id: b.dataset.start, new: true }).then(loadStations);
   if (b.dataset.req) act('/api/request', { song_id: b.dataset.req });
 };
-$('resume').onclick = () => act('/api/start', {});
+$('resume').onclick = () => act('/api/start', $('stations').value ? { station_id: $('stations').value } : {});
+$('stations').onchange = () => { if (state.playing) act('/api/start', { station_id: $('stations').value }); };
 $('stop').onclick = () => act('/api/stop');
 $('skip').onclick = () => act('/api/skip');
-$('up').onclick = () => state.current && act('/api/rate', { song_id: state.current.id, value: 1 });
-$('down').onclick = () => state.current && act('/api/rate', { song_id: state.current.id, value: -1 });
+$('feedback').onclick = e => {
+  const b = e.target.closest('button[data-kind]'); if (!b || !state.current) return;
+  act('/api/feedback', { song_id: state.current.id, kind: b.classList.contains('on') ? 'clear' : b.dataset.kind });
+};
+const tune = async body => { tuning = true; try { await act('/api/settings', body); } finally { tuning = false; } };
+$('intensity').oninput = $('variety').oninput = () => { tuning = true; };
+$('intensity').onchange = () => tune({ intensity: Number($('intensity').value) });
+$('intensity-auto').onchange = () => tune({ intensity: $('intensity-auto').checked ? 'auto' : 0 });
+$('variety').onchange = () => tune({ variety: Number($('variety').value) });
 $('volume').oninput = () => { dragging = true; $('volval').textContent = $('volume').value; };
 $('volume').onchange = async () => { await act('/api/volume', { volume: Number($('volume').value) }); dragging = false; };
 $('outputs').onclick = e => { const b = e.target.closest('button[data-out]'); if (b) act('/api/output', { id: b.dataset.out, selected: b.dataset.sel !== 'true' }); };
@@ -145,10 +191,10 @@ $('steer').onclick = e => {
   const b = e.target.closest('button[data-dial]'); if (!b) return;
   act('/api/settings', { [b.dataset.dial]: b.classList.contains('on') ? 0 : Number(b.dataset.v) });
 };
-$('reset').onclick = () => act('/api/settings', { reset_steer: 'true', genre: 'any' });
+$('reset').onclick = () => act('/api/settings', { reset_steer: 'true', genre: 'any', variety: 0.5 });
 
 const poll = async () => { try { render(await api('/api/state')); } catch (e) {} };
-poll(); setInterval(poll, 4000);
+poll(); loadStations(); setInterval(poll, 4000); setInterval(loadStations, 60000);
 </script>
 </body>
 </html>

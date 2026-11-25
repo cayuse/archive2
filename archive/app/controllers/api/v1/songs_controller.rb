@@ -141,12 +141,13 @@ class Api::V1::SongsController < ApplicationController
   #   energy, danceability, happiness, aggression, acousticness, electronic, instrumental
   #                each -1..1: push the stream up or down on that dial
   #   genre        any (default) | adjacent | strict
-  # The caller's own thumbs up/down are applied automatically.
+  # The caller's feedback on their first station is applied automatically.
   def radio
     exclude = Array(params[:exclude_ids]).flat_map { |v| v.to_s.split(",") }.reject(&:blank?).first(500)
     steer = params.permit(*SongAudioFeature::DIALS).to_h
-    songs = SongRadio.new(seed: @song, exclude_ids: exclude, steer: steer, genre_mode: params[:genre],
-                          user: @current_api_user)
+    songs = SongRadio.new(seed: @song, exclude_ids: exclude, steer: steer, intensity: steer["energy"],
+                          genre_mode: params[:genre], user: @current_api_user,
+                          station: Jukebox.first_station(@current_api_user))
                      .next_songs((params[:count] || 20).to_i.clamp(1, 100))
     render json: {
       success: true,
@@ -158,9 +159,12 @@ class Api::V1::SongsController < ApplicationController
   end
 
   # POST /api/v1/songs/:id/rate   value=1 (thumbs up), -1 (thumbs down) or 0 (clear)
+  # Kept for older players: the thumb lands on the caller's first station. New clients use
+  # POST /api/v1/jukeboxes/:id/feedback, which is per station and has more kinds.
   def rate
-    render json: { success: true, song_id: @song.id,
-                   value: SongRating.rate!(user: @current_api_user, song: @song, value: params[:value]) }
+    value = StationFeedback.rate!(user: @current_api_user, song: @song, value: params[:value],
+                                  jukebox: Jukebox.first_station(@current_api_user))
+    render json: { success: true, song_id: @song.id, value: value }
   end
 
   def bulk_upload

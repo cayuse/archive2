@@ -23,8 +23,11 @@ Why the data needed repair: see `IMPORTER_ROOT_CAUSE.md`.
 | 9. Load audio data | `rails 'library:import_audio[out_dir]'` | features, neighbours, embeddings, genre affinities |
 
 Checks: `scripts/root_cause.sql`, `scripts/post_rebuild_check.sql`, `scripts/smoke.rb` (renders the
-pages with login bypassed), `scripts/radio_taste_test.rb`, `scripts/jukebox_radio_test.rb`,
+pages with login bypassed), `scripts/radio_taste_test.rb` (genre modes), `scripts/jukebox_radio_test.rb`,
+`scripts/station_engine_test.rb` (flow, repeats, per-station feedback, taste; asserts and rolls back),
 `scripts/station_test.sh` (headless station against a mock OwnTone).
+
+A Linux equivalent of the staging setup, with no machine-specific paths, is in `staging/`.
 
 Audio model: `laion/larger_clap_music_and_speech` via `transformers==4.46.3`. Do not use
 `laion/larger_clap_music`: its text side returns the same vector for every prompt.

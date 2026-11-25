@@ -4,6 +4,7 @@ class Jukebox < ApplicationRecord
   has_many :playlists, through: :jukebox_playlist_assignments
   has_many :ajb_queue_items, dependent: :destroy
   has_many :ajb_played_songs, dependent: :destroy
+  has_many :station_feedbacks, dependent: :destroy
 
   validates :name, presence: true, length: { maximum: 255 }
   # Guests always join with a password — a jukebox can't exist without one.
@@ -17,17 +18,44 @@ class Jukebox < ApplicationRecord
   FILL_MODES = %w[random radio].freeze
   validates :fill_mode, inclusion: { in: FILL_MODES }
 
-  # A user's personal station: a jukebox on radio auto-fill with no playlists, so it draws on the
-  # whole library. Found by this session_id prefix; created on first use.
+  # A user's stations: jukeboxes on radio auto-fill with no playlists, so they draw on the whole
+  # library. Recognised by this session_id prefix. Everyone who may host has a first one ("My
+  # Station", created on first use) and can add more, each with its own seeds, tuning and feedback.
   STATION_PREFIX = "station-".freeze
+  MAX_STATIONS = 40
+  class TooManyStations < StandardError; end
+
+  scope :stations, -> { where("session_id LIKE ?", "#{STATION_PREFIX}%") }
+
+  def self.station_code(user)
+    "#{STATION_PREFIX}#{user.id.to_s.delete('-').first(12)}"
+  end
 
   def self.station_for(user)
-    code = "#{STATION_PREFIX}#{user.id.to_s.delete('-').first(12)}"
-    find_by(owner_id: user.id, session_id: code) || create!(
-      owner: user, session_id: code, name: "My Station", fill_mode: "radio",
+    code = station_code(user)
+    find_by(owner_id: user.id, session_id: code) || create_station!(user, name: "My Station", session_id: code)
+  end
+
+  # The user's first station if it exists already (never creates one).
+  def self.first_station(user)
+    find_by(owner_id: user.id, session_id: station_code(user))
+  end
+
+  def self.stations_for(user)
+    stations.where(owner_id: user.id).order(:created_at)
+  end
+
+  # A new station for the user, optionally started from a song (named after it unless given a name).
+  def self.create_station!(user, name: nil, song: nil, session_id: nil)
+    raise TooManyStations, "You already have #{MAX_STATIONS} stations" if session_id.nil? && stations_for(user).count >= MAX_STATIONS
+    station = create!(
+      owner: user, session_id: session_id || "#{station_code(user)}-#{SecureRandom.hex(3)}",
+      name: (name.presence || (song ? "#{song.title} Radio" : "New Station")).to_s.first(255), fill_mode: "radio",
       guest_password: SecureRandom.alphanumeric(8).downcase,
       min_queue_length: 2, queue_refill_level: 4
     )
+    station.start_from!(song) if song
+    station
   end
 
   def radio?
@@ -42,31 +70,92 @@ class Jukebox < ApplicationRecord
     radio_settings["genre"].presence || "any"
   end
 
+  # Leanings on the mood dials. Energy is not one of them: see radio_intensity.
   def radio_steer
-    (radio_settings["steer"] || {}).slice(*SongAudioFeature::DIALS)
+    (radio_settings["steer"] || {}).slice(*SongRadio::STEER_DIALS)
   end
 
-  # Store steer/genre from params-like input: { genre: "adjacent", energy: 0.6, ... }. Dials not
-  # mentioned keep their value; a dial set to 0 is removed.
+  # -1.0 (mellow) .. 1.0 (high), or nil to stay at the level of the seed songs.
+  def radio_intensity
+    radio_settings["intensity"]&.to_f
+  end
+
+  # 0.0 (steady) .. 1.0 (dynamic): how far energy rises and falls over a run of songs.
+  def radio_variety
+    (radio_settings["variety"] || 0.5).to_f
+  end
+
+  # Learn a taste and dial leanings from thumbs and skips (on unless switched off).
+  def radio_learn?
+    radio_settings["learn"] != false
+  end
+
+  # Does a request re-aim the station (drop what was lined up and follow the request)? Yes on a
+  # personal station; on a party jukebox a guest's request should not change what everyone hears next.
+  def requests_steer?
+    radio_settings.key?("requests_steer") ? radio_settings["requests_steer"] == true : station?
+  end
+
+  # The songs the station is built around. Empty on a party jukebox: it follows the latest request.
+  def radio_seed_ids
+    Array(radio_settings["seeds"])
+  end
+
+  # Artists the listener put back after two thumbs down took them off the station.
+  def radio_kept_artist_ids
+    Array(radio_settings["kept_artists"])
+  end
+
+  def add_seed!(song)
+    update_setting!("seeds", (radio_seed_ids + [ song.id ]).uniq.last(SongRadio::MAX_SEEDS))
+  end
+
+  def remove_seed!(song_id)
+    update_setting!("seeds", radio_seed_ids - [ song_id.to_s ])
+  end
+
+  def keep_artist!(artist_id)
+    update_setting!("kept_artists", (radio_kept_artist_ids + [ artist_id.to_s ]).uniq)
+  end
+
+  # Store tuning from params-like input:
+  #   { genre: "adjacent", intensity: 0.5 | "auto", variety: 0.3, learn: true, requests_steer: false,
+  #     acousticness: 0.6, ... }
+  # Dials not mentioned keep their value; a dial set to 0 is removed. "energy" is accepted from older
+  # clients and stored as intensity.
   def update_radio_settings!(attrs)
     attrs = attrs.to_h.stringify_keys
     settings = radio_settings.deep_dup
     settings["genre"] = attrs["genre"] if SongRadio::GENRE_MODES.include?(attrs["genre"])
-    steer = (settings["steer"] || {}).slice(*SongAudioFeature::DIALS)
-    steer = {} if attrs["reset_steer"].to_s == "true"
-    SongAudioFeature::DIALS.each do |dial|
+    steer = (settings["steer"] || {}).slice(*SongRadio::STEER_DIALS)
+    if attrs["reset_steer"].to_s == "true"
+      steer = {}
+      settings.delete("intensity")
+    end
+    SongRadio::STEER_DIALS.each do |dial|
       next unless attrs.key?(dial)
       value = attrs[dial].to_f.clamp(-1.0, 1.0)
       value.zero? ? steer.delete(dial) : steer[dial] = value
     end
     settings["steer"] = steer
+    intensity = attrs.key?("intensity") ? attrs["intensity"] : attrs["energy"]
+    unless intensity.nil?
+      auto = intensity.to_s.in?([ "", "auto" ]) || (!attrs.key?("intensity") && intensity.to_f.zero?)
+      auto ? settings.delete("intensity") : settings["intensity"] = intensity.to_f.clamp(-1.0, 1.0)
+    end
+    settings["variety"] = attrs["variety"].to_f.clamp(0.0, 1.0) if attrs.key?("variety")
+    %w[learn requests_steer].each do |flag|
+      settings[flag] = ActiveModel::Type::Boolean.new.cast(attrs[flag]) == true if attrs.key?(flag)
+    end
     update!(radio_settings: settings)
     retune!
   end
 
-  # Start the station over from one song: empty the queue and put the song at the front.
+  # Start the station over from one song: it becomes the only seed, the queue is emptied and the
+  # song goes to the front. What the station learned from thumbs is kept.
   def start_from!(song)
     transaction do
+      update!(radio_settings: radio_settings.merge("seeds" => [ song.id ])) if radio?
       ajb_queue_items.delete_all
       ajb_queue_items.create!(song: song, source: "requested")
     end
@@ -158,6 +247,11 @@ class Jukebox < ApplicationRecord
   end
 
   private
+
+  def update_setting!(key, value)
+    update!(radio_settings: radio_settings.merge(key => value))
+    retune!
+  end
 
   def generate_session_id
     return if session_id.present?

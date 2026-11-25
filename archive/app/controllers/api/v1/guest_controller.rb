@@ -259,7 +259,7 @@ class Api::V1::GuestController < ApplicationController
       end
       
       # Add song to queue as requested
-      @jukebox.retune!   # radio: the request re-aims the station
+      @jukebox.retune! if @jukebox.requests_steer?   # a request re-aims a personal station, not a party
       queue_item = @jukebox.ajb_queue_items.create!(
         song: song,
         source: 'requested'

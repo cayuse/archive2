@@ -36,7 +36,10 @@ STATE_FILE = Path(os.environ.get("STATE_FILE", "/data/station_state.json"))
 LOOKAHEAD = 1          # songs kept queued in OwnTone after the current one (gapless hand-over)
 TICK = 2.0             # seconds between looks at OwnTone
 HEARTBEAT = 10.0       # seconds between now-playing reports to the archive (it treats 30 s as "live")
-DIALS = ["energy", "danceability", "happiness", "aggression", "acousticness", "electronic", "instrumental"]
+DIALS = ["danceability", "happiness", "aggression", "acousticness", "electronic", "instrumental"]
+SETTINGS = ["genre", "reset_steer", "intensity", "variety", "learn"] + DIALS
+MOVE_ON = ("down", "tired", "never")   # feedback that also skips the song
+FINISHED_WITHIN = 10.0                 # seconds from the end that still count as "played to the end"
 
 
 def log(*a):
@@ -97,8 +100,18 @@ class Archive:
                     continue
                 raise
 
-    def station(self, song_id=None):
-        return self.call("POST", "/api/v1/jukeboxes/station", {"song_id": song_id} if song_id else {})[1]["jukebox"]
+    def station(self, song_id=None, station_id=None, new=False):
+        body = {k: v for k, v in {"song_id": song_id, "station_id": station_id, "new": new or None}.items() if v}
+        return self.call("POST", "/api/v1/jukeboxes/station", body)[1]["jukebox"]
+
+    def stations(self):
+        return self.call("GET", "/api/v1/jukeboxes/stations")[1].get("stations", [])
+
+    def feedback(self, jukebox_id, song_id, kind, position=None):
+        body = {"song_id": song_id, "kind": kind}
+        if position is not None:
+            body["position"] = position
+        return self.call("POST", "/api/v1/jukeboxes/%s/feedback" % jukebox_id, body)[1]
 
     def jukeboxes(self):
         return self.call("GET", "/api/v1/jukeboxes")[1].get("jukeboxes", [])
@@ -126,8 +139,6 @@ class Archive:
         qs = urllib.parse.urlencode({"search": q, "limit": 25, "sort_by": "title", "sort_order": "asc"})
         return self.call("GET", "/api/v1/songs?" + qs)[1].get("songs", [])
 
-    def rate(self, song_id, value):
-        return self.call("POST", "/api/v1/songs/%s/rate" % song_id, {"value": value})[1]
 
 
 class OwnTone:
@@ -184,7 +195,10 @@ class Station:
         self.jukebox = None           # dict from the archive (id, name, radio settings, ...)
         self.by_url = {}              # play link -> archive song dict, for the songs we handed to OwnTone
         self.current = None           # archive song dict now playing
+        self.standing = None          # what the listener said about it: up / down / tired / never
+        self.moved_on = set()         # song ids we skipped on purpose (so they are not "finished")
         self.position = 0.0
+        self.length = 0.0             # length of the current song as OwnTone reports it
         self.volume = 50
         self.error = None
         self.last_beat = 0.0
@@ -206,7 +220,9 @@ class Station:
             log("could not save state:", e)
 
     # ---- commands from the control page
-    def start(self, song_id=None, jukebox_id=None):
+    def start(self, song_id=None, jukebox_id=None, station_id=None, new=False):
+        """Play a station: the one given, else the one we were on, else the account's first station.
+        With song_id the station restarts from that song; with new=True a new station is made from it."""
         with self.lock:
             if jukebox_id:
                 self.jukebox = next(({"id": j["id"], "name": j.get("name"), "station": False}
@@ -214,11 +230,18 @@ class Station:
                 if not self.jukebox:
                     raise ValueError("no such jukebox for this account")
             else:
-                self.jukebox = self.archive.station(song_id)
+                if not station_id and not new and self.jukebox and self.jukebox.get("station"):
+                    station_id = self.jukebox["id"]
+                try:
+                    self.jukebox = self.archive.station(song_id, station_id, new)
+                except HttpError as e:
+                    if e.status != 404 or not station_id:
+                        raise
+                    self.jukebox = self.archive.station(song_id)      # that station was deleted
             self.owntone.stop()
             self.owntone.clear()
             self.owntone.prepare()
-            self.by_url, self.current = {}, None
+            self.by_url, self.current, self.standing = {}, None, None
             self.playing, self.error = True, None
             self.save()
             log("START", self.jukebox.get("name"), "from song", song_id or "(resume)")
@@ -235,9 +258,33 @@ class Station:
             self.by_url, self.current = {}, None
             log("STOP")
 
-    def skip(self):
+    def skip(self, report=True):
+        """Go to the next song. A skip the listener asked for is reported to the station (an early
+        skip counts a little against the song); a skip that follows a thumbs down is not."""
         with self.lock:
+            song = self.current
+            if song:
+                self.moved_on.add(song["id"])
+                if report:
+                    self.event(song, "skip", self.position)
             self.owntone.next()
+
+    def event(self, song, kind, position=None):
+        try:
+            self.archive.feedback(self.jukebox["id"], song["id"], kind, position)
+        except Exception as e:
+            log("could not report %s:" % kind, e)
+
+    def feedback(self, song_id, kind):
+        """What the listener says about a song: up, down, tired, never or clear."""
+        with self.lock:
+            out = self.archive.feedback(self.jukebox["id"], song_id, kind)
+            if self.current and self.current["id"] == song_id:
+                self.standing = out.get("standing")
+                if kind in MOVE_ON:
+                    self.retune()             # the station re-aimed: drop the song we had lined up
+                    self.skip(report=False)
+            return out
 
     def retune(self):
         """Settings or requests changed: drop the song we had lined up so the change is heard next."""
@@ -265,9 +312,18 @@ class Station:
             p = self.owntone.player()
             items = self.owntone.queue()
             self.volume = p.get("volume", self.volume)
-            self.position = p.get("item_progress_ms", 0) / 1000.0
             now = next((i for i in items if i["id"] == p.get("item_id")), None)
+            before, before_position, before_length = self.current, self.position, self.length
             self.current = self.by_url.get(now["path"]) if now else None
+            self.length = p.get("item_length_ms", 0) / 1000.0 if now else 0.0
+            if before and (not self.current or self.current["id"] != before["id"]):
+                self.standing = None
+                length = before_length or float(before.get("duration") or 0)
+                if before["id"] in self.moved_on:
+                    self.moved_on.discard(before["id"])
+                elif length and before_position >= length - FINISHED_WITHIN:
+                    self.event(before, "finished")
+            self.position = p.get("item_progress_ms", 0) / 1000.0 if now else 0.0
             ahead = len(items) - (items.index(now) + 1 if now else 0)
             want = LOOKAHEAD if now else LOOKAHEAD + 1
             while ahead < want:
@@ -300,7 +356,7 @@ class Station:
     def state(self):
         with self.lock:
             out = {"playing": self.playing, "jukebox": self.jukebox, "current": self.current,
-                   "position": self.position, "volume": self.volume, "error": self.error,
+                   "standing": self.standing, "position": self.position, "volume": self.volume, "error": self.error,
                    "archive_url": ARCHIVE_URL, "outputs": [], "upcoming": []}
         try:
             out["outputs"] = [{"id": o["id"], "name": o["name"], "type": o["type"], "selected": o["selected"]}
@@ -366,6 +422,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(200, {"songs": STATION.archive.search(q.get("q", [""])[0])})
             elif url.path == "/api/jukeboxes":
                 self.send(200, {"jukeboxes": STATION.archive.jukeboxes()})
+            elif url.path == "/api/stations":
+                self.send(200, {"stations": STATION.archive.stations()})
             else:
                 self.send(404, {"error": "not found"})
         except Exception as e:
@@ -380,7 +438,8 @@ class Handler(BaseHTTPRequestHandler):
             path = urllib.parse.urlparse(self.path).path
             s = STATION
             if path == "/api/start":
-                s.start(song_id=b.get("song_id"), jukebox_id=b.get("jukebox_id"))
+                s.start(song_id=b.get("song_id"), jukebox_id=b.get("jukebox_id"),
+                        station_id=b.get("station_id"), new=bool(b.get("new")))
             elif path == "/api/stop":
                 s.stop()
             elif path == "/api/skip":
@@ -389,22 +448,21 @@ class Handler(BaseHTTPRequestHandler):
                 s.owntone.volume(b["volume"])
             elif path == "/api/output":
                 s.owntone.select(b["id"], b["selected"])
-            elif path in ("/api/request", "/api/settings") and not s.jukebox:
+            elif path in ("/api/request", "/api/settings", "/api/feedback", "/api/rate") and not s.jukebox:
                 raise ValueError("start a station first")
             elif path == "/api/request":
                 s.archive.request(s.jukebox["id"], b["song_id"])
                 s.retune()
             elif path == "/api/settings":
-                attrs = {k: b[k] for k in ["genre", "reset_steer"] + DIALS if k in b}
+                attrs = {k: b[k] for k in SETTINGS if k in b}
                 s.jukebox = dict(s.jukebox, **s.archive.radio_settings(s.jukebox["id"], attrs))
                 s.save()
                 s.retune()
-            elif path == "/api/rate":
+            elif path in ("/api/feedback", "/api/rate"):
                 if not b.get("song_id"):
                     raise ValueError("nothing is playing")
-                s.archive.rate(b["song_id"], b["value"])
-                if int(b["value"]) < 0 and s.current and s.current["id"] == b["song_id"]:
-                    s.skip()
+                kind = b.get("kind") or {1: "up", -1: "down", 0: "clear"}[int(b.get("value", 0))]   # rate: old page
+                s.feedback(b["song_id"], kind)
             else:
                 return self.send(404, {"error": "not found"})
             self.send(200, s.state())

@@ -71,6 +71,7 @@ class PlayerController {
     this.audioEngine.onEnd = () => {
       this.playbackState.setPlaybackStatus(false, false, true);
       this.updatePlaybackStatus('track_end');
+      this.reportEvent('finished');
       if (this.pauseAfterSong) {
         // Hold between songs (e.g. for an announcement) instead of advancing.
         this.pauseAfterSong = false;
@@ -201,9 +202,33 @@ class PlayerController {
     this.audioEngine.stop();
   }
 
-  // Skip button (>>|)
+  // Skip button (>>|). The station hears about it: an early skip counts a little against the song.
   skip() {
+    this.reportEvent('skip');
     this.audioEngine.skip();
+  }
+
+  // Player-observed feedback (skip / finished) for the current song. Fire and forget.
+  reportEvent(kind) {
+    const song = this.playbackState.currentSong;
+    if (!song) return;
+    const info = this.audioEngine.getPlaybackInfo();
+    this.apiService.sendFeedback(song.id, kind, Number(info.currentTime) || 0);
+  }
+
+  // Listener feedback on the current song: up, down, tired ("sick of it for now"), never, or clear.
+  // Anything but a thumbs up (or taking a thumb back) also moves on to the next song.
+  async feedback(kind) {
+    const song = this.playbackState.currentSong;
+    if (!song) return;
+    const result = await this.apiService.sendFeedback(song.id, kind);
+    if (!result.success) { this.notifyError(result.message || 'Could not save that'); return; }
+    this.currentStanding = result.standing || null;
+    if (this.onStandingChange) this.onStandingChange(this.currentStanding);
+    if (kind === 'down' || kind === 'tired' || kind === 'never') {
+      this.loadQueue();
+      this.audioEngine.skip();
+    }
   }
 
   // Restart button (|<<)
@@ -373,6 +398,8 @@ class PlayerController {
   }
 
   notifySongChange(song) {
+    this.currentStanding = null;
+    if (this.onStandingChange) this.onStandingChange(null);
     if (this.onSongChange) {
       this.onSongChange(song);
     }

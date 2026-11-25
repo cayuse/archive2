@@ -109,6 +109,16 @@
                 with none assigned it draws on the whole library.
               </div>
             </div>
+
+            <div class="mb-3 form-check">
+              <input type="hidden" name="jukebox[requests_steer]" value="0">
+              <input type="checkbox" class="form-check-input" id="jukebox_requests_steer" name="jukebox[requests_steer]" value="1" <%= "checked" if jukebox.requests_steer? %>>
+              <label class="form-check-label" for="jukebox_requests_steer">Requests steer the radio</label>
+              <div class="form-text">
+                On: a request drops the songs already lined up, so the radio follows it straight away
+                (good for one listener). Off: the request plays in turn and the line-up stays (good for a party).
+              </div>
+            </div>
           </div>
         </div>
       </div>

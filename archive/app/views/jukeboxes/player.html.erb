@@ -123,7 +123,9 @@
       crossfadeDuration: <%= @jukebox.crossfade_duration %>,
       autoPlay: <%= @jukebox.auto_play %>,
       hasPassword: <%= @jukebox.has_password? %>,
-      guestPassword: '<%= j(@jukebox.guest_password.to_s) %>'
+      guestPassword: '<%= j(@jukebox.guest_password.to_s) %>',
+      radio: <%= @jukebox.radio? %>,
+      tuneUrl: <%= raw((@jukebox.station? ? station_path(@jukebox) : nil).to_json) %>
     };
     
     // Debug: Show what we got from Rails
@@ -138,7 +140,7 @@
   <!-- Load all AJB modules.
        These are plain static files (not asset-pipelined), so bump ajb_v whenever
        any of them changes to force browsers/iOS to fetch the new code. -->
-  <% ajb_v = "20260611-diag" %>
+  <% ajb_v = "20261125-feedback" %>
   <script src="/javascripts/ajb/models/AudioEngine.js?v=<%= ajb_v %>"></script>
   <script src="/javascripts/ajb/models/PlaybackState.js?v=<%= ajb_v %>"></script>
   <script src="/javascripts/ajb/services/ApiService.js?v=<%= ajb_v %>"></script>

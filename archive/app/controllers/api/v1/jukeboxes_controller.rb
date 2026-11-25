@@ -3,7 +3,7 @@ class Api::V1::JukeboxesController < ApplicationController
 
   skip_before_action :verify_authenticity_token
   before_action :authenticate_api_user!
-  before_action :set_jukebox, only: [:status, :queue, :current_song, :playback_info, :history, :add_to_queue, :remove_from_queue, :move_in_queue, :promote_in_queue, :play_next_in_queue, :playback_status, :next_song, :radio_settings]
+  before_action :set_jukebox, only: [:status, :queue, :current_song, :playback_info, :history, :add_to_queue, :remove_from_queue, :move_in_queue, :promote_in_queue, :play_next_in_queue, :playback_status, :next_song, :radio_settings, :feedback, :tuning, :add_seed, :remove_seed, :keep_artist, :rename_station, :destroy_station]
 
   # List the authenticated user's own jukeboxes so player clients can offer
   # a picker instead of needing a pasted UUID.
@@ -111,26 +111,109 @@ class Api::V1::JukeboxesController < ApplicationController
     end
   end
 
-  # POST /api/v1/jukeboxes/station   [song_id]
-  # The caller's personal station (created on first use). With song_id, restarts it from that song.
+  # GET /api/v1/jukeboxes/stations
+  # The caller's stations, first one first.
+  def stations
+    return render_no_host unless @current_api_user.can_host_jukebox?
+    Jukebox.station_for(@current_api_user)
+    render json: { success: true, stations: Jukebox.stations_for(@current_api_user).map { |j| station_json(j) } }
+  end
+
+  # POST /api/v1/jukeboxes/station   [station_id] [song_id] [new=true] [name]
+  # A station of the caller's. With nothing: their first station (created on first use).
+  #   station_id          that station
+  #   song_id             restart the station from that song (it becomes the seed)
+  #   new=true            make a new station (from song_id when given), named +name+ or after the song
   def station
-    unless @current_api_user.can_host_jukebox?
-      return render json: { success: false, message: 'Not allowed to host a jukebox' }, status: 403
+    return render_no_host unless @current_api_user.can_host_jukebox?
+    song = params[:song_id].present? ? Song.find(params[:song_id]) : nil
+    if ActiveModel::Type::Boolean.new.cast(params[:new])
+      jukebox = Jukebox.create_station!(@current_api_user, name: params[:name], song: song)
+    else
+      jukebox = params[:station_id].present? ? Jukebox.stations_for(@current_api_user).find(params[:station_id]) : Jukebox.station_for(@current_api_user)
+      jukebox.start_from!(song) if song
     end
-    jukebox = Jukebox.station_for(@current_api_user)
-    if params[:song_id].present?
-      jukebox.start_from!(Song.find(params[:song_id]))
-      broadcast_queue_update(jukebox)
-    end
+    broadcast_queue_update(jukebox) if song
     render json: { success: true, jukebox: station_json(jukebox) }
+  rescue ActiveRecord::RecordNotFound
+    render json: { success: false, message: 'Song or station not found' }, status: 404
+  rescue Jukebox::TooManyStations => e
+    render json: { success: false, message: e.message }, status: 422
+  end
+
+  # PATCH /api/v1/jukeboxes/:id/station   name=
+  def rename_station
+    return render json: { success: false, message: 'Not a station' }, status: 422 unless @jukebox.station?
+    @jukebox.update!(name: params[:name].to_s.strip.first(255))
+    render json: { success: true, jukebox: station_json(@jukebox) }
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { success: false, message: e.record.errors.full_messages.to_sentence }, status: 422
+  end
+
+  # DELETE /api/v1/jukeboxes/:id/station
+  # Removes a station and what it learned. The first station ("My Station") cannot be removed.
+  def destroy_station
+    if !@jukebox.station? || @jukebox.session_id == Jukebox.station_code(@current_api_user)
+      return render json: { success: false, message: 'This station cannot be removed' }, status: 422
+    end
+    @jukebox.destroy!
+    render json: { success: true }
+  end
+
+  # PATCH /api/v1/jukeboxes/:id/radio_settings
+  #   genre=any|adjacent|strict, intensity=-1..1|auto, variety=0..1, learn=true|false,
+  #   requests_steer=true|false, <dial>=-1..1, reset_steer=true
+  def radio_settings
+    @jukebox.update_radio_settings!(params.permit(:genre, :reset_steer, :intensity, :variety, :learn, :requests_steer, *SongAudioFeature::DIALS))
+    broadcast_queue_update(@jukebox)
+    render json: { success: true, jukebox: station_json(@jukebox) }
+  end
+
+  # POST /api/v1/jukeboxes/:id/feedback   song_id=, kind=up|down|tired|never|clear|skip|finished, [position=]
+  # What the listener (or the player, for skip / finished) says about a song on this station.
+  # A thumbs down, "tired" or "never" re-aims the station so the change is heard in the next songs.
+  def feedback
+    song = Song.find(params[:song_id])
+    kind = params[:kind].to_s
+    standing = StationFeedback.record!(user: @current_api_user, jukebox: @jukebox, song: song, kind: kind, position: params[:position])
+    if kind.in?(%w[down tired never])
+      @jukebox.ajb_queue_items.where(song_id: song.id, source: 'random').delete_all
+      @jukebox.retune!
+      broadcast_queue_update(@jukebox)
+    end
+    render json: { success: true, song_id: song.id, standing: standing }
+  rescue ActiveRecord::RecordNotFound
+    render json: { success: false, message: 'Song not found' }, status: 404
+  rescue ArgumentError => e
+    render json: { success: false, message: e.message }, status: 422
+  end
+
+  # GET /api/v1/jukeboxes/:id/tuning
+  # Everything that shapes the station, for the tuning page.
+  def tuning
+    render json: { success: true, jukebox: station_json(@jukebox), tuning: StationTuning.new(@jukebox, @current_api_user).as_json }
+  end
+
+  # POST /api/v1/jukeboxes/:id/seeds   song_id=
+  def add_seed
+    @jukebox.add_seed!(Song.find(params[:song_id]))
+    broadcast_queue_update(@jukebox)
+    render json: { success: true, jukebox: station_json(@jukebox) }
   rescue ActiveRecord::RecordNotFound
     render json: { success: false, message: 'Song not found' }, status: 404
   end
 
-  # PATCH /api/v1/jukeboxes/:id/radio_settings   genre=any|adjacent|strict, <dial>=-1..1, reset_steer=true
-  def radio_settings
-    @jukebox.update_radio_settings!(params.permit(:genre, :reset_steer, *SongAudioFeature::DIALS))
+  # DELETE /api/v1/jukeboxes/:id/seeds/:song_id
+  def remove_seed
+    @jukebox.remove_seed!(params[:song_id])
     broadcast_queue_update(@jukebox)
+    render json: { success: true, jukebox: station_json(@jukebox) }
+  end
+
+  # POST /api/v1/jukeboxes/:id/artists/:artist_id/keep
+  # Put back an artist that two thumbs down took off the station.
+  def keep_artist
+    @jukebox.keep_artist!(params[:artist_id])
     render json: { success: true, jukebox: station_json(@jukebox) }
   end
 
@@ -142,7 +225,7 @@ class Api::V1::JukeboxesController < ApplicationController
       return render json: { success: false, message: 'Song is already in the queue' }, status: 409
     end
 
-    @jukebox.retune! if source == 'requested'   # radio: the request re-aims the station
+    @jukebox.retune! if source == 'requested' && @jukebox.requests_steer?   # the request re-aims the station
     queue_item = @jukebox.ajb_queue_items.create!(song: song, source: source)
     broadcast_queue_update(@jukebox)
 
@@ -392,20 +475,12 @@ class Api::V1::JukeboxesController < ApplicationController
 
     Rails.logger.info "Added #{added} random songs to jukebox #{@jukebox.id} queue (target: #{target}, current: #{current + added})"
   end
-  # Radio auto-fill: queue songs that sound like the latest request (or the last song in line).
-  # Stays inside the assigned playlists when there are any, otherwise uses the whole library.
-  # Returns how many were added; the caller tops up the rest at random.
+  # Radio auto-fill: queue songs chosen by SongRadio for this jukebox (its seeds, the latest request,
+  # its tuning and what it has learned). Stays inside the assigned playlists when there are any,
+  # otherwise uses the whole library. Returns how many were added; the caller tops up the rest at random.
   def add_radio_songs!(need)
-    seed_id = @jukebox.ajb_queue_items.requested.order(position: :desc).pick(:song_id) ||
-              @jukebox.ajb_played_songs.where(source: 'requested').order(played_at: :desc).pick(:song_id) ||
-              @jukebox.ajb_queue_items.order(position: :desc).pick(:song_id) ||
-              @jukebox.ajb_played_songs.order(played_at: :desc).pick(:song_id)
-    seed = seed_id && Song.find_by(id: seed_id)
-    return 0 unless seed
-
-    playlist_ids = @jukebox.jukebox_playlist_assignments.enabled.pluck(:playlist_id)
-    allowed = playlist_ids.any? ? PlaylistsSong.where(playlist_id: playlist_ids).pluck(:song_id) : nil
     exclude = @jukebox.ajb_played_songs.recent(50).pluck(:song_id) + @jukebox.ajb_queue_items.pluck(:song_id)
+    whole_library = !@jukebox.jukebox_playlist_assignments.enabled.exists?
 
     # A tight genre setting can run dry (small genres have few sound-alikes). Rather than let the
     # music stop, loosen the genre limit step by step for this top-up only.
@@ -414,26 +489,29 @@ class Api::V1::JukeboxesController < ApplicationController
     modes = modes.drop_while { |m| m != @jukebox.radio_genre_mode }
     modes.each do |mode|
       break if added >= need
-      SongRadio.new(seed: seed, exclude_ids: exclude, allowed_ids: allowed, user: @jukebox.owner,
-                    steer: @jukebox.radio_steer, genre_mode: mode).next_songs(need - added).each do |song|
+      radio = SongRadio.for_jukebox(@jukebox, genre_mode: mode, exclude_ids: exclude)
+      break unless radio   # nothing to start from yet (a brand new station): see the last resort below
+      radio.next_songs(need - added).each do |song|
         next unless @jukebox.ajb_queue_items.create(song_id: song.id, source: 'random').persisted?
         added += 1
         exclude << song.id
       end
     end
 
-    # Last resort for a station with no playlists (seed never analysed, or everything nearby was
-    # played recently): any analysed music, so the stream keeps going.
-    if added < need && allowed.nil?
+    # Last resort for a station with no playlists (nothing to start from, seed never analysed, or
+    # everything nearby was played recently): any analysed music the listener has not blocked, so
+    # the stream keeps going. The next top-up follows on from whatever this picks.
+    if added < need && whole_library
+      blocked = StationTaste.new(user: @jukebox.owner, station: @jukebox, learn: false).blocked_ids.to_a
       Song.joins(:audio_feature).where("song_audio_features.speech < ?", SongRadio::SPEECH_CUTOFF)
-          .where.not(id: exclude + [ seed.id ]).order(Arel.sql("RANDOM()")).limit(need - added).pluck(:id).each do |song_id|
+          .where.not(id: exclude + blocked).order(Arel.sql("RANDOM()")).limit(need - added).pluck(:id).each do |song_id|
         added += 1 if @jukebox.ajb_queue_items.create(song_id: song_id, source: 'random').persisted?
       end
     end
-    Rails.logger.info "Radio fill: added #{added} of #{need} songs to jukebox #{@jukebox.id} from seed #{seed.id}"
+    Rails.logger.info "Radio fill: added #{added} of #{need} songs to jukebox #{@jukebox.id}"
     added
   rescue => e
-    Rails.logger.error "Radio fill failed for jukebox #{@jukebox.id}: #{e.message}"
+    Rails.logger.error "Radio fill failed for jukebox #{@jukebox.id}: #{e.class}: #{e.message}"
     0
   end
   private :add_radio_songs!
@@ -550,12 +628,22 @@ class Api::V1::JukeboxesController < ApplicationController
   # in a before_action halts the action chain.)
   READ_ONLY_ACTIONS = %w[status queue current_song playback_info history].freeze
 
+  def render_no_host
+    render json: { success: false, message: 'Not allowed to host a jukebox' }, status: 403
+  end
+
   def station_json(jukebox)
     {
       id: jukebox.id, name: jukebox.name, session_id: jukebox.session_id, fill_mode: jukebox.fill_mode,
       station: jukebox.station?, guest_password: jukebox.guest_password,
-      radio: { genre: jukebox.radio_genre_mode, steer: jukebox.radio_steer },
-      queue_length: jukebox.ajb_queue_items.count
+      radio: {
+        genre: jukebox.radio_genre_mode, steer: jukebox.radio_steer,
+        intensity: jukebox.radio_intensity, variety: jukebox.radio_variety,
+        learn: jukebox.radio_learn?, requests_steer: jukebox.requests_steer?,
+        seeds: jukebox.radio_seed_ids
+      },
+      queue_length: jukebox.ajb_queue_items.count,
+      live: jukebox.live?
     }
   end
 

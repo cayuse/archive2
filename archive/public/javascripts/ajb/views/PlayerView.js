@@ -16,7 +16,8 @@ const PlayerView = {
       history: [],
       historyHasMore: false,
       pauseArmed: false,
-      awaitingResume: false
+      awaitingResume: false,
+      standing: null
     });
 
     const [controller, setController] = React.useState(null);
@@ -72,6 +73,10 @@ const PlayerView = {
 
           playerController.onHistoryChange = (history, historyHasMore) => {
             setState(prev => ({ ...prev, history, historyHasMore }));
+          };
+
+          playerController.onStandingChange = (standing) => {
+            setState(prev => ({ ...prev, standing }));
           };
 
           playerController.onPauseModeChange = (pauseArmed, awaitingResume) => {
@@ -135,6 +140,7 @@ const PlayerView = {
     const handleLoadMoreHistory = () => controller && controller.loadMoreHistory();
     const handleReRequest = (songId) => controller && controller.requestFromHistory(songId);
     const handleTogglePauseAfter = () => controller && controller.togglePauseAfterSong();
+    const handleFeedback = (kind) => controller && controller.feedback(kind);
 
     const handleVolumeChange = (e) => {
       const volume = parseFloat(e.target.value);
@@ -156,6 +162,11 @@ const PlayerView = {
       React.createElement('div', { className: 'row' },
         React.createElement('div', { className: 'col-md-8' },
           React.createElement(PlayerView.CurrentSongDisplay, { song: state.currentSong }),
+          React.createElement(PlayerView.FeedbackBar, {
+            song: state.currentSong,
+            standing: state.standing,
+            onFeedback: handleFeedback
+          }),
           React.createElement(PlayerView.ProgressBar, { 
             currentTime: state.currentTime, 
             duration: state.duration 
@@ -227,6 +238,32 @@ const PlayerView = {
           )
         )
       )
+    );
+  },
+
+  // Thumbs, "sick of it" and "never" for the song now playing, plus a link to the station's tuning
+  // page. Feedback belongs to this jukebox; on a station it also shapes what plays next.
+  FeedbackBar: function({ song, standing, onFeedback }) {
+    const cfg = window.AJB_CONFIG || {};
+    if (!cfg.radio) return null;
+    const button = function(kind, icon, label, title) {
+      const active = standing === kind;
+      return React.createElement('button', {
+        key: kind,
+        className: 'btn btn-sm ' + (active ? 'btn-secondary' : 'btn-outline-secondary'),
+        disabled: !song,
+        title: title,
+        onClick: function() { onFeedback(active ? 'clear' : kind); }
+      }, React.createElement('i', { className: 'fas ' + icon + (label ? ' me-1' : '') }), label);
+    };
+    return React.createElement('div', { className: 'd-flex flex-wrap align-items-center gap-2 mb-3' },
+      button('up', 'fa-thumbs-up', 'More like this', 'Thumbs up: more like this on this station'),
+      button('down', 'fa-thumbs-down', 'Not here', 'Thumbs down: not on this station (skips it)'),
+      button('tired', 'fa-bed', 'Sick of it', 'Shelve this song for a month on all your stations (skips it)'),
+      button('never', 'fa-ban', '', 'Never play this for me (skips it)'),
+      cfg.tuneUrl && React.createElement('a', {
+        className: 'btn btn-sm btn-link ms-auto', href: cfg.tuneUrl, target: '_blank', rel: 'noopener'
+      }, 'Tune this station')
     );
   },
 

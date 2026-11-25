@@ -11,7 +11,7 @@ class Song < ApplicationRecord
   has_one :file_tag, class_name: "SongFileTag", dependent: :destroy
   has_many :artist_credits, -> { order(:position) }, class_name: "SongArtistCredit", dependent: :destroy
   has_many :credited_artists, through: :artist_credits, source: :artist
-  has_many :ratings, class_name: "SongRating", dependent: :destroy
+  has_many :station_feedbacks, dependent: :destroy
   has_one :audio_feature, class_name: "SongAudioFeature", dependent: :destroy
   has_one :embedding, class_name: "SongEmbedding", dependent: :destroy
   has_many :song_neighbors, -> { order(:rank) }, dependent: :destroy

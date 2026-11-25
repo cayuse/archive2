@@ -6,7 +6,8 @@ class JukeboxesController < ApplicationController
   before_action :ensure_owner, only: [:edit, :update, :destroy]
 
   def index
-    @jukeboxes = current_user.jukeboxes.order(created_at: :desc)
+    # stations (personal radio) have their own page; this one lists party jukeboxes
+    @jukeboxes = current_user.jukeboxes.where.not("session_id LIKE ?", "#{Jukebox::STATION_PREFIX}%").order(created_at: :desc)
   end
 
   def show
@@ -26,6 +27,7 @@ class JukeboxesController < ApplicationController
 
     if @jukebox.save
       assign_playlists_to_jukebox
+      save_radio_options
       redirect_to @jukebox, notice: 'Jukebox was successfully created.'
     else
       render :new, status: :unprocessable_entity
@@ -35,6 +37,7 @@ class JukeboxesController < ApplicationController
   def update
     if @jukebox.update(jukebox_params)
       assign_playlists_to_jukebox
+      save_radio_options
       redirect_to @jukebox, notice: 'Jukebox was successfully updated.'
     else
       render :edit, status: :unprocessable_entity
@@ -74,6 +77,13 @@ class JukeboxesController < ApplicationController
       :crossfade_duration, :auto_play, :min_queue_length,
       :queue_refill_level, :fill_mode
     )
+  end
+
+  # Radio options kept in radio_settings rather than in columns of their own.
+  def save_radio_options
+    value = params.dig(:jukebox, :requests_steer)
+    return if value.nil? || @jukebox.requests_steer? == (value.to_s == "1")
+    @jukebox.update!(radio_settings: @jukebox.radio_settings.merge("requests_steer" => value.to_s == "1"))
   end
 
   def assign_playlists_to_jukebox

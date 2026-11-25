@@ -51,7 +51,8 @@ class H(BaseHTTPRequestHandler):
             if p == "/api/player":
                 cur = S["queue"][0] if S["queue"] and S["state"] != "stop" else None
                 self.out({"state": S["state"], "volume": S["volume"], "item_id": cur["id"] if cur else 0,
-                          "item_progress_ms": int((time.time() - S["started"]) * 1000) if cur else 0})
+                          "item_progress_ms": int((time.time() - S["started"]) * 1000) if cur else 0,
+                          "item_length_ms": int(SONG_SECONDS * 1000) if cur else 0})
             elif p == "/api/queue":
                 self.out({"count": len(S["queue"]), "items": S["queue"]})
             elif p == "/api/outputs":

@@ -1,0 +1,113 @@
+<%= render "stations/styles" %>
+<div class="container stations-page" id="tuning-root">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h1 class="h3 mb-0 theme-text-primary">
+      <span id="station-name"><%= @station.name %></span>
+      <button type="button" class="btn btn-link btn-sm p-0 ms-1 align-baseline" id="rename-station">rename</button>
+      <span class="badge bg-success ms-1 <%= "d-none" unless @station.live? %>" id="live-badge">● Live</span>
+    </h1>
+    <div class="d-flex gap-2">
+      <%= link_to "Play in browser", player_jukebox_path(@station), class: "btn btn-success", target: "_blank", rel: "noopener" %>
+      <%= link_to "All stations", stations_path, class: "btn btn-outline-secondary" %>
+    </div>
+  </div>
+
+  <div id="stations-error" class="alert alert-danger d-none"></div>
+
+  <div class="row">
+    <div class="col-lg-5">
+      <div class="card mb-3">
+        <div class="card-header"><h5 class="mb-0 theme-text-primary">Sound</h5></div>
+        <div class="card-body">
+          <label class="form-label d-flex justify-content-between mb-0" for="intensity">
+            <span>Intensity</span>
+            <span class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" id="intensity-auto">
+              <label class="form-check-label small theme-text-secondary" for="intensity-auto">follow the seeds</label>
+            </span>
+          </label>
+          <input type="range" class="form-range" id="intensity" min="-1" max="1" step="0.1">
+          <div class="d-flex justify-content-between small theme-text-secondary mb-3"><span>mellow</span><span>high</span></div>
+
+          <label class="form-label mb-0" for="variety">Variety</label>
+          <input type="range" class="form-range" id="variety" min="0" max="1" step="0.1">
+          <div class="d-flex justify-content-between small theme-text-secondary mb-3"><span>steady</span><span>rises and falls</span></div>
+
+          <div class="mb-3">
+            <div class="form-label mb-1">Genre</div>
+            <div class="btn-group btn-group-sm" id="genre-mode" role="group">
+              <button type="button" class="btn btn-outline-secondary" data-genre="any">Any</button>
+              <button type="button" class="btn btn-outline-secondary" data-genre="adjacent">Same and similar</button>
+              <button type="button" class="btn btn-outline-secondary" data-genre="strict">Same only</button>
+            </div>
+          </div>
+
+          <div class="form-label mb-1">Lean</div>
+          <div id="dials"></div>
+
+          <div class="form-check form-switch mt-3">
+            <input class="form-check-input" type="checkbox" id="learn">
+            <label class="form-check-label" for="learn">Learn from my thumbs and skips</label>
+          </div>
+          <div class="small theme-text-secondary mt-1" id="learned"></div>
+          <button type="button" class="btn btn-outline-secondary btn-sm mt-3" id="reset-sound">Reset sound</button>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header"><h5 class="mb-0 theme-text-primary">Seeds</h5></div>
+        <div class="card-body">
+          <p class="small theme-text-secondary">The songs this station is built around. Add a cool one to widen it; up to <%= SongRadio::MAX_SEEDS %>.</p>
+          <ul class="list-group list-group-flush mb-2" id="list-seeds"></ul>
+          <div class="input-group input-group-sm">
+            <input type="search" id="seed-q" class="form-control" placeholder="Find a song to add…" autocomplete="off">
+            <button class="btn btn-outline-primary" id="seed-go" type="button">Search</button>
+          </div>
+          <ul class="list-group list-group-flush mt-2" id="seed-results"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="card mb-3">
+        <div class="card-header"><h5 class="mb-0 theme-text-primary">Recently played</h5></div>
+        <div class="card-body"><ul class="list-group list-group-flush" id="list-recent"></ul></div>
+      </div>
+      <div class="card mb-3">
+        <div class="card-header"><h5 class="mb-0 theme-text-primary">Liked <span class="badge bg-secondary" id="count-liked"></span></h5></div>
+        <div class="card-body"><ul class="list-group list-group-flush" id="list-liked"></ul></div>
+      </div>
+      <div class="card mb-3">
+        <div class="card-header"><h5 class="mb-0 theme-text-primary">Not on this station <span class="badge bg-secondary" id="count-disliked"></span></h5></div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush" id="list-disliked"></ul>
+          <div id="artists-block" class="mt-3 d-none">
+            <div class="form-label mb-1">Artists taken off this station <span class="small theme-text-secondary">(two thumbs down, none up)</span></div>
+            <ul class="list-group list-group-flush" id="list-artists"></ul>
+          </div>
+        </div>
+      </div>
+      <div class="card mb-3">
+        <div class="card-header"><h5 class="mb-0 theme-text-primary">Sick of it for now <span class="badge bg-secondary" id="count-tired"></span></h5></div>
+        <div class="card-body">
+          <p class="small theme-text-secondary">Shelved on all your stations for <%= (StationFeedback::TIRED_FOR / 1.day).to_i %> days. Not counted as dislike.</p>
+          <ul class="list-group list-group-flush" id="list-tired"></ul>
+        </div>
+      </div>
+      <div class="card mb-3">
+        <div class="card-header"><h5 class="mb-0 theme-text-primary">Never play for me <span class="badge bg-secondary" id="count-never"></span></h5></div>
+        <div class="card-body"><ul class="list-group list-group-flush" id="list-never"></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.STATIONS_CONFIG = {
+    apiToken: <%= raw @api_token.to_json %>,
+    stationId: <%= raw @station.id.to_json %>,
+    dials: <%= raw SongRadio::STEER_DIALS.reject { |d| d == "speech" }.to_json %>
+  };
+</script>
+<script src="/javascripts/stations/stations.js?v=20261125a"></script>
+<script>StationsPage.initTuning();</script>

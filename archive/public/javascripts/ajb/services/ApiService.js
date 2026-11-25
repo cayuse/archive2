@@ -127,6 +127,29 @@ class ApiService {
     }
   }
 
+  // Tell the station what the listener (or the player) thinks of a song.
+  // kind: up | down | tired | never | clear | skip | finished
+  async sendFeedback(songId, kind, position = null) {
+    try {
+      const response = await fetch(`${this.baseUrl}/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Authorization': `Bearer ${this.apiToken}`
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ song_id: songId, kind, position })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) return { success: false, message: data.message || `HTTP ${response.status}` };
+      return data;
+    } catch (error) {
+      console.error('Error sending feedback:', error);
+      return { success: false, message: error.message };
+    }
+  }
+
   // Move a song to a new position in the queue
   async moveInQueue(songId, position) {
     try {

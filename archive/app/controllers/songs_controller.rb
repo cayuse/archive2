@@ -20,9 +20,12 @@ class SongsController < ApplicationController
     authorize @song, :show?
     @steer = params.permit(*SongAudioFeature::DIALS).to_h
     @genre_mode = SongRadio::GENRE_MODES.include?(params[:genre]) ? params[:genre] : "any"
-    @songs = SongRadio.new(seed: @song, steer: @steer, genre_mode: @genre_mode, user: current_user)
+    station = Jukebox.first_station(current_user)
+    @songs = SongRadio.new(seed: @song, steer: @steer, intensity: @steer["energy"], genre_mode: @genre_mode,
+                           user: current_user, station: station)
                       .next_songs((params[:count] || 25).to_i.clamp(1, 100))
-    @ratings = SongRating.where(user_id: current_user.id, song_id: @songs.map(&:id) + [ @song.id ]).pluck(:song_id, :value).to_h
+    @ratings = StationFeedback.standings(user: current_user, song_ids: @songs.map(&:id) + [ @song.id ], jukebox: station)
+                              .transform_values { |standing| standing == "up" ? 1 : -1 }
   end
 
   # POST /songs/:id/play_radio
@@ -38,10 +41,12 @@ class SongsController < ApplicationController
     redirect_to player_jukebox_path(station)
   end
 
-  # POST /songs/:id/rate  value=1 (thumbs up), -1 (thumbs down) or 0 (clear)
+  # POST /songs/:id/rate  value=1 (thumbs up), -1 (thumbs down) or 0 (clear).
+  # Thumbs given here belong to the user's first station (or to the user alone if they have none).
   def rate
     authorize @song, :show?
-    render json: { success: true, song_id: @song.id, value: SongRating.rate!(user: current_user, song: @song, value: params[:value]) }
+    value = StationFeedback.rate!(user: current_user, song: @song, value: params[:value], jukebox: Jukebox.first_station(current_user))
+    render json: { success: true, song_id: @song.id, value: value }
   end
   
   def search

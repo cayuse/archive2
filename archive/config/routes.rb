@@ -114,6 +114,9 @@ Rails.application.routes.draw do
       get :guest
     end
   end
+
+  # A user's radio stations (jukeboxes on radio auto-fill) and the tuning page for one.
+  resources :stations, only: [:index, :show]
   
   # Upload interface
   resource :upload, only: [:show, :create], controller: 'upload'
@@ -131,9 +134,17 @@ Rails.application.routes.draw do
       resources :jukeboxes, only: [:index] do
         collection do
           post :station
+          get :stations
         end
         member do
           patch :radio_settings
+          patch :station, action: :rename_station
+          delete :station, action: :destroy_station
+          post :feedback
+          get :tuning
+          post :seeds, action: :add_seed
+          delete 'seeds/:song_id', action: :remove_seed
+          post 'artists/:artist_id/keep', action: :keep_artist
           get :status
           get :queue
           get :current_song

@@ -44,12 +44,12 @@ REQ=$(curl -s "$S/api/search?q=george+strait" | python3 -c "import json,sys; pri
 post /api/request "{\"song_id\":\"$REQ\"}" >/dev/null; sleep 4; curl -s $S/api/state | show; echo "   ...after the current song ends"; sleep 12; curl -s $S/api/state | show
 echo "== thumbs down the current song (should skip it)"
 CUR=$(curl -s $S/api/state | python3 -c "import json,sys; print((json.load(sys.stdin).get('current') or {}).get('id',''))")
-post /api/rate "{\"song_id\":\"$CUR\",\"value\":-1}" >/dev/null; sleep 4; curl -s $S/api/state | show
+post /api/feedback "{\"song_id\":\"$CUR\",\"kind\":\"down\"}" >/dev/null; sleep 4; curl -s $S/api/state | show
 echo "== non-LAN caller is refused"; curl -s -o /dev/null -w "  with X-Forwarded-For: 8.8.8.8 -> %{http_code}\n" -H 'X-Forwarded-For: 8.8.8.8' $S/api/state
 echo "== stop"; post /api/stop '{}' | python3 -c "import json,sys; s=json.load(sys.stdin); print('  playing=%s' % s['playing'])"
 echo "== what the mock speaker played"; curl -s http://127.0.0.1:3690/mock/log | python3 -c "import json,sys; p=json.load(sys.stdin)['played']; print('  %d songs; link looks like %s' % (len(p), p[0][:60] if p else None))"
 echo "== play link really streams audio?"; L=$(curl -s http://127.0.0.1:3690/mock/log | python3 -c "import json,sys; print(json.load(sys.stdin)['played'][0])"); curl -s -o /dev/null -r 0-99 -w "  GET play link -> %{http_code} %{content_type}\n" "$L"
 echo "== station log tail"; tail -12 /tmp/station_test.log
 echo "== cleanup test data"
-$RUN archive-dev bundle exec rails runner "u = User.find_by(email: 'station-test@example.invalid'); Jukebox.where(owner_id: u.id).destroy_all; SongRating.where(user_id: u.id).delete_all; u.destroy; puts 'removed test user, station and ratings'" 2>&1 | tail -1
+$RUN archive-dev bundle exec rails runner "u = User.find_by(email: 'station-test@example.invalid'); Jukebox.where(owner_id: u.id).destroy_all; StationFeedback.where(user_id: u.id).delete_all; u.destroy; puts 'removed test user, stations and feedback'" 2>&1 | tail -1
 rm -f "$REPO/archive/db/schema.rb"

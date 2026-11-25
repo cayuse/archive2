@@ -1,0 +1,55 @@
+<%= render "stations/styles" %>
+<div class="container stations-page">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h1 class="h3 mb-0 theme-text-primary">Stations</h1>
+    <span class="theme-text-secondary small">A station plays songs that sound like its seeds and learns from your thumbs.</span>
+  </div>
+
+  <% if alert %><div class="alert alert-warning"><%= alert %></div><% end %>
+  <div id="stations-error" class="alert alert-danger d-none"></div>
+
+  <div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0 theme-text-primary">Start a new station from a song</h5></div>
+    <div class="card-body">
+      <div class="input-group">
+        <input type="search" id="new-station-q" class="form-control" placeholder="Search title, artist, album…" autocomplete="off">
+        <button class="btn btn-primary" id="new-station-go" type="button">Search</button>
+      </div>
+      <ul class="list-group list-group-flush mt-2" id="new-station-results"></ul>
+    </div>
+  </div>
+
+  <div class="row" id="stations-list">
+    <% @stations.each do |station| %>
+      <div class="col-md-6 col-lg-4 mb-3">
+        <div class="card h-100">
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title theme-text-primary mb-1">
+              <%= station.name %>
+              <% if station.live? %><span class="badge bg-success ms-1">● Live</span><% end %>
+            </h5>
+            <% seeds = Song.includes(:artist).where(id: station.radio_seed_ids).index_by(&:id).values_at(*station.radio_seed_ids).compact %>
+            <p class="theme-text-secondary small flex-grow-1 mb-2">
+              <% if seeds.any? %>
+                Built around <%= seeds.first(3).map { |s| [ s.title, s.artist&.name ].compact.join(" by ") }.to_sentence %><%= " and #{seeds.size - 3} more" if seeds.size > 3 %>.
+              <% else %>
+                No seed yet. Start it from a song, or request one while it plays.
+              <% end %>
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+              <%= link_to "Tune", station_path(station), class: "btn btn-primary btn-sm" %>
+              <%= link_to "Play in browser", player_jukebox_path(station), class: "btn btn-outline-success btn-sm", target: "_blank", rel: "noopener" %>
+              <% unless station.session_id == Jukebox.station_code(current_user) %>
+                <button type="button" class="btn btn-outline-danger btn-sm ms-auto" data-delete-station="<%= station.id %>" data-name="<%= station.name %>">Delete</button>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script>window.STATIONS_CONFIG = { apiToken: <%= raw @api_token.to_json %> };</script>
+<script src="/javascripts/stations/stations.js?v=20261125a"></script>
+<script>StationsPage.initIndex();</script>
