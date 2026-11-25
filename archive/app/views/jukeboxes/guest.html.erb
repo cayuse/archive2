@@ -3,24 +3,11 @@
 <%# Only boot the React SPA when the jukebox is actually live. When it's closed,
     render a plain server-side page (see _closed) — no JS, no escaping pitfalls. %>
 <% if @jukebox.live? %>
-<div id="ajb-guest-root">
-  <div class="guest-container">
-    <div class="guest-header">
-      <h1 class="guest-title">🎵 Guest View</h1>
-      <p class="guest-subtitle">
-        <span class="status-indicator"></span>
-        <%= @jukebox.name %>
-      </p>
-    </div>
-    
-    <div id="react-guest-app">
-      <!-- React app will mount here -->
-      <div class="text-center">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-        <p class="mt-3">Loading Guest Interface...</p>
-      </div>
+<div id="ajb-guest-root" class="ajb-guest">
+  <div id="react-guest-app">
+    <div class="guest-loading">
+      <div class="spinner-border" role="status"></div>
+      <p>Loading…</p>
     </div>
   </div>
 </div>
@@ -55,7 +42,7 @@
 </script>
 
 <!-- Load all guest modules (bump ajb_v on any change to bust device caches) -->
-<% ajb_v = "20260611-closed" %>
+<% ajb_v = "20261125-guest-ui" %>
 <script src="/javascripts/ajb/guest/models/GuestApiService.js?v=<%= ajb_v %>"></script>
 <script src="/javascripts/ajb/guest/models/GuestState.js?v=<%= ajb_v %>"></script>
 <script src="/javascripts/ajb/guest/controllers/GuestController.js?v=<%= ajb_v %>"></script>
@@ -67,76 +54,4 @@
   <%= render 'closed' %>
 <% end %>
 
-<style>
-  .guest-app {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 20px;
-  }
-  
-  .guest-container {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  
-  .guest-header {
-    text-align: center;
-    color: white;
-    margin-bottom: 30px;
-  }
-  
-  .guest-title {
-    font-size: 2.5rem;
-    margin-bottom: 10px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-  }
-  
-  .guest-subtitle {
-    font-size: 1.2rem;
-    opacity: 0.9;
-  }
-  
-  .auth-container {
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 15px;
-    padding: 40px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  }
-  
-  .now-playing-view .card,
-  .request-songs-view .card {
-    border: none;
-    border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  }
-  
-  .guest-header .navbar {
-    border-radius: 10px;
-    margin-bottom: 20px;
-  }
-  
-  .progress-container {
-    background: rgba(255, 255, 255, 0.9);
-    padding: 20px;
-    border-radius: 10px;
-  }
-  
-  .list-group-item {
-    border: none;
-    border-bottom: 1px solid #eee;
-    transition: background-color 0.2s;
-  }
-  
-  .list-group-item:hover {
-    background-color: #f8f9fa;
-  }
-  
-  .list-group-item:last-child {
-    border-bottom: none;
-  }
-  
-  .list-group-item-warning {
-    background-color: #fff3cd;
-    border-color: #ffeaa7;
-  }
-</style>
+<link rel="stylesheet" href="/stylesheets/ajb_guest.css?v=20261125">

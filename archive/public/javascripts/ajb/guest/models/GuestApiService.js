@@ -242,7 +242,12 @@ class GuestApiService {
       }
 
       const data = await response.json();
-      return { success: true, message: data.message || 'Song requested successfully', queue_item: data.queue_item };
+      return {
+        success: true,
+        outcome: data.outcome || 'added',
+        message: data.message || 'Song requested successfully',
+        queue_item: data.queue_item
+      };
     } catch (error) {
       console.error('Error requesting song:', error);
       throw error;

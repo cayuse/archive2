@@ -27,8 +27,7 @@ class GuestController {
   }
 
   handleStateChange(state) {
-    // Handle any global state changes
-    console.log('Guest state changed:', state);
+    // Hook for global state changes; nothing needed yet.
   }
 
   // Authentication. The password typed into the AuthView is passed in here and
@@ -195,57 +194,76 @@ class GuestController {
   }
 
   // Search songs
+  // page 1 replaces the results; later pages append ("Load more").
   async searchSongs(query, page = 1) {
-    console.log('🔍 GuestController searchSongs called with query:', query, 'page:', page);
+    const requestId = (this.searchRequestId = (this.searchRequestId || 0) + 1);
     try {
-      console.log('🔍 GuestController setting searchLoading=true and searchQuery=', query);
       this.state.setState({ searchLoading: true, searchQuery: query });
-      
-      console.log('🔍 GuestController calling apiService.searchSongs');
       const result = await this.apiService.searchSongs(query, page);
-      console.log('🔍 GuestController search result:', result);
-      
+      // A newer search started while this one was in flight: drop this result.
+      if (requestId !== this.searchRequestId) return;
       if (result.success) {
-        console.log('🔍 GuestController setting search results:', result.songs?.length || 0, 'songs');
-        this.state.setSearchResults(result.songs, result.pagination, query);
+        const songs = page > 1
+          ? this.state.getState().searchResults.concat(result.songs)
+          : result.songs;
+        this.state.setSearchResults(songs, result.pagination, query);
       }
     } catch (error) {
-      console.error('🔍 GuestController search failed:', error);
+      console.error('Search failed:', error);
       this.state.setError('Search failed: ' + error.message);
     } finally {
-      console.log('🔍 GuestController setting searchLoading=false');
-      this.state.setState({ searchLoading: false });
+      if (requestId === this.searchRequestId) {
+        this.state.setState({ searchLoading: false });
+      }
     }
   }
 
-  // Request a song
-  async requestSong(songId) {
+  loadMoreSearchResults() {
+    const { searchQuery, searchPagination, searchLoading } = this.state.getState();
+    if (searchLoading || !searchPagination || !searchPagination.has_more) return;
+    return this.searchSongs(searchQuery, searchPagination.current_page + 1);
+  }
+
+  clearSearch() {
+    this.searchRequestId = (this.searchRequestId || 0) + 1;
+    this.state.setState({ searchLoading: false });
+    this.state.setSearchResults([], null, '');
+  }
+
+  // Short confirmation shown at the bottom of the screen, then cleared.
+  showNotice(text) {
+    clearTimeout(this.noticeTimeout);
+    this.state.setState({ notice: text });
+    this.noticeTimeout = setTimeout(() => this.state.setState({ notice: null }), 3000);
+  }
+
+  // Request a song. The server bumps it instead if it is already auto-queued.
+  async requestSong(songId, title = 'Song') {
     try {
-      this.state.setLoading(true);
-      
       const result = await this.apiService.requestSong(songId);
       if (result.success) {
-        // Refresh the queue to show the new request
         await this.updateQueue();
-        
-        // Show success message (could be handled by UI)
-        console.log('Song requested successfully');
+        const notices = {
+          added: `Added “${title}” to the queue`,
+          bumped: `Bumped “${title}” up the queue`,
+          already_requested: `“${title}” is already requested`
+        };
+        this.showNotice(notices[result.outcome] || notices.added);
         return { success: true };
       }
     } catch (error) {
       console.error('Request failed:', error);
       this.state.setError('Failed to request song: ' + error.message);
       return { success: false, error: error.message };
-    } finally {
-      this.state.setLoading(false);
     }
   }
 
   // Promote a random queued song into the request queue
-  async promoteSong(songId) {
+  async promoteSong(songId, title = 'Song') {
     const result = await this.apiService.promoteSong(songId);
     if (result.success) {
       await this.updateQueue();
+      this.showNotice(`Bumped “${title}” up the queue`);
     } else {
       this.state.setError(result.message || 'Could not promote song');
     }

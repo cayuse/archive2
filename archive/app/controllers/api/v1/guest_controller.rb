@@ -248,13 +248,17 @@ class Api::V1::GuestController < ApplicationController
     begin
       song = Song.find(params[:song_id])
       
-      # Check if song is already in queue
+      # Already queued: a request for an auto-filled song bumps it into the
+      # request group; a song someone already requested is a no-op, not an error.
       existing_item = @jukebox.ajb_queue_items.find_by(song: song)
       if existing_item
-        render json: { 
-          success: false, 
-          message: 'Song is already in the queue' 
-        }, status: 409
+        if existing_item.source == 'requested'
+          render json: { success: true, outcome: 'already_requested', message: 'Song is already requested' }
+        else
+          existing_item.update!(source: 'requested')
+          broadcast_queue_update(@jukebox)
+          render json: { success: true, outcome: 'bumped', message: 'Song bumped up the queue' }
+        end
         return
       end
       
@@ -268,6 +272,7 @@ class Api::V1::GuestController < ApplicationController
 
       render json: {
         success: true,
+        outcome: 'added',
         message: 'Song requested successfully',
         queue_item: {
           id: queue_item.id,
