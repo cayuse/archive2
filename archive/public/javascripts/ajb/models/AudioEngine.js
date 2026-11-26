@@ -21,13 +21,25 @@
 // phone without a new release, and reported with every diagnostic:
 //   ended | loop     swap when the element fires 'ended' (default), or loop and swap from
 //                    'timeupdate' just before the end
-//   stream | blob    give the element the song's URL (default), or a copy downloaded ahead
+//   stream | blob    give the element the song's URL, or a copy downloaded ahead
+//                    (default: stream on iPhone / iPad / Safari, blob everywhere else)
 //   nopause | pause  change the src directly (default), or pause the element first
 // iPhone, locked, 2026-11-26: loop + blob + pause swapped on time but the new song never moved off
-// 0:00 (iOS said "playing", fully buffered).
+// 0:00 (iOS said "playing", fully buffered); ended + stream works there.
+// Android, screen off, 2026-11-26: Doze held the browser's network back for minutes while the
+// current song played on from memory; at its end the next song could not be fetched and the
+// music stopped. A copy downloaded while the page was awake needs no network at the change.
+const AJB_APPLE_WEBKIT = (() => {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const safari = /^((?!chrome|chromium|crios|fxios|edg|android).)*safari/i.test(ua);
+  return ios || safari;
+})();
 const AJB_OPTS = (() => {
   const words = new Set(((typeof location !== 'undefined' && new URLSearchParams(location.search).get('ajb')) || '').split(/[\s,]+/).filter(Boolean));
-  return { trigger: words.has('loop') ? 'loop' : 'ended', source: words.has('blob') ? 'blob' : 'stream', pause: words.has('pause') };
+  const source = words.has('blob') ? 'blob' : words.has('stream') ? 'stream' : (AJB_APPLE_WEBKIT ? 'stream' : 'blob');
+  return { trigger: words.has('loop') ? 'loop' : 'ended', source: source, pause: words.has('pause') };
 })();
 
 const SILENT_WAV = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';

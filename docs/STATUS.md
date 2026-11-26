@@ -170,6 +170,11 @@ survives deploys). What iOS requires, and what the player does (`AudioEngine`, `
   `timeupdate` and played a downloaded copy made iOS report "playing" stuck at 0:00. The variants
   stay selectable for experiments: `?ajb=loop|ended,blob|stream,pause` on the player URL.
 - iOS does not buffer the next song before it plays: gaps measured 0.1 to 0.4 s on the phone.
+- **Android** (2026-11-26): Doze held a sleeping phone's network back for minutes; the next song
+  could not be fetched at the song change and the music stopped. Outside Apple browsers the next
+  song is now downloaded whole while the page is awake (blob) and needs no network at the change;
+  iPhone / iPad / Safari keep streaming (iOS would not play the downloaded copy). Tested in
+  headless Chrome with every request blocked across a song change.
 - Lock screen: Media Session metadata, previous / next track (seek actions switched off, actions
   re-registered on each song), `navigator.audioSession.type = 'playback'`.
 - The jukebox pages load their scripts by a fingerprint of the scripts (`JukeboxesHelper#ajb_build`),

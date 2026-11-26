@@ -123,6 +123,24 @@ await send("Network.setBlockedURLs", { urls: [] });
 for (let i = 0; i < 20 && (await js("(window.ajbPlayer.takingSongIds || []).length")) > 0; i++) await sleep(1000);
 check("once it is back, the archive is told", takesBefore > 0 && (await js("(window.ajbPlayer.takingSongIds || []).length")) === 0 && (await queueHead()) !== expected);
 
+// No network at all across a song change (Android Doze holds a sleeping phone's network back):
+// with the next song downloaded ahead (blob mode, the default outside Apple browsers) it still plays.
+if ((await js(`${E}.getDiagnostics().opts`)).includes("blob")) {
+  await sleep(2000);
+  for (let i = 0; i < 20 && !(await js(`(${E}.next || {}).objectUrl ? true : false`)); i++) await sleep(500);
+  const downloaded = await js(`(${E}.next || {}).objectUrl ? true : false`);
+  const cur4 = await title(), want4 = await nextTitle();
+  await send("Network.setBlockedURLs", { urls: ["*/api/v1/*", "*/s/*"] });
+  const d4 = await js(`${E}.getDuration()`);
+  await js(`${E}.seek(${d4 - 4})`);
+  await untilChange(cur4, 15);
+  await sleep(2500);
+  check("no network at all at the song change: the downloaded next song plays", downloaded && (await title()) === want4 &&
+        (await js(`${E}.isPlaying`)) && (await js(`${E}.getCurrentTime()`)) > 0.5, `${want4} (src ${await js(`${E}.getDiagnostics().src`)})`);
+  await send("Network.setBlockedURLs", { urls: [] });
+  for (let i = 0; i < 20 && (await js("(window.ajbPlayer.takingSongIds || []).length")) > 0; i++) await sleep(1000);
+}
+
 // the system pauses the element (an AirPlay route change on iOS): a real pause, not a stall to fight
 await sleep(3000);
 const pausedSong = await title();
