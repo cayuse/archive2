@@ -65,4 +65,4 @@ group :test do
   gem "webdrivers"
 end
 
-gem "http", "~> 5.3"
+gem "http", "~> 6.0"
