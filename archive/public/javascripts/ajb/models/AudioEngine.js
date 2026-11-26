@@ -77,7 +77,7 @@ class AudioEngine {
       }
 
       // Play the sound, and watch for the case where onplay never fires.
-      this.sound.play();
+      this._start(this.sound);
       this._armPlayWatchdog();
       return true;
     } catch (error) {
@@ -164,13 +164,35 @@ class AudioEngine {
         this._emitDiag('play_blocked');
         howl.once('unlock', () => {
           if (howl === this.sound && this._wantPlaying && !this.isPlaying) {
-            try { howl.play(); } catch (e) {}
+            try { this._start(howl); } catch (e) {}
           }
         });
         this._armPlayWatchdog();
       }
     });
     return howl;
+  }
+
+  // Start a Howl, and make sure iOS actually starts it.
+  //
+  // Howler does not call play() on its <audio> element until the element reports it has buffered
+  // enough ('canplaythrough'). iOS, outside a tap, does not buffer an element until play() is
+  // called on it. So a song started without a tap (the next song, a retry, a locked phone) waits
+  // for ever: the "advanced but silent" stall (ready=0 in the diagnostics; seen on a locked iPhone
+  // 2026-11-26). Calling play() on the element ourselves breaks the wait: iOS starts loading,
+  // 'canplaythrough' follows, and Howler carries on as usual (its own play() is then a no-op).
+  _start(howl) {
+    howl.play();
+    if (howl.state() === 'loaded') return;
+    try {
+      const node = howl._sounds && howl._sounds[0] && howl._sounds[0]._node;
+      if (node && node.paused) {
+        const started = node.play();
+        if (started && typeof started.catch === 'function') {
+          started.catch((e) => { this._emitDiag('start_refused'); console.warn('Audio: the browser refused to start the next song', e); });
+        }
+      }
+    } catch (e) { /* the watchdog and the unlock handler remain as a net */ }
   }
 
   // --- The next song, loaded ahead ----------------------------------------
@@ -182,7 +204,7 @@ class AudioEngine {
     if (this.next && this.next.song.id === song.id) return;
     this.dropPreloaded();
     try {
-      this.next = { song: song, howl: this._createHowl(song), failed: false };
+      this.next = { song: song, howl: this._createHowl(song, { preload: this.preloadAhead !== false }), failed: false };
       this._emitDiag('preload');
     } catch (e) {
       console.warn('Audio: could not preload the next song', e);
@@ -215,7 +237,7 @@ class AudioEngine {
     this._progressStallTicks = 0;
     this._clearPlayWatchdog();
     this.updateMediaSessionMetadata(song);
-    this.sound.play();
+    this._start(this.sound);
     this._armPlayWatchdog();
     // Only now let go of the song that just ended, so there is never a moment with nothing playing.
     if (previous) { try { previous.unload(); } catch (e) {} }
@@ -233,7 +255,7 @@ class AudioEngine {
     if (this.sound && (this.isPaused || this.isStopped)) {
       this._wantPlaying = true;
       this._playRetries = 0;
-      this.sound.play();
+      this._start(this.sound);
       this._armPlayWatchdog();
     }
   }
@@ -275,7 +297,7 @@ class AudioEngine {
       }
       this._playRetries += 1;
       console.warn(`Audio: playback stalled at start, retry ${this._playRetries}`);
-      try { this.sound.play(); } catch (e) {}
+      try { this._start(this.sound); } catch (e) {}
       this._armPlayWatchdog();
     }, 2500);
   }
@@ -295,7 +317,7 @@ class AudioEngine {
       console.warn('Audio: nudging stalled playback after visibility/focus regain');
       this._emitDiag('nudge');
       this._playRetries = 0;
-      try { this.sound.play(); } catch (e) {}
+      try { this._start(this.sound); } catch (e) {}
       this._armPlayWatchdog();
     }
   }

@@ -159,7 +159,11 @@ The browser player takes the next song 20 seconds before the current one ends (t
 the speakers), loads it in a second Howl and starts it in the 'end' event: measured gap 4 ms in
 headless Chrome (`library_tools/staging/browser_player_e2e.sh`). The point on iOS is that the
 audio never goes quiet long enough for a locked phone to be put to sleep; that is untested on a
-real iPhone. Howler is kept: its unlocked `<audio>` pool and 'unlock' event are what the iOS
+real iPhone. The first iPhone test (2026-11-26) showed iOS does not buffer the next song ahead
+at all, and that Howler then never starts it: Howler waits for the element to report it has
+buffered, and iOS waits for play() before buffering. That deadlock is the long-standing "advanced
+but silent" stall. `AudioEngine#_start` now calls play() on the element itself; in Chrome, with
+nothing buffered ahead, the next song then starts 85 ms after the last. Howler is kept: its unlocked `<audio>` pool and 'unlock' event are what the iOS
 stall recovery stands on (see the history in `docs/history/ajb_design.md` and commits e2096f8,
 5afe868). Every "up next" list shows the song already taken as its first row. Player diagnostics
 are also written to `log/player_diagnostics.log` on the log volume, so they survive deploys.
