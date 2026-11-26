@@ -34,6 +34,20 @@
                 { class: "form-select" } %>
           </div>
 
+          <% local_archives = ArchiveNode.offering_local.order(:name) %>
+          <% if local_archives.any? %>
+            <div class="mb-3">
+              <label class="form-label">Local playback</label>
+              <p class="text-muted small mb-2">Archives this user may start local (speaker) playback on. The controls appear for them only when they are on that archive's network.</p>
+              <%= form.collection_check_boxes :playback_node_ids, local_archives, :id, :name do |b| %>
+                <div class="form-check">
+                  <%= b.check_box(class: "form-check-input") %>
+                  <%= b.label(class: "form-check-label") %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+
           <div class="d-flex justify-content-between">
             <%= link_to "Cancel", users_path, class: "btn btn-secondary" %>
             <%= form.submit "Update User", class: "btn btn-primary" %>

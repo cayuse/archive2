@@ -1,6 +1,6 @@
-\restrict 9UcXULBXrfh7cuDQRaRumXlQRqtkx8q8Fj5LHfE10ngkG4Zs0izjccPMyqxawcR
+\restrict WIlJnzBI54jiBeJt6mWJ7IPaVEvtfpjv1MhKQE56iB2EPvt0B8XWscfniDOEded
 
--- Dumped from database version 15.20 (Debian 15.20-1.pgdg13+1)
+-- Dumped from database version 15.19 (Debian 15.19-1.pgdg13+2)
 -- Dumped by pg_dump version 15.20 (Debian 15.20-0+deb12u1)
 
 SET statement_timeout = 0;
@@ -245,6 +245,22 @@ CREATE TABLE public.ar_internal_metadata (
 
 
 --
+-- Name: archive_nodes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.archive_nodes (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    node_id character varying NOT NULL,
+    name character varying NOT NULL,
+    local_playback boolean DEFAULT false NOT NULL,
+    player_url character varying,
+    lan_cidr character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
 -- Name: artists; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -392,6 +408,19 @@ CREATE TABLE public.jukeboxes (
     admin_password character varying,
     CONSTRAINT check_positive_min_queue_length CHECK ((min_queue_length > 0)),
     CONSTRAINT check_positive_queue_refill_level CHECK ((queue_refill_level > 0))
+);
+
+
+--
+-- Name: playback_grants; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.playback_grants (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    archive_node_id uuid NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -837,6 +866,14 @@ ALTER TABLE ONLY public.ar_internal_metadata
 
 
 --
+-- Name: archive_nodes archive_nodes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.archive_nodes
+    ADD CONSTRAINT archive_nodes_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: artists_genres artists_genres_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -898,6 +935,14 @@ ALTER TABLE ONLY public.jukebox_playlist_assignments
 
 ALTER TABLE ONLY public.jukeboxes
     ADD CONSTRAINT jukeboxes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: playback_grants playback_grants_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.playback_grants
+    ADD CONSTRAINT playback_grants_pkey PRIMARY KEY (id);
 
 
 --
@@ -1220,6 +1265,13 @@ CREATE INDEX index_albums_on_total_tracks ON public.albums USING btree (total_tr
 
 
 --
+-- Name: index_archive_nodes_on_node_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_archive_nodes_on_node_id ON public.archive_nodes USING btree (node_id);
+
+
+--
 -- Name: index_artists_genres_on_artist_id_and_genre_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1378,6 +1430,27 @@ CREATE UNIQUE INDEX index_jukeboxes_on_session_id ON public.jukeboxes USING btre
 --
 
 CREATE INDEX index_jukeboxes_on_status ON public.jukeboxes USING btree (status);
+
+
+--
+-- Name: index_playback_grants_on_archive_node_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_playback_grants_on_archive_node_id ON public.playback_grants USING btree (archive_node_id);
+
+
+--
+-- Name: index_playback_grants_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_playback_grants_on_user_id ON public.playback_grants USING btree (user_id);
+
+
+--
+-- Name: index_playback_grants_on_user_id_and_archive_node_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_playback_grants_on_user_id_and_archive_node_id ON public.playback_grants USING btree (user_id, archive_node_id);
 
 
 --
@@ -1853,6 +1926,14 @@ ALTER TABLE ONLY public.artists_genres
 
 
 --
+-- Name: playback_grants fk_rails_55f770ff1c; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.playback_grants
+    ADD CONSTRAINT fk_rails_55f770ff1c FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: ajb_played_songs fk_rails_56676bd3db; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1981,6 +2062,14 @@ ALTER TABLE ONLY public.playlists_songs
 
 
 --
+-- Name: playback_grants fk_rails_c112e16cb3; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.playback_grants
+    ADD CONSTRAINT fk_rails_c112e16cb3 FOREIGN KEY (archive_node_id) REFERENCES public.archive_nodes(id) ON DELETE CASCADE;
+
+
+--
 -- Name: active_storage_attachments fk_rails_c3b3935057; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2061,14 +2150,128 @@ ALTER TABLE ONLY public.songs
 
 
 --
+-- Name: pub_archive; Type: PUBLICATION; Schema: -; Owner: -
+--
+
+CREATE PUBLICATION pub_archive WITH (publish = 'insert, update, delete, truncate');
+
+
+--
+-- Name: pub_archive active_storage_attachments; Type: PUBLICATION TABLE; Schema: public; Owner: -
+--
+
+ALTER PUBLICATION pub_archive ADD TABLE ONLY public.active_storage_attachments;
+
+
+--
+-- Name: pub_archive active_storage_blobs; Type: PUBLICATION TABLE; Schema: public; Owner: -
+--
+
+ALTER PUBLICATION pub_archive ADD TABLE ONLY public.active_storage_blobs;
+
+
+--
+-- Name: pub_archive active_storage_variant_records; Type: PUBLICATION TABLE; Schema: public; Owner: -
+--
+
+ALTER PUBLICATION pub_archive ADD TABLE ONLY public.active_storage_variant_records;
+
+
+--
+-- Name: pub_archive albums; Type: PUBLICATION TABLE; Schema: public; Owner: -
+--
+
+ALTER PUBLICATION pub_archive ADD TABLE ONLY public.albums;
+
+
+--
+-- Name: pub_archive albums_genres; Type: PUBLICATION TABLE; Schema: public; Owner: -
+--
+
+ALTER PUBLICATION pub_archive ADD TABLE ONLY public.albums_genres;
+
+
+--
+-- Name: pub_archive artists; Type: PUBLICATION TABLE; Schema: public; Owner: -
+--
+
+ALTER PUBLICATION pub_archive ADD TABLE ONLY public.artists;
+
+
+--
+-- Name: pub_archive artists_genres; Type: PUBLICATION TABLE; Schema: public; Owner: -
+--
+
+ALTER PUBLICATION pub_archive ADD TABLE ONLY public.artists_genres;
+
+
+--
+-- Name: pub_archive genres; Type: PUBLICATION TABLE; Schema: public; Owner: -
+--
+
+ALTER PUBLICATION pub_archive ADD TABLE ONLY public.genres;
+
+
+--
+-- Name: pub_archive playlists; Type: PUBLICATION TABLE; Schema: public; Owner: -
+--
+
+ALTER PUBLICATION pub_archive ADD TABLE ONLY public.playlists;
+
+
+--
+-- Name: pub_archive playlists_songs; Type: PUBLICATION TABLE; Schema: public; Owner: -
+--
+
+ALTER PUBLICATION pub_archive ADD TABLE ONLY public.playlists_songs;
+
+
+--
+-- Name: pub_archive songs; Type: PUBLICATION TABLE; Schema: public; Owner: -
+--
+
+ALTER PUBLICATION pub_archive ADD TABLE ONLY public.songs;
+
+
+--
+-- Name: pub_archive system_settings; Type: PUBLICATION TABLE; Schema: public; Owner: -
+--
+
+ALTER PUBLICATION pub_archive ADD TABLE ONLY public.system_settings;
+
+
+--
+-- Name: pub_archive theme_assets; Type: PUBLICATION TABLE; Schema: public; Owner: -
+--
+
+ALTER PUBLICATION pub_archive ADD TABLE ONLY public.theme_assets;
+
+
+--
+-- Name: pub_archive themes; Type: PUBLICATION TABLE; Schema: public; Owner: -
+--
+
+ALTER PUBLICATION pub_archive ADD TABLE ONLY public.themes;
+
+
+--
+-- Name: pub_archive users; Type: PUBLICATION TABLE; Schema: public; Owner: -
+--
+
+ALTER PUBLICATION pub_archive ADD TABLE ONLY public.users;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 9UcXULBXrfh7cuDQRaRumXlQRqtkx8q8Fj5LHfE10ngkG4Zs0izjccPMyqxawcR
+\unrestrict WIlJnzBI54jiBeJt6mWJ7IPaVEvtfpjv1MhKQE56iB2EPvt0B8XWscfniDOEded
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261126120100'),
+('20261126120000'),
 ('20261126000000'),
 ('20261125190000'),
 ('20261124230108'),

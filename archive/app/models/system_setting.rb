@@ -54,6 +54,12 @@ class SystemSetting < ApplicationRecord
       set('available_themes', themes.join(','), 'List of available themes')
     end
 
+    # Stable identity of this archive node (set by the archive-sync migration,
+    # defaults to the host name). Used to find this node's Archive row.
+    def archive_node_id
+      get('archive_node_id', Socket.gethostname)
+    end
+
     def site_name
       get('site_name', 'Music Archive')
     end

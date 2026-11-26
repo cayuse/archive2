@@ -6,6 +6,8 @@ class User < ApplicationRecord
   has_many :playlists, dependent: :destroy
   has_many :station_feedbacks, dependent: :destroy
   has_many :jukeboxes, foreign_key: :owner_id, dependent: :destroy
+  has_many :playback_grants, dependent: :destroy
+  has_many :playback_nodes, through: :playback_grants, source: :archive_node
 
   # Enums.
   # NOTE: roles are capability-based (see the predicate methods below), not a
@@ -52,6 +54,12 @@ class User < ApplicationRecord
   # Who may create/host AJB jukeboxes: DJs, moderators, and admins.
   def can_host_jukebox?
     dj? || moderator? || admin?
+  end
+
+  # May this user start local playback on the given archive node? (Granted by an
+  # admin; the surfacing also requires the client to be on that archive's LAN.)
+  def can_play_on?(node)
+    node.present? && playback_grants.exists?(archive_node_id: node.id)
   end
   
   private
