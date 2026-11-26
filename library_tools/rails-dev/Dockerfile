@@ -3,7 +3,7 @@
 FROM ruby:3.4.13-slim
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential git libyaml-dev pkg-config \
-      libpq-dev postgresql-client libvips curl ffmpeg python3 python3-mutagen && \
+      libpq-dev postgresql-client libvips curl ffmpeg python3 python3-mutagen libarchive-tools && \
     rm -rf /var/lib/apt/lists/*
 ENV BUNDLE_PATH=/usr/local/bundle
 WORKDIR /rails

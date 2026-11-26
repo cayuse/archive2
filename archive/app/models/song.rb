@@ -65,6 +65,12 @@ class Song < ApplicationRecord
       .limit(50)
   }
 
+  # The analysis reserve: songs with audio that the offline analysis run has not processed yet, so
+  # they have no dials or sound-alike links and stations cannot pick them.
+  scope :awaiting_analysis, -> {
+    joins(:audio_file_attachment).where.not(id: SongAudioFeature.select(:song_id))
+  }
+
   # Callbacks
   # When inline processing is enabled, do not enqueue background jobs from the model
   unless Rails.configuration.x.inline_audio_processing

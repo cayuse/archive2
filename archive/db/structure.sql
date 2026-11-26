@@ -326,6 +326,43 @@ CREATE TABLE public.genres (
 
 
 --
+-- Name: intake_batches; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.intake_batches (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    name character varying,
+    status character varying DEFAULT 'uploading'::character varying NOT NULL,
+    started_at timestamp(6) without time zone,
+    finished_at timestamp(6) without time zone,
+    error text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: intake_items; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.intake_items (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    intake_batch_id uuid NOT NULL,
+    relative_path character varying NOT NULL,
+    byte_size bigint,
+    checksum character varying,
+    status character varying DEFAULT 'received'::character varying NOT NULL,
+    identified character varying,
+    match_score double precision,
+    song_id uuid,
+    message text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
 -- Name: jukebox_playlist_assignments; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -867,6 +904,22 @@ ALTER TABLE ONLY public.genres
 
 
 --
+-- Name: intake_batches intake_batches_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.intake_batches
+    ADD CONSTRAINT intake_batches_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: intake_items intake_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.intake_items
+    ADD CONSTRAINT intake_items_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: jukebox_playlist_assignments jukebox_playlist_assignments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1297,6 +1350,48 @@ CREATE INDEX index_genres_on_name_gin ON public.genres USING gin (name public.gi
 --
 
 CREATE INDEX index_genres_on_search_vector ON public.genres USING gin (search_vector);
+
+
+--
+-- Name: index_intake_batches_on_status_and_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_intake_batches_on_status_and_created_at ON public.intake_batches USING btree (status, created_at);
+
+
+--
+-- Name: index_intake_batches_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_intake_batches_on_user_id ON public.intake_batches USING btree (user_id);
+
+
+--
+-- Name: index_intake_items_on_checksum; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_intake_items_on_checksum ON public.intake_items USING btree (checksum);
+
+
+--
+-- Name: index_intake_items_on_intake_batch_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_intake_items_on_intake_batch_id ON public.intake_items USING btree (intake_batch_id);
+
+
+--
+-- Name: index_intake_items_on_intake_batch_id_and_relative_path; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_intake_items_on_intake_batch_id_and_relative_path ON public.intake_items USING btree (intake_batch_id, relative_path);
+
+
+--
+-- Name: index_intake_items_on_song_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_intake_items_on_song_id ON public.intake_items USING btree (song_id);
 
 
 --
@@ -1794,6 +1889,14 @@ ALTER TABLE ONLY public.albums_genres
 
 
 --
+-- Name: intake_batches fk_rails_1ad6d1bb6e; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.intake_batches
+    ADD CONSTRAINT fk_rails_1ad6d1bb6e FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: jukebox_playlist_assignments fk_rails_258d82708a; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1807,6 +1910,14 @@ ALTER TABLE ONLY public.jukebox_playlist_assignments
 
 ALTER TABLE ONLY public.station_feedbacks
     ADD CONSTRAINT fk_rails_2878e0f5d7 FOREIGN KEY (jukebox_id) REFERENCES public.jukeboxes(id) ON DELETE CASCADE;
+
+
+--
+-- Name: intake_items fk_rails_2e964b24ec; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.intake_items
+    ADD CONSTRAINT fk_rails_2e964b24ec FOREIGN KEY (intake_batch_id) REFERENCES public.intake_batches(id) ON DELETE CASCADE;
 
 
 --
@@ -1895,6 +2006,14 @@ ALTER TABLE ONLY public.song_embeddings
 
 ALTER TABLE ONLY public.song_file_tags
     ADD CONSTRAINT fk_rails_6e2ac55a8a FOREIGN KEY (song_id) REFERENCES public.songs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: intake_items fk_rails_6f76fc461c; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.intake_items
+    ADD CONSTRAINT fk_rails_6f76fc461c FOREIGN KEY (song_id) REFERENCES public.songs(id) ON DELETE SET NULL;
 
 
 --
@@ -2088,6 +2207,7 @@ ALTER TABLE ONLY public.songs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261126180000'),
 ('20261126170000'),
 ('20261126160000'),
 ('20261126150000'),
