@@ -136,6 +136,23 @@ Rails.application.routes.draw do
   # API routes
   namespace :api do
     namespace :v1 do
+      # Sound analysis by an outside machine; opened by a ServiceKey, not a login. GET analysis describes it.
+      get "analysis", to: "analysis#guide"
+      scope "analysis", controller: "analysis", as: "analysis" do
+        get "status", action: :status
+        get "pending", action: :pending
+        get "songs", action: :songs
+        get "songs/:id/audio", action: :audio
+        get "features", action: :features
+        get "embeddings", action: :embeddings
+        get "neighbors", action: :neighbors
+        get "genres", action: :genres
+        get "genre_affinities", action: :genre_affinities
+        post "results", action: :write_results
+        post "neighbors", action: :write_neighbors
+        post "genre_affinities", action: :write_genre_affinities
+      end
+
       resources :songs, only: [ :show ] do
         member do
           get :download

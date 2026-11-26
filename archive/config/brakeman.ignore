@@ -49,6 +49,29 @@
     {
       "warning_type": "File Access",
       "warning_code": 16,
+      "fingerprint": "8e6bc87d328b79dbf781d76921117b59306f565e424b3629d970850ebde710ad",
+      "check_name": "SendFile",
+      "message": "Model attribute used in file name",
+      "file": "app/controllers/api/v1/analysis_controller.rb",
+      "line": 52,
+      "link": "https://brakemanscanner.org/docs/warning_types/file_access/",
+      "code": "send_file(Song.find(params[:id]).audio_file.blob.service.path_for(Song.find(params[:id]).audio_file.blob.key), :type => ((Song.find(params[:id]).audio_file.blob.content_type or \"application/octet-stream\")), :filename => Song.find(params[:id]).audio_file.blob.filename.to_s, :disposition => \"attachment\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Api::V1::AnalysisController",
+        "method": "audio"
+      },
+      "user_input": "Song.find(params[:id]).audio_file.blob.service.path_for(Song.find(params[:id]).audio_file.blob.key)",
+      "confidence": "Medium",
+      "cwe_id": [
+        22
+      ],
+      "note": "The path comes from Active Storage's own key for the song's blob (a random string the server generated), not from anything the client sent; the client only chooses which song."
+    },
+    {
+      "warning_type": "File Access",
+      "warning_code": 16,
       "fingerprint": "b85badfafcc9f819d90a0a1c3d4823645cf8cf13a03130ba9fc078c73d2ba2e8",
       "check_name": "FileAccess",
       "message": "Model attribute used in file name",

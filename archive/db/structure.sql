@@ -470,6 +470,25 @@ CREATE TABLE public.schema_migrations (
 
 
 --
+-- Name: service_keys; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.service_keys (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name character varying NOT NULL,
+    scope character varying NOT NULL,
+    token_digest character varying NOT NULL,
+    token_hint character varying,
+    last_used_at timestamp(6) without time zone,
+    last_used_ip character varying,
+    writes_count bigint DEFAULT 0 NOT NULL,
+    revoked_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
 -- Name: song_artist_credits; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -965,6 +984,14 @@ ALTER TABLE ONLY public.playlists_songs
 
 ALTER TABLE ONLY public.schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: service_keys service_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.service_keys
+    ADD CONSTRAINT service_keys_pkey PRIMARY KEY (id);
 
 
 --
@@ -1518,6 +1545,20 @@ CREATE INDEX index_playlists_songs_on_playlist_id_and_position ON public.playlis
 --
 
 CREATE UNIQUE INDEX index_playlists_songs_on_playlist_id_and_song_id ON public.playlists_songs USING btree (playlist_id, song_id);
+
+
+--
+-- Name: index_service_keys_on_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_service_keys_on_name ON public.service_keys USING btree (name);
+
+
+--
+-- Name: index_service_keys_on_token_digest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_service_keys_on_token_digest ON public.service_keys USING btree (token_digest);
 
 
 --
@@ -2207,6 +2248,7 @@ ALTER TABLE ONLY public.songs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261126190000'),
 ('20261126180000'),
 ('20261126170000'),
 ('20261126160000'),
