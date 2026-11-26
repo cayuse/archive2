@@ -153,20 +153,31 @@ CLAP-text sidecar), expandable song rows in search, cover-art download
 the mirror), importer fix + dropbox intake (`library_tools/IMPORTER_FIX_PLAN.md`),
 headless tagger worker, library dedup.
 
-## Browser player: gapless and locked phones (2026-11-26)
+## Browser player on phones (2026-11-26)
 
-The browser player takes the next song 20 seconds before the current one ends (the same rule as
-the speakers), loads it in a second Howl and starts it in the 'end' event: measured gap 4 ms in
-headless Chrome (`library_tools/staging/browser_player_e2e.sh`). The point on iOS is that the
-audio never goes quiet long enough for a locked phone to be put to sleep; that is untested on a
-real iPhone. The first iPhone test (2026-11-26) showed iOS does not buffer the next song ahead
-at all, and that Howler then never starts it: Howler waits for the element to report it has
-buffered, and iOS waits for play() before buffering. That deadlock is the long-standing "advanced
-but silent" stall. `AudioEngine#_start` now calls play() on the element itself; in Chrome, with
-nothing buffered ahead, the next song then starts 85 ms after the last. Howler is kept: its unlocked `<audio>` pool and 'unlock' event are what the iOS
-stall recovery stands on (see the history in `docs/history/ajb_design.md` and commits e2096f8,
-5afe868). Every "up next" list shows the song already taken as its first row. Player diagnostics
-are also written to `log/player_diagnostics.log` on the log volume, so they survive deploys.
+Rebuilt after five tests on a real iPhone (diagnostics in `log/player_diagnostics.log`, which now
+survives deploys). What iOS requires, and what the player does (`AudioEngine`, `PlayerController`):
+
+- **One `<audio>` element for the whole session**, started by the tap on Play. iOS lets audio start
+  without a tap only on an element a tap started. Howler gave each song its own element and iOS
+  refused to start the second one while locked; Howler was removed.
+- **The next song is always known before it is needed**: the head of the archive's queue, re-read
+  on every queue change and every 15 s while the page runs. A backgrounded (not locked) Safari
+  freezes the page's timers and network for minutes but still delivers media events, so the swap
+  needs no network call: in the element's `ended` event the src becomes the next song's stream and
+  play() is called. The archive is told afterwards (`POST take_song`, retried until it lands).
+- **Streamed, not looped or downloaded ahead.** A variant that looped the element, swapped from
+  `timeupdate` and played a downloaded copy made iOS report "playing" stuck at 0:00. The variants
+  stay selectable for experiments: `?ajb=loop|ended,blob|stream,pause` on the player URL.
+- iOS does not buffer the next song before it plays: gaps measured 0.1 to 0.4 s on the phone.
+- Lock screen: Media Session metadata, previous / next track (seek actions switched off, actions
+  re-registered on each song), `navigator.audioSession.type = 'playback'`.
+- The jukebox pages load their scripts by a fingerprint of the scripts (`JukeboxesHelper#ajb_build`),
+  are `no-store`, show the build in the corner and report it with every diagnostic.
+
+Tests: `library_tools/staging/browser_player_e2e.sh` (headless Chrome on staging: queue head as next
+song, a request taking its place, song change with the archive's API blocked, skips, gap). iOS itself
+can only be tested on a phone: point it at staging (`BIND=0.0.0.0 bash web.sh`).
 
 ## Known debt (as of 2026-11-26)
 
