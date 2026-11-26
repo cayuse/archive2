@@ -1,6 +1,6 @@
 # The archive node's player daemon (station.py): follows the archive, feeds OwnTone.
 # Standard library only, so the image is just Python plus two files.
-FROM python:3.12-alpine
+FROM python:3.15-alpine
 LABEL service="archive-player"
 RUN adduser -D -u 1000 player && mkdir /data && chown player /data
 WORKDIR /app
