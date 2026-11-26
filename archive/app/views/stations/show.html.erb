@@ -77,7 +77,7 @@
           <p class="small theme-text-secondary">The songs this station is built around. Add a cool one to widen it; up to <%= SongRadio::MAX_SEEDS %>.</p>
           <% (@station.station ? @station.station.station_playlists.includes(:playlist) : []).each do |link| %>
             <p class="small mb-2"><i class="fas fa-list me-1"></i>
-              <%= link.mode == "only" ? "Only plays songs from" : "Takes its sound from" %> the playlist <strong><%= link.playlist&.name %></strong>.</p>
+              <%= link.mode == "only" ? "Only plays songs from" : "Plays, and takes its sound from," %> the playlist <strong><%= link.playlist&.name %></strong>.</p>
           <% end %>
           <ul class="list-group list-group-flush mb-2" id="list-seeds"></ul>
           <div class="input-group input-group-sm">

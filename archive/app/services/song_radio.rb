@@ -20,6 +20,9 @@
 #                 songs never play, artists taken off the station never play, and candidates are
 #                 pulled toward the station's taste and learned dial leanings
 #   * allowed_ids: only these songs may be picked (e.g. a jukebox's assigned playlists)
+#   * home_ids:   the station's own songs (the playlist it was started from). Every HOME_EVERY-th
+#                 pick comes straight from them, so a station that "sounds like" a playlist also
+#                 plays it, with the sound-alikes in between
 #
 #   SongRadio.new(seed: song).next_songs(20)
 #   SongRadio.new(seed: song, user: current_user, intensity: -0.5, variety: 0.2).next_songs(10)
@@ -50,6 +53,8 @@ class SongRadio
   WAVE_SWING = 0.28         # energy swing either side of centre at variety 1
   SKIP_PENALTY = 0.08       # skipped early once on this station
   SOFT_ARTIST_PENALTY = 0.08 # artist with more thumbs down than up on this station
+  HOME_EVERY = 3            # one pick in this many is one of the station's own songs
+  HOME_POOL = 80            # of its own songs, this many are weighed for each such pick
 
   attr_reader :trace, :taste
 
@@ -79,14 +84,14 @@ class SongRadio
     played = jukebox.ajb_played_songs
     new(seed: anchors.first, seeds: anchors.drop(1), after: last_id, exclude_seeds: false,
         exclude_ids: exclude_ids || (played.recent(50).pluck(:song_id) + queue.pluck(:song_id)),
-        allowed_ids: jukebox.radio_allowed_song_ids,
+        allowed_ids: jukebox.radio_allowed_song_ids, home_ids: station&.playlist_song_ids,
         user: jukebox.owner, station: station, steer: jukebox.radio_steer,
         genre_mode: genre_mode || jukebox.radio_genre_mode,
         intensity: jukebox.radio_intensity, variety: jukebox.radio_variety, learn: jukebox.radio_learn?,
         position: played.count + queue.count)
   end
 
-  def initialize(seed:, seeds: [], after: nil, exclude_ids: [], exclude_seeds: true, steer: {}, allowed_ids: nil,
+  def initialize(seed:, seeds: [], after: nil, exclude_ids: [], exclude_seeds: true, steer: {}, allowed_ids: nil, home_ids: nil,
                  genre_mode: "any", user: nil, station: nil, intensity: nil, variety: 0.5, position: 0,
                  learn: true, random: Random.new)
     @seed = seed
@@ -96,6 +101,7 @@ class SongRadio
     @exclude = Set.new(recent)
     @anchors.each { |a| @exclude << a.id.to_s } if exclude_seeds
     @allowed = allowed_ids && Set.new(allowed_ids.map(&:to_s))
+    @home = Array(home_ids).map(&:to_s).uniq
     @steer = steer.to_h.transform_keys(&:to_s).slice(*STEER_DIALS)
                   .transform_values { |v| v.to_f.clamp(-1.0, 1.0) }.reject { |_, v| v.zero? }
     @intensity = intensity.nil? || intensity.to_s.empty? ? nil : intensity.to_f.clamp(-1.0, 1.0)
@@ -132,7 +138,8 @@ class SongRadio
                   allow_speech: allow_speech, blocked_artists: recent_artists.last(ARTIST_GAP) }
       sources = { anchor.id => SEED_WEIGHT, current_id => DRIFT_WEIGHT }
       @taste.liked_ids.sample(LIKED_SOURCES, random: @random).each { |id| sources[id] ||= LIKED_WEIGHT }
-      cands = candidates(sources, anchor, context)
+      cands = home_slot?(slot) ? home_candidates(context) : []
+      cands = candidates(sources, anchor, context) if cands.empty?
       if cands.empty? && (usable.size > 1 || picked.any?)
         # ran dry (tight genre or playlist limits): widen to every seed and everything picked so far
         wide = (usable.map(&:id) + picked.last(12)).to_h { |id| [ id, DRIFT_WEIGHT ] }
@@ -251,6 +258,26 @@ class SongRadio
       end
       best
     end
+  end
+
+  def home_slot?(slot)
+    @home.any? && slot % HOME_EVERY == HOME_EVERY - 1
+  end
+
+  # The station's own songs that may play now, weighed like any other candidate (flow, steer,
+  # taste) but not for closeness to a seed: they belong here by being on the playlist.
+  def home_candidates(context)
+    ids = @home.reject { |id| @exclude.include?(id) }.sample(HOME_POOL, random: @random)
+    return [] if ids.empty?
+    rows = Song.where(id: ids).joins("JOIN song_audio_features f ON f.song_id = songs.id")
+               .pluck(*COLUMNS[1..5].map { |c| Arel.sql(c) }, *DIALS.map { |d| Arel.sql("f.#{d}") })
+               .map { |id, artist_id, genre_id, title, recording, *dials| to_row(id, artist_id, genre_id, title, recording, dials, 1.0) }
+    rows.reject! { |row| rejected?(row, context) }
+    credited = credit_blocked(rows.map { |r| r["id"] })
+    rows.reject! { |row| credited.include?(row["id"]) }
+    rows.each { |row| score!(row, context) }
+    apply_taste!(rows)
+    rows
   end
 
   def candidates(sources, anchor, context)

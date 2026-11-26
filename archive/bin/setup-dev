@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Development setup script for the Music Archive App
+# Development setup script for The Archive
 # This script ensures all dependencies are properly installed
 
 set -e
 
-echo "🎵 Setting up Music Archive App development environment..."
+echo "🎵 Setting up The Archive development environment..."
 
 # Check if we're in the right directory
 if [ ! -f "Gemfile" ]; then
@@ -43,7 +43,7 @@ bin/rails test:prepare
 
 echo "✅ Development environment setup complete!"
 echo ""
-echo "🎵 Music Archive App is ready!"
+echo "🎵 The Archive is ready!"
 echo ""
 echo "🔐 Admin Access:"
 echo "   Email: admin@musicarchive.com"

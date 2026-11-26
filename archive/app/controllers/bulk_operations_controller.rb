@@ -2,6 +2,8 @@ class BulkOperationsController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_bulk_operations!
 
+  UUID = /\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/
+
   def index
     # Show bulk operations dashboard
   end
@@ -15,7 +17,7 @@ class BulkOperationsController < ApplicationController
 
     file = params[:file]
 
-    unless file.content_type.include?("csv")
+    unless file.content_type.to_s.include?("csv") || File.extname(file.original_filename.to_s).casecmp?(".csv")
       flash[:alert] = "Please upload a CSV file"
       redirect_to bulk_operations_path
       return
@@ -26,7 +28,11 @@ class BulkOperationsController < ApplicationController
       result = process_csv_upload(file)
 
       if result[:success]
-        flash[:notice] = "Successfully imported #{result[:created_count]} songs. #{result[:errors].length} errors occurred."
+        flash[:notice] = "Imported #{result[:created_count]} songs."
+        if result[:errors].any?
+          rows = result[:errors].first(10).map { |e| "row #{e[:row]}: #{Array(e[:errors] || e[:error]).join(', ')}" }
+          flash[:alert] = "#{result[:errors].length} rows were skipped (#{rows.join('; ')})"
+        end
       else
         flash[:alert] = "Import failed: #{result[:error]}"
       end
@@ -46,28 +52,26 @@ class BulkOperationsController < ApplicationController
               type: "text/csv"
   end
 
+  # Song ids are UUIDs, separated by commas, spaces or new lines.
   def bulk_delete
-    song_ids = params[:song_ids]&.split(",")&.map(&:to_i) || []
+    entries = params[:song_ids].to_s.split(/[\s,]+/).reject(&:blank?).uniq
+    ids, invalid = entries.partition { |id| id.match?(UUID) }
 
-    if song_ids.empty?
-      flash[:alert] = "Please select songs to delete"
+    if entries.empty?
+      flash[:alert] = "Please enter the IDs of the songs to delete"
       redirect_to bulk_operations_path
       return
     end
 
+    songs = Song.where(id: ids).to_a
+    errors = invalid.map { |id| "#{id.truncate(40)} is not a song ID" }
+    errors += (ids.map(&:downcase) - songs.map(&:id)).map { |id| "Song #{id} not found" }
     destroyed_count = 0
-    errors = []
-
-    song_ids.each do |id|
-      song = Song.find_by(id: id)
-      if song
-        if song.destroy
-          destroyed_count += 1
-        else
-          errors << "Could not delete song #{id}"
-        end
+    songs.each do |song|
+      if song.destroy
+        destroyed_count += 1
       else
-        errors << "Song #{id} not found"
+        errors << "Could not delete song #{song.id}"
       end
     end
 
@@ -133,32 +137,24 @@ class BulkOperationsController < ApplicationController
     }
   end
 
+  # A song record without an audio file: the row's details, with its artist, album and genre
+  # found by name or created.
   def create_song_from_data(data)
-    # Find or create artist
-    artist = Artist.find_or_create_by(name: data[:artist_name]) if data[:artist_name]
+    data = data.transform_values { |v| v.to_s.strip.presence }
+    song = Song.new(data.slice(:title, :track_number, :duration, :file_format, :file_size).merge(user: current_user))
+    if data[:title].nil?
+      song.errors.add(:title, "can't be blank")
+      return song
+    end
+    return song unless song.valid?
 
-    # Find or create album
-    album = nil
-    if data[:album_title] && artist
-      album = Album.find_or_create_by(title: data[:album_title], artist: artist) do |a|
-        a.release_date = data[:album_release_date] if data[:album_release_date]
+    song.artist = Artist.find_or_create_by!(name: data[:artist_name]) if data[:artist_name]
+    if data[:album_title] && song.artist
+      song.album = Album.find_or_create_by!(title: data[:album_title], artist: song.artist) do |a|
+        a.release_date = data[:album_release_date]
       end
     end
-
-    # Find or create genre
-    genre = Genre.find_or_create_by(name: data[:genre_name]) if data[:genre_name]
-
-    # Create song
-    song = Song.new(
-      title: data[:title],
-      track_number: data[:track_number],
-      duration: data[:duration],
-      file_format: data[:file_format],
-      file_size: data[:file_size],
-      album: album,
-      genre: genre
-    )
-
+    song.genre = Genre.find_or_create_by!(name: data[:genre_name]) if data[:genre_name]
     song.save
     song
   end

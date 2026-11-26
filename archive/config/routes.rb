@@ -194,7 +194,7 @@ Rails.application.routes.draw do
   end
 
   # Bulk operations (moderator/admin only)
-  get "bulk_operations", to: "bulk_operations#index", as: :bulk_operations_page
+  get "bulk_operations", to: "bulk_operations#index"
   resource :bulk_operations, only: [] do
     collection do
       post :upload_csv

@@ -13,7 +13,7 @@ def test_api_endpoint():
     # Configuration
     api_url = "http://localhost:3000"
     
-    print("Testing Music Archive API bulk_upload endpoint...")
+    print("Testing The Archive API bulk_upload endpoint...")
     print(f"API URL: {api_url}")
     print()
     

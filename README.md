@@ -1,4 +1,4 @@
-# Archive
+# The Archive
 
 A self-hosted music archive (Rails 8, Postgres) with a party jukebox, personal radio stations and
 server-side playback to AirPlay speakers.

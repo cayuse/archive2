@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Music Archive Tracking Utilities
+The Archive Tracking Utilities
 
 This script provides utilities for managing and querying the import tracking database.
 It demonstrates the shared tracking functionality and provides useful commands.
@@ -157,7 +157,7 @@ def export_job_data(tracker, job_id, output_file=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Music Archive Tracking Utilities")
+    parser = argparse.ArgumentParser(description="The Archive Tracking Utilities")
     parser.add_argument('command', help='Command to execute')
     parser.add_argument('job_id', nargs='?', type=int, help='Job ID (for commands that need it)')
     parser.add_argument('--db', default='import_tracking.db', help='Tracking database path')

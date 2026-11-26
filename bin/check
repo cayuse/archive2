@@ -11,10 +11,13 @@ security() { bash "$S/rails.sh" bundle exec brakeman --no-pager -q 2>&1 | grep -
 lint()     { bash "$S/rails.sh" bundle exec rubocop 2>&1 | tail -3; [ "${PIPESTATUS[0]}" = 0 ]; }
 player()   { python3 -m py_compile "$REPO/station/station.py" "$REPO/station/test/mock_owntone.py"; }
 clean()    { [ -z "$(git -C "$REPO" status --porcelain archive/db/structure.sql)" ] || { echo "   archive/db/structure.sql has uncommitted changes"; return 1; }; }
+# the staging image's pg_dump is newer than production's Postgres 15 and writes a setting 15 rejects
+portable() { ! grep -n "^SET transaction_timeout" "$REPO/archive/db/structure.sql" || { echo "   delete that line: Postgres 15 (production, CI) cannot load it"; return 1; }; }
 step "Rails tests" tests
 step "Security scan (Brakeman, baseline in archive/config/brakeman.ignore)" security
 step "Style (RuboCop; fix with: library_tools/staging/rails.sh bundle exec rubocop -a)" lint
 step "Player daemon compiles" player
+step "structure.sql loads on Postgres 15" portable
 step "structure.sql is committed" clean
 [ "${1:-}" = "--schema" ] && step "Production schema matches master" bash "$S/schema_check.sh" master
 echo; [ $failed = 0 ] && echo "ALL CHECKS PASSED" || echo "CHECKS FAILED"

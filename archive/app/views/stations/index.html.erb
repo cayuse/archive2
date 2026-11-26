@@ -31,7 +31,7 @@
           </div>
           <div class="col-md-5">
             <select id="new-station-playlist-mode" class="form-select">
-              <option value="inspire">Sounds like this playlist, and beyond it</option>
+              <option value="inspire">This playlist, plus songs that sound like it</option>
               <option value="only">Only songs from this playlist</option>
             </select>
           </div>
@@ -59,7 +59,7 @@
             <p class="theme-text-secondary small flex-grow-1 mb-2">
               <% linked = station.station ? station.station.station_playlists.includes(:playlist).to_a : [] %>
               <% if linked.any? %>
-                <%= linked.map { |l| l.mode == "only" ? "Only plays #{l.playlist&.name}" : "Sounds like #{l.playlist&.name}" }.to_sentence %>.
+                <%= linked.map { |l| l.mode == "only" ? "Only plays #{l.playlist&.name}" : "Plays #{l.playlist&.name} and songs that sound like it" }.to_sentence %>.
               <% end %>
               <% if seeds.any? %>
                 Built around <%= seeds.first(3).map { |s| [ s.title, s.artist&.name ].compact.join(" by ") }.to_sentence %><%= " and #{seeds.size - 3} more" if seeds.size > 3 %>.

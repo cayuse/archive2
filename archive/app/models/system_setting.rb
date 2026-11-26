@@ -61,7 +61,7 @@ class SystemSetting < ApplicationRecord
     end
 
     def site_name
-      get("site_name", "Music Archive")
+      get("site_name", "The Archive")
     end
 
     def set_site_name(name)
@@ -69,7 +69,7 @@ class SystemSetting < ApplicationRecord
     end
 
     def site_description
-      get("site_description", "A comprehensive music archive system")
+      get("site_description", "A self-hosted music library, jukebox and radio")
     end
 
     def set_site_description(description)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Music Archive Bulk Upload Script with Comprehensive Tracking (Python 3)
+The Archive Bulk Upload Script with Comprehensive Tracking (Python 3)
 
 Usage:
     python3 bulk_upload.py <directory_path> [options]
@@ -227,7 +227,7 @@ def upload_file(filepath, api_url, api_key, dry_run=False, verbose=False):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Bulk upload audio files to Music Archive API with comprehensive tracking.")
+    parser = argparse.ArgumentParser(description="Bulk upload audio files to The Archive API with comprehensive tracking.")
     
     # Mode flags
     parser.add_argument('--start-over', action='store_true', 

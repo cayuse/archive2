@@ -59,6 +59,30 @@ class SongRadioTest < ActiveSupport::TestCase
     assert_equal targets.max, targets[(SongRadio::WAVE_LENGTH * SongRadio::WAVE_PEAK).round]
   end
 
+  test "a station's own songs take every third pick, with sound-alikes in between" do
+    home = (1..6).map { |i| make_song("Home #{i}", energy: 0.3 + 0.05 * i) }   # not linked to anything
+    songs = SongRadio.new(seed: @seed, home_ids: home.map(&:id), random: Random.new(1)).next_songs(9)
+    assert_equal 9, songs.size
+    assert_equal [ 2, 5, 8 ], songs.each_index.select { |i| home.include?(songs[i]) }
+  end
+
+  test "a station's own songs are not forced in once they have all just played" do
+    home = [ make_song("Home", energy: 0.5) ]
+    songs = SongRadio.new(seed: @seed, home_ids: home.map(&:id), exclude_ids: home.map(&:id), random: Random.new(1)).next_songs(6)
+    assert_equal 6, songs.size
+    assert_not_includes songs, home.first
+  end
+
+  test "a station started from a playlist plays that playlist's songs among the rest" do
+    playlist = Playlist.create!(name: "Mix", user: @user)
+    home = (1..5).map { |i| make_song("Listed #{i}", energy: 0.4 + 0.03 * i) }
+    ([ @seed ] + home).each_with_index { |s, i| PlaylistsSong.create!(playlist: playlist, song: s, position: i + 1) }
+    jukebox = Jukebox.create_station!(@user, playlist: playlist)
+    songs = SongRadio.for_jukebox(jukebox).next_songs(9)
+    assert_operator (songs & home).size, :>=, 2
+    assert_operator (songs - home - [ @seed ]).size, :>=, 4
+  end
+
   test "title_key reduces versions of a title to one key" do
     assert_equal "heyjude", SongRadio.title_key("Hey Jude (Remastered 2009)")
     assert_equal "heyjude", SongRadio.title_key("Hey Jude - Live at the BBC")

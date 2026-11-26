@@ -35,7 +35,7 @@
                   <label for="file" class="form-label">Select CSV File</label>
                   <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
                   <div class="form-text">
-                    Upload a CSV file with song data. See the template below for the required format.
+                    Adds a song record for each row, without an audio file. Only the title is required; artists, albums and genres are matched by name or created.
                   </div>
                 </div>
                 
@@ -104,17 +104,17 @@
               <!-- Bulk Delete -->
               <div>
                 <h6>Bulk Delete Songs</h6>
-                <p class="theme-text-muted">Enter song IDs separated by commas to delete multiple songs.</p>
+                <p class="theme-text-muted">Paste song IDs (the ID column below, or of the CSV export) to delete those songs and their audio files.</p>
                 <form action="<%= bulk_delete_bulk_operations_path %>" method="post" 
                       onsubmit="return confirm('Are you sure you want to delete these songs? This action cannot be undone.')">
                   <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
                   
                   <div class="mb-3">
                     <label for="song_ids" class="form-label">Song IDs</label>
-                    <textarea class="form-control" id="song_ids" name="song_ids" rows="3" 
-                              placeholder="1, 2, 3, 4, 5"></textarea>
+                    <textarea class="form-control" id="song_ids" name="song_ids" rows="3"
+                              placeholder="3f0c9a52-7d1e-4b8a-9c11-2a6f0e5d7b90, ..."></textarea>
                     <div class="form-text">
-                      Enter song IDs separated by commas (e.g., 1, 2, 3, 4, 5)
+                      Separate IDs with commas, spaces or new lines.
                     </div>
                   </div>
                   

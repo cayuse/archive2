@@ -11,9 +11,9 @@ class UserMailerTest < ActionMailer::TestCase
 
     assert_equal [ ApplicationMailer.default[:from] ], email.from
     assert_equal [ "test@example.com" ], email.to
-    assert_equal "Welcome to Music Archive - Your Account is Ready!", email.subject
-    assert_match "Welcome to CavaForge Archive!", email.html_part.body.to_s
-    assert_match "Welcome to Music Archive!", email.text_part.body.to_s
+    assert_equal "Welcome to The Archive - your account is ready", email.subject
+    assert_match "Welcome to The Archive!", email.html_part.body.to_s
+    assert_match "Welcome to The Archive!", email.text_part.body.to_s
   end
 
   test "the welcome email carries the temporary password and a link to the site" do

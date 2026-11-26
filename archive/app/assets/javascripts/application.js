@@ -466,7 +466,6 @@ function removeSelectedSongsFromPlaylist() {
 // Custom JavaScript for the music archive
 document.addEventListener('turbo:load', function() {
   // Initialize any custom JavaScript here
-  console.log('Music Archive loaded');
   
   // Ensure global functions are available
   console.log('Global functions check:');

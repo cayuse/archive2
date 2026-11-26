@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Music Archive Import Tracker Module
+The Archive Import Tracker Module
 
 This module provides comprehensive tracking functionality for bulk imports.
 It can be used by any upload script to provide uniform tracking capabilities.

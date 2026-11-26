@@ -1,8 +1,3 @@
-\restrict j19nerS584W3P6wEcOLC166zeSvg1dGM5sTIkxo7jdOdZaGNHo6qihInq3wggaS
-
--- Dumped from database version 15.19 (Debian 15.19-1.pgdg13+2)
--- Dumped by pg_dump version 15.20 (Debian 15.20-0+deb12u1)
-
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -301,23 +296,6 @@ CREATE TABLE public.artists_genres (
 
 
 --
--- Name: conflict_logs; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.conflict_logs (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    conflict_type character varying NOT NULL,
-    master_change jsonb,
-    slave_change jsonb,
-    resolution character varying NOT NULL,
-    reason text,
-    resolved_at timestamp without time zone NOT NULL,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
-);
-
-
---
 -- Name: genre_affinities; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -344,22 +322,6 @@ CREATE TABLE public.genres (
     updated_at timestamp(6) without time zone NOT NULL,
     search_vector tsvector,
     CONSTRAINT check_valid_hex_color CHECK (((color IS NULL) OR ((color)::text ~ '^#[0-9A-Fa-f]{6}$'::text)))
-);
-
-
---
--- Name: jukebox_keys; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.jukebox_keys (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    name character varying NOT NULL,
-    key_hash character varying NOT NULL,
-    allowed_archives text[] DEFAULT '{}'::text[],
-    last_used_at timestamp without time zone,
-    is_active boolean DEFAULT true NOT NULL,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -467,22 +429,6 @@ CREATE TABLE public.playlists_songs (
 
 CREATE TABLE public.schema_migrations (
     version character varying NOT NULL
-);
-
-
---
--- Name: slave_keys; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.slave_keys (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    name character varying NOT NULL,
-    key_hash character varying NOT NULL,
-    node_id character varying NOT NULL,
-    last_used_at timestamp without time zone,
-    is_active boolean DEFAULT true NOT NULL,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -625,20 +571,6 @@ CREATE TABLE public.song_neighbors (
 
 
 --
--- Name: song_ratings; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.song_ratings (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    user_id uuid NOT NULL,
-    song_id uuid NOT NULL,
-    value integer NOT NULL,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
-);
-
-
---
 -- Name: songs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -719,23 +651,6 @@ CREATE TABLE public.stations (
     forked_at timestamp(6) without time zone,
     archived_at timestamp(6) without time zone,
     recipe_digest character varying,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
-);
-
-
---
--- Name: sync_changes; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.sync_changes (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    table_name character varying NOT NULL,
-    record_id character varying NOT NULL,
-    change_type character varying NOT NULL,
-    change_data jsonb,
-    applied_at timestamp without time zone,
-    applied_to_slaves text[] DEFAULT '{}'::text[],
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
 );
@@ -936,14 +851,6 @@ ALTER TABLE ONLY public.artists
 
 
 --
--- Name: conflict_logs conflict_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.conflict_logs
-    ADD CONSTRAINT conflict_logs_pkey PRIMARY KEY (id);
-
-
---
 -- Name: genre_affinities genre_affinities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -957,14 +864,6 @@ ALTER TABLE ONLY public.genre_affinities
 
 ALTER TABLE ONLY public.genres
     ADD CONSTRAINT genres_pkey PRIMARY KEY (id);
-
-
---
--- Name: jukebox_keys jukebox_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.jukebox_keys
-    ADD CONSTRAINT jukebox_keys_pkey PRIMARY KEY (id);
 
 
 --
@@ -1016,14 +915,6 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
--- Name: slave_keys slave_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.slave_keys
-    ADD CONSTRAINT slave_keys_pkey PRIMARY KEY (id);
-
-
---
 -- Name: song_artist_credits song_artist_credits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1064,14 +955,6 @@ ALTER TABLE ONLY public.song_neighbors
 
 
 --
--- Name: song_ratings song_ratings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.song_ratings
-    ADD CONSTRAINT song_ratings_pkey PRIMARY KEY (id);
-
-
---
 -- Name: songs songs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1101,14 +984,6 @@ ALTER TABLE ONLY public.station_playlists
 
 ALTER TABLE ONLY public.stations
     ADD CONSTRAINT stations_pkey PRIMARY KEY (id);
-
-
---
--- Name: sync_changes sync_changes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.sync_changes
-    ADD CONSTRAINT sync_changes_pkey PRIMARY KEY (id);
 
 
 --
@@ -1390,20 +1265,6 @@ CREATE INDEX index_artists_on_search_vector ON public.artists USING gin (search_
 
 
 --
--- Name: index_conflict_logs_on_conflict_type; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_conflict_logs_on_conflict_type ON public.conflict_logs USING btree (conflict_type);
-
-
---
--- Name: index_conflict_logs_on_resolved_at; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_conflict_logs_on_resolved_at ON public.conflict_logs USING btree (resolved_at);
-
-
---
 -- Name: index_genre_affinities_on_genre_id_and_related_genre_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1436,13 +1297,6 @@ CREATE INDEX index_genres_on_name_gin ON public.genres USING gin (name public.gi
 --
 
 CREATE INDEX index_genres_on_search_vector ON public.genres USING gin (search_vector);
-
-
---
--- Name: index_jukebox_keys_on_key_hash; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_jukebox_keys_on_key_hash ON public.jukebox_keys USING btree (key_hash);
 
 
 --
@@ -1572,20 +1426,6 @@ CREATE UNIQUE INDEX index_playlists_songs_on_playlist_id_and_song_id ON public.p
 
 
 --
--- Name: index_slave_keys_on_key_hash; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_slave_keys_on_key_hash ON public.slave_keys USING btree (key_hash);
-
-
---
--- Name: index_slave_keys_on_node_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_slave_keys_on_node_id ON public.slave_keys USING btree (node_id);
-
-
---
 -- Name: index_song_artist_credits_on_artist_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1695,20 +1535,6 @@ CREATE INDEX index_song_neighbors_on_neighbor_id ON public.song_neighbors USING 
 --
 
 CREATE UNIQUE INDEX index_song_neighbors_on_song_id_and_rank ON public.song_neighbors USING btree (song_id, rank);
-
-
---
--- Name: index_song_ratings_on_song_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_song_ratings_on_song_id ON public.song_ratings USING btree (song_id);
-
-
---
--- Name: index_song_ratings_on_user_id_and_song_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_song_ratings_on_user_id_and_song_id ON public.song_ratings USING btree (user_id, song_id);
 
 
 --
@@ -1863,27 +1689,6 @@ CREATE INDEX index_stations_on_recipe_digest ON public.stations USING btree (rec
 --
 
 CREATE INDEX index_stations_on_user_id ON public.stations USING btree (user_id);
-
-
---
--- Name: index_sync_changes_on_applied_at; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_sync_changes_on_applied_at ON public.sync_changes USING btree (applied_at);
-
-
---
--- Name: index_sync_changes_on_created_at; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_sync_changes_on_created_at ON public.sync_changes USING btree (created_at);
-
-
---
--- Name: index_sync_changes_on_table_name_and_record_id_and_created_at; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_sync_changes_on_table_name_and_record_id_and_created_at ON public.sync_changes USING btree (table_name, record_id, created_at);
 
 
 --
@@ -2085,14 +1890,6 @@ ALTER TABLE ONLY public.song_embeddings
 
 
 --
--- Name: song_ratings fk_rails_6da5f42af3; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.song_ratings
-    ADD CONSTRAINT fk_rails_6da5f42af3 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-
-
---
 -- Name: song_file_tags fk_rails_6e2ac55a8a; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2130,14 +1927,6 @@ ALTER TABLE ONLY public.genre_affinities
 
 ALTER TABLE ONLY public.genre_affinities
     ADD CONSTRAINT fk_rails_89cc7ddbba FOREIGN KEY (genre_id) REFERENCES public.genres(id) ON DELETE CASCADE;
-
-
---
--- Name: song_ratings fk_rails_9176d4ff57; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.song_ratings
-    ADD CONSTRAINT fk_rails_9176d4ff57 FOREIGN KEY (song_id) REFERENCES public.songs(id) ON DELETE CASCADE;
 
 
 --
@@ -2293,126 +2082,13 @@ ALTER TABLE ONLY public.songs
 
 
 --
--- Name: pub_archive; Type: PUBLICATION; Schema: -; Owner: -
---
-
-CREATE PUBLICATION pub_archive WITH (publish = 'insert, update, delete, truncate');
-
-
---
--- Name: pub_archive active_storage_attachments; Type: PUBLICATION TABLE; Schema: public; Owner: -
---
-
-ALTER PUBLICATION pub_archive ADD TABLE ONLY public.active_storage_attachments;
-
-
---
--- Name: pub_archive active_storage_blobs; Type: PUBLICATION TABLE; Schema: public; Owner: -
---
-
-ALTER PUBLICATION pub_archive ADD TABLE ONLY public.active_storage_blobs;
-
-
---
--- Name: pub_archive active_storage_variant_records; Type: PUBLICATION TABLE; Schema: public; Owner: -
---
-
-ALTER PUBLICATION pub_archive ADD TABLE ONLY public.active_storage_variant_records;
-
-
---
--- Name: pub_archive albums; Type: PUBLICATION TABLE; Schema: public; Owner: -
---
-
-ALTER PUBLICATION pub_archive ADD TABLE ONLY public.albums;
-
-
---
--- Name: pub_archive albums_genres; Type: PUBLICATION TABLE; Schema: public; Owner: -
---
-
-ALTER PUBLICATION pub_archive ADD TABLE ONLY public.albums_genres;
-
-
---
--- Name: pub_archive artists; Type: PUBLICATION TABLE; Schema: public; Owner: -
---
-
-ALTER PUBLICATION pub_archive ADD TABLE ONLY public.artists;
-
-
---
--- Name: pub_archive artists_genres; Type: PUBLICATION TABLE; Schema: public; Owner: -
---
-
-ALTER PUBLICATION pub_archive ADD TABLE ONLY public.artists_genres;
-
-
---
--- Name: pub_archive genres; Type: PUBLICATION TABLE; Schema: public; Owner: -
---
-
-ALTER PUBLICATION pub_archive ADD TABLE ONLY public.genres;
-
-
---
--- Name: pub_archive playlists; Type: PUBLICATION TABLE; Schema: public; Owner: -
---
-
-ALTER PUBLICATION pub_archive ADD TABLE ONLY public.playlists;
-
-
---
--- Name: pub_archive playlists_songs; Type: PUBLICATION TABLE; Schema: public; Owner: -
---
-
-ALTER PUBLICATION pub_archive ADD TABLE ONLY public.playlists_songs;
-
-
---
--- Name: pub_archive songs; Type: PUBLICATION TABLE; Schema: public; Owner: -
---
-
-ALTER PUBLICATION pub_archive ADD TABLE ONLY public.songs;
-
-
---
--- Name: pub_archive system_settings; Type: PUBLICATION TABLE; Schema: public; Owner: -
---
-
-ALTER PUBLICATION pub_archive ADD TABLE ONLY public.system_settings;
-
-
---
--- Name: pub_archive theme_assets; Type: PUBLICATION TABLE; Schema: public; Owner: -
---
-
-ALTER PUBLICATION pub_archive ADD TABLE ONLY public.theme_assets;
-
-
---
--- Name: pub_archive themes; Type: PUBLICATION TABLE; Schema: public; Owner: -
---
-
-ALTER PUBLICATION pub_archive ADD TABLE ONLY public.themes;
-
-
---
--- Name: pub_archive users; Type: PUBLICATION TABLE; Schema: public; Owner: -
---
-
-ALTER PUBLICATION pub_archive ADD TABLE ONLY public.users;
-
-
---
 -- PostgreSQL database dump complete
 --
-
-\unrestrict j19nerS584W3P6wEcOLC166zeSvg1dGM5sTIkxo7jdOdZaGNHo6qihInq3wggaS
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261126160000'),
 ('20261126150000'),
 ('20261126140000'),
 ('20261126130000'),

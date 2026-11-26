@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Test script for Music Archive API
+# Test script for The Archive API
 # This script demonstrates how to authenticate and upload songs
 
 set -e
@@ -196,7 +196,7 @@ run_tests() {
 
 # Show usage
 show_usage() {
-    echo "Music Archive API Test Script"
+    echo "The Archive API Test Script"
     echo ""
     echo "Usage: $0 [options]"
     echo ""
@@ -205,7 +205,7 @@ show_usage() {
     echo "  -p, --password PASS   Test password (default: password123)"
     echo "  -h, --help            Show this help message"
     echo ""
-    echo "This script tests the Music Archive API endpoints."
+    echo "This script tests the The Archive API endpoints."
 }
 
 # Parse command line arguments

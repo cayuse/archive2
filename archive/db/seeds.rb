@@ -43,7 +43,7 @@ default_theme = Theme.find_or_create_by(name: 'default') do |theme|
 
   # Additional theme properties
   theme.heading_color = '#f8fafc'  # Same as text_primary for consistency
-  theme.card_header_text = 'Music Archive'  # Same as site name for consistency
+  theme.card_header_text = 'The Archive'  # Same as site name for consistency
   theme.css_variables = {}
   theme.custom_css = nil
 end
@@ -52,8 +52,8 @@ puts "Default theme created/updated: #{default_theme.name}"
 
 # Initialize system settings
 SystemSetting.set('current_theme', 'default', 'Currently active theme')
-SystemSetting.set('site_name', 'Music Archive', 'Site name displayed in navigation')
-SystemSetting.set('site_description', 'A comprehensive music archive system', 'Site description for SEO')
+SystemSetting.set('site_name', 'The Archive', 'Site name displayed in navigation')
+SystemSetting.set('site_description', 'A self-hosted music library, jukebox and radio', 'Site description for SEO')
 
 puts "System settings initialized"
 puts "Seeding completed!"

@@ -6,7 +6,7 @@ class UserMailer < ApplicationMailer
 
     mail(
       to: @user.email,
-      subject: "Welcome to Music Archive - Your Account is Ready!"
+      subject: "Welcome to The Archive - your account is ready"
     )
   end
 end

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Music Archive Universal Upload Script with Comprehensive Tracking (Python 3)
+The Archive Universal Upload Script with Comprehensive Tracking (Python 3)
 
 This script is designed to be completely resilient against path and environment issues.
 It works across Linux, Mac, Windows and handles any Unicode characters, spaces, 
@@ -531,7 +531,7 @@ async def upload_files_concurrent(filepaths, api_url, api_key, max_concurrent=5,
     return results
 
 def main():
-    parser = argparse.ArgumentParser(description="Universal upload audio files to Music Archive API with comprehensive tracking.")
+    parser = argparse.ArgumentParser(description="Universal upload audio files to The Archive API with comprehensive tracking.")
     
     # Mode flags
     parser.add_argument('--start-over', action='store_true', 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Music Archive Bulk Upload Script
+# The Archive Bulk Upload Script
 # Usage: ./bulk_upload.sh <directory_path> [api_key]
 
 set -e
@@ -31,7 +31,7 @@ print_status() {
 
 # Function to show usage
 show_usage() {
-    echo "Music Archive Bulk Upload Script"
+    echo "The Archive Bulk Upload Script"
     echo ""
     echo "Usage: $0 <directory_path> [options]"
     echo ""
