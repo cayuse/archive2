@@ -90,7 +90,7 @@ to bigballs, migrations applied, verified healthy). Four slices:
 
 ## UNFINISHED — in rough priority order
 
-### 1. Increment 2 — the durable `Station`: BUILT on branch `feature/station-model` (2026-11-25), NOT deployed
+### 1. DONE — the durable `Station` (deployed 2026-11-25)
 Tested on staging (model tests, the API with two users, both player end-to-end scripts). Deploying
 it is one archive deploy + `db:migrate` (`20261126150000_create_stations`, which converts every
 existing station/radio jukebox and its feedback); the player daemon is unchanged.
