@@ -247,6 +247,7 @@ class Station:
         self.saved_urls = set()
         self.session = {}             # jukebox id + songs handed to OwnTone, kept on disk across restarts
         self.last_tick = time.time()  # for /up: is the loop alive?
+        self.tick_failed = False      # self.error came from a tick that raised
         self.load()
 
     # ---- persistence: the control page remembers which station it last started
@@ -421,6 +422,8 @@ class Station:
 
     def tick(self):
         with self.lock:
+            if self.tick_failed:           # the last tick blew up; if this one gets through, that is over
+                self.error, self.tick_failed = None, False
             a = self.archive.sync(self.acked, self.report()) or {}
             target = a.get("jukebox")
             if (target or {}).get("id") != (self.jukebox or {}).get("id"):
@@ -527,7 +530,7 @@ class Station:
             try:
                 self.tick()
             except Exception as e:
-                self.error = "%s: %s" % (type(e).__name__, e)
+                self.error, self.tick_failed = "%s: %s" % (type(e).__name__, e), True
                 log("tick failed:", self.error)
                 time.sleep(5)
             time.sleep(TICK)

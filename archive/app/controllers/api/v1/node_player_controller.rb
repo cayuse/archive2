@@ -12,8 +12,6 @@ class Api::V1::NodePlayerController < ApplicationController
 
   skip_before_action :verify_authenticity_token
   before_action :authenticate!
-  # The daemon polls every couple of seconds: keep that out of the log.
-  around_action(only: :sync) { |_, action| Rails.logger.silence(Logger::WARN, &action) }
 
   def sync
     node = ArchiveNode.current

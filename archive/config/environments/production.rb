@@ -40,6 +40,8 @@ Rails.application.configure do
 
   # Prevent health checks from clogging up the logs.
   config.silence_healthcheck_path = "/up"
+  # The player daemon polls this every two seconds; like the health check, it stays out of the log.
+  config.middleware.insert_before Rails::Rack::Logger, Rails::Rack::SilenceRequest, path: "/api/v1/node_player/sync"
 
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
