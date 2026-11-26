@@ -1,4 +1,4 @@
-\restrict WIlJnzBI54jiBeJt6mWJ7IPaVEvtfpjv1MhKQE56iB2EPvt0B8XWscfniDOEded
+\restrict ytCRJILNRdvEO15hkWvHOvlrVqnXymYeGC7X8cxoxCUD9rxof4Tkg9kIcOUgT0m
 
 -- Dumped from database version 15.19 (Debian 15.19-1.pgdg13+2)
 -- Dumped by pg_dump version 15.20 (Debian 15.20-0+deb12u1)
@@ -406,6 +406,7 @@ CREATE TABLE public.jukeboxes (
     fill_mode character varying DEFAULT 'random'::character varying NOT NULL,
     radio_settings jsonb DEFAULT '{}'::jsonb NOT NULL,
     admin_password character varying,
+    server_playback boolean DEFAULT false NOT NULL,
     CONSTRAINT check_positive_min_queue_length CHECK ((min_queue_length > 0)),
     CONSTRAINT check_positive_queue_refill_level CHECK ((queue_refill_level > 0))
 );
@@ -2265,11 +2266,12 @@ ALTER PUBLICATION pub_archive ADD TABLE ONLY public.users;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict WIlJnzBI54jiBeJt6mWJ7IPaVEvtfpjv1MhKQE56iB2EPvt0B8XWscfniDOEded
+\unrestrict ytCRJILNRdvEO15hkWvHOvlrVqnXymYeGC7X8cxoxCUD9rxof4Tkg9kIcOUgT0m
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261126130000'),
 ('20261126120100'),
 ('20261126120000'),
 ('20261126000000'),

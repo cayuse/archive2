@@ -112,6 +112,7 @@ Rails.application.routes.draw do
     member do
       get :player
       get :guest
+      patch :server_playback
     end
   end
 

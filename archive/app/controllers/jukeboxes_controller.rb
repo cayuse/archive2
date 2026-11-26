@@ -2,8 +2,8 @@ class JukeboxesController < ApplicationController
   require 'base64'
   before_action :authenticate_user!, except: [:guest, :guest_short]
   before_action :require_host!, except: [:guest, :guest_short]
-  before_action :set_jukebox, only: [:show, :edit, :update, :destroy, :player, :guest]
-  before_action :ensure_owner, only: [:edit, :update, :destroy]
+  before_action :set_jukebox, only: [:show, :edit, :update, :destroy, :player, :guest, :server_playback]
+  before_action :ensure_owner, only: [:edit, :update, :destroy, :server_playback]
 
   def index
     # stations (personal radio) have their own page; this one lists party jukeboxes
@@ -109,6 +109,18 @@ class JukeboxesController < ApplicationController
   # routes — declare them public so Ruby's `private` above never swallows them
   # (Rails raises ActionNotFound for a private method just like a missing one).
   public
+
+  # Toggle whether this jukebox is driven by the node's server-side player task.
+  # Owner-only (ensure_owner) and only where local playback is available to this
+  # user here (authorize_local_playback!).
+  def server_playback
+    authorize_local_playback!
+    return if performed?
+    @jukebox.update(server_playback: ActiveModel::Type::Boolean.new.cast(params[:server_playback]))
+    redirect_to @jukebox, notice: @jukebox.server_playback? ?
+      "This jukebox now plays on the archive's speakers. The player page is a remote control." :
+      "This jukebox now plays in the host's browser."
+  end
 
   # AJB Player and Guest interfaces
   def player

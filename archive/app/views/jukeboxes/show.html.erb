@@ -66,6 +66,25 @@
                   <i class="fas fa-users me-1"></i> Open Guest View
                 <% end %>
               </div>
+
+              <% if local_playback_available? && @jukebox.owner == current_user %>
+                <div class="mt-3 p-3 border rounded">
+                  <%= form_with url: server_playback_jukebox_path(@jukebox), method: :patch, local: true, id: "server-playback-form" do %>
+                    <input type="hidden" name="server_playback" value="0">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" role="switch" id="server_playback"
+                             name="server_playback" value="1" <%= 'checked' if @jukebox.server_playback? %>
+                             onchange="document.getElementById('server-playback-form').submit()">
+                      <label class="form-check-label" for="server_playback">
+                        Play on <strong><%= current_archive.name %></strong>'s speakers (server-side)
+                      </label>
+                    </div>
+                    <p class="text-muted small mb-0 mt-1">
+                      When on, the player page becomes a remote control &mdash; closing it never stops the music.
+                    </p>
+                  <% end %>
+                </div>
+              <% end %>
             </div>
           </div>
 
