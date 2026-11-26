@@ -1,4 +1,6 @@
 class Artist < ApplicationRecord
+  include NaturalId
+  natural_id { musicbrainz_id }   # unique by MusicBrainz id, when it has one
   # Associations
   has_many :songs, dependent: :nullify
   has_many :albums, dependent: :nullify

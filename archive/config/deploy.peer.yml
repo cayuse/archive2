@@ -1,0 +1,100 @@
+# Kamal config for a PEER of The Archive: a second (third, ...) archive that keeps its library,
+# users, playlists and stations in step with the others, both ways. Runbook: docs/PEERS.md.
+#
+# Every peer is a destination with its own overlay, config/deploy.peer.<peer>.yml (hosts, paths,
+# addresses, how it is reached), and its own secrets, ~/.config/archive/peers/<peer>.env:
+#
+#   kamal deploy -c config/deploy.peer.yml -d gameforge
+#
+# Unlike production on bigballs (config/deploy.yml: compose-run Postgres, fixed port, host nginx),
+# a peer runs everything under Kamal: Postgres with pglogical and Redis as accessories, the app
+# behind kamal-proxy (zero-downtime deploys, no fixed-port juggling). How the outside world reaches
+# kamal-proxy (TLS directly, behind another proxy, or plain on the private network) is set per
+# peer: see the overlays and docs/PEERS.md "Reaching a peer".
+service: archive
+image: cayuse/archive
+
+servers:
+  web:
+    hosts: []          # the overlay names the peer's host
+  # The Drop Box worker (rake intake:work); same image, no port.
+  intake:
+    hosts: []
+    cmd: bin/rails intake:work
+    proxy: false
+
+proxy:
+  app_port: 3000
+  healthcheck:
+    path: /up
+    interval: 3
+    timeout: 5
+
+registry:
+  server: ghcr.io
+  username: cayuse
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+builder:
+  arch: amd64
+  context: .
+
+# Peer secrets and hooks are kept apart from production's (.kamal/secrets-common, .kamal/hooks).
+secrets_path: .kamal/peer-secrets
+hooks_path: .kamal/peer-hooks
+
+env:
+  clear:
+    RAILS_ENV: production
+    RAILS_LOG_TO_STDOUT: "true"
+    RAILS_SERVE_STATIC_FILES: "true"
+    REDIS_URL: redis://archive-redis:6379/1
+    INLINE_AUDIO_PROCESSING: "true"
+    USE_SIDEKIQ: "false"
+    INTAKE_ROOT: /rails/intake
+    FORGERY_ORIGIN_CHECK: "true"
+    AWS_SES_SMTP_HOST: email-smtp.us-east-2.amazonaws.com
+    AWS_SES_SMTP_PORT: "587"
+    AWS_SES_SMTP_DOMAIN: cavaforge.net
+    MAILER_FROM_EMAIL: noreply@cavaforge.net
+  secret:
+    - RAILS_MASTER_KEY
+    - SECRET_KEY_BASE      # each peer its own: API tokens and sessions are per peer
+    - DATABASE_URL
+    - MUSICBRAINZ_URL      # may point at another peer's mirror over the private network
+    - AWS_SES_SMTP_USERNAME
+    - AWS_SES_SMTP_PASSWORD
+
+accessories:
+  # Postgres 15 with pglogical (deploy/postgres/Dockerfile, pushed as ghcr.io/cayuse/archive-postgres).
+  # Its port is published on the peer's PRIVATE address only (WireGuard / LAN), for the other peers'
+  # replication connections; the overlay sets it.
+  db:
+    image: ghcr.io/cayuse/archive-postgres:15-pglogical
+    env:
+      clear:
+        POSTGRES_USER: postgres
+        POSTGRES_DB: archive_production
+      secret:
+        - POSTGRES_PASSWORD
+    cmd: >-
+      postgres
+      -c wal_level=logical
+      -c shared_preload_libraries=pglogical
+      -c output_plugin_libraries=pgoutput,test_decoding,pglogical_output
+      -c track_commit_timestamp=on
+      -c pglogical.conflict_resolution=last_update_wins
+      -c max_replication_slots=10
+      -c max_wal_senders=10
+      -c max_worker_processes=20
+      -c max_slot_wal_keep_size=50GB
+    options:
+      shm-size: 256m
+  redis:
+    image: redis:7-alpine
+    cmd: redis-server --appendonly yes
+
+aliases:
+  console: app exec --interactive --reuse "bin/rails console"
+  peer: app exec --reuse "bin/rails peer:status"

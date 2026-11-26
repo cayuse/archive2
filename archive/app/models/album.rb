@@ -1,4 +1,6 @@
 class Album < ApplicationRecord
+  include NaturalId
+  natural_id { musicbrainz_release_id }   # unique by release id, when it has one
   # Associations
   belongs_to :artist, optional: true
   has_many :songs, dependent: :nullify

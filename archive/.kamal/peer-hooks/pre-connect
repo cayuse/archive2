@@ -1,0 +1,9 @@
+#!/bin/sh
+# Refuse to deploy a peer whose secrets would come out empty (Kamal turns a failed $(...) into an
+# empty string without complaint).
+set -e
+peer="${KAMAL_DESTINATION:?deploy a peer with -d <peer>}"
+f="$HOME/.config/archive/peers/$peer.env"
+[ -s "$f" ] || { echo "pre-connect: $f missing (see docs/PEERS.md, step 2)" >&2; exit 1; }
+for v in POSTGRES_PASSWORD SECRET_KEY_BASE MUSICBRAINZ_URL; do .kamal/read-secret "$v" "peers/$peer.env" >/dev/null; done
+for v in RAILS_MASTER_KEY AWS_SES_SMTP_USERNAME AWS_SES_SMTP_PASSWORD; do .kamal/read-secret "$v" >/dev/null; done

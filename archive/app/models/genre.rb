@@ -1,4 +1,6 @@
 class Genre < ApplicationRecord
+  include NaturalId
+  natural_id { name }   # unique by name
   # Associations
   has_many :songs, dependent: :nullify
   has_and_belongs_to_many :artists, join_table: :artists_genres

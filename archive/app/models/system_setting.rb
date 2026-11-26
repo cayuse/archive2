@@ -57,7 +57,8 @@ class SystemSetting < ApplicationRecord
     # Stable identity of this archive node (set by the archive-sync migration,
     # defaults to the host name). Used to find this node's Archive row.
     def archive_node_id
-      get("archive_node_id", Socket.gethostname)
+      # ARCHIVE_NODE_ID (a peer's deploy config) wins; containers get a new hostname every deploy
+      ENV["ARCHIVE_NODE_ID"].presence || get("archive_node_id", Socket.gethostname)
     end
 
     def site_name
