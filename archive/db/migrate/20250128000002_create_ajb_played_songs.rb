@@ -13,12 +13,12 @@ class CreateAjbPlayedSongs < ActiveRecord::Migration[7.0]
     add_index :ajb_played_songs, :jukebox_id
     add_index :ajb_played_songs, :song_id
     add_index :ajb_played_songs, :played_at
-    add_index :ajb_played_songs, [:jukebox_id, :played_at]
-    
+    add_index :ajb_played_songs, [ :jukebox_id, :played_at ]
+
     # Foreign key constraints
     add_foreign_key :ajb_played_songs, :jukeboxes, column: :jukebox_id, on_delete: :cascade
     add_foreign_key :ajb_played_songs, :songs, column: :song_id, on_delete: :cascade
-    
+
     # Check constraints
     add_check_constraint :ajb_played_songs, "source IN ('random', 'requested')", name: "check_valid_source"
   end

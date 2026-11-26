@@ -43,7 +43,7 @@ class AddArchiveSyncSettings < ActiveRecord::Migration[8.0]
         description: 'Destination path for rsync (on slave nodes)'
       }
     ]
-    
+
     settings.each do |setting|
       SystemSetting.find_or_create_by(key: setting[:key]) do |s|
         s.value = setting[:value]
@@ -51,12 +51,12 @@ class AddArchiveSyncSettings < ActiveRecord::Migration[8.0]
       end
     end
   end
-  
+
   def down
     # Remove archive sync settings
     keys_to_remove = [
       'archive_role',
-      'master_archive_url', 
+      'master_archive_url',
       'archive_node_id',
       'sync_enabled',
       'sync_interval',
@@ -64,7 +64,7 @@ class AddArchiveSyncSettings < ActiveRecord::Migration[8.0]
       'rsync_source_path',
       'rsync_dest_path'
     ]
-    
+
     SystemSetting.where(key: keys_to_remove).destroy_all
   end
 end

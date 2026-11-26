@@ -8,11 +8,11 @@ class CreateUsers < ActiveRecord::Migration[8.0]
 
       t.timestamps
     end
-    
+
     # Add indexes for performance and data integrity
     add_index :users, :email, unique: true
     add_index :users, :role
-    
+
     # Add a check constraint to ensure valid role values
     add_check_constraint :users, "role IN (0, 1, 2)", name: "check_valid_role"
   end

@@ -11,7 +11,7 @@ class CreateSyncChanges < ActiveRecord::Migration[8.0]
       t.timestamps
     end
 
-    add_index :sync_changes, [:table_name, :record_id, :created_at]
+    add_index :sync_changes, [ :table_name, :record_id, :created_at ]
     add_index :sync_changes, :created_at
     add_index :sync_changes, :applied_at
   end

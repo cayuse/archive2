@@ -4,57 +4,57 @@ Rails.application.routes.draw do
   # mount Sidekiq::Web => "/sidekiq"
 
   # Mount ActionCable for WebSocket connections
-  mount ActionCable.server => '/cable'
+  mount ActionCable.server => "/cable"
 
-  
+
   # Theme routes (public access for assets, admin for management)
-  get '/themes/:theme.css', to: 'themes#css', as: :theme_css
-  get '/themes/:theme/assets/:asset_type/:filename', to: 'themes#asset', as: :theme_asset
-  
+  get "/themes/:theme.css", to: "themes#css", as: :theme_css
+  get "/themes/:theme/assets/:asset_type/:filename", to: "themes#asset", as: :theme_asset
+
   # Settings routes (admin only)
-  resource :settings, only: [:show, :update] do
+  resource :settings, only: [ :show, :update ] do
     collection do
       get :general
     end
   end
-  
 
-  
 
-  
+
+
+
   # Theme management routes
-  get 'themes', to: 'settings#themes', as: :manage_themes
-  get 'themes/new', to: 'settings#new_theme', as: :new_manage_theme
-  post 'themes', to: 'settings#create_theme'
-  get 'themes/:id', to: 'settings#show_theme', as: :manage_theme
-  get 'themes/:id/edit', to: 'settings#edit_theme', as: :edit_manage_theme
-  patch 'themes/:id', to: 'settings#update_theme'
-  put 'themes/:id', to: 'settings#update_theme'
-  delete 'themes/:id', to: 'settings#destroy_theme'
-  get 'themes/:id/export', to: 'settings#export_theme', as: :export_manage_theme
-  get 'themes/:id/preview', to: 'settings#preview_theme', as: :preview_manage_theme
-  post 'themes/:id/duplicate', to: 'settings#duplicate_theme', as: :duplicate_manage_theme
-  post 'themes/:id/switch', to: 'settings#switch_theme', as: :switch_theme
-  
+  get "themes", to: "settings#themes", as: :manage_themes
+  get "themes/new", to: "settings#new_theme", as: :new_manage_theme
+  post "themes", to: "settings#create_theme"
+  get "themes/:id", to: "settings#show_theme", as: :manage_theme
+  get "themes/:id/edit", to: "settings#edit_theme", as: :edit_manage_theme
+  patch "themes/:id", to: "settings#update_theme"
+  put "themes/:id", to: "settings#update_theme"
+  delete "themes/:id", to: "settings#destroy_theme"
+  get "themes/:id/export", to: "settings#export_theme", as: :export_manage_theme
+  get "themes/:id/preview", to: "settings#preview_theme", as: :preview_manage_theme
+  post "themes/:id/duplicate", to: "settings#duplicate_theme", as: :duplicate_manage_theme
+  post "themes/:id/switch", to: "settings#switch_theme", as: :switch_theme
 
-  
+
+
   # Authentication routes
-  get '/login', to: 'sessions#new', as: :login
-  post '/login', to: 'sessions#create'
-  delete '/logout', to: 'sessions#destroy', as: :logout
-  get '/logout', to: 'sessions#destroy'  # Allow GET for easier logout
-  
+  get "/login", to: "sessions#new", as: :login
+  post "/login", to: "sessions#create"
+  delete "/logout", to: "sessions#destroy", as: :logout
+  get "/logout", to: "sessions#destroy"  # Allow GET for easier logout
+
   # User management routes (admin only)
-  resources :users, except: [:show] do
+  resources :users, except: [ :show ] do
     member do
       post :reset_password
       patch :set_password
     end
   end
-  
+
   # Profile routes (users can edit their own profile)
-  resource :profile, only: [:show, :edit, :update], controller: 'profile'
-  
+  resource :profile, only: [ :show, :edit, :update ], controller: "profile"
+
   # Songs management
   resources :songs do
     collection do
@@ -68,45 +68,45 @@ Rails.application.routes.draw do
       post :play_radio
     end
   end
-  
+
   # Album search for autocomplete
-  get '/albums/search', to: 'albums#search'
-  
+  get "/albums/search", to: "albums#search"
+
   # Artist search for autocomplete
-  get '/artists/search', to: 'artists#search'
-  
+  get "/artists/search", to: "artists#search"
+
   # Genre search for autocomplete
-  get '/genres/search', to: 'genres#search'
-  
+  get "/genres/search", to: "genres#search"
+
   # Artists management
-  resources :artists, only: [:index, :show]
-  
+  resources :artists, only: [ :index, :show ]
+
   # Albums management
-  resources :albums, only: [:index, :show]
-  
+  resources :albums, only: [ :index, :show ]
+
   # Genres management
-  resources :genres, only: [:index, :show]
-  
+  resources :genres, only: [ :index, :show ]
+
   # Playlists management
-  resources :playlists, only: [:index, :show, :create, :update] do
+  resources :playlists, only: [ :index, :show, :create, :update ] do
     member do
       post :reorder
       post :add_songs
       delete :remove_songs
     end
   end
-  
+
   # Jukeboxes management
   # Short, shareable guest-join URL: /j/<slug> resolves the human-friendly
   # session_id slug to the jukebox and serves the guest page. The UUID stays the
   # functional id everywhere; this is just a pretty front door for sharing/QR.
-  get 'j/:code', to: 'jukeboxes#guest_short', as: :short_guest
+  get "j/:code", to: "jukeboxes#guest_short", as: :short_guest
 
   # Public, tokenized single-song play link: /s/<signed-token>. No login — the
   # token is a signed, self-expiring Rails signed_id (purpose: :play) minted on
   # the song show page. Streams the audio inline (plays in-browser) and is also
   # the URL a standalone player/device can stream. See PublicSongsController.
-  get 's/:token', to: 'public_songs#play', as: :public_song
+  get "s/:token", to: "public_songs#play", as: :public_song
 
   resources :jukeboxes do
     member do
@@ -117,27 +117,27 @@ Rails.application.routes.draw do
   end
 
   # A user's radio stations (jukeboxes on radio auto-fill) and the tuning page for one.
-  resources :stations, only: [:index, :show]
+  resources :stations, only: [ :index, :show ]
 
   # Admin: this archive node's local-playback settings and its player daemon
-  resource :archive_node, only: [:show, :update] do
+  resource :archive_node, only: [ :show, :update ] do
     post :regenerate_token
   end
-  
+
   # Upload interface
-  resource :upload, only: [:show, :create], controller: 'upload'
-  
+  resource :upload, only: [ :show, :create ], controller: "upload"
+
   # API routes
   namespace :api do
     namespace :v1 do
-      resources :songs, only: [:show] do
+      resources :songs, only: [ :show ] do
         member do
           get :download
           get :stream
         end
       end
-      
-      resources :jukeboxes, only: [:index] do
+
+      resources :jukeboxes, only: [ :index ] do
         collection do
           post :station
           get :stations
@@ -152,8 +152,8 @@ Rails.application.routes.draw do
           post :feedback
           get :tuning
           post :seeds, action: :add_seed
-          delete 'seeds/:song_id', action: :remove_seed
-          post 'artists/:artist_id/keep', action: :keep_artist
+          delete "seeds/:song_id", action: :remove_seed
+          post "artists/:artist_id/keep", action: :keep_artist
           get :status
           get :queue
           get :current_song
@@ -161,10 +161,10 @@ Rails.application.routes.draw do
           get :playback_info
           get :history
           post :queue, action: :add_to_queue
-          delete 'queue/:song_id', action: :remove_from_queue
-          patch 'queue/:song_id', action: :move_in_queue
-          patch 'queue/:song_id/promote', action: :promote_in_queue
-          patch 'queue/:song_id/play_next', action: :play_next_in_queue
+          delete "queue/:song_id", action: :remove_from_queue
+          patch "queue/:song_id", action: :move_in_queue
+          patch "queue/:song_id/promote", action: :promote_in_queue
+          patch "queue/:song_id/play_next", action: :play_next_in_queue
           post :playback_status
           post :transport
           post :server_playback
@@ -172,29 +172,29 @@ Rails.application.routes.draw do
       end
 
       # This node's player daemon (and the volume / speaker controls of the remote page)
-      post 'node_player/sync', to: 'node_player#sync'
-      post 'node_player/command', to: 'node_player#command'
-      
+      post "node_player/sync", to: "node_player#sync"
+      post "node_player/command", to: "node_player#command"
+
       # Guest access routes (read-only, password-protected)
-      scope 'guest/:jukebox_id' do
-        get 'test', to: 'guest#test'
-        get 'status', to: 'guest#status'
-        get 'current_song', to: 'guest#current_song'
-        get 'queue', to: 'guest#queue'
-        get 'playback_info', to: 'guest#playback_info'
-        get 'history', to: 'guest#history'
-        get 'search_songs', to: 'guest#search_songs'
-        post 'request_song', to: 'guest#request_song'
-        post 'promote_song', to: 'guest#promote_song'
+      scope "guest/:jukebox_id" do
+        get "test", to: "guest#test"
+        get "status", to: "guest#status"
+        get "current_song", to: "guest#current_song"
+        get "queue", to: "guest#queue"
+        get "playback_info", to: "guest#playback_info"
+        get "history", to: "guest#history"
+        get "search_songs", to: "guest#search_songs"
+        post "request_song", to: "guest#request_song"
+        post "promote_song", to: "guest#promote_song"
         # Admin-code guests only
-        delete 'queue/:song_id', to: 'guest#remove_song'
-        post 'player_command', to: 'guest#player_command'
+        delete "queue/:song_id", to: "guest#remove_song"
+        post "player_command", to: "guest#player_command"
       end
     end
   end
-  
+
   # Bulk operations (moderator/admin only)
-  get 'bulk_operations', to: 'bulk_operations#index', as: :bulk_operations_page
+  get "bulk_operations", to: "bulk_operations#index", as: :bulk_operations_page
   resource :bulk_operations, only: [] do
     collection do
       post :upload_csv
@@ -202,20 +202,20 @@ Rails.application.routes.draw do
       post :bulk_delete
     end
   end
-  
+
   # API Routes for external access and bulk operations
   namespace :api do
     namespace :v1 do
       # Authentication for API
-      post '/auth/login', to: 'auth#login'
-      post '/auth/logout', to: 'auth#logout'
-      post '/auth/refresh', to: 'auth#refresh'
-      get '/auth/verify', to: 'auth#verify'
-      
+      post "/auth/login", to: "auth#login"
+      post "/auth/logout", to: "auth#logout"
+      post "/auth/refresh", to: "auth#refresh"
+      get "/auth/verify", to: "auth#verify"
 
-      
+
+
       # Songs: list, search, radio, thumbs, and upload (moderator / admin)
-      resources :songs, only: [:index, :show] do
+      resources :songs, only: [ :index, :show ] do
         member do
           get :radio
           post :rate
@@ -226,7 +226,7 @@ Rails.application.routes.draw do
       end
 
       # Playlist operations (for music player integration)
-      resources :playlists, only: [:index, :show, :create, :update, :destroy] do
+      resources :playlists, only: [ :index, :show, :create, :update, :destroy ] do
         member do
           post :add_song
           post :add_songs
@@ -234,17 +234,17 @@ Rails.application.routes.draw do
           put :reorder_songs
         end
       end
-      
+
       # Audio file streaming (for music player)
-      resources :audio_files, only: [:show] do
+      resources :audio_files, only: [ :show ] do
         member do
           get :stream
           get :download
         end
       end
-      
+
       # Health check for load balancers
-      get '/health', to: 'health#show'
+      get "/health", to: "health#show"
     end
   end
 

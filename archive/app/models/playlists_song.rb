@@ -10,22 +10,22 @@ class PlaylistsSong < ApplicationRecord
 
   # Scopes
   scope :ordered, -> { order(:position) }
-  
+
   # Callbacks
   after_save :renumber_playlist, if: :saved_change_to_position?
   after_destroy :renumber_playlist
-  
+
   # Instance methods
   def reorder_to_position(new_position)
     return if new_position == position
-    
+
     # Get all songs in this playlist (excluding current song using composite key)
     # Use explicit SQL to avoid UUID association issues
     playlist_items = PlaylistsSong.where(playlist_id: playlist_id).where.not(
-      playlist_id: playlist_id, 
+      playlist_id: playlist_id,
       song_id: song_id
     ).ordered
-    
+
     if new_position > position
       # Moving down - shift items between old and new position up
       playlist_items.where("position > ? AND position <= ?", position, new_position)
@@ -35,14 +35,14 @@ class PlaylistsSong < ApplicationRecord
       playlist_items.where("position >= ? AND position < ?", new_position, position)
                    .update_all("position = position + 1")
     end
-    
+
     # Use raw SQL to avoid primary key issues
     PlaylistsSong.where(playlist_id: playlist_id, song_id: song_id)
                  .update_all(position: new_position)
   end
-  
+
   private
-  
+
   def renumber_playlist
     # Renumber all songs in the playlist to ensure sequential ordering
     # Since this table has no primary key, we need to use a more explicit approach
@@ -56,4 +56,4 @@ class PlaylistsSong < ApplicationRecord
       end
     end
   end
-end 
+end

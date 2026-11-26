@@ -9,7 +9,7 @@ class CreateJukeboxKeys < ActiveRecord::Migration[8.0]
 
       t.timestamps
     end
-    
+
     add_index :jukebox_keys, :key_hash
   end
 end

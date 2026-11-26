@@ -5,10 +5,10 @@ module PunditAuthorization
 
   included do
     include Pundit::Authorization
-    
+
     # Rescue from Pundit::NotAuthorizedError
     rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
-    
+
     # Add helper methods for common authorization checks
     helper_method :can_manage_content?
     helper_method :can_manage_users?
@@ -56,4 +56,4 @@ module PunditAuthorization
       redirect_back(fallback_location: root_path)
     end
   end
-end 
+end

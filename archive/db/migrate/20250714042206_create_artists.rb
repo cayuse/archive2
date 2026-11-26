@@ -10,12 +10,12 @@ class CreateArtists < ActiveRecord::Migration[8.0]
 
       t.timestamps
     end
-    
+
     # Add indexes for performance and data integrity
     add_index :artists, :name, unique: true
     add_index :artists, :country
     add_index :artists, :formed_year
-    
+
     # Add check constraint for reasonable formed year
     add_check_constraint :artists, "formed_year IS NULL OR (formed_year >= 1900 AND formed_year <= 2030)", name: "check_reasonable_formed_year"
   end

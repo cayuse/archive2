@@ -9,7 +9,7 @@ class CreateSlaveKeys < ActiveRecord::Migration[8.0]
 
       t.timestamps
     end
-    
+
     add_index :slave_keys, :node_id, unique: true
     add_index :slave_keys, :key_hash
   end

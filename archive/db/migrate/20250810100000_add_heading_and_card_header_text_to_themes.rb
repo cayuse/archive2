@@ -4,5 +4,3 @@ class AddHeadingAndCardHeaderTextToThemes < ActiveRecord::Migration[8.0]
     add_column :themes, :card_header_text, :string
   end
 end
-
-

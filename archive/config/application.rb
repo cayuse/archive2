@@ -25,7 +25,7 @@ module Archive
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
-    
+
     # The schema uses triggers and extensions that schema.rb can't express, so
     # db/structure.sql is the source of truth (database.yml's schema_format key
     # is not read by Rails 8.0).

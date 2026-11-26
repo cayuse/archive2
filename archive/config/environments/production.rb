@@ -61,7 +61,7 @@ Rails.application.configure do
   app_host = ENV.fetch("APP_HOST", "musicarchive.com")
   app_proto = ENV.fetch("APP_PROTOCOL", config.force_ssl || config.assume_ssl ? "https" : "http")
   config.action_mailer.default_url_options = { host: app_host, protocol: app_proto }
-  
+
   # Set default URL options for Active Storage
   config.active_storage.default_url_options = { host: app_host, protocol: app_proto }
 

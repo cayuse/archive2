@@ -17,7 +17,7 @@ default_theme = Theme.find_or_create_by(name: 'default') do |theme|
   theme.version = '1.0.0'
   theme.is_active = true
   theme.is_default = true
-  
+
   # Complete color palette (21 colors)
   theme.primary_bg = '#0f0f23'
   theme.secondary_bg = '#1a1a2e'
@@ -40,7 +40,7 @@ default_theme = Theme.find_or_create_by(name: 'default') do |theme|
   theme.highlight_color = '#3b82f6'
   theme.link_color = '#60a5fa'
   theme.link_hover = '#93c5fd'
-  
+
   # Additional theme properties
   theme.heading_color = '#f8fafc'  # Same as text_primary for consistency
   theme.card_header_text = 'Music Archive'  # Same as site name for consistency

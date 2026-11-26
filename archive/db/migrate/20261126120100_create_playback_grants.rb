@@ -8,6 +8,6 @@ class CreatePlaybackGrants < ActiveRecord::Migration[8.0]
       t.references :archive_node, null: false, foreign_key: { on_delete: :cascade }, type: :uuid
       t.timestamps
     end
-    add_index :playback_grants, [:user_id, :archive_node_id], unique: true
+    add_index :playback_grants, [ :user_id, :archive_node_id ], unique: true
   end
 end

@@ -1,6 +1,6 @@
 class JukeboxPlaylistAssignment < ApplicationRecord
-  self.table_name = 'jukebox_playlist_assignments'
-  
+  self.table_name = "jukebox_playlist_assignments"
+
   belongs_to :jukebox
   belongs_to :playlist
 

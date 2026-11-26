@@ -17,73 +17,63 @@ class SystemSetting < ApplicationRecord
     end
 
     def current_theme
-      get('current_theme', 'default')
+      get("current_theme", "default")
     end
 
     def set_current_theme(theme_name)
-      set('current_theme', theme_name, 'Currently active theme')
+      set("current_theme", theme_name, "Currently active theme")
     end
 
     def available_themes
       # Discover themes from filesystem and cache in database
       discovered_themes = discover_themes_from_filesystem
-      cached_themes = get('available_themes', 'default')
-      
+      cached_themes = get("available_themes", "default")
+
       # Update cache if themes have changed
-      if discovered_themes.sort != cached_themes.split(',').sort
-        set('available_themes', discovered_themes.join(','), 'List of available themes')
+      if discovered_themes.sort != cached_themes.split(",").sort
+        set("available_themes", discovered_themes.join(","), "List of available themes")
       end
-      
+
       discovered_themes
     end
 
     def discover_themes_from_filesystem
-      themes_dir = Rails.root.join('app', 'assets', 'stylesheets', 'themes')
-      return ['default'] unless Dir.exist?(themes_dir)
+      themes_dir = Rails.root.join("app", "assets", "stylesheets", "themes")
+      return [ "default" ] unless Dir.exist?(themes_dir)
 
       themes = Dir.entries(themes_dir).select do |entry|
-        next if entry.start_with?('.')
-        theme_css_path = File.join(themes_dir, entry, 'theme.css')
+        next if entry.start_with?(".")
+        theme_css_path = File.join(themes_dir, entry, "theme.css")
         File.exist?(theme_css_path)
       end
-      
-      themes.empty? ? ['default'] : themes
+
+      themes.empty? ? [ "default" ] : themes
     end
 
     def set_available_themes(themes)
-      set('available_themes', themes.join(','), 'List of available themes')
+      set("available_themes", themes.join(","), "List of available themes")
     end
 
     # Stable identity of this archive node (set by the archive-sync migration,
     # defaults to the host name). Used to find this node's Archive row.
     def archive_node_id
-      get('archive_node_id', Socket.gethostname)
+      get("archive_node_id", Socket.gethostname)
     end
 
     def site_name
-      get('site_name', 'Music Archive')
+      get("site_name", "Music Archive")
     end
 
     def set_site_name(name)
-      set('site_name', name, 'Site name displayed in navigation')
+      set("site_name", name, "Site name displayed in navigation")
     end
 
     def site_description
-      get('site_description', 'A comprehensive music archive system')
+      get("site_description", "A comprehensive music archive system")
     end
 
     def set_site_description(description)
-      set('site_description', description, 'Site description for SEO')
+      set("site_description", description, "Site description for SEO")
     end
-    
-
-    
-
-
-
-    
-
-
-
   end
 end

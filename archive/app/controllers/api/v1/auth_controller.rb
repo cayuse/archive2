@@ -1,6 +1,6 @@
 class Api::V1::AuthController < ApplicationController
   skip_before_action :verify_authenticity_token
-  before_action :authenticate_api_user!, only: [:verify, :logout, :refresh]
+  before_action :authenticate_api_user!, only: [ :verify, :logout, :refresh ]
 
   # Clients may ask for a longer-lived token (mobile apps); capped so a
   # leaked token still ages out.
@@ -9,12 +9,12 @@ class Api::V1::AuthController < ApplicationController
 
   def login
     user = User.find_by(email: params[:email])
-    
+
     if user&.authenticate(params[:password])
       # Generate API token
       ttl = requested_token_ttl
       api_token = generate_api_token(user, ttl: ttl)
-      
+
       render json: {
         success: true,
         message: "Authentication successful",
@@ -80,7 +80,7 @@ class Api::V1::AuthController < ApplicationController
   def requested_token_ttl
     requested = params[:expires_in].to_i
     return DEFAULT_TOKEN_TTL if requested <= 0
-    [requested.seconds, MAX_TOKEN_TTL].min
+    [ requested.seconds, MAX_TOKEN_TTL ].min
   end
 
   def generate_api_token(user, ttl: DEFAULT_TOKEN_TTL)
@@ -91,21 +91,21 @@ class Api::V1::AuthController < ApplicationController
       role: user.role,
       exp: ttl.from_now.to_i,
       iat: Time.current.to_i,
-      iss: 'archive-api'
+      iss: "archive-api"
     }
-    
+
     # Convert to JSON and encrypt with Rails secret key
     json_payload = payload.to_json
     encryptor = ActiveSupport::MessageEncryptor.new(Rails.application.secret_key_base[0, 32])
     encrypted_token = encryptor.encrypt_and_sign(json_payload)
-    
+
     # Base64 encode for URL safety
     Base64.urlsafe_encode64(encrypted_token)
   end
 
   def authenticate_api_user!
     token = extract_token_from_header
-    
+
     if token.blank?
       render json: { success: false, message: "Missing API token" }, status: :unauthorized
       return
@@ -114,41 +114,41 @@ class Api::V1::AuthController < ApplicationController
     begin
       # Decode from Base64
       decoded_token = Base64.urlsafe_decode64(token)
-      
+
       # Decrypt with Rails secret key
       encryptor = ActiveSupport::MessageEncryptor.new(Rails.application.secret_key_base[0, 32])
       decrypted_payload = encryptor.decrypt_and_verify(decoded_token)
-      
+
       # Parse JSON payload
       payload = JSON.parse(decrypted_payload)
-      
+
       # Check if token is expired
-      if payload['exp'] && Time.current.to_i > payload['exp']
+      if payload["exp"] && Time.current.to_i > payload["exp"]
         render json: { success: false, message: "API token expired" }, status: :unauthorized
         return
       end
-      
+
       # Find the user
-      @current_api_user = User.find(payload['user_id'])
-      
+      @current_api_user = User.find(payload["user_id"])
+
       unless @current_api_user
         render json: { success: false, message: "Invalid API token" }, status: :unauthorized
-        return
+        nil
       end
-      
+
     rescue => e
       Rails.logger.error "Token decryption error: #{e.message}"
       render json: { success: false, message: "Invalid API token" }, status: :unauthorized
-      return
+      nil
     end
   end
 
   def extract_token_from_header
-    auth_header = request.headers['Authorization']
+    auth_header = request.headers["Authorization"]
     return nil unless auth_header
-    
+
     # Extract token from "Bearer <token>" format
-    token = auth_header.gsub(/^Bearer\s+/, '')
+    token = auth_header.gsub(/^Bearer\s+/, "")
     token.presence
   end
-end 
+end

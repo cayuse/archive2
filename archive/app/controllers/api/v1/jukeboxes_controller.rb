@@ -4,8 +4,8 @@ class Api::V1::JukeboxesController < ApplicationController
 
   skip_before_action :verify_authenticity_token
   before_action :authenticate_api_user!
-  before_action :set_jukebox, only: [:status, :queue, :current_song, :playback_info, :history, :add_to_queue, :remove_from_queue, :move_in_queue, :promote_in_queue, :play_next_in_queue, :playback_status, :next_song, :radio_settings, :feedback, :tuning, :add_seed, :remove_seed, :keep_artist, :rename_station, :destroy_station, :share_station, :transport, :server_playback]
-  before_action :require_person!, only: [:index, :stations, :station, :shared_stations, :copy_station, :server_playback]
+  before_action :set_jukebox, only: [ :status, :queue, :current_song, :playback_info, :history, :add_to_queue, :remove_from_queue, :move_in_queue, :promote_in_queue, :play_next_in_queue, :playback_status, :next_song, :radio_settings, :feedback, :tuning, :add_seed, :remove_seed, :keep_artist, :rename_station, :destroy_station, :share_station, :transport, :server_playback ]
+  before_action :require_person!, only: [ :index, :stations, :station, :shared_stations, :copy_station, :server_playback ]
 
   # List the authenticated user's own jukeboxes so player clients can offer
   # a picker instead of needing a pasted UUID.
@@ -76,7 +76,7 @@ class Api::V1::JukeboxesController < ApplicationController
     queue_items = @jukebox.ajb_queue_items
                           .includes(:song, :jukebox)
                           .queue_order
-    
+
     render json: {
       success: true,
       queue: queue_items.map do |item|
@@ -105,7 +105,7 @@ class Api::V1::JukeboxesController < ApplicationController
                            .includes(:song)
                            .queue_order
                            .first
-    
+
     if current_item
       render json: {
         success: true,
@@ -158,7 +158,7 @@ class Api::V1::JukeboxesController < ApplicationController
     broadcast_queue_update(jukebox) if song
     render json: { success: true, jukebox: station_json(jukebox) }
   rescue ActiveRecord::RecordNotFound
-    render json: { success: false, message: 'Song, playlist or station not found' }, status: 404
+    render json: { success: false, message: "Song, playlist or station not found" }, status: 404
   rescue Jukebox::TooManyStations => e
     render json: { success: false, message: e.message }, status: 422
   end
@@ -195,14 +195,14 @@ class Api::V1::JukeboxesController < ApplicationController
     jukebox = source.copy_for!(@current_api_user, name: params[:name]).runtime!
     render json: { success: true, jukebox: station_json(jukebox) }
   rescue ActiveRecord::RecordNotFound
-    render json: { success: false, message: 'Station not found or not shared' }, status: 404
+    render json: { success: false, message: "Station not found or not shared" }, status: 404
   rescue Station::TooMany => e
     render json: { success: false, message: e.message }, status: 422
   end
 
   # PATCH /api/v1/jukeboxes/:id/station   name=
   def rename_station
-    return render json: { success: false, message: 'Not a station' }, status: 422 unless @jukebox.station?
+    return render json: { success: false, message: "Not a station" }, status: 422 unless @jukebox.station?
     @jukebox.radio_station.rename!(params[:name])
     render json: { success: true, jukebox: station_json(@jukebox.reload) }
   rescue ActiveRecord::RecordInvalid => e
@@ -212,7 +212,7 @@ class Api::V1::JukeboxesController < ApplicationController
   # PATCH /api/v1/jukeboxes/:id/share   shared=true|false
   # Let other people see this station and copy it.
   def share_station
-    return render json: { success: false, message: 'Not a station' }, status: 422 unless @jukebox.station?
+    return render json: { success: false, message: "Not a station" }, status: 422 unless @jukebox.station?
     @jukebox.radio_station.update!(shared: ActiveModel::Type::Boolean.new.cast(params[:shared]) == true)
     render json: { success: true, jukebox: station_json(@jukebox) }
   end
@@ -222,7 +222,7 @@ class Api::V1::JukeboxesController < ApplicationController
   # station ("My Station") cannot be removed.
   def destroy_station
     if !@jukebox.station? || @jukebox.station.nil? || @jukebox.station.permanent?
-      return render json: { success: false, message: 'This station cannot be removed' }, status: 422
+      return render json: { success: false, message: "This station cannot be removed" }, status: 422
     end
     @jukebox.station.remove!
     render json: { success: true }
@@ -245,13 +245,13 @@ class Api::V1::JukeboxesController < ApplicationController
     kind = params[:kind].to_s
     standing = StationFeedback.record!(user: @current_api_user, station: @jukebox.radio_station, song: song, kind: kind, position: params[:position])
     if kind.in?(%w[down tired never])
-      @jukebox.ajb_queue_items.where(song_id: song.id, source: 'random').delete_all
+      @jukebox.ajb_queue_items.where(song_id: song.id, source: "random").delete_all
       @jukebox.retune!
       broadcast_queue_update(@jukebox)
     end
     render json: { success: true, song_id: song.id, standing: standing }
   rescue ActiveRecord::RecordNotFound
-    render json: { success: false, message: 'Song not found' }, status: 404
+    render json: { success: false, message: "Song not found" }, status: 404
   rescue ArgumentError => e
     render json: { success: false, message: e.message }, status: 422
   end
@@ -268,7 +268,7 @@ class Api::V1::JukeboxesController < ApplicationController
     broadcast_queue_update(@jukebox)
     render json: { success: true, jukebox: station_json(@jukebox) }
   rescue ActiveRecord::RecordNotFound
-    render json: { success: false, message: 'Song not found' }, status: 404
+    render json: { success: false, message: "Song not found" }, status: 404
   end
 
   # DELETE /api/v1/jukeboxes/:id/seeds/:song_id
@@ -287,13 +287,13 @@ class Api::V1::JukeboxesController < ApplicationController
 
   def add_to_queue
     song = Song.find(params[:song_id])
-    source = params[:source].presence_in(%w[requested random]) || 'requested'
+    source = params[:source].presence_in(%w[requested random]) || "requested"
 
     if @jukebox.ajb_queue_items.exists?(song_id: song.id)
-      return render json: { success: false, message: 'Song is already in the queue' }, status: 409
+      return render json: { success: false, message: "Song is already in the queue" }, status: 409
     end
 
-    @jukebox.retune! if source == 'requested' && @jukebox.requests_steer?   # the request re-aims the station
+    @jukebox.retune! if source == "requested" && @jukebox.requests_steer?   # the request re-aims the station
     queue_item = @jukebox.ajb_queue_items.create!(song: song, source: source)
     broadcast_queue_update(@jukebox)
 
@@ -314,66 +314,66 @@ class Api::V1::JukeboxesController < ApplicationController
       }
     }
   rescue ActiveRecord::RecordNotFound
-    render json: { success: false, message: 'Song not found' }, status: 404
+    render json: { success: false, message: "Song not found" }, status: 404
   rescue ActiveRecord::RecordInvalid => e
-    render json: { success: false, message: 'Could not add song to queue', errors: e.record.errors.full_messages }, status: 422
+    render json: { success: false, message: "Could not add song to queue", errors: e.record.errors.full_messages }, status: 422
   end
 
   def remove_from_queue
     queue_item = @jukebox.ajb_queue_items.find_by(song_id: params[:song_id])
-    
+
     if queue_item
       queue_item.destroy
       broadcast_queue_update(@jukebox)
-      render json: { success: true, message: 'Song removed from queue' }
+      render json: { success: true, message: "Song removed from queue" }
     else
-      render json: { success: false, message: 'Song not found in queue' }, status: 404
+      render json: { success: false, message: "Song not found in queue" }, status: 404
     end
   end
 
   def move_in_queue
     queue_item = @jukebox.ajb_queue_items.find_by(song_id: params[:song_id])
-    return render json: { success: false, message: 'Song not found in queue' }, status: 404 unless queue_item
+    return render json: { success: false, message: "Song not found in queue" }, status: 404 unless queue_item
 
     new_position = params[:position].to_i
     if new_position <= 0
-      return render json: { success: false, message: 'Position must be a positive number' }, status: 422
+      return render json: { success: false, message: "Position must be a positive number" }, status: 422
     end
 
     queue_item.update!(position: new_position)
     broadcast_queue_update(@jukebox)
-    render json: { success: true, message: 'Song moved in queue' }
+    render json: { success: true, message: "Song moved in queue" }
   rescue ActiveRecord::RecordInvalid => e
-    render json: { success: false, message: 'Could not move song', errors: e.record.errors.full_messages }, status: 422
+    render json: { success: false, message: "Could not move song", errors: e.record.errors.full_messages }, status: 422
   end
 
   # Promote a random (auto-filled) item into the requested queue so it jumps
   # ahead of the remaining random songs.
   def promote_in_queue
     queue_item = @jukebox.ajb_queue_items.find_by(song_id: params[:song_id])
-    return render json: { success: false, message: 'Song not found in queue' }, status: 404 unless queue_item
+    return render json: { success: false, message: "Song not found in queue" }, status: 404 unless queue_item
 
-    queue_item.update!(source: 'requested')
+    queue_item.update!(source: "requested")
     broadcast_queue_update(@jukebox)
-    render json: { success: true, message: 'Song promoted to the request queue' }
+    render json: { success: true, message: "Song promoted to the request queue" }
   rescue ActiveRecord::RecordInvalid => e
-    render json: { success: false, message: 'Could not promote song', errors: e.record.errors.full_messages }, status: 422
+    render json: { success: false, message: "Could not promote song", errors: e.record.errors.full_messages }, status: 422
   end
 
   # Host party trick: bump a song to the very top so it plays next. Make it a
   # requested item at position 1, shifting everything else down, atomically.
   def play_next_in_queue
     queue_item = @jukebox.ajb_queue_items.find_by(song_id: params[:song_id])
-    return render json: { success: false, message: 'Song not found in queue' }, status: 404 unless queue_item
+    return render json: { success: false, message: "Song not found in queue" }, status: 404 unless queue_item
 
     @jukebox.with_lock do
-      @jukebox.ajb_queue_items.where.not(id: queue_item.id).update_all('position = position + 1')
-      queue_item.update!(source: 'requested', position: 1)
+      @jukebox.ajb_queue_items.where.not(id: queue_item.id).update_all("position = position + 1")
+      queue_item.update!(source: "requested", position: 1)
     end
     broadcast_queue_update(@jukebox)
-    render json: { success: true, message: 'Song will play next' }
+    render json: { success: true, message: "Song will play next" }
   rescue ActiveRecord::RecordInvalid => e
-    render json: { success: false, message: 'Could not move song', errors: e.record.errors.full_messages }, status: 422
+    render json: { success: false, message: "Could not move song", errors: e.record.errors.full_messages }, status: 422
   end
 
   # POST /api/v1/jukeboxes/:id/server_playback   on=true|false, [transport=play|pause|stop], [fresh=true]
@@ -381,7 +381,7 @@ class Api::V1::JukeboxesController < ApplicationController
   def server_playback
     node = ArchiveNode.current
     unless node.local_playback? && @current_api_user.can_play_on?(node)
-      return render json: { success: false, message: 'Local playback is not available to you here.' }, status: 403
+      return render json: { success: false, message: "Local playback is not available to you here." }, status: 403
     end
     bool = ActiveModel::Type::Boolean.new
     if bool.cast(params[:on])
@@ -407,7 +407,7 @@ class Api::V1::JukeboxesController < ApplicationController
     # A server-played jukebox is the daemon's to report on. A browser player that has not yet
     # noticed the switch is told so here, and what it reports is ignored.
     if @jukebox.server_playback? && !@node_player
-      return render json: { success: true, server_playback: true, message: 'Playing on the archive\'s speakers' }
+      return render json: { success: true, server_playback: true, message: "Playing on the archive's speakers" }
     end
 
     # Update jukebox with current playback status (with safe defaults)
@@ -419,7 +419,7 @@ class Api::V1::JukeboxesController < ApplicationController
     if params[:current_song_id].present? && Song.exists?(id: params[:current_song_id].to_s)
       update_params[:current_song_id] = params[:current_song_id].to_s
       update_params[:current_position] = params[:position].to_f if params[:position].present?
-      update_params[:is_playing] = params[:is_playing] if params[:is_playing].in?([true, false])
+      update_params[:is_playing] = params[:is_playing] if params[:is_playing].in?([ true, false ])
     end
     update_params[:volume] = params[:volume].to_f if params[:volume].present?
     # Don't update crossfade_duration unless explicitly provided - it has validation requirements
@@ -441,11 +441,11 @@ class Api::V1::JukeboxesController < ApplicationController
       # Push the new now-playing state to subscribed guests.
       broadcast_playback_update(@jukebox)
 
-      render json: { success: true, server_playback: @jukebox.server_playback?, message: 'Playback status updated' }
+      render json: { success: true, server_playback: @jukebox.server_playback?, message: "Playback status updated" }
     rescue ActiveRecord::RecordInvalid => e
       Rails.logger.error "Playback status update failed: #{e.message}"
       Rails.logger.error "Validation errors: #{@jukebox.errors.full_messages}"
-      render json: { success: false, message: 'Invalid playback status data', errors: @jukebox.errors.full_messages }, status: 422
+      render json: { success: false, message: "Invalid playback status data", errors: @jukebox.errors.full_messages }, status: 422
     end
   end
 
@@ -498,10 +498,10 @@ class Api::V1::JukeboxesController < ApplicationController
     current = @jukebox.ajb_queue_items.count
     return if current >= min_len
 
-    need = [target - current, 0].max
+    need = [ target - current, 0 ].max
     return if need <= 0
 
-    if @jukebox.fill_mode == 'radio'
+    if @jukebox.fill_mode == "radio"
       need -= add_radio_songs!(need)
       return if need <= 0
     end
@@ -511,7 +511,7 @@ class Api::V1::JukeboxesController < ApplicationController
                            .enabled
                            .includes(:playlist)
                            .map(&:playlist_id)
-    
+
     # If no playlists are assigned, don't add any random songs
     if playlist_ids.empty?
       Rails.logger.warn "No playlists assigned to jukebox #{@jukebox.id} - cannot add random songs"
@@ -520,7 +520,7 @@ class Api::V1::JukeboxesController < ApplicationController
 
     # Get songs from assigned playlists only
     playlist_song_ids = PlaylistsSong.where(playlist_id: playlist_ids).pluck(:song_id)
-    
+
     if playlist_song_ids.empty?
       Rails.logger.warn "Assigned playlists contain no songs for jukebox #{@jukebox.id} - cannot add random songs"
       return
@@ -531,25 +531,25 @@ class Api::V1::JukeboxesController < ApplicationController
                          .recent(50)
                          .pluck(:song_id)
     queued_ids = @jukebox.ajb_queue_items.pluck(:song_id)
-    
+
     # Get songs that have audio files attached
     attached_ids = ActiveStorage::Attachment
-                   .where(record_type: 'Song', name: 'audio_file')
+                   .where(record_type: "Song", name: "audio_file")
                    .pluck(:record_id)
-    
+
     # First try: songs from assigned playlists that haven't been played recently and aren't already queued
     available_songs = Song.joins(:audio_file_attachment)
                           .where(id: attached_ids)
                           .where(id: playlist_song_ids)
                           .where.not(id: recent_ids + queued_ids)
-                          .order('RANDOM()')
+                          .order("RANDOM()")
                           .limit(need)
-    
+
     added = 0
     available_songs.pluck(:id).each do |song_id|
       @jukebox.ajb_queue_items.create!(
         song_id: song_id,
-        source: 'random'
+        source: "random"
       )
       added += 1
     end
@@ -558,19 +558,19 @@ class Api::V1::JukeboxesController < ApplicationController
     remaining = need - added
     if remaining > 0
       Rails.logger.info "Adding #{remaining} repeated songs from assigned playlists for jukebox #{@jukebox.id} to meet minimum queue length"
-      
+
       # Get all songs from assigned playlists (including repeats)
       repeat_songs = Song.joins(:audio_file_attachment)
                          .where(id: attached_ids)
                          .where(id: playlist_song_ids)
                          .where.not(id: queued_ids) # Still exclude already queued
-                         .order('RANDOM()')
+                         .order("RANDOM()")
                          .limit(remaining)
-      
+
       repeat_songs.pluck(:id).each do |song_id|
         @jukebox.ajb_queue_items.create!(
           song_id: song_id,
-          source: 'random'
+          source: "random"
         )
         added += 1
       end
@@ -595,7 +595,7 @@ class Api::V1::JukeboxesController < ApplicationController
       radio = SongRadio.for_jukebox(@jukebox, genre_mode: mode, exclude_ids: exclude)
       break unless radio   # nothing to start from yet (a brand new station): see the last resort below
       radio.next_songs(need - added).each do |song|
-        next unless @jukebox.ajb_queue_items.create(song_id: song.id, source: 'random').persisted?
+        next unless @jukebox.ajb_queue_items.create(song_id: song.id, source: "random").persisted?
         added += 1
         exclude << song.id
       end
@@ -609,7 +609,7 @@ class Api::V1::JukeboxesController < ApplicationController
       pool = Song.joins(:audio_feature).where("song_audio_features.speech < ?", SongRadio::SPEECH_CUTOFF)
       pool = pool.where(id: allowed) if allowed
       pool.where.not(id: exclude + blocked).order(Arel.sql("RANDOM()")).limit(need - added).pluck(:id).each do |song_id|
-        added += 1 if @jukebox.ajb_queue_items.create(song_id: song_id, source: 'random').persisted?
+        added += 1 if @jukebox.ajb_queue_items.create(song_id: song_id, source: "random").persisted?
       end
     end
     Rails.logger.info "Radio fill: added #{added} of #{need} songs to jukebox #{@jukebox.id}"
@@ -671,7 +671,7 @@ class Api::V1::JukeboxesController < ApplicationController
       # 2) Queue is still empty after refill -> no content
       render json: {
         success: false,
-        message: 'No songs available in queue'
+        message: "No songs available in queue"
       }, status: :no_content
     end
   end
@@ -683,7 +683,7 @@ class Api::V1::JukeboxesController < ApplicationController
     return @node_player = true if node_player_request?
 
     token = extract_token_from_header
-    
+
     if token.blank?
       render json: { success: false, message: "Missing API token" }, status: :unauthorized
       return
@@ -692,41 +692,41 @@ class Api::V1::JukeboxesController < ApplicationController
     begin
       # Decode from Base64
       decoded_token = Base64.urlsafe_decode64(token)
-      
+
       # Decrypt with Rails secret key
       encryptor = ActiveSupport::MessageEncryptor.new(Rails.application.secret_key_base[0, 32])
       decrypted_payload = encryptor.decrypt_and_verify(decoded_token)
-      
+
       # Parse JSON payload
       payload = JSON.parse(decrypted_payload)
-      
+
       # Check if token is expired
-      if payload['exp'] && Time.current.to_i > payload['exp']
+      if payload["exp"] && Time.current.to_i > payload["exp"]
         render json: { success: false, message: "API token expired" }, status: :unauthorized
         return
       end
-      
+
       # Find the user
-      @current_api_user = User.find(payload['user_id'])
-      
+      @current_api_user = User.find(payload["user_id"])
+
       unless @current_api_user
         render json: { success: false, message: "Invalid API token" }, status: :unauthorized
-        return
+        nil
       end
-      
+
     rescue => e
       Rails.logger.error "Token decryption error: #{e.message}"
       render json: { success: false, message: "Invalid API token" }, status: :unauthorized
-      return
+      nil
     end
   end
 
   def extract_token_from_header
-    auth_header = request.headers['Authorization']
+    auth_header = request.headers["Authorization"]
     return nil unless auth_header
-    
+
     # Extract token from "Bearer <token>" format
-    token = auth_header.gsub(/^Bearer\s+/, '')
+    token = auth_header.gsub(/^Bearer\s+/, "")
     token.presence
   end
 
@@ -736,7 +736,7 @@ class Api::V1::JukeboxesController < ApplicationController
   READ_ONLY_ACTIONS = %w[status queue current_song playback_info history].freeze
 
   def render_no_host
-    render json: { success: false, message: 'Not allowed to host a jukebox' }, status: 403
+    render json: { success: false, message: "Not allowed to host a jukebox" }, status: 403
   end
 
   def station_json(jukebox)
@@ -754,7 +754,7 @@ class Api::V1::JukeboxesController < ApplicationController
 
   # Collection actions belong to a person; the player daemon has no use for them.
   def require_person!
-    render json: { success: false, message: 'Access denied' }, status: 403 unless @current_api_user
+    render json: { success: false, message: "Access denied" }, status: 403 unless @current_api_user
   end
 
   # What the remote-control page shows about the node's player.
@@ -769,7 +769,7 @@ class Api::V1::JukeboxesController < ApplicationController
     @jukebox = Jukebox.find(params[:id])
 
     if @node_player
-      return render json: { success: false, message: 'Not on the speakers' }, status: 403 unless @jukebox.server_playback?
+      return render json: { success: false, message: "Not on the speakers" }, status: 403 unless @jukebox.server_playback?
       @current_api_user = @jukebox.owner
       return
     end
@@ -778,8 +778,7 @@ class Api::V1::JukeboxesController < ApplicationController
     public_read = READ_ONLY_ACTIONS.include?(action_name) && @jukebox.public?
 
     unless owner || public_read
-      render json: { success: false, message: 'Access denied' }, status: 403
+      render json: { success: false, message: "Access denied" }, status: 403
     end
   end
-
 end

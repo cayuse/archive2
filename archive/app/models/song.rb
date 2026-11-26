@@ -4,7 +4,7 @@ class Song < ApplicationRecord
   belongs_to :album, optional: true
   belongs_to :genre, optional: true
   belongs_to :user, optional: true
-  has_many :playlists_songs, foreign_key: :song_id, class_name: 'PlaylistsSong', dependent: :destroy, primary_key: :id
+  has_many :playlists_songs, foreign_key: :song_id, class_name: "PlaylistsSong", dependent: :destroy, primary_key: :id
   has_many :playlists, through: :playlists_songs, source: :playlist
   has_many :ajb_queue_items, dependent: :destroy
   has_many :ajb_played_songs, dependent: :destroy
@@ -37,28 +37,28 @@ class Song < ApplicationRecord
   scope :recent, -> { order(created_at: :desc) }
   scope :by_genre, ->(genre) { where(genre: genre) }
   scope :by_genre_name, ->(genre_name) { joins(:genre).where(genres: { name: genre_name }) }
-  
+
   # Processing status scopes
-  scope :pending_processing, -> { where(processing_status: 'pending') }
-  scope :processing, -> { where(processing_status: 'processing') }
-  scope :completed, -> { where(processing_status: 'completed') }
-  scope :failed, -> { where(processing_status: 'failed') }
-  scope :needs_review, -> { where(processing_status: 'needs_review') }
+  scope :pending_processing, -> { where(processing_status: "pending") }
+  scope :processing, -> { where(processing_status: "processing") }
+  scope :completed, -> { where(processing_status: "completed") }
+  scope :failed, -> { where(processing_status: "failed") }
+  scope :needs_review, -> { where(processing_status: "needs_review") }
 
 
-  
+
   # Search scopes
   scope :search_by_title, ->(query) { where("title ILIKE ?", "%#{query}%") }
   scope :search_by_artist, ->(query) { joins(:artist).where("artists.name ILIKE ?", "%#{query}%") }
   scope :search_by_genre, ->(query) { joins(:genre).where("genres.name ILIKE ?", "%#{query}%") }
-  
+
   # Full-text search
   scope :full_text_search, ->(query) {
     return none if query.blank?
-    
+
     search_query = query.strip
     ts_query = "plainto_tsquery('english', ?)"
-    
+
     where("search_vector @@ #{ts_query}", search_query)
       .order("ts_rank(search_vector, #{ts_query}) DESC")
       .limit(50)
@@ -71,7 +71,7 @@ class Song < ApplicationRecord
     after_commit :schedule_processing, on: :update, if: :should_reschedule_processing?
   end
   before_save :auto_complete_if_ready
-  
+
 
   # Instance methods
   def display_title
@@ -92,23 +92,23 @@ class Song < ApplicationRecord
   end
 
   def processing_pending?
-    processing_status == 'pending'
+    processing_status == "pending"
   end
 
   def processing_in_progress?
-    processing_status == 'processing'
+    processing_status == "processing"
   end
 
   def processing_completed?
-    processing_status == 'completed'
+    processing_status == "completed"
   end
 
   def processing_failed?
-    processing_status == 'failed'
+    processing_status == "failed"
   end
 
   def needs_review?
-    processing_status == 'needs_review'
+    processing_status == "needs_review"
   end
 
 
@@ -129,7 +129,7 @@ class Song < ApplicationRecord
 
   def extract_metadata_from_file
     return unless audio_file.attached?
-    
+
     temp_file = download_audio_file
     processor = AudioFileProcessor.new(
       temp_file.path,
@@ -137,13 +137,13 @@ class Song < ApplicationRecord
       audio_file.byte_size,
       original_filename: original_filename
     )
-    
+
     metadata = processor.process
-    
+
     # Clean up temp file
     temp_file.close
     temp_file.unlink
-    
+
     metadata
   rescue => e
     Rails.logger.error "Failed to extract metadata from song #{id}: #{e.message}"
@@ -153,10 +153,10 @@ class Song < ApplicationRecord
   private
 
   def auto_complete_if_ready
-    # If the song has both title and artist, and is currently 'needs_review', 
+    # If the song has both title and artist, and is currently 'needs_review',
     # automatically change status to 'completed'
     if title.present? && artist.present? && needs_review?
-      self.processing_status = 'completed'
+      self.processing_status = "completed"
       Rails.logger.info "Auto-completing song #{id} (#{title}) - has title and artist"
     end
   end
@@ -175,17 +175,16 @@ class Song < ApplicationRecord
   end
 
   def download_audio_file
-    temp_file = Tempfile.new(['audio', File.extname(audio_file.filename.to_s)])
+    temp_file = Tempfile.new([ "audio", File.extname(audio_file.filename.to_s) ])
     temp_file.binmode
-    
+
     audio_file.open do |file|
       while (chunk = file.read(16.kilobytes))
         temp_file.write(chunk)
       end
     end
-    
+
     temp_file.rewind
     temp_file
   end
-
 end

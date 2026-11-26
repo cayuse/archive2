@@ -11,7 +11,7 @@ gem "turbo-rails"
 
 # Server gems
 gem "puma"
-gem "webrick", platforms: [:ruby]
+gem "webrick", platforms: [ :ruby ]
 # Database
 gem "pg", "~> 1.5"
 
@@ -48,7 +48,7 @@ gem "kaminari-bootstrap", "~> 0.1"
 group :development, :test do
   gem "debug", platforms: %i[ mri mingw x64_mingw ]
   gem "brakeman", require: false
-  gem "rubocop", require: false
+  gem "rubocop-rails-omakase", require: false   # the Rails house style; config in .rubocop.yml
   gem "letter_opener", "~> 1.8"
 end
 
@@ -61,4 +61,3 @@ group :test do
   gem "selenium-webdriver"
   gem "minitest-mock"   # stub / Minitest::Mock, split out of minitest in 6.0
 end
-

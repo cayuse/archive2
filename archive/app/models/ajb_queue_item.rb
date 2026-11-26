@@ -6,18 +6,18 @@ class AjbQueueItem < ApplicationRecord
   validates :song_id, presence: true
   validates :position, presence: true, numericality: { greater_than: 0 }
   validates :source, presence: true, inclusion: { in: %w[random requested] }
-  
+
   # Ensure no duplicate songs in the same jukebox queue
   validates :song_id, uniqueness: { scope: :jukebox_id, message: "is already in this jukebox queue" }
 
   # Scopes
   scope :for_jukebox, ->(jukebox) { where(jukebox: jukebox) }
-  scope :requested, -> { where(source: 'requested') }
-  scope :random, -> { where(source: 'random') }
+  scope :requested, -> { where(source: "requested") }
+  scope :random, -> { where(source: "random") }
   scope :ordered_by_position, -> { order(:position) }
-  
+
   # Default ordering for queue display (requested first, then random)
-  scope :queue_order, -> { 
+  scope :queue_order, -> {
     order(
       Arel.sql("CASE WHEN source = 'requested' THEN 0 ELSE 1 END"),
       :position
@@ -32,11 +32,11 @@ class AjbQueueItem < ApplicationRecord
 
   # Instance methods
   def requested?
-    source == 'requested'
+    source == "requested"
   end
 
   def random?
-    source == 'random'
+    source == "random"
   end
 
   # Set initial position based on queue order if not provided

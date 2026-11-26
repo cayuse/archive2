@@ -13,35 +13,35 @@ GENRES = {
 
 # [title, artist, album, genre]
 TRACKS = [
-  ["Granite Road",        "The Test Tones",    "Signal Check",     "Rock"],
-  ["Overdrive Sunday",    "The Test Tones",    "Signal Check",     "Rock"],
-  ["Feedback Loop",       "Null Pointer",      "Segfault",         "Rock"],
-  ["Blue Fixture",        "Fixture Quartet",   "After Hours",      "Jazz"],
-  ["Seven Over Four",     "Fixture Quartet",   "After Hours",      "Jazz"],
-  ["Walking Stub",        "Mock Trio",         "Standards",        "Jazz"],
-  ["Sonata in A 440",     "Sine Philharmonic", "Pure Tones",       "Classical"],
-  ["Etude for Oscillator", "Sine Philharmonic", "Pure Tones",      "Classical"],
-  ["Adagio for Harness",  "Sine Philharmonic", "Pure Tones",       "Classical"],
-  ["Stack Trace",         "MC Assert",         "Green Build",      "Hip Hop"],
-  ["Push to Main",        "MC Assert",         "Green Build",      "Hip Hop"],
-  ["Dusty Schema",        "The Migrations",    "Rollback Road",    "Country"],
-  ["Long Way to Prod",    "The Migrations",    "Rollback Road",    "Country"],
-  ["Square Wave City",    "Voltage Kids",      "Hertz",            "Electronic"],
-  ["Low Pass",            "Voltage Kids",      "Hertz",            "Electronic"],
-  ["Sidechain",           "Voltage Kids",      "Hertz",            "Electronic"],
-  ["Flaky Test Blues",    "Slow Query Sam",    "Timeout",          "Blues"],
-  ["Deadlock Morning",    "Slow Query Sam",    "Timeout",          "Blues"],
-  ["One Drop Queue",      "Island Fixtures",   "Steady State",     "Reggae"],
-  ["Easy Skanking Seed",  "Island Fixtures",   "Steady State",     "Reggae"],
-  ["Paper Lanterns",      "Mabel Stubbs",      "Kitchen Tapes",    "Folk"],
-  ["River Under Ice",     "Mabel Stubbs",      "Kitchen Tapes",    "Folk"],
-  ["Sugar Rush",          "Factory Girl",      "Bright Defaults",  "Pop"],
-  ["Hold the Line Item",  "Factory Girl",      "Bright Defaults",  "Pop"],
-  ["Last Song Tonight",   "Factory Girl",      "Bright Defaults",  "Pop"]
+  [ "Granite Road",        "The Test Tones",    "Signal Check",     "Rock" ],
+  [ "Overdrive Sunday",    "The Test Tones",    "Signal Check",     "Rock" ],
+  [ "Feedback Loop",       "Null Pointer",      "Segfault",         "Rock" ],
+  [ "Blue Fixture",        "Fixture Quartet",   "After Hours",      "Jazz" ],
+  [ "Seven Over Four",     "Fixture Quartet",   "After Hours",      "Jazz" ],
+  [ "Walking Stub",        "Mock Trio",         "Standards",        "Jazz" ],
+  [ "Sonata in A 440",     "Sine Philharmonic", "Pure Tones",       "Classical" ],
+  [ "Etude for Oscillator", "Sine Philharmonic", "Pure Tones",      "Classical" ],
+  [ "Adagio for Harness",  "Sine Philharmonic", "Pure Tones",       "Classical" ],
+  [ "Stack Trace",         "MC Assert",         "Green Build",      "Hip Hop" ],
+  [ "Push to Main",        "MC Assert",         "Green Build",      "Hip Hop" ],
+  [ "Dusty Schema",        "The Migrations",    "Rollback Road",    "Country" ],
+  [ "Long Way to Prod",    "The Migrations",    "Rollback Road",    "Country" ],
+  [ "Square Wave City",    "Voltage Kids",      "Hertz",            "Electronic" ],
+  [ "Low Pass",            "Voltage Kids",      "Hertz",            "Electronic" ],
+  [ "Sidechain",           "Voltage Kids",      "Hertz",            "Electronic" ],
+  [ "Flaky Test Blues",    "Slow Query Sam",    "Timeout",          "Blues" ],
+  [ "Deadlock Morning",    "Slow Query Sam",    "Timeout",          "Blues" ],
+  [ "One Drop Queue",      "Island Fixtures",   "Steady State",     "Reggae" ],
+  [ "Easy Skanking Seed",  "Island Fixtures",   "Steady State",     "Reggae" ],
+  [ "Paper Lanterns",      "Mabel Stubbs",      "Kitchen Tapes",    "Folk" ],
+  [ "River Under Ice",     "Mabel Stubbs",      "Kitchen Tapes",    "Folk" ],
+  [ "Sugar Rush",          "Factory Girl",      "Bright Defaults",  "Pop" ],
+  [ "Hold the Line Item",  "Factory Girl",      "Bright Defaults",  "Pop" ],
+  [ "Last Song Tonight",   "Factory Girl",      "Bright Defaults",  "Pop" ]
 ].freeze
 
 admin = User.find_by!(email: "admin@musicarchive.com")
-genres = GENRES.to_h { |name, color| [name, Genre.find_or_create_by!(name: name) { |g| g.color = color }] }
+genres = GENRES.to_h { |name, color| [ name, Genre.find_or_create_by!(name: name) { |g| g.color = color } ] }
 track_no = Hash.new(0)
 
 Dir.mktmpdir do |dir|
@@ -86,12 +86,12 @@ upbeat     = Playlist.find_or_create_by!(name: "Upbeat", user: admin)
 mellow     = Playlist.find_or_create_by!(name: "Mellow", user: admin)
 seeded     = Song.where(title: TRACKS.map(&:first)).order(:created_at)
 fill(everything, seeded)
-fill(upbeat, seeded.joins(:genre).where(genres: { name: ["Rock", "Hip Hop", "Electronic", "Pop", "Reggae"] }))
-fill(mellow, seeded.joins(:genre).where(genres: { name: ["Jazz", "Classical", "Blues", "Folk", "Country"] }))
+fill(upbeat, seeded.joins(:genre).where(genres: { name: [ "Rock", "Hip Hop", "Electronic", "Pop", "Reggae" ] }))
+fill(mellow, seeded.joins(:genre).where(genres: { name: [ "Jazz", "Classical", "Blues", "Folk", "Country" ] }))
 
 jukebox = Jukebox.find_or_initialize_by(session_id: "dev-party")
 jukebox.update!(name: "Dev Party", owner: admin, guest_password: "guest", admin_password: "boss", status: "active")
-[everything, upbeat].each do |playlist|
+[ everything, upbeat ].each do |playlist|
   JukeboxPlaylistAssignment.find_or_create_by!(jukebox: jukebox, playlist: playlist)
 end
 

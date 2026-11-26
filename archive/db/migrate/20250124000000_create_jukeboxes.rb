@@ -25,6 +25,6 @@ class CreateJukeboxes < ActiveRecord::Migration[7.0]
     add_index :jukeboxes, :status
     add_index :jukeboxes, :private
     add_index :jukeboxes, :created_at
-    add_index :jukeboxes, [:private, :status], where: "private = false"
+    add_index :jukeboxes, [ :private, :status ], where: "private = false"
   end
 end

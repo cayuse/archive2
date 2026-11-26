@@ -1,4 +1,4 @@
-require 'open3'
+require "open3"
 
 class AudioFileProcessor
   def initialize(file_path, content_type, file_size, original_filename: nil)
@@ -36,42 +36,42 @@ class AudioFileProcessor
     begin
       # Use the exact ffprobe command that works
       cmd = [
-        'ffprobe', '-v', 'quiet',
-        '-of', 'json',
-        '-show_entries', 'format_tags',
+        "ffprobe", "-v", "quiet",
+        "-of", "json",
+        "-show_entries", "format_tags",
         @file_path
       ]
-      
+
       stdout, stderr, status = Open3.capture3(*cmd)
-      
+
       if status.success?
         data = JSON.parse(stdout) rescue {}
-        tags = (data.dig('format', 'tags') || {})
-        
+        tags = (data.dig("format", "tags") || {})
+
         # Extract metadata with case-insensitive fallbacks
-        file_info[:title] = clean_string(tags['title'] || tags['TITLE'])
-        file_info[:artist] = clean_string(tags['artist'] || tags['ARTIST'])
-        file_info[:album] = clean_string(tags['album'] || tags['ALBUM'])
-        file_info[:genre] = clean_string(tags['genre'] || tags['GENRE'])
-        
+        file_info[:title] = clean_string(tags["title"] || tags["TITLE"])
+        file_info[:artist] = clean_string(tags["artist"] || tags["ARTIST"])
+        file_info[:album] = clean_string(tags["album"] || tags["ALBUM"])
+        file_info[:genre] = clean_string(tags["genre"] || tags["GENRE"])
+
         # Handle track number from various possible tag names
-        track_tag = tags['track'] || tags['TRACK'] || tags['tracknumber'] || tags['TRACKNUMBER']
+        track_tag = tags["track"] || tags["TRACK"] || tags["tracknumber"] || tags["TRACKNUMBER"]
         if track_tag
-          file_info[:track_number] = track_tag.to_s.split('/').first.to_i
+          file_info[:track_number] = track_tag.to_s.split("/").first.to_i
         end
-        
+
         # Get duration separately since we're not showing format info
         duration_cmd = [
-          'ffprobe', '-v', 'quiet',
-          '-of', 'json',
-          '-show_entries', 'format=duration',
+          "ffprobe", "-v", "quiet",
+          "-of", "json",
+          "-show_entries", "format=duration",
           @file_path
         ]
-        
+
         duration_stdout, duration_stderr, duration_status = Open3.capture3(*duration_cmd)
         if duration_status.success?
           duration_data = JSON.parse(duration_stdout) rescue {}
-          duration = duration_data.dig('format', 'duration')
+          duration = duration_data.dig("format", "duration")
           file_info[:duration] = duration.to_f.round if duration
         end
       end
@@ -111,32 +111,32 @@ class AudioFileProcessor
 
   def extract_file_format
     case @content_type
-    when 'audio/mpeg', 'audio/mp3'
-      'mp3'
-    when 'audio/x-m4a', 'audio/mp4'
-      'm4a'
-    when 'audio/ogg'
-      'ogg'
-    when 'audio/flac'
-      'flac'
-    when 'audio/wav'
-      'wav'
-    when 'audio/aac'
-      'aac'
+    when "audio/mpeg", "audio/mp3"
+      "mp3"
+    when "audio/x-m4a", "audio/mp4"
+      "m4a"
+    when "audio/ogg"
+      "ogg"
+    when "audio/flac"
+      "flac"
+    when "audio/wav"
+      "wav"
+    when "audio/aac"
+      "aac"
     else
       # Fallback to file extension
-      File.extname(@filename).downcase.gsub('.', '')
+      File.extname(@filename).downcase.gsub(".", "")
     end
   end
 
   def parse_filename(filename)
     # Remove file extension and normalize common separators/leading track numbers
-    name = filename.gsub(/\.[^.]*$/, '')
+    name = filename.gsub(/\.[^.]*$/, "")
     # Strip leading track numbers like "01 - ", "101-", "01_"
-    name = name.sub(/^\d+\s*[-_.]\s*/, '')
+    name = name.sub(/^\d+\s*[-_.]\s*/, "")
     # Replace underscores with spaces for better parsing
-    name = name.tr('_', ' ').strip
-    
+    name = name.tr("_", " ").strip
+
     # Common filename patterns
     patterns = [
       # Artist - Album - Track - Title
@@ -178,13 +178,13 @@ class AudioFileProcessor
 
   def clean_string(str)
     return nil if str.blank?
-    
+
     # Remove common separators and clean up
     cleaned = str
-      .gsub(/[_-]/, ' ')  # Replace underscores and dashes with spaces
-      .gsub(/\s+/, ' ')   # Normalize whitespace
+      .gsub(/[_-]/, " ")  # Replace underscores and dashes with spaces
+      .gsub(/\s+/, " ")   # Normalize whitespace
       .strip
-    
+
     cleaned.presence
   end
 
@@ -208,4 +208,4 @@ class AudioFileProcessor
     # This would extract FLAC metadata when available
     {}
   end
-end 
+end

@@ -52,7 +52,7 @@ module SongPlayToken
   # --- internals ---
 
   def pack_body(song_id, exp)
-    [song_id.to_s.delete("-")].pack("H*") + [exp].pack("N")
+    [ song_id.to_s.delete("-") ].pack("H*") + [ exp ].pack("N")
   end
 
   def unpack_uuid(raw16)

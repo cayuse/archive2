@@ -24,10 +24,10 @@ class Album < ApplicationRecord
   # Full-text search
   scope :full_text_search, ->(query) {
     return none if query.blank?
-    
+
     search_query = query.strip
     ts_query = "plainto_tsquery('english', ?)"
-    
+
     where("search_vector @@ #{ts_query}", search_query)
       .order("ts_rank(search_vector, #{ts_query}) DESC")
       .limit(50)
@@ -59,5 +59,4 @@ class Album < ApplicationRecord
       cover_image_url.presence || "default_album.jpg"
     end
   end
-
 end

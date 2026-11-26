@@ -7,7 +7,7 @@ class CreateSimpleThemes < ActiveRecord::Migration[8.0]
       t.string :version, default: '1.0.0'
       t.boolean :is_active, default: true
       t.boolean :is_default, default: false
-      
+
       # Color palette (21 colors)
       t.string :primary_bg, default: '#0f0f23'
       t.string :secondary_bg, default: '#1a1a2e'
@@ -44,12 +44,12 @@ class CreateSimpleThemes < ActiveRecord::Migration[8.0]
       t.string :content_type, null: false
       t.string :checksum, null: false
       t.integer :file_size, null: false
-      
+
       t.timestamps
-      
-      t.index [:theme_id, :asset_type, :filename], unique: true
+
+      t.index [ :theme_id, :asset_type, :filename ], unique: true
     end
 
     # Theme creation moved to seeds.rb for cleaner management
   end
-end 
+end

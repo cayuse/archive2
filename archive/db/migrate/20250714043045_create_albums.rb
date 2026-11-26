@@ -11,12 +11,12 @@ class CreateAlbums < ActiveRecord::Migration[8.0]
 
       t.timestamps
     end
-    
+
     # Add indexes for performance and data integrity
     add_index :albums, :title
     add_index :albums, :release_date
     add_index :albums, :total_tracks
-    
+
     # Add check constraints
     add_check_constraint :albums, "total_tracks IS NULL OR total_tracks > 0", name: "check_positive_total_tracks"
     add_check_constraint :albums, "duration IS NULL OR duration > 0", name: "check_positive_duration"

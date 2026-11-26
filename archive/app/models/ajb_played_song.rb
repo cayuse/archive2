@@ -11,7 +11,7 @@ class AjbPlayedSong < ApplicationRecord
   scope :for_jukebox, ->(jukebox) { where(jukebox: jukebox) }
   scope :recent, ->(limit = 50) { order(played_at: :desc).limit(limit) }
   scope :by_source, ->(source) { where(source: source) }
-  
+
   # Class methods
   def self.recently_played_for_jukebox(jukebox, limit = 50)
     for_jukebox(jukebox).recent(limit)
@@ -23,7 +23,7 @@ class AjbPlayedSong < ApplicationRecord
 
   # Ordered, eager-loaded relation for the play-history views (paginate this).
   scope :history_for, ->(jukebox) {
-    for_jukebox(jukebox).order(played_at: :desc).includes(song: [:artist, :album])
+    for_jukebox(jukebox).order(played_at: :desc).includes(song: [ :artist, :album ])
   }
 
   # JSON shape used by the player/guest play-history views.
@@ -44,10 +44,10 @@ class AjbPlayedSong < ApplicationRecord
 
   # Instance methods
   def requested?
-    source == 'requested'
+    source == "requested"
   end
 
   def random?
-    source == 'random'
+    source == "random"
   end
 end

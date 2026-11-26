@@ -1,5 +1,5 @@
 class Jukebox < ApplicationRecord
-  belongs_to :owner, class_name: 'User'
+  belongs_to :owner, class_name: "User"
   has_many :jukebox_playlist_assignments, dependent: :destroy
   has_many :playlists, through: :jukebox_playlist_assignments
   has_many :ajb_queue_items, dependent: :destroy
@@ -211,7 +211,7 @@ class Jukebox < ApplicationRecord
   end
 
   # Add associations for current song
-  belongs_to :current_song, class_name: 'Song', optional: true
+  belongs_to :current_song, class_name: "Song", optional: true
 
   # ---- Server-side playback -------------------------------------------------------------------
   # A jukebox with server_playback on is played by the node's player daemon through the node's
@@ -280,7 +280,7 @@ class Jukebox < ApplicationRecord
     [ current_song, position ]
   end
 
-  scope :active, -> { where(status: 'active') }
+  scope :active, -> { where(status: "active") }
   scope :public_jukeboxes, -> { where(private: false) }
   scope :private_jukeboxes, -> { where(private: true) }
   scope :owned_by, ->(user) { where(owner_id: user.id) }
@@ -293,19 +293,19 @@ class Jukebox < ApplicationRecord
   before_validation { self.private = true }
 
   def active?
-    status == 'active'
+    status == "active"
   end
 
   def ended?
-    status == 'ended'
+    status == "ended"
   end
 
   def paused?
-    status == 'paused'
+    status == "paused"
   end
 
   def inactive?
-    status == 'inactive'
+    status == "inactive"
   end
 
   def public?
@@ -402,10 +402,10 @@ class Jukebox < ApplicationRecord
 
   def generate_session_id
     return if session_id.present?
-    
-    base_name = name.downcase.gsub(/[^a-z0-9\s]/, '').gsub(/\s+/, '-').strip
-    base_name = 'jukebox' if base_name.empty?
-    
+
+    base_name = name.downcase.gsub(/[^a-z0-9\s]/, "").gsub(/\s+/, "-").strip
+    base_name = "jukebox" if base_name.empty?
+
     # Ensure uniqueness (excluding ourselves, so re-saving doesn't collide).
     counter = 1
     candidate = base_name
@@ -413,12 +413,12 @@ class Jukebox < ApplicationRecord
       candidate = "#{base_name}-#{counter}"
       counter += 1
     end
-    
+
     self.session_id = candidate
   end
 
   def normalize_session_id
     return unless session_id.present?
-    self.session_id = session_id.downcase.gsub(/[^a-z0-9\-]/, '-').gsub(/-+/, '-').gsub(/^-|-$/, '')
+    self.session_id = session_id.downcase.gsub(/[^a-z0-9\-]/, "-").gsub(/-+/, "-").gsub(/^-|-$/, "")
   end
 end

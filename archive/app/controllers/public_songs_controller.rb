@@ -34,7 +34,7 @@ class PublicSongsController < ApplicationController
 
     if range && range =~ /bytes=(\d+)-(\d*)/
       start_byte = $1.to_i
-      end_byte   = $2.empty? ? file_size - 1 : [$2.to_i, file_size - 1].min
+      end_byte   = $2.empty? ? file_size - 1 : [ $2.to_i, file_size - 1 ].min
       start_byte = 0 if start_byte >= file_size
       response.headers["Content-Range"] = "bytes #{start_byte}-#{end_byte}/#{file_size}"
       response.headers["Accept-Ranges"] = "bytes"

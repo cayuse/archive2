@@ -8,10 +8,10 @@ class CreatePlaylists < ActiveRecord::Migration[8.0]
 
       t.timestamps
     end
-    
+
     # Add indexes for performance and data integrity
     add_index :playlists, :name
     add_index :playlists, :is_public
-    add_index :playlists, [:user_id, :name], unique: true
+    add_index :playlists, [ :user_id, :name ], unique: true
   end
 end

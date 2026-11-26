@@ -3,5 +3,3 @@
 Rails.application.configure do
   config.x.inline_audio_processing = ENV.fetch("INLINE_AUDIO_PROCESSING", "true") == "true"
 end
-
-

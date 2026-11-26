@@ -1,14 +1,14 @@
 module JukeboxesHelper
   def status_color(status)
     case status
-    when 'active'
-      'success'
-    when 'paused'
-      'warning'
-    when 'ended'
-      'danger'
+    when "active"
+      "success"
+    when "paused"
+      "warning"
+    when "ended"
+      "danger"
     else
-      'secondary'
+      "secondary"
     end
   end
   LOOPBACK_HOSTS = %w[localhost 127.0.0.1 ::1].freeze

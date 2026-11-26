@@ -1,7 +1,7 @@
 class PlaylistsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_playlist, only: [:show, :update, :reorder, :add_songs, :remove_songs]
-  
+  before_action :set_playlist, only: [ :show, :update, :reorder, :add_songs, :remove_songs ]
+
   def index
     # User's own playlists
     @user_playlists = current_user.playlists
@@ -9,7 +9,7 @@ class PlaylistsController < ApplicationController
                                  .order(:name)
                                  .page(params[:user_page])
                                  .per(params[:per_page] || 20)
-    
+
     # Public playlists from other users
     @shared_playlists = Playlist.publicly_visible
                                 .where.not(user: current_user)
@@ -18,96 +18,96 @@ class PlaylistsController < ApplicationController
                                 .page(params[:shared_page])
                                 .per(params[:per_page] || 20)
   end
-  
+
   def show
     @songs = @playlist.songs.includes(:artist, :album, :genre)
                    .order(:position, :title)
                    .page(params[:page])
                    .per(params[:per_page] || 50)
   end
-  
+
   def create
     @playlist = current_user.playlists.build(playlist_params)
-    
+
     if @playlist.save
       # Add songs if song_ids are provided
       if params[:song_ids].present?
         song_ids = params[:song_ids]
         # Start position at 1,000,000 to add new songs at the end
         next_position = PlaylistsSong.where(playlist_id: @playlist.id).maximum(:position) || 1_000_000
-        
+
         song_ids.each_with_index do |song_id, index|
           PlaylistsSong.create!(playlist_id: @playlist.id, song_id: song_id, position: next_position + index)
         end
       end
-      
+
       if request.xhr?
-        render json: { 
-          success: true, 
+        render json: {
+          success: true,
           message: "Playlist created successfully with #{params[:song_ids]&.length || 0} songs.",
           playlist_id: @playlist.id,
           playlist_name: @playlist.name,
           redirect_url: playlist_path(@playlist)
         }
       else
-        redirect_to @playlist, notice: 'Playlist created successfully.'
+        redirect_to @playlist, notice: "Playlist created successfully."
       end
     else
       if request.xhr?
-        render json: { error: 'Failed to create playlist.' }, status: :unprocessable_entity
+        render json: { error: "Failed to create playlist." }, status: :unprocessable_entity
       else
-        redirect_to playlists_path, alert: 'Failed to create playlist.'
+        redirect_to playlists_path, alert: "Failed to create playlist."
       end
     end
   end
-  
+
   def update
     unless @playlist.owned_by?(current_user)
       if ajax_request?
-        render json: { error: 'Not authorized' }, status: :forbidden
+        render json: { error: "Not authorized" }, status: :forbidden
       else
-        redirect_to @playlist, alert: 'Not authorized'
+        redirect_to @playlist, alert: "Not authorized"
       end
       return
     end
 
     if @playlist.update(playlist_params)
       if ajax_request?
-        render json: { 
-          success: true, 
-          message: 'Playlist updated successfully.',
+        render json: {
+          success: true,
+          message: "Playlist updated successfully.",
           playlist_id: @playlist.id,
           playlist_name: @playlist.name
         }
       else
-        redirect_to @playlist, notice: 'Playlist updated successfully.'
+        redirect_to @playlist, notice: "Playlist updated successfully."
       end
     else
       if ajax_request?
-        render json: { error: 'Failed to update playlist.' }, status: :unprocessable_entity
+        render json: { error: "Failed to update playlist." }, status: :unprocessable_entity
       else
-        redirect_to @playlist, alert: 'Failed to update playlist.'
+        redirect_to @playlist, alert: "Failed to update playlist."
       end
     end
   end
-  
+
   def add_songs
     unless @playlist.owned_by?(current_user)
       if request.xhr?
-        render json: { error: 'Not authorized' }, status: :forbidden
+        render json: { error: "Not authorized" }, status: :forbidden
       else
-        redirect_to @playlist, alert: 'Not authorized'
+        redirect_to @playlist, alert: "Not authorized"
       end
       return
     end
-    
+
     song_ids = params[:song_ids]
-    
+
     if song_ids.present?
       # Start position at 1,000,000 to add new songs at the end
       next_position = PlaylistsSong.where(playlist_id: @playlist.id).maximum(:position) || 1_000_000
       added_count = 0
-      
+
       song_ids.each_with_index do |song_id, index|
         # Only add if not already in playlist
         unless PlaylistsSong.where(playlist_id: @playlist.id, song_id: song_id).exists?
@@ -115,10 +115,10 @@ class PlaylistsController < ApplicationController
           added_count += 1
         end
       end
-      
+
       if request.xhr?
-        render json: { 
-          success: true, 
+        render json: {
+          success: true,
           message: "Added #{added_count} songs to playlist.",
           playlist_id: @playlist.id,
           playlist_name: @playlist.name
@@ -128,37 +128,37 @@ class PlaylistsController < ApplicationController
       end
     else
       if request.xhr?
-        render json: { error: 'No songs selected.' }, status: :bad_request
+        render json: { error: "No songs selected." }, status: :bad_request
       else
-        redirect_to @playlist, alert: 'No songs selected.'
+        redirect_to @playlist, alert: "No songs selected."
       end
     end
   end
-  
+
   def remove_songs
     unless @playlist.owned_by?(current_user)
-      render json: { error: 'Not authorized' }, status: :forbidden
+      render json: { error: "Not authorized" }, status: :forbidden
       return
     end
-    
+
     song_ids = params[:song_ids]
-    
+
     if song_ids.present?
       # Remove songs from playlist using explicit SQL to avoid UUID association issues
       removed_count = 0
       song_ids.each do |song_id|
         # Debug: Let's see what's actually happening
         Rails.logger.info "About to delete playlist_song for song_id: #{song_id}"
-        
+
         # Use direct SQL delete to bypass the problematic destroy method entirely
         deleted_count = PlaylistsSong.where(playlist_id: @playlist.id, song_id: song_id).delete_all
         Rails.logger.info "Deleted #{deleted_count} records"
         removed_count += deleted_count
       end
-      
+
       if request.xhr?
-        render json: { 
-          success: true, 
+        render json: {
+          success: true,
           message: "Removed #{removed_count} songs from playlist.",
           playlist_id: @playlist.id,
           playlist_name: @playlist.name
@@ -169,25 +169,25 @@ class PlaylistsController < ApplicationController
                        .order(:position, :title)
                        .page(params[:page])
                        .per(params[:per_page] || 50)
-        render partial: 'playlist_songs', locals: { songs: @songs, playlist: @playlist }
+        render partial: "playlist_songs", locals: { songs: @songs, playlist: @playlist }
       end
     else
-      render json: { error: 'No song IDs provided' }, status: :bad_request
+      render json: { error: "No song IDs provided" }, status: :bad_request
     end
   end
-  
+
   def reorder
     Rails.logger.info "Reorder action called with params: #{params.inspect}"
-    
+
     unless @playlist.owned_by?(current_user)
       Rails.logger.warn "User #{current_user.id} not authorized to reorder playlist #{@playlist.id}"
-      render json: { error: 'Not authorized' }, status: :forbidden
+      render json: { error: "Not authorized" }, status: :forbidden
       return
     end
-    
+
     song_ids = params[:song_ids]
     Rails.logger.info "Song IDs received: #{song_ids.inspect}"
-    
+
     if song_ids.present?
       # Update the position of each song in the playlist
       song_ids.each_with_index do |song_id, index|
@@ -200,10 +200,10 @@ class PlaylistsController < ApplicationController
           Rails.logger.warn "Playlist song not found for song_id: #{song_id}"
         end
       end
-      
+
       if request.xhr?
-        render json: { 
-          success: true, 
+        render json: {
+          success: true,
           message: "Playlist reordered successfully.",
           playlist_id: @playlist.id,
           playlist_name: @playlist.name
@@ -215,25 +215,25 @@ class PlaylistsController < ApplicationController
                        .page(params[:page])
                        .per(params[:per_page] || 50)
         Rails.logger.info "Rendering partial with #{@songs.count} songs"
-        render partial: 'playlist_songs', locals: { songs: @songs, playlist: @playlist }
+        render partial: "playlist_songs", locals: { songs: @songs, playlist: @playlist }
       end
     else
       Rails.logger.warn "No song IDs provided"
-      render json: { error: 'No song IDs provided' }, status: :bad_request
+      render json: { error: "No song IDs provided" }, status: :bad_request
     end
   end
-  
+
   private
-  
+
   def set_playlist
     @playlist = Playlist.find_by!(id: params[:id])
   end
-  
+
   def playlist_params
     params.require(:playlist).permit(:name, :is_public)
   end
-  
+
   def ajax_request?
-    request.xhr? || request.format.json? || request.headers['X-Requested-With'] == 'XMLHttpRequest'
+    request.xhr? || request.format.json? || request.headers["X-Requested-With"] == "XMLHttpRequest"
   end
-end 
+end

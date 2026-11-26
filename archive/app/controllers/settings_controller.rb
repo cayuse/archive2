@@ -4,56 +4,56 @@ class SettingsController < ApplicationController
 
   def show
     # Show the main settings page with navigation
-    @current_tab = 'index'
+    @current_tab = "index"
   end
 
   # Theme management methods
   def themes
     @themes = Theme.all.order(:name)
-    render 'settings/themes/index'
+    render "settings/themes/index"
   end
 
   def show_theme
     @theme = Theme.find(params[:id])
-    render 'settings/themes/show'
+    render "settings/themes/show"
   end
 
   def new_theme
     @theme = Theme.new
-    render 'settings/themes/new'
+    render "settings/themes/new"
   end
 
   def edit_theme
     @theme = Theme.find(params[:id])
-    render 'settings/themes/edit'
+    render "settings/themes/edit"
   end
 
   def create_theme
     @theme = Theme.new(theme_params)
-    
+
     if @theme.save
-      redirect_to manage_theme_path(@theme), notice: 'Theme was successfully created.'
+      redirect_to manage_theme_path(@theme), notice: "Theme was successfully created."
     else
-      render 'settings/themes/new', status: :unprocessable_entity
+      render "settings/themes/new", status: :unprocessable_entity
     end
   end
 
   def update_theme
     @theme = Theme.find(params[:id])
     if @theme.update(theme_params)
-      redirect_to manage_theme_path(@theme), notice: 'Theme was successfully updated.'
+      redirect_to manage_theme_path(@theme), notice: "Theme was successfully updated."
     else
-      render 'settings/themes/edit', status: :unprocessable_entity
+      render "settings/themes/edit", status: :unprocessable_entity
     end
   end
 
   def destroy_theme
     @theme = Theme.find(params[:id])
     if @theme.is_default
-      redirect_to manage_themes_path, alert: 'Cannot delete the default theme.'
+      redirect_to manage_themes_path, alert: "Cannot delete the default theme."
     else
       @theme.destroy
-      redirect_to manage_themes_path, notice: 'Theme was successfully deleted.'
+      redirect_to manage_themes_path, notice: "Theme was successfully deleted."
     end
   end
 
@@ -61,9 +61,9 @@ class SettingsController < ApplicationController
     @theme = Theme.find(params[:id])
     new_theme = @theme.duplicate!
     if new_theme
-      redirect_to manage_theme_path(new_theme), notice: 'Theme was successfully duplicated.'
+      redirect_to manage_theme_path(new_theme), notice: "Theme was successfully duplicated."
     else
-      redirect_to manage_theme_path(@theme), alert: 'Failed to duplicate theme.'
+      redirect_to manage_theme_path(@theme), alert: "Failed to duplicate theme."
     end
   end
 
@@ -71,23 +71,23 @@ class SettingsController < ApplicationController
     @theme = Theme.find(params[:id])
     # Export theme to filesystem (simplified)
     # names come from the database: keep each to a single path component
-    theme_dir = Rails.root.join('app', 'assets', 'stylesheets', 'themes', File.basename(@theme.name.to_s))
+    theme_dir = Rails.root.join("app", "assets", "stylesheets", "themes", File.basename(@theme.name.to_s))
     FileUtils.mkdir_p(theme_dir)
-    
+
     # Export CSS
-    css_file = theme_dir.join('theme.css')
+    css_file = theme_dir.join("theme.css")
     File.write(css_file, @theme.generate_css)
-    
+
     # Export assets
-    assets_dir = theme_dir.join('assets')
+    assets_dir = theme_dir.join("assets")
     FileUtils.mkdir_p(assets_dir)
-    
+
     @theme.theme_assets.each do |asset|
       asset_dir = assets_dir.join(File.basename(asset.asset_type.to_s.pluralize))
       FileUtils.mkdir_p(asset_dir)
       File.write(asset_dir.join(File.basename(asset.filename.to_s)), asset.file_data)
     end
-    
+
     redirect_to manage_theme_path(@theme), notice: "Theme exported to #{theme_dir}"
   end
 
@@ -106,10 +106,10 @@ class SettingsController < ApplicationController
 
   def preview_theme
     @theme = Theme.find(params[:id])
-    render layout: 'preview'
+    render layout: "preview"
   rescue ActiveRecord::RecordNotFound
     @theme = Theme.current
-    render layout: 'preview'
+    render layout: "preview"
   end
 
   def general
@@ -119,9 +119,9 @@ class SettingsController < ApplicationController
 
   def update
     case params[:tab]
-    when 'theme'
+    when "theme"
       update_theme_settings
-    when 'general'
+    when "general"
       update_general_settings
     else
       flash[:error] = "Invalid settings tab"
@@ -170,7 +170,7 @@ class SettingsController < ApplicationController
     if params[:site_name].present?
       SystemSetting.set_site_name(params[:site_name])
     end
-    
+
     if params[:site_description].present?
       SystemSetting.set_site_description(params[:site_description])
     end

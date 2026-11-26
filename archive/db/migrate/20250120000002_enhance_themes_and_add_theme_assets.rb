@@ -6,7 +6,7 @@ class EnhanceThemesAndAddThemeAssets < ActiveRecord::Migration[8.0]
       t.jsonb :css_variables, default: {}
       t.text :custom_css
     end
-    
+
     # Create theme_settings table (theme_assets already exists from previous migration)
     create_table :theme_settings, id: :uuid, default: -> { 'gen_random_uuid()' } do |t|
       t.string :key, null: false, index: { unique: true }
@@ -14,10 +14,10 @@ class EnhanceThemesAndAddThemeAssets < ActiveRecord::Migration[8.0]
       t.string :description
       t.timestamps
     end
-    
+
     # Add theme reference to system settings if table/column state allows
     if table_exists?(:system_settings) && !column_exists?(:system_settings, :theme_id)
       add_reference :system_settings, :theme, foreign_key: true, null: true, type: :uuid
     end
   end
-end 
+end

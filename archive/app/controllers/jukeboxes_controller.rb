@@ -1,10 +1,10 @@
 class JukeboxesController < ApplicationController
-  require 'base64'
-  before_action :authenticate_user!, except: [:guest, :guest_short]
-  before_action :require_host!, except: [:guest, :guest_short]
-  before_action :set_jukebox, only: [:show, :edit, :update, :destroy, :player, :guest, :server_playback]
+  require "base64"
+  before_action :authenticate_user!, except: [ :guest, :guest_short ]
+  before_action :require_host!, except: [ :guest, :guest_short ]
+  before_action :set_jukebox, only: [ :show, :edit, :update, :destroy, :player, :guest, :server_playback ]
   # show and player are owner-only too: they display the guest and admin codes and mint an API token.
-  before_action :ensure_owner, only: [:show, :edit, :update, :destroy, :player, :server_playback]
+  before_action :ensure_owner, only: [ :show, :edit, :update, :destroy, :player, :server_playback ]
 
   def index
     # stations (personal radio) have their own page; this one lists party jukeboxes
@@ -29,7 +29,7 @@ class JukeboxesController < ApplicationController
     if @jukebox.save
       assign_playlists_to_jukebox
       save_radio_options
-      redirect_to @jukebox, notice: 'Jukebox was successfully created.'
+      redirect_to @jukebox, notice: "Jukebox was successfully created."
     else
       render :new, status: :unprocessable_entity
     end
@@ -39,7 +39,7 @@ class JukeboxesController < ApplicationController
     if @jukebox.update(jukebox_params)
       assign_playlists_to_jukebox
       save_radio_options
-      redirect_to @jukebox, notice: 'Jukebox was successfully updated.'
+      redirect_to @jukebox, notice: "Jukebox was successfully updated."
     else
       render :edit, status: :unprocessable_entity
     end
@@ -47,7 +47,7 @@ class JukeboxesController < ApplicationController
 
   def destroy
     @jukebox.destroy
-    redirect_to jukeboxes_url, notice: 'Jukebox was successfully deleted.'
+    redirect_to jukeboxes_url, notice: "Jukebox was successfully deleted."
   end
 
   private
@@ -58,7 +58,7 @@ class JukeboxesController < ApplicationController
 
   def ensure_owner
     unless @jukebox.owner == current_user
-      redirect_to jukeboxes_path, alert: 'You can only manage your own jukeboxes.'
+      redirect_to jukeboxes_path, alert: "You can only manage your own jukeboxes."
     end
   end
 
@@ -67,7 +67,7 @@ class JukeboxesController < ApplicationController
   # require admin, or swap in a per-user capability flag).
   def require_host!
     unless current_user&.can_host_jukebox?
-      redirect_to root_path, alert: 'Hosting a jukebox requires the DJ, moderator, or admin role.'
+      redirect_to root_path, alert: "Hosting a jukebox requires the DJ, moderator, or admin role."
     end
   end
 
@@ -102,10 +102,10 @@ class JukeboxesController < ApplicationController
 
   def assign_playlists_to_jukebox
     playlist_ids = params[:jukebox][:playlist_ids] || []
-    
+
     # Remove existing assignments
     @jukebox.jukebox_playlist_assignments.destroy_all
-    
+
     # Add new assignments (only if playlist_ids are provided)
     if playlist_ids.present?
       playlist_ids.each_with_index do |playlist_id, index|
@@ -163,7 +163,7 @@ class JukeboxesController < ApplicationController
   # same guest page. Everything downstream still keys on @jukebox.id (the UUID).
   def guest_short
     @jukebox = Jukebox.find_by(session_id: params[:code].to_s.downcase.strip)
-    return render plain: 'Jukebox not found.', status: :not_found unless @jukebox
+    return render plain: "Jukebox not found.", status: :not_found unless @jukebox
     render :guest
   end
 
@@ -178,14 +178,14 @@ class JukeboxesController < ApplicationController
         role: user.role,
         exp: 2.days.from_now.to_i,
         iat: Time.current.to_i,
-        iss: 'archive-api'
+        iss: "archive-api"
       }
-      
+
       # Convert to JSON and encrypt with Rails secret key
       json_payload = payload.to_json
       encryptor = ActiveSupport::MessageEncryptor.new(Rails.application.secret_key_base[0, 32])
       encrypted_token = encryptor.encrypt_and_sign(json_payload)
-      
+
       # Base64 encode for URL safety
       Base64.urlsafe_encode64(encrypted_token)
     rescue => e

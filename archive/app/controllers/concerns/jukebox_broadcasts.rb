@@ -16,14 +16,14 @@ module JukeboxBroadcasts
   # Tell subscribers the queue changed; they re-fetch it through their normal
   # (authenticated) endpoint. Cheap signal, no payload.
   def broadcast_queue_update(jukebox)
-    ActionCable.server.broadcast(jukebox_stream(jukebox), { type: 'queue_update' })
+    ActionCable.server.broadcast(jukebox_stream(jukebox), { type: "queue_update" })
   rescue => e
     Rails.logger.warn "queue_update broadcast failed: #{e.message}"
   end
 
   # Relay a transport command (play, pause, skip) to the host's player page.
   def broadcast_player_command(jukebox, command)
-    ActionCable.server.broadcast(jukebox_stream(jukebox), { type: 'player_command', command: command })
+    ActionCable.server.broadcast(jukebox_stream(jukebox), { type: "player_command", command: command })
   rescue => e
     Rails.logger.warn "player_command broadcast failed: #{e.message}"
   end
@@ -33,7 +33,7 @@ module JukeboxBroadcasts
   def broadcast_playback_update(jukebox)
     song = jukebox.current_song
     ActionCable.server.broadcast(jukebox_stream(jukebox), {
-      type: 'playback_status_update',
+      type: "playback_status_update",
       data: {
         current_song: song && {
           id: song.id,
