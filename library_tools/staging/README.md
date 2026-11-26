@@ -20,7 +20,7 @@ WORK=../scripts bash rails.sh bundle exec rails runner /work/station_engine_test
 
 Notes:
 
-- `web.sh` runs in production mode because development mode trips over an old `before_action`
-  in the songs API. Code is loaded once: rerun `web.sh` after changing Ruby or views.
+- `web.sh` runs in production mode, to behave like the deployed app. Code is loaded once: rerun
+  `web.sh` after changing Ruby or views.
 - Rails commands write `archive/db/schema.rb`; the repo does not track it, so the scripts delete it.
 - `setup.sh` creates a login for tests (`station-test@example.invalid`, password in `.env`).

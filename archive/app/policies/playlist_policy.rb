@@ -25,7 +25,7 @@ class PlaylistPolicy < ApplicationPolicy
 
   # Users can manage their own playlists
   def manage_songs?
-    user == record.user || super
+    user == record.user
   end
 
   class Scope < ApplicationPolicy::Scope

@@ -1,4 +1,4 @@
-# Radio / Multi-peer Local Playback — status & unfinished business
+# Status: what is built, what is deployed, what is not
 
 Session handoff as of 2026-11-25. Written so this work can be picked up cold.
 
@@ -146,12 +146,31 @@ attempted and is out of scope for now. For the record, when it's time:
   `conflict_logs`, `PowerSyncService` (jukebox app, commented-out initializer).
   UUID PKs everywhere are the "random key" that makes multi-master collision-free.
 
-### 7. Other design items (see `UI_DESIGN_PASS.md`, not built)
+### 7. Other design items (see `reference/UI_DESIGN_PASS.md`, not built)
 Devices/sites model, unified Now Playing, mood search (dial filters + chips +
 CLAP-text sidecar), expandable song rows in search, cover-art download
 (coverartarchive.org/release/<mbid>/front-500; 8,439 releases have front art in
 the mirror), importer fix + dropbox intake (`library_tools/IMPORTER_FIX_PLAN.md`),
 headless tagger worker, library dedup.
+
+## Known debt (as of the 2026-11-25 cleanup pass)
+
+- **Rails 8.0 and Ruby 3.2 are past end of support.** Brakeman flags both; they are in
+  `archive/config/brakeman.ignore` with a note so CI stays meaningful. The fix is an upgrade to
+  Rails 8.1+ and Ruby 3.4 (new base image, full regression on staging); remove the two ignore
+  entries when it is done.
+- **No linter.** `archive/.rubocop.yml` inherits `rubocop-rails-omakase`, which is not in the
+  Gemfile, so RuboCop has never run. Either add the gem and accept one large formatting commit,
+  or delete the config.
+- **Legacy deploy scripts** at the repository root and in `archive/` (`setup.sh`,
+  `jukebox_*setup*.sh`, `deploy*.sh`, `manage_replication.sh`, `fix_*.sh`, `run_migration.sh`,
+  `deploy_commands.sh`, `check_status.sh`, `after_deploy_slave.sh`, `slave_exports_template.sh`)
+  predate Kamal. Some may still be how the replicated slave jukeboxes are set up; nobody has
+  confirmed which. They were left in place.
+- **Reference docs are unreviewed** (see `docs/README.md`): moved and indexed, not checked
+  against the code.
+- **Ad-hoc scripts in `archive/`** (`test_all.rb`, `test_api_upload.rb`,
+  `test_encrypted_tokens.rb`, `setup_gems.rb`) are from 2025 and not part of any workflow.
 
 ## Dev / staging harness (gameforge)
 - `library_tools/staging/` scripts run a production-copy of the app locally:
@@ -178,4 +197,4 @@ headless tagger worker, library dedup.
 - **Deploy**: `cd archive && kamal deploy` builds from the local tree; migrations
   do NOT run automatically — `kamal app exec --reuse "bin/rails db:migrate"`
   (the `--reuse` matters; without it a new container fights for port 3000). Back
-  up first (`KAMAL_DEPLOY.md`). Brief 502s on app swap.
+  up first (`archive/KAMAL_DEPLOY.md`). Brief 502s on app swap.

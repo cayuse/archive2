@@ -124,7 +124,7 @@ bin/rails test test/policies/
 
 ## 📚 Documentation
 
-- `USAGENOTES.txt`: Comprehensive usage guide
+- `../docs/history/USAGENOTES.txt`: usage notes from 2025 (not kept up to date)
 - `PUNDIT_AUTHORIZATION.md`: Authorization system documentation
 - `MIGRATION_PLANS.md`: Database migration details
 

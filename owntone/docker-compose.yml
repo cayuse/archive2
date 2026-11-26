@@ -1,5 +1,5 @@
 # OwnTone: the AirPlay 2 output engine for the headless jukebox (see
-# HEADLESS_JUKEBOX_RESEARCH.md). Runs on bigballs under ~/owntone as cayuse.
+# docs/reference/HEADLESS_JUKEBOX_RESEARCH.md). Runs on bigballs under ~/owntone as cayuse.
 #
 # Host networking is required: mDNS discovery of AirPlay speakers, PTP timing
 # (UDP 319/320) and the RTP control/timing ports all need the real LAN stack.

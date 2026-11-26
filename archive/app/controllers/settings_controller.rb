@@ -70,7 +70,8 @@ class SettingsController < ApplicationController
   def export_theme
     @theme = Theme.find(params[:id])
     # Export theme to filesystem (simplified)
-    theme_dir = Rails.root.join('app', 'assets', 'stylesheets', 'themes', @theme.name)
+    # names come from the database: keep each to a single path component
+    theme_dir = Rails.root.join('app', 'assets', 'stylesheets', 'themes', File.basename(@theme.name.to_s))
     FileUtils.mkdir_p(theme_dir)
     
     # Export CSS
@@ -82,9 +83,9 @@ class SettingsController < ApplicationController
     FileUtils.mkdir_p(assets_dir)
     
     @theme.theme_assets.each do |asset|
-      asset_dir = assets_dir.join(asset.asset_type.pluralize)
+      asset_dir = assets_dir.join(File.basename(asset.asset_type.to_s.pluralize))
       FileUtils.mkdir_p(asset_dir)
-      File.write(asset_dir.join(asset.filename), asset.file_data)
+      File.write(asset_dir.join(File.basename(asset.filename.to_s)), asset.file_data)
     end
     
     redirect_to manage_theme_path(@theme), notice: "Theme exported to #{theme_dir}"

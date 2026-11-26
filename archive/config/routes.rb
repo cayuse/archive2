@@ -194,7 +194,8 @@ Rails.application.routes.draw do
   end
   
   # Bulk operations (moderator/admin only)
-  resource :bulk_operations, only: [:show] do
+  get 'bulk_operations', to: 'bulk_operations#index', as: :bulk_operations_page
+  resource :bulk_operations, only: [] do
     collection do
       post :upload_csv
       get :export_csv
@@ -213,47 +214,17 @@ Rails.application.routes.draw do
       
 
       
-      # Bulk song operations (admin/moderator only)
+      # Songs: list, search, radio, thumbs, and upload (moderator / admin)
       resources :songs, only: [:index, :show] do
         member do
           get :radio
           post :rate
         end
         collection do
-          post :bulk_create
-          put :bulk_update
-          delete :bulk_destroy
           post :bulk_upload
-          post :direct_upload
-          post :create_from_blob
-          get :export
         end
       end
-      
-      # Artist management
-      resources :artists, only: [:index, :show] do
-        collection do
-          post :bulk_create
-          get :export
-        end
-      end
-      
-      # Album management
-      resources :albums, only: [:index, :show] do
-        collection do
-          post :bulk_create
-          get :export
-        end
-      end
-      
-      # Genre management
-      resources :genres, only: [:index, :show] do
-        collection do
-          post :bulk_create
-          get :export
-        end
-      end
-      
+
       # Playlist operations (for music player integration)
       resources :playlists, only: [:index, :show, :create, :update, :destroy] do
         member do

@@ -857,6 +857,6 @@ psql -h localhost -U postgres -d archive_production < backup.sql
 - `~/archive2/temp_corrected_exports.sh` - Environment configuration
 - `~/archive2/archive/deploy_slave.sh` - Slave deployment script
 - `~/archive2/archive/after_deploy_slave.sh` - Replication setup script
-- `~/archive2/postgres_notes.md` - Detailed PostgreSQL commands
+- `docs/reference/postgres_notes.md` - Detailed PostgreSQL commands
 
 This deployment guide provides a complete foundation for deploying and managing the Archive system with optional replication capabilities.

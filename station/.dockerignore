@@ -1,0 +1,8 @@
+.env
+data/
+__pycache__/
+test/
+.kamal/
+config/
+*.md
+docker-compose.yml

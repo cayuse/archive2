@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  test:
+    name: Rails tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: archive
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: password
+        ports: [ "5432:5432" ]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      RAILS_ENV: test
+      POSTGRES_HOST: localhost
+      POSTGRES_PASSWORD: password
+      PGPASSWORD: password
+      SECRET_KEY_BASE: ci-only-not-a-secret-0123456789abcdef0123456789abcdef
+    steps:
+      - uses: actions/checkout@v4
+      - name: System packages (current psql for structure.sql, ffmpeg for audio tests)
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSLo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client-15 libyaml-dev ffmpeg
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2.5"
+          bundler-cache: true
+          working-directory: archive
+      - name: Build the test database from db/structure.sql
+        run: bin/rails db:create db:schema:load
+      - name: Tests
+        run: bin/rails test
+
+  security:
+    name: Brakeman
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: archive
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2.5"
+          bundler-cache: true
+          working-directory: archive
+      - name: Static security scan (fails on anything not in config/brakeman.ignore)
+        run: bin/brakeman --no-pager -q
+
+  player:
+    name: Player daemon
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compiles
+        run: python -m py_compile station/station.py station/test/mock_owntone.py
+      - name: Image builds
+        run: docker build -t archive-player:ci station

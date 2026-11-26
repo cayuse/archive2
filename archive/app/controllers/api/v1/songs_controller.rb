@@ -102,6 +102,7 @@ class Api::V1::SongsController < ApplicationController
   end
 
   def download
+    return render_no_audio unless @song.audio_file.attached?
     send_data @song.audio_file.download,
               filename: "#{@song.artist&.name || 'Unknown'} - #{@song.title}.#{@song.file_format}",
               type: @song.audio_file.content_type
@@ -112,6 +113,7 @@ class Api::V1::SongsController < ApplicationController
     # them (needed for seeking + the lock-screen scrubber). ActiveStorage's
     # #download returns the whole blob and takes no args, so we slice the
     # requested range in Ruby.
+    return render_no_audio unless @song.audio_file.attached?
     data = @song.audio_file.download
     file_size = data.bytesize
     range = request.headers['Range']
@@ -186,7 +188,8 @@ class Api::V1::SongsController < ApplicationController
       @song.original_filename = params[:filename] || params[:audio_file].original_filename
       
       # Set optional metadata if provided
-      @song.title = params[:title] if params[:title].present?
+      # the column is NOT NULL: until the tags are read, the file name stands in for the title
+      @song.title = params[:title].presence || File.basename(@song.original_filename.to_s, ".*").presence || "Untitled"
       @song.track_number = params[:track_number] if params[:track_number].present?
       @song.duration = params[:duration] if params[:duration].present?
       
@@ -292,6 +295,10 @@ class Api::V1::SongsController < ApplicationController
   def authenticate_media_request!
     return if current_user
     authenticate_encrypted_token_user!
+  end
+
+  def render_no_audio
+    render json: { success: false, message: "This song has no audio file" }, status: :not_found
   end
 
   def set_song

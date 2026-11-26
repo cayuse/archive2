@@ -416,8 +416,8 @@ class Api::V1::JukeboxesController < ApplicationController
     # Only update position/is_playing when the client is actually driving a song.
     # A freshly (re)opened player hasn't adopted the current song yet and would
     # otherwise reset position->0 / is_playing->false, wiping "what was playing".
-    if params[:current_song_id].present? && Song.exists?(params[:current_song_id])
-      update_params[:current_song_id] = params[:current_song_id]
+    if params[:current_song_id].present? && Song.exists?(id: params[:current_song_id].to_s)
+      update_params[:current_song_id] = params[:current_song_id].to_s
       update_params[:current_position] = params[:position].to_f if params[:position].present?
       update_params[:is_playing] = params[:is_playing] if params[:is_playing].in?([true, false])
     end
