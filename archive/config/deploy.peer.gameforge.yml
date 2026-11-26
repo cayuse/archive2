@@ -4,10 +4,8 @@
 # Paths live under /home/cayuse/archive-peer/gameforge because this host has no /srv/archive set up
 # (no root here); a real peer uses the paths deploy/peer/host-setup.sh creates.
 #
-# Reached on the private network only, plain HTTP: kamal-proxy publishes 192.168.17.97:3920.
-# Set once per host (it is the host's kamal-proxy, shared by every Kamal app there):
-#   kamal proxy boot_config set -c config/deploy.peer.yml -d gameforge \
-#     --publish-host-ip 192.168.17.97 --http-port 3920 --https-port 3921
+# Reached on the private network only, plain HTTP: kamal-proxy listens on 192.168.17.97:3920.
+# (kamal-proxy is one per host, shared by every Kamal app there: its ports are a host decision.)
 servers:
   web:
     hosts:
@@ -21,6 +19,11 @@ ssh:
 
 proxy:
   ssl: false            # no host name: kamal-proxy answers any name on its port
+  run:
+    http_port: 3920
+    https_port: 3921
+    bind_ips:
+      - 192.168.17.97
 
 env:
   clear:
