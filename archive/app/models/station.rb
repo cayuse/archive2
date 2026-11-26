@@ -31,6 +31,7 @@ class Station < ApplicationRecord
   scope :listed, -> { active.where(implicit: false) }            # what a person sees as "my stations"
   scope :for_user, ->(user) { listed.where(user_id: user.id).order(:created_at) }
   scope :shared_by_others, ->(user) { listed.where(shared: true).where.not(user_id: user.id).order(:name) }
+  scope :shared_list, -> { listed.where(shared: true).order(:name) }   # everything on the shared list
 
   before_validation { self.origin_archive ||= SystemSetting.archive_node_id }
   before_save { self.recipe_digest = compute_recipe_digest }
@@ -124,6 +125,26 @@ class Station < ApplicationRecord
 
   def copy?
     parent_id.present?
+  end
+
+  # Where a copy first came from: the station at the top of its chain (itself if it is no copy).
+  # May be archived (its owner deleted it); it is still who made it.
+  def original
+    node, seen = self, Set[id]
+    while node.parent_id
+      up = Station.find_by(id: node.parent_id)
+      break unless up && seen.add?(up.id)
+      node = up
+    end
+    node
+  end
+
+  # How much the station has been taught: thumbs that currently stand, its own and inherited.
+  def thumb_counts
+    rows = StationFeedback.log_for(user: user, station: self).where(kind: StationFeedback::VOTES + %w[clear])
+                          .pluck(:song_id, :kind, :created_at)
+    kinds = StationFeedback.thumbs(rows).values.map(&:first)
+    { up: kinds.count("up"), down: kinds.count("down") }
   end
 
   # This station and the ancestors it reads feedback from: [[station_id, cutoff or nil], ...],

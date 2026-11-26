@@ -164,16 +164,25 @@ class Api::V1::JukeboxesController < ApplicationController
   end
 
   # GET /api/v1/jukeboxes/shared_stations
-  # Stations other people have shared, to copy.
+  # The shared list: every station somebody has switched "Share" on for, the caller's own included.
+  # Nothing is copied by being listed; POST copy_station is what puts one among the caller's stations.
   def shared_stations
     return render_no_host unless @current_api_user.can_host_jukebox?
-    mine = Station.for_user(@current_api_user).where.not(parent_id: nil).pluck(:parent_id).to_set
-    stations = Station.shared_by_others(@current_api_user).includes(:user)
+    my_copies = Station.for_user(@current_api_user).where.not(parent_id: nil).index_by(&:parent_id)
+    stations = Station.shared_list.includes(:user, :playlists).to_a
     seeds = Song.includes(:artist).where(id: stations.flat_map(&:seed_ids)).index_by(&:id)
+    copies = Station.active.where(parent_id: stations.map(&:id)).group(:parent_id).count
     render json: { success: true, stations: stations.map { |s|
-      { id: s.id, name: s.name, owner: s.user&.name, copied: mine.include?(s.id),
+      original = s.original
+      mine = s.user_id == @current_api_user.id
+      copy = my_copies[s.id]
+      { id: s.id, name: s.name, owner: s.user&.name, mine: mine,
+        original: (original.id != s.id ? { name: original.name, owner: original.user&.name } : nil),
+        copied: copy.present?,
+        open_id: (mine ? s : copy)&.then { |own| own.runtime!.id },     # the caller's own one, to open
         seeds: s.seed_ids.filter_map { |id| seeds[id] && { title: seeds[id].title, artist: seeds[id].artist&.name } }.first(3),
-        playlists: s.playlists.map(&:name) }
+        playlists: s.playlists.map(&:name), thumbs: s.thumb_counts, copies: copies[s.id].to_i,
+        created_at: s.created_at.iso8601 }
     } }
   end
 

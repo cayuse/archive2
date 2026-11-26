@@ -106,6 +106,20 @@ class StationTest < ActiveSupport::TestCase
     end
   end
 
+  test "a copy of a copy still knows who made the station first, and what it has been taught" do
+    say(@station, @one, "up")
+    say(@station, @two, "down")
+    copy = travel(1.minute) { @station.copy_for!(@copier) }
+    grand = travel(2.minutes) { copy.copy_for!(@owner, name: "Mine again") }
+    assert_equal @station, grand.original
+    assert_equal @station, @station.original
+    travel(3.minutes) { say(grand, @two, "clear") }
+    travel 4.minutes do
+      assert_equal({ up: 1, down: 0 }, grand.thumb_counts)
+      assert_equal({ up: 1, down: 1 }, copy.thumb_counts)
+    end
+  end
+
   test "the first station cannot be removed" do
     assert_raises(ArgumentError) { Station.first_for(@owner).remove! }
   end

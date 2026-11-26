@@ -78,17 +78,23 @@ const StationsPage = (function () {
   async function loadShared() {
     const data = await api('GET', '/jukeboxes/shared_stations');
     const stations = data.stations || [];
-    $('shared-block').classList.toggle('d-none', !stations.length);
     $('shared-list').innerHTML = stations.map(s => {
-      const about = [s.playlists.length ? 'Playlist: ' + s.playlists.join(', ') : '',
-                     s.seeds.length ? 'Built around ' + s.seeds.map(x => x.title + (x.artist ? ' by ' + x.artist : '')).join(', ') : ''].filter(Boolean).join('. ');
-      return `<div class="col-md-6 col-lg-4 mb-3"><div class="card h-100"><div class="card-body d-flex flex-column">
-        <h5 class="card-title theme-text-primary mb-1">${esc(s.name)}</h5>
-        <p class="theme-text-secondary small mb-1">by ${esc(s.owner || 'someone')}</p>
-        <p class="theme-text-secondary small flex-grow-1 mb-2">${esc(about)}</p>
-        <div><button type="button" class="btn btn-sm ${s.copied ? 'btn-outline-secondary' : 'btn-primary'}" data-copy-station="${esc(s.id)}">${s.copied ? 'Open my copy' : 'Add to my stations'}</button></div>
-      </div></div></div>`;
-    }).join('');
+      const built = [s.playlists.length ? 'Playlist: ' + s.playlists.join(', ') : '',
+                     s.seeds.map(x => x.title + (x.artist ? ' by ' + x.artist : '')).join(', ')].filter(Boolean).join('; ');
+      const original = s.original ? esc(s.original.owner || 'someone') + (s.original.name !== s.name ? ` <small class="theme-text-secondary">(as ${esc(s.original.name)})</small>` : '') : esc(s.owner || 'someone');
+      const action = s.open_id
+        ? `<a class="btn btn-sm btn-outline-secondary" href="/stations/${esc(s.open_id)}">${s.mine ? 'Yours' : 'Open my copy'}</a>`
+        : `<button type="button" class="btn btn-sm btn-primary" data-copy-station="${esc(s.id)}">Add to my stations</button>`;
+      return `<tr>
+        <td><strong>${esc(s.name)}</strong></td>
+        <td>${esc(s.owner || 'someone')}</td>
+        <td>${original}</td>
+        <td class="small theme-text-secondary">${esc(built) || '—'}</td>
+        <td class="text-nowrap small"><i class="fas fa-thumbs-up"></i> ${s.thumbs.up} &nbsp;<i class="fas fa-thumbs-down"></i> ${s.thumbs.down}</td>
+        <td>${s.copies || ''}</td>
+        <td class="text-end text-nowrap">${action}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="7" class="theme-text-secondary small">Nobody has shared a station yet.</td></tr>';
   }
 
   // ---- tuning page

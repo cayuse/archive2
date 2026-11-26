@@ -114,8 +114,10 @@ existing station/radio jukebox and its feedback); the player daemon is unchanged
 - **Copies without copying**: a copy is one row (`parent_id`, `forked_at`). It reads the parent's
   log up to `forked_at` plus its own (`Station#lineage`, `StationFeedback.log_for`); its own thumbs
   override inherited ones; the original never changes. Snapshot, not follow (owner's decision).
-- **Sharing**: per-station `shared` switch (off by default) on the tuning page; shared stations of
-  other people show under "From others" on the stations page with "Add to my stations".
+- **Sharing**: per-station `shared` switch (off by default) on the tuning page. Shared stations
+  are listed in the "Shared stations" table on the stations page (who shares it, who made it
+  originally if it is a copy, what it is built on, thumbs taught, copies made). Being listed copies
+  nothing; "Add to my stations" is what makes the person's own copy.
 - **Delete**: the owner can always delete. With copies it is archived (`archived_at`, hidden) so
   the copies keep their base; when the last copy goes, the archived original is pruned.
 - **Recipe digest**: SHA-256 of seeds + tuning + linked playlists. Starting a station whose recipe

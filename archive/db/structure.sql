@@ -1,4 +1,4 @@
-\restrict sVZ8KZ5Vm2Dnx69Rk0ajpzQnBEUwk06frecSdw5pP7TplmG2LpVBXvMCwmnjoGA
+\restrict j19nerS584W3P6wEcOLC166zeSvg1dGM5sTIkxo7jdOdZaGNHo6qihInq3wggaS
 
 -- Dumped from database version 15.19 (Debian 15.19-1.pgdg13+2)
 -- Dumped by pg_dump version 15.20 (Debian 15.20-0+deb12u1)
@@ -2408,7 +2408,7 @@ ALTER PUBLICATION pub_archive ADD TABLE ONLY public.users;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict sVZ8KZ5Vm2Dnx69Rk0ajpzQnBEUwk06frecSdw5pP7TplmG2LpVBXvMCwmnjoGA
+\unrestrict j19nerS584W3P6wEcOLC166zeSvg1dGM5sTIkxo7jdOdZaGNHo6qihInq3wggaS
 
 SET search_path TO "$user", public;
 

@@ -87,13 +87,20 @@
     <% end %>
   </div>
 
-  <div id="shared-block" class="d-none">
-    <h2 class="h5 theme-text-primary mt-3">From others</h2>
-    <p class="theme-text-secondary small">Stations other people have shared. Adding one gives you your own copy, with everything it has learned so far; from then on yours and theirs go their own ways.</p>
-    <div class="row" id="shared-list"></div>
+  <h2 class="h4 theme-text-primary mt-4" id="shared">Shared stations</h2>
+  <p class="theme-text-secondary small">Stations people here have shared (switch "Share" on a station's tuning page to list yours).
+    Nothing lands in your stations until you add one: you then get your own copy with everything it has learned so far,
+    and from there yours and theirs go their own ways.</p>
+  <div class="card mb-4">
+    <div class="table-responsive">
+      <table class="table mb-0 align-middle">
+        <thead><tr><th>Station</th><th>Shared by</th><th>Originally by</th><th>Built on</th><th class="text-nowrap">Taught</th><th>Copies</th><th></th></tr></thead>
+        <tbody id="shared-list"><tr><td colspan="7" class="theme-text-secondary small">Loading…</td></tr></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
 <script>window.STATIONS_CONFIG = { apiToken: <%= raw @api_token.to_json %> };</script>
-<script src="/javascripts/stations/stations.js?v=20261127a"></script>
+<script src="/javascripts/stations/stations.js?v=20261127b"></script>
 <script>StationsPage.initIndex();</script>
