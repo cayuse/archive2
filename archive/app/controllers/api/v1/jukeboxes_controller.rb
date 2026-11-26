@@ -36,6 +36,7 @@ class Api::V1::JukeboxesController < ApplicationController
   end
 
   def status
+    song = @jukebox.current_song
     render json: {
       success: true,
       jukebox: {
@@ -45,7 +46,22 @@ class Api::V1::JukeboxesController < ApplicationController
         status: @jukebox.status,
         crossfade_enabled: @jukebox.crossfade_enabled,
         crossfade_duration: @jukebox.crossfade_duration,
-        auto_play: @jukebox.auto_play
+        auto_play: @jukebox.auto_play,
+        server_playback: @jukebox.server_playback?,
+        # Last-known playback, so a reopened player can restore instead of
+        # coming up blank. current_song is the row's current_song_id, not the
+        # queue head (that's the #current_song action).
+        is_playing: @jukebox.is_playing,
+        current_position: @jukebox.current_position,
+        current_song: (song && {
+          id: song.id,
+          title: song.title,
+          artist: song.artist&.name,
+          album: song.album&.title,
+          duration: song.duration,
+          download_url: download_api_v1_song_url(song),
+          stream_url: stream_api_v1_song_url(song)
+        })
       }
     }
   end
@@ -312,12 +328,14 @@ class Api::V1::JukeboxesController < ApplicationController
     # Update jukebox with current playback status (with safe defaults)
     update_params = { last_status_update: Time.current }
 
-    # Only update fields that are provided and valid
+    # Only update position/is_playing when the client is actually driving a song.
+    # A freshly (re)opened player hasn't adopted the current song yet and would
+    # otherwise reset position->0 / is_playing->false, wiping "what was playing".
     if params[:current_song_id].present? && Song.exists?(params[:current_song_id])
       update_params[:current_song_id] = params[:current_song_id]
+      update_params[:current_position] = params[:position].to_f if params[:position].present?
+      update_params[:is_playing] = params[:is_playing] if params[:is_playing].in?([true, false])
     end
-    update_params[:current_position] = params[:position].to_f if params[:position].present?
-    update_params[:is_playing] = params[:is_playing] if params[:is_playing].in?([true, false])
     update_params[:volume] = params[:volume].to_f if params[:volume].present?
     # Don't update crossfade_duration unless explicitly provided - it has validation requirements
 

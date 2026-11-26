@@ -42,7 +42,7 @@ class AudioEngine {
   }
 
   // Load and play a song
-  async loadAndPlay(song) {
+  async loadAndPlay(song, startAt = 0) {
     try {
       this.currentSong = song;
       this._wantPlaying = true;
@@ -133,6 +133,12 @@ class AudioEngine {
 
       // Surface the track on the OS lock screen / control center.
       this.updateMediaSessionMetadata(song);
+
+      // Resume at a saved position (reopened player). Seek once playback starts,
+      // which is when html5 audio reliably accepts a seek.
+      if (startAt > 0) {
+        this.sound.once('play', () => { try { this.sound.seek(startAt); } catch (e) {} });
+      }
 
       // Play the sound, and watch for the case where onplay never fires.
       this.sound.play();

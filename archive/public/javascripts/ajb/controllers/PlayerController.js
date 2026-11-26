@@ -12,6 +12,7 @@ class PlayerController {
     this.isLoading = false;
     this.pauseAfterSong = false;   // armed: hold when the current track ends
     this.awaitingResume = false;   // held between songs, waiting for the host
+    this.resumePosition = null;    // reopened mid-play: seconds to resume at on Play
     this.queue = [];
     this.history = [];
     this.historyPage = 0;
@@ -26,9 +27,32 @@ class PlayerController {
     // Show the host the live queue (incl. guest requests) + recent history.
     this.loadQueue();
     this.loadHistory();
+    this.restoreFromServer();
     this.subscribeRealtime();
     this.startHeartbeat();
     this.setupVisibilityRecovery();
+  }
+
+  // On (re)open, adopt the server's last-known playback so the page shows what
+  // was playing instead of coming up "Nothing playing". We don't autoplay
+  // (browsers block it); the host presses Play to resume at the saved position.
+  // The server guards position/is_playing against this page's first null-song
+  // heartbeat, so nothing is clobbered before we adopt here.
+  async restoreFromServer() {
+    try {
+      const s = await this.apiService.getStatus();
+      const jb = s && s.success && s.jukebox;
+      if (!jb || !jb.current_song) return;
+      if (this.playbackState.currentSong) return;   // host already started something
+      this.playbackState.setCurrentSong(jb.current_song);
+      const pos = Number(jb.current_position) || 0;
+      this.playbackState.currentTime = pos;
+      this.resumePosition = pos;
+      this.playbackState.setPlaybackStatus(false, true, false);   // paused, ready to resume
+      this.playbackState.notifyTimeUpdate();
+    } catch (e) {
+      console.warn('restoreFromServer failed (non-critical):', e.message);
+    }
   }
 
   // When the host's screen/tab comes back (unlocked phone, refocused window),
@@ -177,6 +201,11 @@ class PlayerController {
     }
     if (!this.playbackState.currentSong) {
       await this.playNextSong();
+    } else if (!this.audioEngine.sound && this.resumePosition != null) {
+      // Reopened mid-play: load the restored track and resume at the saved spot.
+      const pos = this.resumePosition;
+      this.resumePosition = null;
+      await this.audioEngine.loadAndPlay(this.playbackState.currentSong, pos);
     } else {
       this.audioEngine.play();
     }
