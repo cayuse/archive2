@@ -126,6 +126,9 @@ class JukeboxesController < ApplicationController
   def player
     # Generate a short-lived API token for the logged-in host's browser player.
     @api_token = current_user ? generate_api_token_for_user(current_user) : nil
+    # Server-played jukeboxes: the node's hidden task is the player, so the page
+    # is a passive remote (status + a link to the local controls), never Howler.
+    render :controller if @jukebox.server_playback?
   end
 
   def guest

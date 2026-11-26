@@ -1,0 +1,80 @@
+<% content_for :hide_main_nav, true %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Remote — <%= @jukebox.name %></title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin:0; background:#0b1020; color:#e6e9f2; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+    .wrap { max-width:620px; margin:0 auto; padding:24px 16px; }
+    h1 { font-size:1.5rem; margin:.2rem 0; }
+    .muted { color:#9aa3bd; font-size:.95rem; }
+    .card { background:#121a33; border:1px solid #243154; border-radius:14px; padding:20px; margin:18px 0; }
+    .state { letter-spacing:.12em; font-size:.8rem; color:#7aa2ff; font-weight:700; }
+    .title { font-size:1.6rem; font-weight:700; margin:.15rem 0; }
+    .artist { color:#c3c9de; }
+    .pos { color:#9aa3bd; margin-top:.5rem; font-variant-numeric:tabular-nums; }
+    .bar { height:6px; background:#243154; border-radius:3px; margin-top:.6rem; overflow:hidden; }
+    .bar > i { display:block; height:100%; width:0; background:#5570ff; transition:width .5s linear; }
+    .btn { display:block; text-align:center; text-decoration:none; padding:14px 18px; border-radius:12px;
+           background:#5570ff; color:#fff; font-weight:600; margin:10px 0; }
+    .btn.secondary { background:transparent; color:#9aa3bd; border:1px solid #243154; }
+    .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#51607f; margin-right:6px; vertical-align:middle; }
+    .dot.live { background:#36d17a; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1><%= @jukebox.name %></h1>
+    <p class="muted">
+      <span id="livedot" class="dot"></span>Playing on <strong><%= current_archive.name %></strong>'s speakers.
+      This page is a remote — closing it won't stop the music.
+    </p>
+
+    <div class="card">
+      <div class="state" id="state">LOADING</div>
+      <div class="title" id="title">—</div>
+      <div class="artist" id="artist"></div>
+      <div class="bar"><i id="barfill"></i></div>
+      <div class="pos" id="pos"></div>
+    </div>
+
+    <% if current_archive.player_url.present? %>
+      <a class="btn" href="<%= current_archive.player_url %>" target="_blank" rel="noopener">Open the local player controls ↗</a>
+    <% end %>
+    <a class="btn secondary" href="<%= jukebox_path(@jukebox) %>">Back to jukebox</a>
+  </div>
+
+  <script>
+    const CFG = { id: '<%= @jukebox.id %>', token: '<%= @api_token %>' };
+    const $ = (id) => document.getElementById(id);
+    const fmt = (x) => { x = Math.floor(x || 0); return Math.floor(x/60) + ':' + String(x%60).padStart(2,'0'); };
+    async function poll() {
+      try {
+        const r = await fetch('/api/v1/jukeboxes/' + CFG.id + '/status', {
+          headers: { 'Authorization': 'Bearer ' + CFG.token, 'X-Requested-With': 'XMLHttpRequest' },
+          credentials: 'same-origin'
+        });
+        const d = await r.json();
+        const j = (d && d.jukebox) || {};
+        const s = j.current_song;
+        $('livedot').classList.toggle('live', !!j.is_playing);
+        $('state').textContent = s ? (j.is_playing ? 'PLAYING' : 'PAUSED') : 'IDLE';
+        $('title').textContent = s ? s.title : 'Nothing playing';
+        $('artist').textContent = s ? (s.artist || '') : '';
+        if (s) {
+          const pos = Number(j.current_position) || 0, dur = Number(s.duration) || 0;
+          $('pos').textContent = fmt(pos) + ' / ' + fmt(dur);
+          $('barfill').style.width = dur ? Math.min(100, (pos/dur)*100) + '%' : '0';
+        } else {
+          $('pos').textContent = ''; $('barfill').style.width = '0';
+        }
+      } catch (e) { /* non-fatal: it's a status view */ }
+    }
+    poll();
+    setInterval(poll, 3000);
+  </script>
+</body>
+</html>
