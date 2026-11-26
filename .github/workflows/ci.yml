@@ -26,7 +26,7 @@ jobs:
       PGPASSWORD: password
       SECRET_KEY_BASE: ci-only-not-a-secret-0123456789abcdef0123456789abcdef
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: System packages (current psql for structure.sql, ffmpeg for audio tests)
         run: |
           sudo install -d /usr/share/postgresql-common/pgdg
@@ -51,7 +51,7 @@ jobs:
       run:
         working-directory: archive
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.4.13"
@@ -67,7 +67,7 @@ jobs:
       run:
         working-directory: archive
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.4.13"
@@ -80,10 +80,10 @@ jobs:
     name: Player daemon
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version: "3.15"
       - name: Compiles
         run: python -m py_compile station/station.py station/test/mock_owntone.py
       - name: Image builds
