@@ -58,8 +58,8 @@ filed under their own tags. The login is a read-only role (`archive_mb_ro`) on t
 ## The analysis reserve
 
 New songs have no sound analysis, so stations cannot pick them. `Song.awaiting_analysis` is the
-reserve; the Drop Box page shows its size. Pulling those files to the analysis PC and loading the
-results back is not built yet (see `STATUS.md`).
+reserve; the Drop Box page shows its size. An outside machine works through it with the analysis API
+(`ANALYSIS_API.md`).
 
 ## Not built
 
