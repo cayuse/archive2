@@ -156,7 +156,7 @@ headless tagger worker, library dedup.
 ## Known debt (as of the 2026-11-25 cleanup pass)
 
 Runs on Ruby 3.4.13 and Rails 8.1 since 2026-11-25 (was 3.2.5 / 8.0.2, both past end of support).
-`config.load_defaults` is still 8.0: adopting the 8.1 defaults is a separate, deliberate step.
+`config.load_defaults` is 8.1 (YJIT in production, unsafe relative redirects raise, the rest).
 
 
 - **Leftovers of the retired standalone jukeboxes** (removed 2026-11-25; code at tag
