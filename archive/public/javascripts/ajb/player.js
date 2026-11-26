@@ -28,12 +28,6 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
-  if (typeof Howl === 'undefined') {
-    console.error('Howler.js is not loaded');
-    document.getElementById('react-player-app').innerHTML = '<div class="alert alert-danger">Error: Howler.js library not loaded</div>';
-    return;
-  }
-
   if (typeof PlayerController === 'undefined') {
     console.error('PlayerController is not loaded');
     document.getElementById('react-player-app').innerHTML = '<div class="alert alert-danger">Error: PlayerController not loaded</div>';

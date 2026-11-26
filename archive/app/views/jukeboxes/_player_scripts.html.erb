@@ -1,13 +1,11 @@
 <!-- AJB player libraries — all self-hosted so the player works offline / on a
      party LAN with no internet. (Babel and Tone.js were removed: the app uses
-     React.createElement, not JSX, and audio is Howler-only.) -->
+     React.createElement, not JSX. Howler was removed 2026-11-26: AudioEngine drives one <audio>
+     element itself, which is what iOS needs to keep playing with the screen locked.) -->
 
 <!-- React and ReactDOM -->
 <script src="/vendor/ajb/react.production.min.js"></script>
 <script src="/vendor/ajb/react-dom.production.min.js"></script>
-
-<!-- Audio -->
-<script src="/vendor/ajb/howler.min.js"></script>
 
 <!-- ActionCable (self-hosted) for live updates -->
 <script src="/vendor/ajb/actioncable.min.js"></script>

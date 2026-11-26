@@ -105,6 +105,7 @@ class PlayerController {
       this.reportEvent('finished');
       if (this.pauseAfterSong) {
         // Hold between songs (e.g. for an announcement) instead of advancing.
+        this.audioEngine.stop();
         this.pauseAfterSong = false;
         this.awaitingResume = true;
         this.notifyPauseMode();
@@ -220,6 +221,7 @@ class PlayerController {
           this.notifyError('Failed to load song');
         }
       } else {
+        this.audioEngine.stop();   // nothing to play next: do not keep the last song looping silently
         this.notifyError(result.message || 'No songs available');
       }
     } catch (error) {
@@ -242,6 +244,8 @@ class PlayerController {
 
   // Play button
   async play() {
+    // This is a tap: let the audio element play from now on without one (iOS; see AudioEngine).
+    this.audioEngine.unlock();
     if (this.awaitingResume) {
       // Resume after a "pause after song" hold → continue to the next track.
       await this.playNextSong();
@@ -249,7 +253,7 @@ class PlayerController {
     }
     if (!this.playbackState.currentSong) {
       await this.playNextSong();
-    } else if (!this.audioEngine.sound && this.resumePosition != null) {
+    } else if (!this.audioEngine.currentSong && this.resumePosition != null) {
       // Reopened mid-play: load the restored track and resume at the saved spot.
       const pos = this.resumePosition;
       this.resumePosition = null;

@@ -52,6 +52,12 @@ class JukeboxesController < ApplicationController
 
   private
 
+  # The jukebox pages pin their scripts by fingerprint (JukeboxesHelper#ajb_build); a cached copy of
+  # the page would keep loading old code, so the page itself is never cached.
+  def no_store!
+    response.headers["Cache-Control"] = "no-store"
+  end
+
   def set_jukebox
     @jukebox = Jukebox.find(params[:id])
   end
@@ -147,6 +153,7 @@ class JukeboxesController < ApplicationController
 
   # AJB Player and Guest interfaces
   def player
+    no_store!
     # Generate a short-lived API token for the logged-in host's browser player.
     @api_token = current_user ? generate_api_token_for_user(current_user) : nil
     # Server-played jukeboxes: the node's hidden task is the player, so the page
@@ -155,6 +162,7 @@ class JukeboxesController < ApplicationController
   end
 
   def guest
+    no_store!
     # Guest interface - no authentication required, just jukebox access
     # The guest will authenticate using jukebox ID and password via JavaScript
   end
@@ -164,6 +172,7 @@ class JukeboxesController < ApplicationController
   def guest_short
     @jukebox = Jukebox.find_by(session_id: params[:code].to_s.downcase.strip)
     return render plain: "Jukebox not found.", status: :not_found unless @jukebox
+    no_store!
     render :guest
   end
 

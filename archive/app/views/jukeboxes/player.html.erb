@@ -69,10 +69,11 @@
     };
   </script>
   
-  <!-- Load all AJB modules.
-       These are plain static files (not asset-pipelined), so bump ajb_v whenever
-       any of them changes to force browsers/iOS to fetch the new code. -->
-  <% ajb_v = "20261126-ios-start" %>
+  <!-- Load all AJB modules. Plain static files (not asset-pipelined): ajb_build is a fingerprint
+       of their contents, so any change gives them new URLs and browsers/iOS fetch the new code. -->
+  <% ajb_v = ajb_build %>
+  <script>window.AJB_BUILD = <%= raw ajb_v.to_json %>;</script>
+  <div style="position:fixed;right:6px;bottom:4px;font:11px/1 system-ui,sans-serif;opacity:.45;pointer-events:none;z-index:9999">player <%= ajb_v %></div>
   <script src="/javascripts/ajb/models/AudioEngine.js?v=<%= ajb_v %>"></script>
   <script src="/javascripts/ajb/models/PlaybackState.js?v=<%= ajb_v %>"></script>
   <script src="/javascripts/ajb/services/ApiService.js?v=<%= ajb_v %>"></script>

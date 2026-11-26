@@ -42,6 +42,9 @@ await js(`(() => { const f = document.querySelector('form'); f.querySelector('[n
 await sleep(2500);
 await go(`${BASE}/jukeboxes/${JUKEBOX}/player`);
 check("player page has its controller", await js("!!window.ajbPlayer"));
+const build = await js("window.AJB_BUILD");
+check("the page reports its player build", /^[0-9a-f]{10}$/.test(build || ""), build);
+check("one audio element, no Howler", (await js("typeof Howl")) === "undefined" && (await js("document.querySelectorAll('audio').length")) === 1);
 
 // record the engine's end / play moments
 await js(`(() => { const p = window.ajbPlayer, e = p.audioEngine; window.ev = [];
@@ -58,7 +61,7 @@ const callsAtStart = nextSongCalls();
 
 // jump to 30s before the end: nothing may be taken yet
 const dur = await js("window.ajbPlayer.audioEngine.getDuration()");
-await js(`window.ajbPlayer.audioEngine.sound.seek(${dur - 30})`);
+await js(`window.ajbPlayer.audioEngine.seek(${dur - 30})`);
 await sleep(4000);
 check("nothing taken 26s before the end", nextSongCalls() === callsAtStart && !(await js("window.ajbPlayer.audioEngine.hasPreloaded()")));
 await sleep(9000);
@@ -87,7 +90,7 @@ check("a skip mid-song fetches and plays a new song", nextSongCalls() === before
 
 // skip right after a prefetch: the prefetched song is used, nothing else is taken
 const d2 = await js("window.ajbPlayer.audioEngine.getDuration()");
-await js(`window.ajbPlayer.audioEngine.sound.seek(${d2 - 15})`);
+await js(`window.ajbPlayer.audioEngine.seek(${d2 - 15})`);
 await sleep(3000);
 const lined2 = await js("window.ajbPlayer.audioEngine.hasPreloaded() && window.ajbPlayer.audioEngine.preloadedSong().title");
 const calls2 = nextSongCalls();
@@ -95,12 +98,12 @@ await js("window.ajbPlayer.skip()");
 await sleep(3000);
 check("a skip after the prefetch plays the prefetched song", !!lined2 && (await js("window.ajbPlayer.audioEngine.currentSong.title")) === lined2 && nextSongCalls() === calls2, lined2 || "(nothing prefetched)");
 
-// iOS does not buffer the next song ahead (seen on a locked iPhone): emulate that by not loading it
-// ahead at all, and check the song still starts on its own when the current one ends.
-await js("window.ajbPlayer.audioEngine.preloadAhead = false");
+// The download of the next song has not finished when this one ends (slow network): it is streamed
+// instead, from the same element, and must still start by itself.
+await js("window.ajbPlayer.audioEngine.downloadAhead = false");
 const d3 = await js("window.ajbPlayer.audioEngine.getDuration()");
 const third = await js("window.ajbPlayer.audioEngine.currentSong.title");
-await js(`window.ajbPlayer.audioEngine.sound.seek(${d3 - 12})`);
+await js(`window.ajbPlayer.audioEngine.seek(${d3 - 12})`);
 await sleep(3000);
 const unbuffered = await js("JSON.stringify(window.ajbPlayer.audioEngine.getDiagnostics().next || null)");
 for (let i = 0; i < 20 && (await js("window.ajbPlayer.audioEngine.currentSong.title")) === third; i++) await sleep(1000);
@@ -108,10 +111,11 @@ await sleep(2500);
 const ev3 = await js("window.ev");
 const end3 = ev3.findLast((e) => e[0] === "end"), play3 = ev3.findLast((e) => e[0] === "play");
 const gap3 = end3 && play3 && play3[1] > end3[1] ? play3[1] - end3[1] : null;
-check("with nothing buffered ahead (as on iOS) the next song still starts by itself",
+check("with the next song not downloaded yet it is streamed and still starts by itself",
       (await js("window.ajbPlayer.audioEngine.isPlaying")) && (await js("window.ajbPlayer.audioEngine.currentSong.title")) !== third,
       `gap ${gap3 !== null ? gap3.toFixed(0) + " ms" : "?"}; next was ${unbuffered}`);
 
+check("still one audio element after all that", (await js("document.querySelectorAll('audio').length")) === 1);
 const errors = await js("JSON.stringify(window.ajbPlayer.audioEngine.getDiagnostics())");
 console.log("       diagnostics now:", errors);
 await js("window.ajbPlayer.audioEngine.stop()");
