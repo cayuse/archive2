@@ -47,48 +47,6 @@
       "note": "Column names come from the DIALS constant, not from input."
     },
     {
-      "warning_type": "Unmaintained Dependency",
-      "warning_code": 121,
-      "fingerprint": "9a3951031616a07c8e02c86652f537e92c08685da97f5ec2b12d5d3602b55bb8",
-      "check_name": "EOLRuby",
-      "message": "Support for Ruby 3.2.5 ended on 2026-03-31",
-      "file": "Gemfile.lock",
-      "line": 394,
-      "link": "https://brakemanscanner.org/docs/warning_types/unmaintained_dependency/",
-      "code": null,
-      "render_path": null,
-      "location": null,
-      "user_input": null,
-      "confidence": "High",
-      "cwe_id": [
-        1104
-      ],
-      "note": "KNOWN DEBT, not a false positive: Rails 8.0 and Ruby 3.2 are past end of support. Remove this entry when the upgrade (Rails 8.1+, Ruby 3.4) is done; tracked in docs/STATUS.md."
-    },
-    {
-      "warning_type": "Command Injection",
-      "warning_code": 14,
-      "fingerprint": "a799e6f433752380b01f56d1196b5273249ab8ced61f78c9e5a3c255f7b5c2bd",
-      "check_name": "Execute",
-      "message": "Possible command injection",
-      "file": "lib/library_sample/audio_synth.rb",
-      "line": 53,
-      "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
-      "code": "Open3.capture3(\"ffmpeg\", \"-loglevel\", \"error\", \"-y\", \"-i\", (clip.path or \"#{path}.wav\"), \"-af\", (clip_filters(clip, features, seconds) or filters(features, seconds)), \"-t\", seconds.to_s, \"-ar\", \"44100\", *tags.compact.flat_map do\n [\"-metadata\", \"#{key}=#{value}\"]\n end, *{ \"mp3\" => ({ :codec => ([\"-c:a\", \"libmp3lame\", \"-b:a\", \"128k\"]), :content_type => \"audio/mpeg\" }), \"m4a\" => ({ :codec => ([\"-c:a\", \"aac\", \"-b:a\", \"128k\"]), :content_type => \"audio/mp4\" }), \"flac\" => ({ :codec => ([\"-c:a\", \"flac\"]), :content_type => \"audio/flac\" }) }.fetch(self.class.format_for(file_format)).fetch(:codec), path)",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "LibrarySample::AudioSynth",
-        "method": "render"
-      },
-      "user_input": "path",
-      "confidence": "Medium",
-      "cwe_id": [
-        77
-      ],
-      "note": "Development seed tool; ffmpeg is run with an argument array (no shell), values come from the bundled sample data."
-    },
-    {
       "warning_type": "File Access",
       "warning_code": 16,
       "fingerprint": "b85badfafcc9f819d90a0a1c3d4823645cf8cf13a03130ba9fc078c73d2ba2e8",
@@ -133,25 +91,6 @@
         915
       ],
       "note": "Role and playback grants are meant to be set here; update is refused for non-admins in the action and by UserPolicy."
-    },
-    {
-      "warning_type": "Unmaintained Dependency",
-      "warning_code": 120,
-      "fingerprint": "d84924377155b41e094acae7404ec2e521629d86f97b0ff628e3d1b263f8101c",
-      "check_name": "EOLRails",
-      "message": "Support for Rails 8.0.2 ended on 2026-10-07",
-      "file": "Gemfile.lock",
-      "line": 249,
-      "link": "https://brakemanscanner.org/docs/warning_types/unmaintained_dependency/",
-      "code": null,
-      "render_path": null,
-      "location": null,
-      "user_input": null,
-      "confidence": "High",
-      "cwe_id": [
-        1104
-      ],
-      "note": "KNOWN DEBT, not a false positive: Rails 8.0 and Ruby 3.2 are past end of support. Remove this entry when the upgrade (Rails 8.1+, Ruby 3.4) is done; tracked in docs/STATUS.md."
     },
     {
       "warning_type": "File Access",
@@ -200,5 +139,5 @@
       "note": "Admin-only theme export; each database-supplied name is reduced to one path component with File.basename."
     }
   ],
-  "brakeman_version": "7.1.0"
+  "brakeman_version": "8.1.1"
 }

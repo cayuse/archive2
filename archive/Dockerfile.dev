@@ -1,5 +1,5 @@
 # Development image for docker-compose.dev.yml. Source is bind-mounted, not copied.
-FROM ruby:3.2.5
+FROM ruby:3.4.13
 
 RUN apt-get update -qq \
  && apt-get install -y --no-install-recommends postgresql-client libyaml-dev ffmpeg \

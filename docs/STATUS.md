@@ -155,10 +155,10 @@ headless tagger worker, library dedup.
 
 ## Known debt (as of the 2026-11-25 cleanup pass)
 
-- **Rails 8.0 and Ruby 3.2 are past end of support.** Brakeman flags both; they are in
-  `archive/config/brakeman.ignore` with a note so CI stays meaningful. The fix is an upgrade to
-  Rails 8.1+ and Ruby 3.4 (new base image, full regression on staging); remove the two ignore
-  entries when it is done.
+Runs on Ruby 3.4.13 and Rails 8.1 since 2026-11-25 (was 3.2.5 / 8.0.2, both past end of support).
+`config.load_defaults` is still 8.0: adopting the 8.1 defaults is a separate, deliberate step.
+
+
 - **No linter.** `archive/.rubocop.yml` inherits `rubocop-rails-omakase`, which is not in the
   Gemfile, so RuboCop has never run. Either add the gem and accept one large formatting commit,
   or delete the config.
