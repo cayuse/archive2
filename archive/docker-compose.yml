@@ -15,7 +15,9 @@ services:
       timeout: 5s
       retries: 5
 
-  # PostgreSQL database for Archive
+  # PostgreSQL database for Archive. This file still defines production's db and redis containers
+  # on bigballs (the app itself is deployed by Kamal, see KAMAL_DEPLOY.md). The replication settings
+  # below date from the retired slave jukeboxes and are harmless.
   db:
     image: postgres:15
     restart: unless-stopped

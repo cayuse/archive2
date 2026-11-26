@@ -10,7 +10,6 @@ server-side playback to AirPlay speakers.
 | `owntone/` | OwnTone's configuration (used by `station/`). |
 | `library_tools/` | Library maintenance tools and the staging harness (`library_tools/staging/`). |
 | `utilities/` | Bulk upload and tag-extraction scripts that talk to the API. |
-| `jukebox/`, `player/` | Earlier standalone jukebox app and mpv player for replicated slave machines. Not part of the current deploy; kept for the slaves that still run them. |
 | `docs/` | Documentation. Start at `docs/README.md`. |
 
 ## Run it locally

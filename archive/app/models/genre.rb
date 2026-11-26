@@ -31,10 +31,6 @@ class Genre < ApplicationRecord
       .limit(50)
   }
 
-  # Sync tracking
-  after_create :track_sync_change
-  after_update :track_sync_change
-  after_destroy :track_sync_change
 
   # Instance methods
   def display_name
@@ -49,21 +45,4 @@ class Genre < ApplicationRecord
     color.presence || '#6c757d'
   end
 
-  private
-
-  def track_sync_change
-    return unless SystemSetting.sync_enabled?
-    return if SystemSetting.standalone?  # Don't track in standalone mode
-    
-    change_type = destroyed? ? 'delete' : (previously_new_record? ? 'create' : 'update')
-    
-    SyncChange.create!(
-      table_name: self.class.table_name,
-      record_id: id,
-      change_type: change_type,
-      change_data: destroyed? ? nil : attributes
-    )
-  rescue => e
-    Rails.logger.error "Failed to track sync change for genre #{id}: #{e.message}"
-  end
-end 
+end

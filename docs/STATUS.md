@@ -162,15 +162,13 @@ headless tagger worker, library dedup.
 - **No linter.** `archive/.rubocop.yml` inherits `rubocop-rails-omakase`, which is not in the
   Gemfile, so RuboCop has never run. Either add the gem and accept one large formatting commit,
   or delete the config.
-- **Legacy deploy scripts** at the repository root and in `archive/` (`setup.sh`,
-  `jukebox_*setup*.sh`, `deploy*.sh`, `manage_replication.sh`, `fix_*.sh`, `run_migration.sh`,
-  `deploy_commands.sh`, `check_status.sh`, `after_deploy_slave.sh`, `slave_exports_template.sh`)
-  predate Kamal. Some may still be how the replicated slave jukeboxes are set up; nobody has
-  confirmed which. They were left in place.
+- **Leftovers of the retired standalone jukeboxes** (removed 2026-11-25; code at tag
+  `pre-jukebox-removal`): the tables `sync_changes`, `slave_keys`, `jukebox_keys`,
+  `conflict_logs` (all empty) and `song_ratings` (5 rows, superseded by `station_feedbacks`), and
+  the publication `pub_archive`. Nothing in the app reads or writes them; they can be dropped in
+  a later migration. Postgres still runs with `wal_level=logical`, which is harmless.
 - **Reference docs are unreviewed** (see `docs/README.md`): moved and indexed, not checked
   against the code.
-- **Ad-hoc scripts in `archive/`** (`test_all.rb`, `test_api_upload.rb`,
-  `test_encrypted_tokens.rb`, `setup_gems.rb`) are from 2025 and not part of any workflow.
 
 ## Dev / staging harness (gameforge)
 - `library_tools/staging/` scripts run a production-copy of the app locally:

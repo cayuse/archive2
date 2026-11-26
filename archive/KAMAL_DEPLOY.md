@@ -2,9 +2,9 @@
 
 Kamal manages **only the Rails app container**. Postgres (`archive-db-1`) and
 Redis (`archive-redis-1`) keep running in the docker compose project on bigballs
-and are never stopped, recreated or migrated by a deploy. The DB is the
-logical-replication master for the jukeboxes (publication `pub_archive`, one
-slot per jukebox); jukeboxes keep replicating from it on :5432 as before.
+and are never stopped, recreated or migrated by a deploy. (The DB used to be the
+logical-replication master for standalone jukebox machines. Those are retired and their
+replication slots dropped; the publication `pub_archive` and a few empty tables remain.)
 
 ## How the containers are separated on bigballs
 | Network | Members | Purpose |

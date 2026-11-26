@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Wait for the GitHub Actions run of a commit (default: HEAD) and print each job's result.
+# Exit 0 only if the run succeeded. Uses the public API; no token needed while the repo is public.
+set -uo pipefail
+SHA="$(git rev-parse "${1:-HEAD}")"; API=https://api.github.com/repos/cayuse/archive2/actions
+for i in $(seq 1 80); do
+  read -r ID STATUS RESULT < <(curl -s -m 15 "$API/runs?head_sha=$SHA&per_page=5" | python3 -c "
+import json,sys
+runs=[r for r in json.load(sys.stdin).get('workflow_runs',[]) if r['name']=='CI']
+print(runs[0]['id'], runs[0]['status'], runs[0]['conclusion']) if runs else print('- waiting -')")
+  [ "$STATUS" = completed ] && break
+  sleep 15
+done
+curl -s -m 15 "$API/runs/$ID/jobs" | python3 -c "
+import json,sys
+for j in json.load(sys.stdin).get('jobs',[]): print('  %-14s %s' % (j['name'], j['conclusion']))"
+echo "CI for ${SHA:0:7}: ${RESULT:-no run found}"
+[ "$RESULT" = success ]

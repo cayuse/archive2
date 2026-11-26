@@ -2,8 +2,8 @@
 #
 # Only the Rails app is managed by Kamal. Postgres (archive-db-1) and Redis
 # (archive-redis-1) stay in the docker compose project "archive" on bigballs:
-# the DB is the logical-replication master for the jukeboxes (publication
-# pub_archive, one slot per jukebox), so it is never recreated by a deploy.
+# the database is long-lived state, so it is never recreated by a deploy. (It used to be the
+# logical-replication master for standalone jukebox machines; those are retired.)
 # The app container joins the compose network and connects by the unique
 # container names archive-db-1 / archive-redis-1 (not the generic "db"/"redis"
 # aliases), so it can never resolve to another app's Postgres such as
@@ -19,7 +19,7 @@ servers:
     hosts:
       - 192.168.17.109
     # No kamal-proxy on bigballs: host nginx terminates TLS and proxies to :3000,
-    # and LAN clients (jukebox players) may hit :3000 directly.
+    # and LAN clients may hit :3000 directly.
     proxy: false
     options:
       network: archive_default

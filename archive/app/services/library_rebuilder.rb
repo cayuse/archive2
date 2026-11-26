@@ -12,7 +12,7 @@
 #     pointing at them are deleted.
 #
 # Everything runs as set-based SQL in ONE transaction. Model callbacks do not run, so no
-# SyncChange rows are written; the search_vector triggers do fire.
+# the search_vector triggers do fire.
 #
 # Lookup files (tab-separated, written by scripts/mb_export_lookup.sql against the mirror):
 #   lookup_artist.tsv, lookup_release.tsv, lookup_recording.tsv
