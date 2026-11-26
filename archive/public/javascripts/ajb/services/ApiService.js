@@ -9,6 +9,19 @@ class ApiService {
   }
 
   // Get next song from queue
+  // The browser player started this song (it picked it from the head of the queue): take it out of
+  // the queue and into the history.
+  async takeSong(songId) {
+    const response = await fetch(`${this.baseUrl}/take_song`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'Authorization': `Bearer ${this.apiToken}` },
+      credentials: 'same-origin',
+      body: JSON.stringify({ song_id: songId })
+    });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    return response.json();
+  }
+
   async getNextSong() {
     try {
       const response = await fetch(`${this.baseUrl}/next_song`, {

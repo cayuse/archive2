@@ -115,4 +115,20 @@ class Api::V1::NodePlayerTest < ActionDispatch::IntegrationTest
       assert_equal "added", json["outcome"]
     end
   end
+  test "a player says which song it started: it leaves the queue for the history, once" do
+    first, second = songs(:one), songs(:two)
+    @jukebox.ajb_queue_items.create!(song: first, source: "requested")
+    @jukebox.ajb_queue_items.create!(song: second, source: "random")
+
+    2.times { post "/api/v1/jukeboxes/#{@jukebox.id}/take_song", params: { song_id: first.id }, headers: bearer(@owner), as: :json }
+    assert_response :success
+    assert_equal [ second.id ], @jukebox.ajb_queue_items.pluck(:song_id)
+    assert_equal [ [ first.id, "requested" ] ], @jukebox.ajb_played_songs.pluck(:song_id, :source)
+
+    post "/api/v1/jukeboxes/#{@jukebox.id}/take_song", params: { song_id: SecureRandom.uuid }, headers: bearer(@owner), as: :json
+    assert_response :not_found
+    post "/api/v1/jukeboxes/#{@jukebox.id}/take_song", params: { song_id: second.id }, headers: bearer(@other), as: :json
+    assert_response :forbidden
+    assert_equal [ second.id ], @jukebox.ajb_queue_items.pluck(:song_id)
+  end
 end

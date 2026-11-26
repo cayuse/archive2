@@ -1,10 +1,12 @@
 // AJB PlayerController - Business logic for the player
 
-// The next song is taken from the archive this many seconds before the current one ends and loaded
-// in the background, so it starts without a gap (and a locked iPhone never goes quiet). Taking it
-// earlier would hold it off the queue a whole song: a request made meanwhile would wait behind it.
-// Same rule as the speakers (station/station.py, LINE_UP_SECONDS).
-const PREFETCH_SECONDS = 20;
+// The song that follows is always known before it is needed: it is the head of the archive's queue,
+// read (not taken) every time the queue is loaded, and refreshed at least this often while playing.
+// When a song ends, the next one is started inside that 'ended' event with no network call (a
+// backgrounded iPhone Safari freezes the page's timers and holds back its network for minutes, but
+// still delivers the media event), and the archive is told afterwards (take_song). A request made
+// up to the last moment the page could run still plays next.
+const QUEUE_REFRESH_SECONDS = 15;
 
 class PlayerController {
   constructor(jukeboxId, apiToken, sessionId = null) {
@@ -154,32 +156,42 @@ class PlayerController {
         this.playbackState.updateTime(currentTime, duration);
         // Keep the lock-screen scrubber in sync.
         this.audioEngine.updateMediaSessionPosition();
-        this.maybePrefetch(currentTime, duration);
+        this.refreshQueueIfStale();
       }
     }, 1000); // Update every second
   }
 
-  // Near the end of the current song, take the next one from the archive and load it ahead.
-  maybePrefetch(currentTime, duration) {
-    const song = this.playbackState.currentSong;
-    if (!song || this.yielded || this.pauseAfterSong || this.prefetchPromise) return;
-    if (this.audioEngine.hasPreloaded() || this.prefetchedAfter === song.id) return;
-    if (!duration || !isFinite(duration) || duration - currentTime > PREFETCH_SECONDS) return;
-    this.prefetchedAfter = song.id;   // once per song, even if the archive had nothing
-    this.prefetchPromise = (async () => {
+  refreshQueueIfStale() {
+    if (this.yielded || this.queueLoading) return;
+    if (this.queueLoadedAt && Date.now() - this.queueLoadedAt < QUEUE_REFRESH_SECONDS * 1000) return;
+    this.loadQueue();
+  }
+
+  // The song to start when this one ends: the head of the queue, unless it is the song playing or
+  // one started here whose take_song has not reached the archive yet.
+  pickNext() {
+    const current = this.playbackState.currentSong;
+    const pending = this.takingSongIds || [];
+    const item = (this.queue || []).find((i) => i.source !== 'lined_up' && i.song && (i.song.stream_url || i.song.download_url) &&
+      !(current && i.song.id === current.id) && !pending.includes(i.song.id));
+    if (item) this.audioEngine.preload(item.song);
+    else this.audioEngine.dropPreloaded();
+  }
+
+  // Tell the archive a song started, retrying while the network is held back.
+  async takeSong(song) {
+    this.takingSongIds = (this.takingSongIds || []).concat(song.id).slice(-5);
+    for (let attempt = 0; attempt < 30; attempt++) {
       try {
-        const result = await this.apiService.getNextSong();
-        if (result.success && result.song) {
-          this.audioEngine.preload(result.song);
-          this.loadQueue();            // it left the queue
-          this.refreshNewestHistory();
-        }
+        await this.apiService.takeSong(song.id);
+        this.takingSongIds = this.takingSongIds.filter((id) => id !== song.id);
+        this.loadQueue();
+        this.refreshNewestHistory();
+        return;
       } catch (e) {
-        console.warn('Prefetch of the next song failed; it will be fetched when this one ends:', e.message);
-      } finally {
-        this.prefetchPromise = null;
+        await new Promise((r) => setTimeout(r, Math.min(2000 * (attempt + 1), 15000)));
       }
-    })();
+    }
   }
 
   // Play the next song
@@ -192,13 +204,9 @@ class PlayerController {
       this.notifyPauseMode();
     }
 
-    // The next song is already loaded: start it now, before anything is awaited (see AudioEngine#playPreloaded).
+    // The next song is known: start it now, before anything is awaited (see QUEUE_REFRESH_SECONDS).
     if (this.startPreloaded()) return;
-    // It is on its way (a skip just before the end): wait for it rather than take yet another song.
-    if (this.prefetchPromise) {
-      await this.prefetchPromise;
-      if (this.startPreloaded()) return;
-    }
+    // Nothing known (empty queue, nothing loaded yet): ask the archive for one, the old way.
 
     this.isLoading = true;
     this.notifyLoading(true);
@@ -209,6 +217,7 @@ class PlayerController {
       
       if (result.success && result.song) {
         const song = result.song;
+        this.audioEngine.dropPreloaded();
         this.playbackState.setCurrentSong(song);
         this.loadQueue();          // the consumed track left the queue
         this.refreshNewestHistory(); // ...and became a history entry
@@ -237,8 +246,9 @@ class PlayerController {
     const song = this.audioEngine.playPreloaded();
     if (!song) return false;
     this.playbackState.setCurrentSong(song);
-    console.log(`Playing (preloaded): ${song.title} by ${song.artist}`);
+    console.log(`Playing: ${song.title} by ${song.artist}`);
     this.updatePlaybackStatus('advance_done');
+    this.takeSong(song);
     return true;
   }
 
@@ -352,16 +362,21 @@ class PlayerController {
   // --- Queue management: the host's view of upcoming songs + guest requests ---
 
   async loadQueue() {
+    this.queueLoading = true;
     try {
       const result = await this.apiService.getQueue();
       if (result.success) {
+        this.queueLoadedAt = Date.now();
         // the song already taken to follow this one is no longer in the queue: show it first
         const lined = result.lined_up;
         this.queue = (lined ? [{ id: 'lined-' + lined.id, source: 'lined_up', song: lined }] : []).concat(result.queue || []);
+        this.pickNext();
         this.notifyQueueChange();
       }
     } catch (error) {
       console.warn('Failed to load queue:', error.message);
+    } finally {
+      this.queueLoading = false;
     }
   }
 

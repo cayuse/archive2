@@ -181,6 +181,7 @@ Rails.application.routes.draw do
           get :queue
           get :current_song
           get :next_song
+          post :take_song
           get :playback_info
           get :history
           post :queue, action: :add_to_queue

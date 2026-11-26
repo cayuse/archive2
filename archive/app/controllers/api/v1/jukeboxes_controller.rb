@@ -4,7 +4,7 @@ class Api::V1::JukeboxesController < ApplicationController
 
   skip_before_action :verify_authenticity_token
   before_action :authenticate_api_user!
-  before_action :set_jukebox, only: [ :status, :queue, :current_song, :playback_info, :history, :add_to_queue, :remove_from_queue, :move_in_queue, :promote_in_queue, :play_next_in_queue, :playback_status, :next_song, :radio_settings, :feedback, :tuning, :add_seed, :remove_seed, :keep_artist, :rename_station, :destroy_station, :share_station, :transport, :server_playback ]
+  before_action :set_jukebox, only: [ :status, :queue, :current_song, :playback_info, :history, :add_to_queue, :remove_from_queue, :move_in_queue, :promote_in_queue, :play_next_in_queue, :playback_status, :next_song, :take_song, :radio_settings, :feedback, :tuning, :add_seed, :remove_seed, :keep_artist, :rename_station, :destroy_station, :share_station, :transport, :server_playback ]
   before_action :require_person!, only: [ :index, :stations, :station, :shared_stations, :copy_station, :server_playback ]
 
   # List the authenticated user's own jukeboxes so player clients can offer
@@ -682,6 +682,27 @@ class Api::V1::JukeboxesController < ApplicationController
         message: "No songs available in queue"
       }, status: :no_content
     end
+  end
+
+  # POST /api/v1/jukeboxes/:id/take_song  song_id=...
+  # A player that already started a song says so: it leaves the queue (if it is there) and goes into
+  # the history. The browser player picks the head of the queue itself, so it can start it the
+  # instant the last song ends with no network call (iOS freezes a backgrounded page's network);
+  # this follows when it can. Saying it twice is harmless.
+  def take_song
+    song = Song.find(params[:song_id])
+    @jukebox.with_lock do
+      item = @jukebox.ajb_queue_items.find_by(song_id: song.id)
+      unless @jukebox.ajb_played_songs.where(song_id: song.id).where("played_at > ?", 10.minutes.ago).exists?
+        @jukebox.ajb_played_songs.create!(song: song, played_at: Time.current, source: item&.source || "random")
+      end
+      item&.destroy!
+    end
+    ensure_min_queue_length!
+    broadcast_queue_update(@jukebox)
+    render json: { success: true }
+  rescue ActiveRecord::RecordNotFound
+    render json: { success: false, message: "Song not found" }, status: :not_found
   end
 
   private
