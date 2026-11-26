@@ -2,7 +2,7 @@
 
 Session handoff as of 2026-11-25. Written so this work can be picked up cold.
 
-## What is DONE and DEPLOYED to production (master `9a93f20`)
+## What is DONE and DEPLOYED to production (slices I–IV: `9a93f20`; slice V: `600556d`, 2026-11-25)
 
 Branch `feature/radio-multipeer` (merged to `master`, pushed, deployed via Kamal
 to bigballs, migrations applied, verified healthy). Four slices:
@@ -34,7 +34,7 @@ to bigballs, migrations applied, verified healthy). Four slices:
   from `/status`, a link to the node's `player_url`, no Howler), so closing/
   reopening it can't affect playback. Browser mode unchanged.
 
-- **V — Server-side playback, end to end (branch `feature/server-player`, not deployed).**
+- **V — Server-side playback, end to end (deployed 2026-11-25, `600556d`).**
   The archive holds the desired state; the node's daemon (`station/station.py`) follows it.
   - *State.* `jukeboxes.server_transport` (play/pause/stop). `archive_nodes.player_token`
     (daemon's secret, `X-Node-Token`), `player_commands` (one-shot: skip/volume/output/retune, 30 s
@@ -69,22 +69,24 @@ to bigballs, migrations applied, verified healthy). Four slices:
     health check; the daemon remembers what it handed OwnTone (`/data` volume), so a deploy or
     restart mid-song carries on without touching the queue. `owntone.conf` trusts Docker's
     bridge ranges so the bridged daemon may use OwnTone's API. `station/docker-compose.yml` is
-    the same pair for a node without Kamal. NOT deployed: bigballs still runs the old hand-started
-    `owntone` + `archive-station` containers.
+    the same pair for a node without Kamal. Deployed: bigballs runs `archive-player-player-<sha>`
+    and `archive-player-owntone`; the old hand-started `owntone` and `archive-station` containers
+    are stopped (not removed) for rollback.
   - *Known limits.* The daemon keeps one song lined up in OwnTone, so a request on a non-steering
     party queue plays after that song. Seeking on takeover needs OwnTone to be playing first, so
     the first second or two of the song may be heard before it jumps. Daemon restart mid-song
     restarts that song at the estimated position (brief gap).
 
 ### Production state right now
-- Node row: `name="Home"`, `local_playback=true`, `player_url=nil`.
-- Grants: **cayuse** (`cayuse@mac.com`) and **Katya** (`katerina.krasko@gmail.com`).
-- Backup before deploy: `~/archive-backups/20261125-203625` on bigballs (dump +
+- Node row: `name="Home"`, `local_playback=true`, `player_url=http://192.168.17.109:8337`
+  (the daemon's own control page, published on the LAN address only), player token set.
+- Player secrets: `~/.config/archive/player.env` on gameforge (`NODE_TOKEN`, plus the account the
+  old daemon used, for the control page's search / station list). Regenerating the token in
+  Settings → Speakers means updating that file and `kamal deploy` in `station/`.
+- Backups before deploys: `~/archive-backups/20261125-203625` (I–IV) and `20261125-211015` (V) on bigballs (dump +
   globals + SHA256SUMS). Rollback: `kamal rollback <ver>` or pg_restore.
-- `station.py` on bigballs was NOT changed by slices I–IV. **Slice V replaces it**: deploy the
-  archive (migrate), make a player token (Settings → Speakers), put it in
-  `~/.config/archive/player.env` on gameforge, then cut the player over with Kamal
-  (`station/README.md`). Until the new daemon runs, server mode does nothing (the old one never polls).
+- Not yet done on real speakers: nobody has pressed Play since the cutover. The daemon is online
+  and sees the speakers, but its pause and seek calls have only run against the mock OwnTone.
 
 ## UNFINISHED — in rough priority order
 
@@ -110,10 +112,9 @@ saved/propagated/resumed elsewhere. The refactor the owner asked for:
   gated on sync, which is deferred (see #6). Build the model peer-safely now
   (UUID PKs already everywhere, origin stamp) without wiring sync.
 
-### 2–5. Server-side playback end to end — BUILT on branch `feature/server-player` (2026-11-25), NOT yet committed/deployed
-Verified on staging (unit + API tests, two end-to-end runs against a mock OwnTone, one headless-Chrome
-pass of the hand-off). See "Slice V" below. Old items 2 (daemon drives any jukebox, hand-off,
-transport), 3 (node admin UI), 4 (`player_url` reachability) and 5 (code leak on `show`) are closed by it.
+### 2–5. DONE — server-side playback end to end (slice V above)
+Old items 2 (daemon drives any jukebox, hand-off, transport), 3 (node admin UI), 4 (`player_url`
+reachability) and 5 (code leak on `show`) are closed and deployed.
 
 ### 6. Sync extension (DEFERRED by owner — "don't mess with syncing")
 Existing jukeboxes are slave-only player endpoints; true peer sync has never been
