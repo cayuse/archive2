@@ -159,9 +159,6 @@ Runs on Ruby 3.4.13 and Rails 8.1 since 2026-11-25 (was 3.2.5 / 8.0.2, both past
 `config.load_defaults` is still 8.0: adopting the 8.1 defaults is a separate, deliberate step.
 
 
-- **No linter.** `archive/.rubocop.yml` inherits `rubocop-rails-omakase`, which is not in the
-  Gemfile, so RuboCop has never run. Either add the gem and accept one large formatting commit,
-  or delete the config.
 - **Leftovers of the retired standalone jukeboxes** (removed 2026-11-25; code at tag
   `pre-jukebox-removal`): the tables `sync_changes`, `slave_keys`, `jukebox_keys`,
   `conflict_logs` (all empty) and `song_ratings` (5 rows, superseded by `station_feedbacks`), and

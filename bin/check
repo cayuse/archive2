@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 # Everything that must pass before a change is merged. Same checks as CI (.github/workflows/ci.yml),
 # run locally through the staging harness (library_tools/staging; needs its one-time setup.sh).
-#   bin/check            tests, security scan, player daemon
+#   bin/check            tests, security scan, style, player daemon
 #   bin/check --schema   also compare production's schema and migrations with master (read-only)
 set -uo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"; S="$REPO/library_tools/staging"; failed=0
 step() { echo; echo "== $1"; shift; if "$@"; then echo "   ok"; else echo "   FAILED: $*"; failed=1; fi; }
 tests()    { bash "$S/test.sh" 2>&1 | grep -v "wal_level\|^HINT\|unprocessable_entity is deprecated" | tail -25; [ "${PIPESTATUS[0]}" = 0 ]; }
 security() { bash "$S/rails.sh" bundle exec brakeman --no-pager -q 2>&1 | grep -E "Security Warnings|Ignored Warnings|Confidence|Category|File:|Line:|Message"; bash "$S/rails.sh" bundle exec brakeman --no-pager -q >/dev/null 2>&1; }
+lint()     { bash "$S/rails.sh" bundle exec rubocop 2>&1 | tail -3; [ "${PIPESTATUS[0]}" = 0 ]; }
 player()   { python3 -m py_compile "$REPO/station/station.py" "$REPO/station/test/mock_owntone.py"; }
 clean()    { [ -z "$(git -C "$REPO" status --porcelain archive/db/structure.sql)" ] || { echo "   archive/db/structure.sql has uncommitted changes"; return 1; }; }
 step "Rails tests" tests
 step "Security scan (Brakeman, baseline in archive/config/brakeman.ignore)" security
+step "Style (RuboCop; fix with: library_tools/staging/rails.sh bundle exec rubocop -a)" lint
 step "Player daemon compiles" player
 step "structure.sql is committed" clean
 [ "${1:-}" = "--schema" ] && step "Production schema matches master" bash "$S/schema_check.sh" master

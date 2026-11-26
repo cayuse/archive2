@@ -1,0 +1,5 @@
+# Commits that only reformat code. `git blame` skips them:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs   (GitHub does this automatically)
+
+# RuboCop: apply the Rails house style
+6b8dec352e288f3c412a01c7dd713642268a1102

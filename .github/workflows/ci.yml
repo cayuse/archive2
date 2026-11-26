@@ -60,6 +60,22 @@ jobs:
       - name: Static security scan (fails on anything not in config/brakeman.ignore)
         run: bundle exec brakeman --no-pager -q   # the locked version; Dependabot keeps it current
 
+  lint:
+    name: RuboCop
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: archive
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4.13"
+          bundler-cache: true
+          working-directory: archive
+      - name: Style (the Rails house style, archive/.rubocop.yml)
+        run: bundle exec rubocop -f github
+
   player:
     name: Player daemon
     runs-on: ubuntu-latest

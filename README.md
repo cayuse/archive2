@@ -25,7 +25,7 @@ throws the database away.
 ## Working on it
 
 1. Branch from `master`.
-2. Run the checks: `bin/check` (tests, security scan, daemon syntax). They also run in CI on every push
+2. Run the checks: `bin/check` (tests, security scan, style, daemon syntax). They also run in CI on every push
    and pull request (`.github/workflows/ci.yml`). The suite must be green; a failing test is fixed or the
    change is not merged.
 3. Try it on staging: a production-copy database on the dev machine (`library_tools/staging/README.md`).
