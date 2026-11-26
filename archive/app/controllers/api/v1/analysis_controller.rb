@@ -48,6 +48,7 @@ class Api::V1::AnalysisController < ActionController::API
     song = Song.find(params[:id])
     return render json: { error: "this song has no audio file" }, status: :not_found unless song.audio_file.attached?
     blob = song.audio_file.blob
+    return render json: { error: "this song's audio file is missing from storage" }, status: :not_found unless blob.service.exist?(blob.key)
     if blob.service.respond_to?(:path_for)
       send_file blob.service.path_for(blob.key), type: blob.content_type || "application/octet-stream", filename: blob.filename.to_s, disposition: "attachment"
     else
