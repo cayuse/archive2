@@ -123,6 +123,19 @@ await send("Network.setBlockedURLs", { urls: [] });
 for (let i = 0; i < 20 && (await js("(window.ajbPlayer.takingSongIds || []).length")) > 0; i++) await sleep(1000);
 check("once it is back, the archive is told", takesBefore > 0 && (await js("(window.ajbPlayer.takingSongIds || []).length")) === 0 && (await queueHead()) !== expected);
 
+// the system pauses the element (an AirPlay route change on iOS): a real pause, not a stall to fight
+await sleep(3000);
+const pausedSong = await title();
+await js("document.querySelector('audio').pause()");
+await sleep(10000);   // longer than the stall check (4 s) and the play watchdog (2.5 s)
+check("a pause by the system stays a pause (no reload, no restart)",
+      !(await js(`${E}.isPlaying`)) && (await js(`${E}.isPaused`)) && (await js("document.querySelector('audio').paused")) &&
+      !(await js(`${E}._wantPlaying`)) && (await title()) === pausedSong);
+check("and the page shows it paused", (await js("window.ajbPlayer.playbackState.getState().isPlaying")) === false);
+await js("window.ajbPlayer.play()");
+await sleep(2500);
+check("Play resumes the same song where it was", (await js(`${E}.isPlaying`)) && (await title()) === pausedSong && (await js(`${E}.getCurrentTime()`)) > 3);
+
 check("still one audio element after all that", (await js("document.querySelectorAll('audio').length")) === 1);
 console.log("       diagnostics now:", await js(`JSON.stringify(${E}.getDiagnostics())`));
 await js(`${E}.stop()`);

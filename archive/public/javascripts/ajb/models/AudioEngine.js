@@ -76,9 +76,21 @@ class AudioEngine {
       if (this.onPlay) this.onPlay();
     });
     a.addEventListener('pause', () => {
-      // a pause we did not ask for (swapping songs, an interruption) is not the host pausing
-      if (this._wantPlaying || !this.currentSong) return;
-      this.isPlaying = false; this.isPaused = true;
+      if (!this.currentSong) return;
+      if (this._wantPlaying) {
+        // Not asked for by the host. Ignore the pause that comes with a song ending or with our own
+        // change of src; anything else is the system pausing us: an AirPlay or headphone route
+        // change, a call, another app's audio. iOS means that pause (Apple Music stops too), and
+        // fighting it from the background leaves the page silent and then frozen (seen 2026-11-26).
+        // So it is a real pause: the lock screen and the page offer Play.
+        const atEnd = a.ended || (isFinite(a.duration) && a.currentTime >= a.duration - 0.5);
+        const justSwapped = performance.now() - (this._srcChangedAt || 0) < 1500;
+        if (atEnd || justSwapped || this._ending) return;
+        this._wantPlaying = false;
+        this._clearPlayWatchdog();
+        this._emitDiag('system_pause');
+      }
+      this.isPlaying = false; this.isPaused = true; this.isStopped = false;
       this.setMediaSessionPlaybackState('paused');
       if (this.onPause) this.onPause();
     });
@@ -132,6 +144,7 @@ class AudioEngine {
     this._clearPlayWatchdog();
     this.currentSong = song;
     this._wantPlaying = true;
+    this._srcChangedAt = performance.now();
     if (AJB_OPTS.pause) { try { a.pause(); } catch (e) { /* not playing */ } }
     a.src = url;
     a.muted = false;
