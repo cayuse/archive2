@@ -70,6 +70,9 @@ class AudioEngine {
       this._playRetries = 0;
       this._clearPlayWatchdog();
       this.setMediaSessionPlaybackState('playing');
+      // WebKit can drop the page's lock-screen actions when the element's src changes (every song):
+      // register them again each time playback starts.
+      this.setupMediaSession();
       if (this.onPlay) this.onPlay();
     });
     a.addEventListener('pause', () => {
@@ -418,6 +421,10 @@ class AudioEngine {
     set('stop', () => this.stop());
     set('nexttrack', () => this.skip());
     set('previoustrack', () => this.restart());
+    // iOS draws "back 10 s / ahead 10 s" instead of previous / next track unless the seek actions
+    // are explicitly switched off.
+    set('seekbackward', null);
+    set('seekforward', null);
   }
 
   // Push the current track's info to the lock screen.
