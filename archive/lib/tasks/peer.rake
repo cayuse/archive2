@@ -17,6 +17,12 @@ namespace :peer do
     puts d.any? ? "dangling references: #{d.inspect}" : "dangling references: none"
   end
 
+  desc "How many of the library's files are on this peer's disk (files follow the database)"
+  task files: :environment do
+    present, total, missing = PeerSync.file_presence
+    puts "#{present} of #{total} files present#{missing.any? ? "; missing e.g. #{missing.join(', ')}" : ''}"
+  end
+
   desc "Make this database a peer node: PEER_NAME=bigballs PEER_DSN='host=... port=... dbname=... user=... password=...'"
   task setup_node: :environment do
     added = PeerSync.setup_node!(name: ENV.fetch("PEER_NAME"), dsn: ENV.fetch("PEER_DSN"))

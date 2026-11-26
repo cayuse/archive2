@@ -1,0 +1,33 @@
+# Turns production's database (the "db" service in docker-compose.yml, on bigballs) into a peer
+# node: the same Postgres 15 with pglogical and the settings replication needs. docs/PEERS.md,
+# "2. Convert bigballs". Applied on top of the main file, only to the db service:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.peer.yml up -d db
+#
+# The data directory is untouched; the image goes from postgres:15 (15.14) to 15.20 plus pglogical,
+# a minor upgrade that needs no dump. output_plugin_libraries only exists from 15.15 on, which is
+# why it is here and not in the main file.
+services:
+  db:
+    image: ghcr.io/cayuse/archive-postgres:15-pglogical
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - shared_preload_libraries=pglogical
+      - -c
+      - output_plugin_libraries=pgoutput,test_decoding,pglogical_output
+      - -c
+      - track_commit_timestamp=on
+      - -c
+      - pglogical.conflict_resolution=last_update_wins
+      - -c
+      - max_wal_senders=10
+      - -c
+      - max_replication_slots=10
+      - -c
+      - max_worker_processes=20
+      - -c
+      - max_slot_wal_keep_size=50GB
+    shm_size: 256m

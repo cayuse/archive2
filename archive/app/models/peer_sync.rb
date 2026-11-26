@@ -92,7 +92,8 @@ module PeerSync
 
   # Tables of a subscription still copying their initial rows (empty when the copy is done).
   def syncing_tables(subscription)
-    conn.select_values("select relname from pglogical.local_sync_status s join pg_class c on c.oid = s.sync_relid " \
+    # one row for the whole subscription (no table name) plus one per table; 'r' = ready
+    conn.select_values("select coalesce(s.sync_relname, '(all tables)') from pglogical.local_sync_status s " \
                        "join pglogical.subscription sub on sub.sub_id = s.sync_subid " \
                        "where sub.sub_name = #{quote(subscription)} and s.sync_status <> 'r'")
   end
@@ -119,6 +120,15 @@ module PeerSync
     "playlists_songs" => "select count(*) from playlists_songs p where not exists (select 1 from songs s where s.id = p.song_id)",
     "station_feedbacks" => "select count(*) from station_feedbacks f where f.station_id is not null and not exists (select 1 from stations s where s.id = f.station_id)"
   }.freeze
+
+  # How many of the library's files this peer actually has on disk (the database arrives at once,
+  # the files follow with archive-sync-files). Returns [present, total, a few missing keys].
+  def file_presence(limit: nil)
+    service = ActiveStorage::Blob.service
+    keys = ActiveStorage::Blob.order(:created_at).limit(limit).pluck(:key)
+    missing = keys.reject { |key| service.exist?(key) }
+    [ keys.size - missing.size, keys.size, missing.first(5) ]
+  end
 
   def dangling
     DANGLING.transform_values { |sql| conn.select_value(sql).to_i }.select { |_, n| n.positive? }

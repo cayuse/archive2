@@ -1,0 +1,72 @@
+# A template for a new peer: copy to config/deploy.peer.<peer>.yml and fill in. docs/PEERS.md.
+# Validate with: kamal config -c config/deploy.peer.yml -d <peer>
+#
+# Addresses: PEER_WG is the peer's address on the private network (WireGuard at the routers),
+# e.g. 10.66.0.2. Everything peers say to each other (replication, file pulls) uses it.
+servers:
+  web:
+    hosts:
+      - 10.66.0.2           # PEER_WG
+  intake:
+    hosts:
+      - 10.66.0.2
+
+ssh:
+  user: archive            # made by deploy/peer/host-setup.sh
+
+env:
+  clear:
+    ARCHIVE_NODE_ID: example          # this peer's name: unique, never changed
+    APP_HOST: archive.example.org     # the name people use (or PEER_WG:port when there is none)
+    APP_PROTOCOL: https
+    FORCE_SSL: "true"
+    ASSUME_SSL: "true"
+    ALLOW_ALL_HOSTS: "false"
+
+# --- Reaching the peer: keep ONE of the three ---------------------------------------------------
+#
+# A. Direct, with its own certificate. The host has a public name and ports 80/443 reach it.
+#    kamal-proxy gets a Let's Encrypt certificate for the name.
+proxy:
+  host: archive.example.org
+  ssl: true
+
+# B. Behind another proxy (nginx, Caddy, the router) that holds the certificate and forwards to
+#    kamal-proxy on a private port. That proxy must send X-Forwarded-Proto: https.
+# proxy:
+#   host: archive.example.org
+#   ssl: false
+#   forward_headers: true
+#   run:
+#     http_port: 3920
+#     https_port: 3921
+#     bind_ips:
+#       - 127.0.0.1          # or PEER_WG, if the proxy runs on another machine
+# (and APP_PROTOCOL https, ASSUME_SSL "true", FORCE_SSL "true" as above)
+#
+# C. Private only: no name, plain HTTP on the private network (like the gameforge test peer).
+# proxy:
+#   ssl: false
+#   run:
+#     http_port: 3920
+#     https_port: 3921
+#     bind_ips:
+#       - 10.66.0.2          # PEER_WG
+# (and APP_HOST 10.66.0.2:3920, APP_PROTOCOL http, FORCE_SSL/ASSUME_SSL "false", ALLOW_ALL_HOSTS "true")
+# -------------------------------------------------------------------------------------------------
+
+volumes:
+  - /srv/archive/storage:/rails/storage
+  - /srv/archive/intake:/rails/intake
+  - archive_peer_logs:/rails/log
+
+accessories:
+  db:
+    host: 10.66.0.2
+    port: "10.66.0.2:5432:5432"       # PEER_WG only: never a public address
+    volumes:
+      - /srv/archive/postgres:/var/lib/postgresql/data
+  redis:
+    host: 10.66.0.2
+    volumes:
+      - /srv/archive/redis:/data
