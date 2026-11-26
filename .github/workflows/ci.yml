@@ -7,7 +7,7 @@ on:
 jobs:
   test:
     name: Rails tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # has Ruby 3.2.5, the version production runs; move with the Ruby upgrade
     defaults:
       run:
         working-directory: archive
@@ -46,7 +46,7 @@ jobs:
 
   security:
     name: Brakeman
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # has Ruby 3.2.5, the version production runs; move with the Ruby upgrade
     defaults:
       run:
         working-directory: archive
@@ -62,7 +62,7 @@ jobs:
 
   player:
     name: Player daemon
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # has Ruby 3.2.5, the version production runs; move with the Ruby upgrade
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
