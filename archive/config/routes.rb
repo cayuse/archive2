@@ -125,7 +125,13 @@ Rails.application.routes.draw do
   end
 
   # Upload interface
-  resource :upload, only: [ :show, :create ], controller: "upload"
+  # The drop box: files, folders and archives in; songs out (see IntakeProcessor)
+  get "intake", to: "intake#index", as: :intake
+  post "intake/batches", to: "intake#create", as: :intake_batches
+  get "intake/batches/:id", to: "intake#show", as: :intake_batch
+  post "intake/batches/:id/files", to: "intake#upload", as: :intake_batch_files
+  post "intake/batches/:id/finish", to: "intake#finish", as: :intake_batch_finish
+  get "upload", to: redirect("/intake")
 
   # API routes
   namespace :api do

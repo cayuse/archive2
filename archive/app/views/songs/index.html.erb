@@ -9,7 +9,7 @@
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 hide-on-narrow">Songs</h1>
         <% if policy(Song.new).upload_audio? %>
-          <%= link_to upload_path, class: "btn btn-primary hide-on-narrow" do %>
+          <%= link_to intake_path, class: "btn btn-primary hide-on-narrow" do %>
             <i class="fas fa-plus me-2"></i>Upload Song
           <% end %>
         <% end %>

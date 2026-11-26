@@ -1,0 +1,64 @@
+<%= render "intake/styles" %>
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h1 class="h3 mb-0 theme-text-primary">Drop Box</h1>
+    <span class="theme-text-secondary small"><%= pluralize(@awaiting_analysis, "song") %> waiting for sound analysis</span>
+  </div>
+
+  <div id="intake-error" class="alert alert-danger d-none"></div>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <div id="intake-drop" class="intake-drop">
+        <i class="bi bi-cloud-arrow-up"></i>
+        <p class="h5 mt-2 theme-text-primary">Drop music here</p>
+        <p class="theme-text-secondary mb-3">Songs, whole folders (subfolders too), or archives: zip, tar, 7z, rar.<br>
+          Anything that is not music is set aside and listed, never added.</p>
+        <button type="button" class="btn btn-outline-primary" id="intake-pick-files">Choose files</button>
+        <button type="button" class="btn btn-outline-primary" id="intake-pick-folder">Choose a folder</button>
+        <input type="file" id="intake-files" multiple class="d-none">
+        <input type="file" id="intake-folder" webkitdirectory class="d-none">
+      </div>
+
+      <div id="intake-sending" class="d-none mt-3">
+        <div class="d-flex justify-content-between small theme-text-secondary mb-1">
+          <span id="intake-sending-label"></span><span id="intake-sending-count"></span>
+        </div>
+        <div class="progress"><div class="progress-bar" id="intake-bar" style="width: 0%"></div></div>
+        <p class="small theme-text-secondary mt-2 mb-0">Keep this page open until sending is finished. Sorting and tagging then carry on by themselves.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h5 class="mb-0 theme-text-primary">Recent drops</h5></div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 align-middle">
+        <thead><tr><th>Dropped</th><th>What</th><% if current_user.admin? %><th>By</th><% end %><th>Result</th></tr></thead>
+        <tbody>
+          <% @batches.each do |batch| %>
+            <% counts = IntakeItem::STATUSES.index_with { |s| @counts[[ batch.id, s ]].to_i } %>
+            <tr>
+              <td class="text-nowrap"><%= time_ago_in_words(batch.created_at) %> ago</td>
+              <td class="intake-path"><%= link_to batch.name, intake_batch_path(batch) %></td>
+              <% if current_user.admin? %><td><%= batch.user.name %></td><% end %>
+              <td>
+                <% if batch.status == "done" %>
+                  <% if counts["imported"] > 0 %><span class="badge bg-success"><%= counts["imported"] %> added</span><% end %>
+                  <% if counts["duplicate"] > 0 %><span class="badge bg-secondary"><%= counts["duplicate"] %> already here</span><% end %>
+                  <% if counts["rejected"] > 0 %><span class="badge bg-warning text-dark"><%= counts["rejected"] %> set aside</span><% end %>
+                  <% if counts["failed"] > 0 || batch.error %><span class="badge bg-danger"><%= counts["failed"] %> failed</span><% end %>
+                <% else %>
+                  <span class="badge bg-info text-dark"><%= { "uploading" => "Sending", "queued" => "Waiting", "processing" => "Working" }[batch.status] %></span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+          <% if @batches.empty? %><tr><td colspan="4" class="theme-text-secondary">Nothing has been dropped yet.</td></tr><% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script src="/javascripts/intake/intake.js?v=20261126a"></script>
+<script>IntakePage.initDrop({ create: <%= raw intake_batches_path.to_json %> });</script>

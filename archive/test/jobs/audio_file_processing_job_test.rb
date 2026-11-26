@@ -1,155 +1,70 @@
 require "test_helper"
 
+# The job reads the stored file's tags and hands them to LibraryImporter (whose rules have their
+# own tests). Here: that the wiring works on a real file, and what happens around it.
 class AudioFileProcessingJobTest < ActiveJob::TestCase
   setup do
     @user = users(:admin)
   end
 
-  # A song with a (fake) audio file attached, waiting to be processed.
-  def song_with_audio(title: "Test Song", processing_status: "pending", **attrs)
-    song = Song.create!(title: title, user: @user, processing_status: processing_status, **attrs)
-    song.audio_file.attach(io: StringIO.new("fake audio content"), filename: "test.mp3", content_type: "audio/mpeg")
+  def song_with(file, processing_status: "pending", **attrs)
+    song = Song.create!(title: "Uploaded", user: @user, processing_status: processing_status, **attrs)
+    song.audio_file.attach(io: File.open(file_fixture(file)), filename: file, content_type: "audio/mpeg")
     song
   end
 
-  # Run the job with the file reader (AudioFileProcessor) reporting +metadata+. The job loads its
-  # own copy of the song, so the stub has to sit below the model, not on a song instance.
-  def process(song, metadata)
-    processor = Struct.new(:metadata) { def process = metadata }.new(metadata)
-    AudioFileProcessor.stub :new, processor do
-      AudioFileProcessingJob.perform_now(song.id)
-    end
-    song.reload
-  end
-
-  test "fills the song in from the file's tags and completes it" do
-    song = song_with_audio
-    process(song, title: "Extracted Title", artist: "Extracted Artist", album: "Extracted Album", genre: "Blues",
-                  track_number: 1, duration: 180, file_format: "mp3", file_size: 1024)
-
-    assert_equal "completed", song.processing_status
-    assert_nil song.processing_error
-    assert_equal "Extracted Title", song.title
-    assert_equal "Extracted Artist", song.artist.name
-    assert_equal "Extracted Album", song.album.title
-    assert_equal "Blues", song.genre.name
-    assert_equal 1, song.track_number
-    assert_equal 180, song.duration
-    assert_equal "mp3", song.file_format
-    assert_equal 1024, song.file_size
-  end
-
-  test "creates the artist, album and genre the tags name" do
-    song = song_with_audio
-    assert_difference [ "Artist.count", "Album.count", "Genre.count" ], 1 do
-      process(song, title: "Extracted Title", artist: "Extracted Artist", album: "Extracted Album", genre: "Blues")
-    end
-  end
-
-  test "reuses an artist, album and genre that already exist" do
-    song = song_with_audio
-    assert_no_difference [ "Artist.count", "Album.count", "Genre.count" ] do
-      process(song, title: "Extracted Title", artist: "Test Artist", album: "Test Album", genre: "Rock")
-    end
-    assert_equal artists(:one), song.artist
-    assert_equal albums(:one), song.album
-    assert_equal genres(:one), song.genre
-  end
-
-  test "tags replace what the song already had" do
-    song = song_with_audio(title: "Typed Title", artist: artists(:one))
-    process(song, title: "Extracted Title", artist: "Another Artist")
-    assert_equal "Extracted Title", song.title
-    assert_equal artists(:two), song.artist
-  end
-
-  test "a title and artist are enough to complete, with no album or genre" do
-    song = song_with_audio
-    process(song, title: "Extracted Title", artist: "Extracted Artist", file_format: "mp3", file_size: 1024)
-    assert_equal "completed", song.processing_status
-    assert_nil song.album
-    assert_nil song.genre
-  end
-
-  test "the song's own title counts when the tags only give an artist" do
-    song = song_with_audio(title: "Typed Title")
-    process(song, artist: "Extracted Artist")
-    assert_equal "completed", song.processing_status
-    assert_equal "Typed Title", song.title
-  end
-
-  test "without an artist the song needs review, and no placeholder artist, album or genre is made" do
-    song = song_with_audio
-    assert_no_difference [ "Artist.count", "Album.count", "Genre.count" ] do
-      process(song, title: "Extracted Title", file_format: "mp3", file_size: 1024)
-    end
-    assert_equal "needs_review", song.processing_status
-    assert_equal "Extracted Title", song.title
-    assert_nil song.artist
-    assert_nil song.album
-    assert_nil song.genre
-  end
-
-  test "a file with no tags at all needs review" do
-    song = song_with_audio(title: "")
-    process(song, file_format: "mp3", file_size: 1024, title: nil, artist: nil, album: nil, genre: nil,
-                  track_number: nil, duration: nil)
-    assert_equal "needs_review", song.processing_status
-    assert_equal "", song.title
-    assert_equal "mp3", song.file_format
-  end
-
-  test "a file the real processor can read nothing from needs review" do
-    song = song_with_audio(title: "")
+  def process(song)
     AudioFileProcessingJob.perform_now(song.id)
     song.reload
-    assert_equal "needs_review", song.processing_status
-    assert_nil song.processing_error
+  end
+
+  test "files the song by its tags, unchanged, and keeps a record of them" do
+    song = process(song_with("tagged.mp3"))
+    assert_equal [ "Fixture Song", "Fixture-Artist", "Fixture_Album", "Test", 7, "completed" ],
+                 [ song.title, song.artist.name, song.album.title, song.genre.name, song.track_number, song.processing_status ]
+    assert_equal song.artist, song.album.artist
+    assert_equal [ "Fixture Song", song.audio_file.checksum ], [ song.file_tag.title, song.file_tag.blob_checksum ]
     assert_equal "mp3", song.file_format
-    assert_equal "fake audio content".bytesize, song.file_size
   end
 
-  test "a processing error fails the song and records why" do
-    song = song_with_audio
-    process(song, error: "Test error")
+  test "processing again adds nothing" do
+    song = process(song_with("tagged.mp3"))
+    song.update_columns(processing_status: "needs_review")
+    assert_no_difference [ "Artist.count", "Album.count", "Genre.count", "SongFileTag.count" ] do
+      process(song)
+    end
+  end
+
+  test "a file that cannot be read fails the song and says why; a later success clears it" do
+    song = process(song_with("test.txt"))
     assert_equal "failed", song.processing_status
-    assert_equal "Test error", song.processing_error
-    assert_equal "Test Song", song.title
-  end
+    assert song.processing_error.present?
+    assert_nil song.artist
 
-  test "finding no metadata in the filename is not a failure" do
-    song = song_with_audio
-    process(song, error: "No metadata found in filename")
-    assert_equal "needs_review", song.processing_status
-    assert_nil song.processing_error
-  end
-
-  test "an earlier error is cleared when processing succeeds" do
-    song = song_with_audio(processing_status: "failed", processing_error: "old trouble")
-    process(song, title: "Extracted Title", artist: "Extracted Artist")
-    assert_equal "completed", song.processing_status
-    assert_nil song.processing_error
-  end
-
-  test "skips a song with no audio file" do
-    song = Song.create!(title: "Test Song", user: @user, processing_status: "pending")
-    assert_no_changes -> { song.reload.attributes } do
-      AudioFileProcessingJob.perform_now(song.id)
+    song.update_columns(processing_status: "pending")
+    TagScanner.stub :scan, { "title" => "Now Readable", "artist" => "Someone", "musicbrainz_artist_ids" => [] } do
+      process(song)
     end
+    assert_equal [ "completed", nil, "Now Readable" ], [ song.processing_status, song.processing_error, song.title ]
   end
 
-  test "skips a song that is already processing or completed" do
+  test "a file with no tags needs review and creates no placeholder rows" do
+    song = song_with("tagged.mp3")
+    assert_no_difference [ "Artist.count", "Album.count", "Genre.count" ] do
+      TagScanner.stub(:scan, { "musicbrainz_artist_ids" => [] }) { process(song) }
+    end
+    assert_equal [ "needs_review", "Uploaded" ], [ song.processing_status, song.title ]
+  end
+
+  test "skips a song with no audio file, one already processing or completed, and one that is gone" do
+    bare = Song.create!(title: "No file", user: @user, processing_status: "pending")
+    AudioFileProcessingJob.perform_now(bare.id)
+    assert_equal "pending", bare.reload.processing_status
+
     %w[processing completed].each do |status|
-      song = song_with_audio(processing_status: status)
-      assert_no_changes -> { song.reload.attributes }, "status #{status}" do
-        process(song, title: "Extracted Title", artist: "Extracted Artist")
-      end
+      song = song_with("tagged.mp3", processing_status: status)
+      assert_equal "Uploaded", process(song).title
     end
-  end
-
-  test "does nothing for a song that no longer exists" do
-    assert_nothing_raised do
-      AudioFileProcessingJob.perform_now(SecureRandom.uuid)
-    end
+    assert_nothing_raised { AudioFileProcessingJob.perform_now(SecureRandom.uuid) }
   end
 end

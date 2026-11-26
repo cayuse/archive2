@@ -112,6 +112,12 @@ class IntakeProcessor
       FileUtils.rm_f(path)
       return nil
     end
+    if (@seen ||= {})[checksum]
+      settle(rel, "duplicate", "The same file is in this drop twice (#{@seen[checksum]})", byte_size: size, checksum: checksum)
+      FileUtils.rm_f(path)
+      return nil
+    end
+    @seen[checksum] = rel
     tags = TagScanner.scan(path)
     raise "unreadable (#{tags['scan_error']})" if tags["scan_error"].present?
     settle(rel, "received", nil, byte_size: size, checksum: checksum)

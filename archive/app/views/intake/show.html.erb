@@ -1,0 +1,19 @@
+<%= render "intake/styles" %>
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h1 class="h4 mb-0 theme-text-primary intake-path"><%= @batch.name %></h1>
+    <%= link_to "Back to the Drop Box", intake_path, class: "btn btn-outline-secondary btn-sm" %>
+  </div>
+  <p class="theme-text-secondary">Dropped <%= time_ago_in_words(@batch.created_at) %> ago by <%= @batch.user.name %>. <span id="intake-summary"></span></p>
+  <div id="intake-error" class="alert alert-danger d-none"></div>
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table mb-0 align-middle">
+        <thead><tr><th>File</th><th>Result</th><th>In the library as</th></tr></thead>
+        <tbody id="intake-items"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script src="/javascripts/intake/intake.js?v=20261126a"></script>
+<script>IntakePage.initBatch(<%= raw json_escape(@batch.as_status_json.to_json) %>, <%= raw intake_batch_path(@batch, format: :json).to_json %>);</script>
