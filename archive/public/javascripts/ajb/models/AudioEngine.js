@@ -17,6 +17,19 @@
 //
 // Howler (and its crossfading plans, see docs/history/ajb_design.md) is no longer used here.
 
+// How songs are handed over, chosen from the page address (?ajb=...) so variants can be tried on a
+// phone without a new release, and reported with every diagnostic:
+//   ended | loop     swap when the element fires 'ended' (default), or loop and swap from
+//                    'timeupdate' just before the end
+//   stream | blob    give the element the song's URL (default), or a copy downloaded ahead
+//   nopause | pause  change the src directly (default), or pause the element first
+// iPhone, locked, 2026-11-26: loop + blob + pause swapped on time but the new song never moved off
+// 0:00 (iOS said "playing", fully buffered).
+const AJB_OPTS = (() => {
+  const words = new Set(((typeof location !== 'undefined' && new URLSearchParams(location.search).get('ajb')) || '').split(/[\s,]+/).filter(Boolean));
+  return { trigger: words.has('loop') ? 'loop' : 'ended', source: words.has('blob') ? 'blob' : 'stream', pause: words.has('pause') };
+})();
+
 const SILENT_WAV = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
 const END_LEAD = 0.35;   // seconds before the end at which the next song is swapped in
 
@@ -24,7 +37,7 @@ class AudioEngine {
   constructor() {
     this.audio = document.createElement('audio');
     this.audio.preload = 'auto';
-    this.audio.loop = true;
+    this.audio.loop = AJB_OPTS.trigger === 'loop';
     this.audio.setAttribute('playsinline', '');
     this.audio.setAttribute('webkit-playsinline', '');
     this.audio.style.display = 'none';
@@ -66,7 +79,10 @@ class AudioEngine {
       this.setMediaSessionPlaybackState('paused');
       if (this.onPause) this.onPause();
     });
-    a.addEventListener('timeupdate', () => this._watchEnd());
+    a.addEventListener('timeupdate', () => { if (AJB_OPTS.trigger === 'loop') this._watchEnd(); });
+    a.addEventListener('ended', () => {
+      if (AJB_OPTS.trigger === 'ended' && this.currentSong && !this._ending && this._wantPlaying) this._songOver();
+    });
     a.addEventListener('error', () => {
       if (!this.currentSong || !a.error) return;
       console.error('Audio error:', a.error);
@@ -113,7 +129,7 @@ class AudioEngine {
     this._clearPlayWatchdog();
     this.currentSong = song;
     this._wantPlaying = true;
-    try { a.pause(); } catch (e) { /* not playing */ }   // pausing first keeps the audio session
+    if (AJB_OPTS.pause) { try { a.pause(); } catch (e) { /* not playing */ } }
     a.src = url;
     a.muted = false;
     if (this.objectUrl && this.objectUrl !== objectUrl) URL.revokeObjectURL(this.objectUrl);
@@ -156,7 +172,7 @@ class AudioEngine {
 
   _songOver() {
     this._ending = true;
-    this.audio.muted = true;   // keep it playing, silently, until the next song is in
+    if (AJB_OPTS.trigger === 'loop') this.audio.muted = true;   // keep it looping, silently, until the next song is in
     this.isPlaying = false; this.isPaused = false; this.isStopped = true;
     console.log('Audio: Ended');
     if (this.onEnd) this.onEnd();
@@ -184,7 +200,7 @@ class AudioEngine {
                    abort: () => { try { ctrl && ctrl.abort(); } catch (e) { /* done */ } } };
     this.next = next;
     this._emitDiag('preload');
-    if (this.downloadAhead === false) return;   // (staging test: as if the download had not finished)
+    if (AJB_OPTS.source !== 'blob' || this.downloadAhead === false) return;   // streamed when its turn comes
     fetch(next.url, { credentials: 'same-origin', signal: ctrl ? ctrl.signal : undefined })
       .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
       .then((blob) => {
@@ -324,8 +340,10 @@ class AudioEngine {
         if (this._progressRecoveries < 3) {
           this._progressRecoveries += 1;
           this._emitDiag('stall_reload');
-          const src = this.audio.currentSrc || this.audio.src;
-          this._use(this.currentSong, src, this.objectUrl, pos);
+          // a downloaded copy that will not play is replaced by the stream (the copy is the suspect)
+          const fromCopy = (this.audio.src || '').startsWith('blob:');
+          const url = fromCopy ? (this.currentSong.stream_url || this.currentSong.download_url) : (this.audio.currentSrc || this.audio.src);
+          this._use(this.currentSong, url, fromCopy ? null : this.objectUrl, pos);
         } else {
           this._emitDiag('stall_skip');
           this._progressRecoveries = 0;
@@ -348,6 +366,7 @@ class AudioEngine {
     const d = {
       build: (typeof window !== 'undefined' && window.AJB_BUILD) || null,
       engine: 'one-element',
+      opts: AJB_OPTS.trigger + ',' + AJB_OPTS.source + (AJB_OPTS.pause ? ',pause' : ''),
       want: this._wantPlaying, playing: this.isPlaying, paused: this.isPaused, stopped: this.isStopped,
       ending: this._ending, retries: this._playRetries, stallTicks: this._progressStallTicks,
       recoveries: this._progressRecoveries, pos: r(pos), dur: r(dur),

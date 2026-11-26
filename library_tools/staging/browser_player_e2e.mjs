@@ -40,7 +40,8 @@ await go(`${BASE}/login`);
 await js(`(() => { const f = document.querySelector('form'); f.querySelector('[name=email]').value = ${JSON.stringify(EMAIL)};
   f.querySelector('[name=password]').value = ${JSON.stringify(PASSWORD)}; f.submit(); })()`);
 await sleep(2500);
-await go(`${BASE}/jukeboxes/${JUKEBOX}/player`);
+await go(`${BASE}/jukeboxes/${JUKEBOX}/player${process.env.AJB_OPTS ? "?ajb=" + process.env.AJB_OPTS : ""}`);
+console.log("       options:", await js("JSON.stringify(window.ajbPlayer.audioEngine.getDiagnostics().opts)"));
 check("player page has its controller", await js("!!window.ajbPlayer"));
 const build = await js("window.AJB_BUILD");
 check("the page reports its player build", /^[0-9a-f]{10}$/.test(build || ""), build);
@@ -98,8 +99,8 @@ await js("window.ajbPlayer.skip()");
 await sleep(3000);
 check("a skip after the prefetch plays the prefetched song", !!lined2 && (await js("window.ajbPlayer.audioEngine.currentSong.title")) === lined2 && nextSongCalls() === calls2, lined2 || "(nothing prefetched)");
 
-// The download of the next song has not finished when this one ends (slow network): it is streamed
-// instead, from the same element, and must still start by itself.
+// The next song has not been downloaded ahead (stream mode, or the download is slow): it is streamed
+// from the same element and must still start by itself.
 await js("window.ajbPlayer.audioEngine.downloadAhead = false");
 const d3 = await js("window.ajbPlayer.audioEngine.getDuration()");
 const third = await js("window.ajbPlayer.audioEngine.currentSong.title");
@@ -111,7 +112,7 @@ await sleep(2500);
 const ev3 = await js("window.ev");
 const end3 = ev3.findLast((e) => e[0] === "end"), play3 = ev3.findLast((e) => e[0] === "play");
 const gap3 = end3 && play3 && play3[1] > end3[1] ? play3[1] - end3[1] : null;
-check("with the next song not downloaded yet it is streamed and still starts by itself",
+check("streamed (not downloaded ahead), the next song still starts by itself",
       (await js("window.ajbPlayer.audioEngine.isPlaying")) && (await js("window.ajbPlayer.audioEngine.currentSong.title")) !== third,
       `gap ${gap3 !== null ? gap3.toFixed(0) + " ms" : "?"}; next was ${unbuffered}`);
 
