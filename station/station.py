@@ -1,17 +1,28 @@
 #!/usr/bin/env python3
-"""Archive Station: a headless player that keeps an archive jukebox playing through OwnTone (AirPlay).
+"""Archive Station: the archive node's headless player. It plays whichever jukebox has been put
+"on the speakers" in the archive, through OwnTone (AirPlay).
 
-It is a jukebox *player*, like the browser AJB player, but with no browser: it asks the archive for
-the next song, hands OwnTone a play link, reports now-playing back (so guests can request songs),
-and repeats until told to stop. Controlled from a small web page that it serves on the LAN only.
+It is a jukebox *player*, like the browser AJB player, but with no browser. The archive is in charge:
+every couple of seconds this daemon asks it which jukebox has the speakers (any party jukebox or
+radio station, of any user allowed to play here) and whether that should be playing, paused or
+stopped; it then asks for the next song, hands OwnTone a play link and reports now-playing back.
+When a jukebox is switched over from a browser player it picks the song up where the browser was.
+Transport, volume and speaker selection arrive from the archive's remote-control page the same way.
+
+It also serves a small control page of its own on the LAN, which is just another remote: starting a
+station there puts it on the speakers through the archive.
 
 Runs on Linux, Python 3.9+, standard library only. Configuration is by environment variables:
 
   ARCHIVE_URL        base URL of the archive as seen from this host   (http://192.168.17.109:3000)
-  ARCHIVE_EMAIL      login of the account that owns the station (must be DJ, moderator or admin)
-  ARCHIVE_PASSWORD   its password
+  NODE_TOKEN         the node's player token (archive: Settings -> Speakers). With it the daemon can
+                     play any jukebox that is put on the speakers.
+  ARCHIVE_EMAIL      optional login for the control page's search / station list (DJ or above, with
+  ARCHIVE_PASSWORD   a local-playback grant). Without NODE_TOKEN the daemon polls as this account
+                     and only plays this account's own jukeboxes.
   OWNTONE_URL        OwnTone JSON API                                 (http://127.0.0.1:3689)
-  BIND_HOST          address the control page listens on - use the LAN address, never 0.0.0.0
+  BIND_HOST          address the control page listens on - the LAN address, never 0.0.0.0 on a host
+                     (in the container image it is 0.0.0.0 and the published port picks the address)
   BIND_PORT          port of the control page                         (8337)
   STATE_FILE         where "was playing / which jukebox" is remembered across restarts
 """
@@ -29,6 +40,7 @@ from pathlib import Path
 ARCHIVE_URL = os.environ.get("ARCHIVE_URL", "http://192.168.17.109:3000").rstrip("/")
 ARCHIVE_EMAIL = os.environ.get("ARCHIVE_EMAIL", "")
 ARCHIVE_PASSWORD = os.environ.get("ARCHIVE_PASSWORD", "")
+NODE_TOKEN = os.environ.get("NODE_TOKEN", "")
 OWNTONE_URL = os.environ.get("OWNTONE_URL", "http://127.0.0.1:3689").rstrip("/")
 BIND_HOST = os.environ.get("BIND_HOST", "127.0.0.1")
 BIND_PORT = int(os.environ.get("BIND_PORT", "8337"))
@@ -74,7 +86,8 @@ def http(method, url, body=None, headers=None, timeout=20):
 
 
 class Archive:
-    """The archive's API, logged in as the station's owner."""
+    """The archive's API. Calls about the on-air jukebox go out with the node token (when there is
+    one), so they work whoever owns it; search and the station list need the account login."""
 
     def __init__(self):
         self.token = None
@@ -82,17 +95,21 @@ class Archive:
         self.lock = threading.Lock()
 
     def login(self):
+        if not ARCHIVE_EMAIL:
+            raise ValueError("no archive account is configured for this (set ARCHIVE_EMAIL / ARCHIVE_PASSWORD)")
         _, j = http("POST", ARCHIVE_URL + "/api/v1/auth/login", {"email": ARCHIVE_EMAIL, "password": ARCHIVE_PASSWORD})
         self.token, self.user = j["api_token"], j["user"]
         log("logged in to the archive as", self.user.get("name"), "(%s)" % self.user.get("role"))
 
-    def call(self, method, path, body=None):
+    def call(self, method, path, body=None, as_user=False, timeout=20):
+        if NODE_TOKEN and not as_user:
+            return http(method, ARCHIVE_URL + path, body, {"X-Node-Token": NODE_TOKEN}, timeout)
         with self.lock:
             if not self.token:
                 self.login()
         for attempt in (1, 2):
             try:
-                return http(method, ARCHIVE_URL + path, body, {"Authorization": "Bearer " + self.token})
+                return http(method, ARCHIVE_URL + path, body, {"Authorization": "Bearer " + self.token}, timeout)
             except HttpError as e:
                 if e.status == 401 and attempt == 1:   # token expired: log in again once
                     with self.lock:
@@ -102,10 +119,21 @@ class Archive:
 
     def station(self, song_id=None, station_id=None, new=False):
         body = {k: v for k, v in {"song_id": song_id, "station_id": station_id, "new": new or None}.items() if v}
-        return self.call("POST", "/api/v1/jukeboxes/station", body)[1]["jukebox"]
+        return self.call("POST", "/api/v1/jukeboxes/station", body, as_user=True)[1]["jukebox"]
 
     def stations(self):
-        return self.call("GET", "/api/v1/jukeboxes/stations")[1].get("stations", [])
+        return self.call("GET", "/api/v1/jukeboxes/stations", as_user=True)[1].get("stations", [])
+
+    def sync(self, ack, state):
+        """The poll: tell the archive how we are, learn which jukebox has the speakers."""
+        return self.call("POST", "/api/v1/node_player/sync", {"ack": ack, "state": state}, timeout=10)[1]
+
+    def on_air(self, jukebox_id, on, transport=None, fresh=False):
+        body = {"on": on, "transport": transport, "fresh": fresh}
+        return self.call("POST", "/api/v1/jukeboxes/%s/server_playback" % jukebox_id, body, as_user=True)[1]
+
+    def transport(self, jukebox_id, command):
+        return self.call("POST", "/api/v1/jukeboxes/%s/transport" % jukebox_id, {"command": command})[1]
 
     def feedback(self, jukebox_id, song_id, kind, position=None):
         body = {"song_id": song_id, "kind": kind}
@@ -114,7 +142,7 @@ class Archive:
         return self.call("POST", "/api/v1/jukeboxes/%s/feedback" % jukebox_id, body)[1]
 
     def jukeboxes(self):
-        return self.call("GET", "/api/v1/jukeboxes")[1].get("jukeboxes", [])
+        return self.call("GET", "/api/v1/jukeboxes", as_user=True)[1].get("jukeboxes", [])
 
     def next_song(self, jukebox_id):
         status, j = self.call("GET", "/api/v1/jukeboxes/%s/next_song" % jukebox_id)
@@ -137,7 +165,7 @@ class Archive:
 
     def search(self, q):
         qs = urllib.parse.urlencode({"search": q, "limit": 25, "sort_by": "title", "sort_order": "asc"})
-        return self.call("GET", "/api/v1/songs?" + qs)[1].get("songs", [])
+        return self.call("GET", "/api/v1/songs?" + qs, as_user=True)[1].get("songs", [])
 
 
 
@@ -169,6 +197,12 @@ class OwnTone:
     def stop(self):
         self.put("/api/player/stop")
 
+    def pause(self):
+        self.put("/api/player/pause")
+
+    def seek(self, seconds):
+        self.put("/api/player/seek?position_ms=%d" % max(0, int(seconds * 1000)))
+
     def next(self):
         self.put("/api/player/next")
 
@@ -185,88 +219,104 @@ class OwnTone:
 
 
 class Station:
-    """Keeps OwnTone fed while 'playing' is on. One thread; everything else just flips flags."""
+    """Follows the archive: plays the jukebox that has the speakers, the way the archive says.
+    One thread does all the work (tick); the control page only asks the archive to change things."""
 
     def __init__(self):
         self.archive = Archive()
         self.owntone = OwnTone()
         self.lock = threading.RLock()
-        self.playing = False
-        self.jukebox = None           # dict from the archive (id, name, radio settings, ...)
+        self.jukebox = None           # the on-air jukebox, as the archive last described it
+        self.transport = "stop"       # what we last acted on: play / pause / stop
+        self.loaded = False           # have we put anything into OwnTone for this jukebox?
+        self.fresh = False            # just took this jukebox over: start with the archive's resume song
+        self.seek = None              # (song id, seconds, when, moving) still to be sought to
+        self.acked = 0                # last archive command carried out
+        self.retuned = 0.0            # when we last dropped the lined-up song ourselves
         self.by_url = {}              # play link -> archive song dict, for the songs we handed to OwnTone
         self.current = None           # archive song dict now playing
         self.standing = None          # what the listener said about it: up / down / tired / never
         self.moved_on = set()         # song ids we skipped on purpose (so they are not "finished")
         self.position = 0.0
         self.length = 0.0             # length of the current song as OwnTone reports it
+        self.sounding = False         # OwnTone is actually playing our song
         self.volume = 50
         self.error = None
         self.last_beat = 0.0
+        self.last_station = None      # the station the control page last started (for its Resume button)
+        self.saved_urls = set()
+        self.session = {}             # jukebox id + songs handed to OwnTone, kept on disk across restarts
+        self.last_tick = time.time()  # for /up: is the loop alive?
         self.load()
 
-    # ---- persistence: come back playing after a restart
+    # ---- persistence: the control page remembers which station it last started
     def load(self):
         try:
             s = json.loads(STATE_FILE.read_text())
-            self.playing, self.jukebox = bool(s.get("playing")), s.get("jukebox")
+            self.last_station = s.get("last_station") or ((s.get("jukebox") or {}).get("id") if (s.get("jukebox") or {}).get("station") else None)
+            self.session = s.get("session") or {}
         except Exception:
             pass
 
     def save(self):
         try:
             STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-            STATE_FILE.write_text(json.dumps({"playing": self.playing, "jukebox": self.jukebox}))
+            session = {"jukebox_id": self.jukebox["id"], "by_url": self.by_url} if self.jukebox and self.loaded else {}
+            STATE_FILE.write_text(json.dumps({"last_station": self.last_station, "session": session}))
         except Exception as e:
             log("could not save state:", e)
 
-    # ---- commands from the control page
+    # ---- commands from the control page: they go to the archive, and come back to us in tick()
     def start(self, song_id=None, jukebox_id=None, station_id=None, new=False):
-        """Play a station: the one given, else the one we were on, else the account's first station.
-        With song_id the station restarts from that song; with new=True a new station is made from it."""
+        """Put a jukebox on the speakers: the one given, else the station last started here, else
+        the account's first station. With song_id the station restarts from that song; with
+        new=True a new station is made from it."""
         with self.lock:
             if jukebox_id:
-                self.jukebox = next(({"id": j["id"], "name": j.get("name"), "station": False}
-                                     for j in self.archive.jukeboxes() if j["id"] == jukebox_id), None)
-                if not self.jukebox:
+                if not any(j["id"] == jukebox_id for j in self.archive.jukeboxes()):
                     raise ValueError("no such jukebox for this account")
+                target = jukebox_id
             else:
-                if not station_id and not new and self.jukebox and self.jukebox.get("station"):
-                    station_id = self.jukebox["id"]
+                station_id = station_id or (None if new else self.last_station)
                 try:
-                    self.jukebox = self.archive.station(song_id, station_id, new)
+                    target = self.archive.station(song_id, station_id, new)["id"]
                 except HttpError as e:
                     if e.status != 404 or not station_id:
                         raise
-                    self.jukebox = self.archive.station(song_id)      # that station was deleted
-            self.owntone.stop()
-            self.owntone.clear()
-            self.owntone.prepare()
-            self.by_url, self.current, self.standing = {}, None, None
-            self.playing, self.error = True, None
-            self.save()
-            log("START", self.jukebox.get("name"), "from song", song_id or "(resume)")
+                    target = self.archive.station(song_id)["id"]      # that station was deleted
+                self.last_station = target
+                self.save()
+            if song_id and self.jukebox and self.jukebox["id"] == target:
+                self.release()                     # same station, restarted from a song: begin again
+            self.archive.on_air(target, True, transport="play", fresh=bool(song_id))
+            self.error = None
+            log("START", target, "from song", song_id or "(resume)")
+        self.nudge()
 
     def stop(self):
         with self.lock:
-            self.playing = False
-            self.save()
-            try:
-                self.owntone.stop()
-                self.owntone.clear()
-            finally:
-                self.beat(force=True)
-            self.by_url, self.current = {}, None
+            if self.jukebox:
+                self.archive.transport(self.jukebox["id"], "stop")
             log("STOP")
+        self.nudge()
+
+    def nudge(self):
+        """Act on what we just asked the archive for without waiting for the next tick."""
+        try:
+            self.tick()
+        except Exception as e:
+            log("tick failed:", e)
 
     def skip(self, report=True):
         """Go to the next song. A skip the listener asked for is reported to the station (an early
         skip counts a little against the song); a skip that follows a thumbs down is not."""
         with self.lock:
             song = self.current
-            if song:
-                self.moved_on.add(song["id"])
-                if report:
-                    self.event(song, "skip", self.position)
+            if not song:
+                return
+            self.moved_on.add(song["id"])
+            if report:
+                self.event(song, "skip", self.position)
             self.owntone.next()
 
     def event(self, song, kind, position=None):
@@ -289,26 +339,116 @@ class Station:
     def retune(self):
         """Settings or requests changed: drop the song we had lined up so the change is heard next."""
         with self.lock:
+            self.retuned = time.time()
             p = self.owntone.player()
             for item in self.owntone.queue():
                 if item["id"] != p.get("item_id"):
                     http("DELETE", OWNTONE_URL + "/api/queue/items/%s" % item["id"], timeout=8)
 
-    # ---- the loop
+    # ---- following the archive
+    def report(self):
+        """What the archive's remote-control page shows about this player."""
+        out = {"error": self.error}
+        try:
+            out["outputs"] = [{"id": str(o["id"]), "name": o["name"], "type": o.get("type"), "selected": o["selected"]}
+                              for o in self.owntone.outputs()]
+            p = self.owntone.player()
+            out["volume"], out["owntone_state"] = p.get("volume"), p.get("state")
+        except Exception as e:
+            out["error"] = "OwnTone is not answering: %s" % e
+        return out
+
+    def release(self):
+        """Let go of the jukebox we were playing (the speakers went elsewhere, or nowhere)."""
+        if self.jukebox:
+            log("RELEASE", self.jukebox.get("name"))
+        if self.loaded:
+            try:
+                self.owntone.stop()
+                self.owntone.clear()
+            except Exception as e:
+                log("could not stop OwnTone:", e)
+        self.jukebox, self.transport, self.loaded, self.fresh, self.seek = None, "stop", False, False, None
+        self.saved_urls = set()
+        self.save()
+        self.by_url, self.current, self.standing, self.position, self.sounding = {}, None, None, 0.0, False
+
+    def adopt(self, jukebox):
+        # Restarted (a deploy, a crash) while this jukebox was playing? If everything in OwnTone's
+        # queue is something we put there, carry on without a break in the music.
+        saved, self.session = self.session, {}
+        if saved.get("jukebox_id") == jukebox["id"] and jukebox.get("transport") != "stop":
+            try:
+                paths = [i["path"] for i in self.owntone.queue()]
+            except Exception:
+                paths = []
+            known = saved.get("by_url") or {}
+            if paths and all(p in known for p in paths):
+                self.jukebox, self.transport, self.fresh, self.error = jukebox, None, False, None
+                self.by_url, self.loaded = {p: known[p] for p in paths}, True
+                log("ON AIR", jukebox.get("name"), "(carrying on after a restart)")
+                return
+        self.owntone.stop()
+        self.owntone.clear()
+        self.owntone.prepare()
+        self.jukebox, self.transport, self.fresh, self.error = jukebox, None, True, None
+        log("ON AIR", jukebox.get("name"), "(%s)" % jukebox.get("transport"))
+
+    def command(self, c):
+        """A one-shot command from the archive's remote."""
+        cmd, value = c.get("cmd"), c.get("value")
+        try:
+            if cmd == "skip":
+                self.skip(report=not (isinstance(value, dict) and value.get("report") is False))
+            elif cmd == "volume":
+                self.owntone.volume(value)
+            elif cmd == "output":
+                self.owntone.select(value["id"], value["selected"])
+            elif cmd == "retune" and self.loaded and time.time() - self.retuned > 5:
+                self.retune()
+        except Exception as e:
+            log("command %s failed:" % cmd, e)
+
     def beat(self, force=False):
         if not self.jukebox or (not force and time.time() - self.last_beat < HEARTBEAT):
             return
         self.last_beat = time.time()
         try:
             self.archive.heartbeat(self.jukebox["id"], self.current and self.current["id"], self.position,
-                                   self.playing and self.current is not None, self.volume / 100.0)
+                                   self.sounding, self.volume / 100.0)
         except Exception as e:
             log("heartbeat failed:", e)
 
     def tick(self):
         with self.lock:
-            if not self.playing or not self.jukebox:
+            a = self.archive.sync(self.acked, self.report()) or {}
+            target = a.get("jukebox")
+            if (target or {}).get("id") != (self.jukebox or {}).get("id"):
+                self.release()
+                if target:
+                    self.adopt(target)
+            elif target:
+                self.jukebox = target
+            for c in a.get("commands") or []:
+                if c.get("seq", 0) > self.acked:
+                    self.acked = c["seq"]
+                    if self.jukebox:
+                        self.command(c)
+            if not self.jukebox:
                 return
+            want = self.jukebox.get("transport") or "stop"
+            changed, self.transport = want != self.transport, want
+
+            if want == "stop":
+                if self.loaded:
+                    self.owntone.stop()
+                    self.owntone.clear()
+                    self.loaded = False
+                self.by_url, self.current, self.standing, self.position, self.sounding = {}, None, None, 0.0, False
+                self.fresh, self.seek = False, None
+                self.beat(force=changed)
+                return
+
             p = self.owntone.player()
             items = self.owntone.queue()
             self.volume = p.get("volume", self.volume)
@@ -324,27 +464,66 @@ class Station:
                 elif length and before_position >= length - FINISHED_WITHIN:
                     self.event(before, "finished")
             self.position = p.get("item_progress_ms", 0) / 1000.0 if now else 0.0
-            ahead = len(items) - (items.index(now) + 1 if now else 0)
-            want = LOOKAHEAD if now else LOOKAHEAD + 1
-            while ahead < want:
+            was_sounding = self.sounding
+            self.sounding = bool(self.current) and p.get("state") == "play"
+            # report at once when a song starts or the sound starts / stops, not on the next heartbeat
+            started = (bool(self.current) and before is not self.current) or was_sounding != self.sounding
+
+            if want == "pause":
+                if p.get("state") == "play":
+                    self.owntone.pause()
+                    self.sounding = False
+                self.beat(force=changed or started)
+                return
+
+            # play
+            resume = self.jukebox.get("resume")
+            if self.fresh and not self.loaded and resume and resume.get("song"):
+                song = resume["song"]             # taking over mid-song: same song, same place
+                self.by_url[song["play_url"]] = song
+                self.owntone.add(song["play_url"])
+                self.loaded = True
+                items = self.owntone.queue()
+                if float(resume.get("position") or 0) > 3:
+                    self.seek = (song["id"], float(resume["position"]), time.time(), bool(self.jukebox.get("live")))
+                log("resuming:", song.get("artist"), "-", song.get("title"), "at %ds" % float(resume.get("position") or 0))
+            self.fresh = False
+            ahead = len(items) - (items.index(now) + 1 if now in items else 0)
+            want_ahead = LOOKAHEAD if now else LOOKAHEAD + 1
+            while ahead < want_ahead:
                 song = self.archive.next_song(self.jukebox["id"])
                 if not song:
-                    self.error = "The archive has no next song for this station (has the seed song been analysed?)"
+                    self.error = "The archive has no next song for this jukebox (no playlists, or the seed song has not been analysed?)"
                     break
                 self.error = None
                 self.by_url[song["play_url"]] = song
                 self.owntone.add(song["play_url"])
+                self.loaded = True
                 ahead += 1
                 log("queued:", song.get("artist"), "-", song.get("title"))
-            if len(self.by_url) > 50:      # forget songs long gone
-                live = {i["path"] for i in items}
+            if len(self.by_url) > 8:       # forget songs long gone
+                live = {i["path"] for i in self.owntone.queue()}
                 self.by_url = {u: s for u, s in self.by_url.items() if u in live}
-            if p.get("state") == "stop" and (items or ahead):
+            if self.loaded and set(self.by_url) != self.saved_urls:
+                self.saved_urls = set(self.by_url)
+                self.save()
+            if p.get("state") != "play" and (items or ahead):
                 self.owntone.play()
-            self.beat()
+            if self.seek:
+                song_id, position, since, moving = self.seek
+                if self.current and self.current["id"] != song_id:
+                    self.seek = None
+                elif self.sounding:
+                    target_position = position + (time.time() - since if moving else 0)
+                    if not self.length or target_position < self.length - 5:
+                        self.owntone.seek(target_position)
+                        self.position = target_position
+                    self.seek = None
+            self.beat(force=changed or started)
 
     def run(self):
         while True:
+            self.last_tick = time.time()
             try:
                 self.tick()
             except Exception as e:
@@ -355,7 +534,8 @@ class Station:
 
     def state(self):
         with self.lock:
-            out = {"playing": self.playing, "jukebox": self.jukebox, "current": self.current,
+            out = {"playing": bool(self.jukebox) and self.transport == "play", "transport": self.transport,
+                   "jukebox": self.jukebox, "current": self.current,
                    "standing": self.standing, "position": self.position, "volume": self.volume, "error": self.error,
                    "archive_url": ARCHIVE_URL, "outputs": [], "upcoming": []}
         try:
@@ -414,7 +594,10 @@ class Handler(BaseHTTPRequestHandler):
         url = urllib.parse.urlparse(self.path)
         q = urllib.parse.parse_qs(url.query)
         try:
-            if url.path == "/":
+            if url.path == "/up":          # health check: the loop is alive (says nothing about the archive or OwnTone)
+                alive = time.time() - STATION.last_tick < 60
+                self.send(200 if alive else 503, {"ok": alive})
+            elif url.path == "/":
                 self.send(200, raw=PAGE, ctype="text/html; charset=utf-8")
             elif url.path == "/api/state":
                 self.send(200, STATION.state())
@@ -451,13 +634,10 @@ class Handler(BaseHTTPRequestHandler):
             elif path in ("/api/request", "/api/settings", "/api/feedback", "/api/rate") and not s.jukebox:
                 raise ValueError("start a station first")
             elif path == "/api/request":
-                s.archive.request(s.jukebox["id"], b["song_id"])
-                s.retune()
+                s.archive.request(s.jukebox["id"], b["song_id"])   # the archive tells us to retune if it re-aims
             elif path == "/api/settings":
                 attrs = {k: b[k] for k in SETTINGS if k in b}
                 s.jukebox = dict(s.jukebox, **s.archive.radio_settings(s.jukebox["id"], attrs))
-                s.save()
-                s.retune()
             elif path in ("/api/feedback", "/api/rate"):
                 if not b.get("song_id"):
                     raise ValueError("nothing is playing")
@@ -472,8 +652,8 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    if not ARCHIVE_EMAIL or not ARCHIVE_PASSWORD:
-        raise SystemExit("set ARCHIVE_EMAIL and ARCHIVE_PASSWORD")
+    if not NODE_TOKEN and not (ARCHIVE_EMAIL and ARCHIVE_PASSWORD):
+        raise SystemExit("set NODE_TOKEN (and, for the control page's search and stations, ARCHIVE_EMAIL and ARCHIVE_PASSWORD)")
     threading.Thread(target=STATION.run, daemon=True).start()
     log("control page on http://%s:%d  (archive %s, OwnTone %s)" % (BIND_HOST, BIND_PORT, ARCHIVE_URL, OWNTONE_URL))
     ThreadingHTTPServer((BIND_HOST, BIND_PORT), Handler).serve_forever()

@@ -10,6 +10,7 @@
     body { margin:0; background:#0b1020; color:#e6e9f2; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
     .wrap { max-width:620px; margin:0 auto; padding:24px 16px; }
     h1 { font-size:1.5rem; margin:.2rem 0; }
+    h2 { font-size:.8rem; letter-spacing:.12em; color:#7aa2ff; margin:0 0 .6rem; text-transform:uppercase; }
     .muted { color:#9aa3bd; font-size:.95rem; }
     .card { background:#121a33; border:1px solid #243154; border-radius:14px; padding:20px; margin:18px 0; }
     .state { letter-spacing:.12em; font-size:.8rem; color:#7aa2ff; font-weight:700; }
@@ -18,20 +19,32 @@
     .pos { color:#9aa3bd; margin-top:.5rem; font-variant-numeric:tabular-nums; }
     .bar { height:6px; background:#243154; border-radius:3px; margin-top:.6rem; overflow:hidden; }
     .bar > i { display:block; height:100%; width:0; background:#5570ff; transition:width .5s linear; }
-    .btn { display:block; text-align:center; text-decoration:none; padding:14px 18px; border-radius:12px;
-           background:#5570ff; color:#fff; font-weight:600; margin:10px 0; }
+    .btn { display:block; text-align:center; text-decoration:none; padding:14px 18px; border-radius:12px; border:0; width:100%;
+           box-sizing:border-box; background:#5570ff; color:#fff; font-weight:600; font-size:1rem; margin:10px 0; cursor:pointer; }
     .btn.secondary { background:transparent; color:#9aa3bd; border:1px solid #243154; }
+    .row { display:flex; gap:10px; margin-top:16px; }
+    .row .btn { margin:0; flex:1; }
+    .row .btn.main { flex:2; }
+    .btn:disabled { opacity:.45; cursor:default; }
+    .btn.on { background:#2b8a57; }
+    .chips { display:flex; flex-wrap:wrap; gap:8px; }
+    .chip { padding:8px 14px; border-radius:999px; border:1px solid #243154; background:transparent; color:#9aa3bd; cursor:pointer; font-size:.95rem; }
+    .chip.on { background:#1d2b57; color:#fff; border-color:#5570ff; }
+    input[type=range] { width:100%; accent-color:#5570ff; }
     .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#51607f; margin-right:6px; vertical-align:middle; }
     .dot.live { background:#36d17a; }
+    .warn { background:#3a2a12; border:1px solid #6b4a17; color:#ffd58a; border-radius:12px; padding:12px 14px; margin:14px 0; display:none; }
+    ol.next { margin:0; padding-left:1.2rem; color:#c3c9de; } ol.next li { margin:.25rem 0; } ol.next small { color:#7f89a6; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1><%= @jukebox.name %></h1>
     <p class="muted">
-      <span id="livedot" class="dot"></span>Playing on <strong><%= current_archive.name %></strong>'s speakers.
+      <span id="livedot" class="dot"></span>On <strong><%= current_archive.name %></strong>'s speakers.
       This page is a remote — closing it won't stop the music.
     </p>
+    <div class="warn" id="warn"></div>
 
     <div class="card">
       <div class="state" id="state">LOADING</div>
@@ -39,42 +52,127 @@
       <div class="artist" id="artist"></div>
       <div class="bar"><i id="barfill"></i></div>
       <div class="pos" id="pos"></div>
+      <div class="row">
+        <button class="btn main" id="playpause">Play</button>
+        <button class="btn secondary" id="skip">Skip</button>
+        <button class="btn secondary" id="stop">Stop</button>
+      </div>
+      <% if @jukebox.radio? %>
+        <div class="row">
+          <button class="btn secondary" id="up">👍 More like this</button>
+          <button class="btn secondary" id="down">👎 Not this</button>
+        </div>
+      <% end %>
     </div>
 
-    <% if current_archive.player_url.present? %>
-      <a class="btn" href="<%= current_archive.player_url %>" target="_blank" rel="noopener">Open the local player controls ↗</a>
+    <div class="card">
+      <h2>Volume</h2>
+      <input type="range" id="volume" min="0" max="100" value="50">
+      <h2 style="margin-top:1.2rem">Speakers</h2>
+      <div class="chips" id="outputs"><span class="muted">—</span></div>
+    </div>
+
+    <div class="card">
+      <h2>Up next</h2>
+      <ol class="next" id="next"><li class="muted">—</li></ol>
+    </div>
+
+    <% if @jukebox.station? %>
+      <a class="btn secondary" href="<%= station_path(@jukebox) %>">Tune this station</a>
     <% end %>
-    <a class="btn secondary" href="<%= jukebox_path(@jukebox) %>">Back to jukebox</a>
+    <% if current_archive.player_url.present? %>
+      <a class="btn secondary" href="<%= current_archive.player_url %>" target="_blank" rel="noopener">Open the local player controls ↗</a>
+    <% end %>
+    <button class="btn secondary" id="release">Give the speakers back (play in this browser)</button>
+    <a class="btn secondary" href="<%= @jukebox.station? ? stations_path : jukebox_path(@jukebox) %>">Back</a>
   </div>
 
   <script>
-    const CFG = { id: '<%= @jukebox.id %>', token: '<%= @api_token %>' };
+    const CFG = { id: <%= raw @jukebox.id.to_json %>, token: <%= raw @api_token.to_json %> };
+    const BASE = '/api/v1/jukeboxes/' + CFG.id;
     const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
     const fmt = (x) => { x = Math.floor(x || 0); return Math.floor(x/60) + ':' + String(x%60).padStart(2,'0'); };
+    let last = {}, songId = null, draggingVolume = false, holdVolumeUntil = 0;
+
+    async function call(method, path, body) {
+      const r = await fetch(path, {
+        method, credentials: 'same-origin',
+        headers: { 'Authorization': 'Bearer ' + CFG.token, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined
+      });
+      return r.status === 204 ? {} : r.json();
+    }
+    const transport = (command, extra) => call('POST', BASE + '/transport', Object.assign({ command }, extra || {})).then(poll);
+
+    function render(j) {
+      const srv = j.server || {}, s = j.current_song, t = srv.transport || 'stop';
+      songId = s ? s.id : null;
+      $('livedot').classList.toggle('live', !!j.is_playing);
+      $('state').textContent = s ? (j.is_playing ? 'PLAYING' : (t === 'play' ? 'STARTING' : 'PAUSED')) : (t === 'play' ? 'STARTING' : 'STOPPED');
+      $('title').textContent = s ? s.title : 'Nothing playing';
+      $('artist').textContent = s ? [s.artist, s.album].filter(Boolean).join(' — ') : '';
+      const pos = Number(j.current_position) || 0, dur = s ? Number(s.duration) || 0 : 0;
+      $('pos').textContent = s ? fmt(pos) + ' / ' + fmt(dur) : '';
+      $('barfill').style.width = s && dur ? Math.min(100, (pos/dur)*100) + '%' : '0';
+      $('playpause').textContent = t === 'play' ? 'Pause' : 'Play';
+      $('playpause').classList.toggle('on', t === 'play');
+      $('skip').disabled = !s; $('stop').disabled = t === 'stop';
+      const w = $('warn');
+      const msg = !srv.online ? "The archive's player is not answering, so nothing will play until it is back." : (srv.error || '');
+      w.textContent = msg; w.style.display = msg ? 'block' : 'none';
+      if (!draggingVolume && Date.now() > holdVolumeUntil && srv.volume != null) $('volume').value = srv.volume;
+      const outs = srv.outputs || [];
+      $('outputs').innerHTML = outs.length
+        ? outs.map((o) => '<button class="chip' + (o.selected ? ' on' : '') + '" data-id="' + esc(o.id) + '" data-sel="' + (o.selected ? 1 : 0) + '">' + esc(o.name) + '</button>').join('')
+        : '<span class="muted">No speakers reported</span>';
+    }
+
     async function poll() {
       try {
-        const r = await fetch('/api/v1/jukeboxes/' + CFG.id + '/status', {
-          headers: { 'Authorization': 'Bearer ' + CFG.token, 'X-Requested-With': 'XMLHttpRequest' },
-          credentials: 'same-origin'
-        });
-        const d = await r.json();
+        const d = await call('GET', BASE + '/status');
         const j = (d && d.jukebox) || {};
-        const s = j.current_song;
-        $('livedot').classList.toggle('live', !!j.is_playing);
-        $('state').textContent = s ? (j.is_playing ? 'PLAYING' : 'PAUSED') : 'IDLE';
-        $('title').textContent = s ? s.title : 'Nothing playing';
-        $('artist').textContent = s ? (s.artist || '') : '';
-        if (s) {
-          const pos = Number(j.current_position) || 0, dur = Number(s.duration) || 0;
-          $('pos').textContent = fmt(pos) + ' / ' + fmt(dur);
-          $('barfill').style.width = dur ? Math.min(100, (pos/dur)*100) + '%' : '0';
-        } else {
-          $('pos').textContent = ''; $('barfill').style.width = '0';
-        }
+        // The speakers were given back (here or from another page): become the browser player.
+        if (d && d.success && j.server_playback === false) { location.reload(); return; }
+        last = j; render(j);
       } catch (e) { /* non-fatal: it's a status view */ }
     }
-    poll();
-    setInterval(poll, 3000);
+    async function loadQueue() {
+      try {
+        const d = await call('GET', BASE + '/queue');
+        const q = (d.queue || []).slice(0, 8);
+        $('next').innerHTML = q.length
+          ? q.map((i) => '<li>' + esc(i.song.title) + ' <small>' + esc(i.song.artist || '') + (i.source === 'requested' ? ' · requested' : '') + '</small></li>').join('')
+          : '<li class="muted">Nothing queued yet</li>';
+      } catch (e) {}
+    }
+
+    $('playpause').onclick = () => transport(((last.server || {}).transport) === 'play' ? 'pause' : 'play');
+    $('skip').onclick = () => transport('skip');
+    $('stop').onclick = () => transport('stop');
+    $('volume').oninput = () => { draggingVolume = true; };
+    $('volume').onchange = async () => {
+      holdVolumeUntil = Date.now() + 5000; draggingVolume = false;
+      await call('POST', '/api/v1/node_player/command', { cmd: 'volume', value: Number($('volume').value) });
+    };
+    $('outputs').onclick = async (e) => {
+      const b = e.target.closest('button[data-id]'); if (!b) return;
+      b.classList.toggle('on');
+      await call('POST', '/api/v1/node_player/command', { cmd: 'output', id: b.dataset.id, selected: b.dataset.sel !== '1' });
+    };
+    if ($('up')) {
+      $('up').onclick = async () => { if (songId) { await call('POST', BASE + '/feedback', { song_id: songId, kind: 'up' }); $('up').classList.add('on'); setTimeout(() => $('up').classList.remove('on'), 1500); } };
+      $('down').onclick = async () => { if (songId) { await call('POST', BASE + '/feedback', { song_id: songId, kind: 'down' }); await transport('skip', { quiet: true }); } };
+    }
+    $('release').onclick = async () => {
+      if (!confirm('Stop the speakers and carry on in this browser?')) return;
+      await call('POST', BASE + '/server_playback', { on: false });
+      location.reload();
+    };
+
+    poll(); loadQueue();
+    setInterval(poll, 2000);
+    setInterval(loadQueue, 6000);
   </script>
 </body>
 </html>

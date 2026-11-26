@@ -168,11 +168,80 @@ class Jukebox < ApplicationRecord
   # On a radio jukebox, drop the auto-filled songs that have not played yet, so the next top-up
   # follows the newest request or setting. Requests themselves are never dropped.
   def retune!
-    ajb_queue_items.where(source: "random").delete_all if radio?
+    return unless radio?
+    ajb_queue_items.where(source: "random").delete_all
+    ArchiveNode.current.push_player_command!("retune") if server_playback?   # and the one the daemon lined up
   end
 
   # Add associations for current song
   belongs_to :current_song, class_name: 'Song', optional: true
+
+  # ---- Server-side playback -------------------------------------------------------------------
+  # A jukebox with server_playback on is played by the node's player daemon through the node's
+  # speakers instead of by a browser. A node has one set of speakers, so at most one jukebox is
+  # "on air": switching another one on takes the speakers. The daemon follows server_transport;
+  # the remote-control page (and admin-code guests) change it with transport!.
+  SERVER_TRANSPORTS = %w[play pause stop].freeze
+  TRANSPORT_COMMANDS = %w[play pause stop skip].freeze
+  validates :server_transport, inclusion: { in: SERVER_TRANSPORTS }
+  after_commit :announce_server_playback, if: :saved_change_to_server_playback?
+
+  def self.on_air
+    where(server_playback: true).order(updated_at: :desc).first
+  end
+
+  # Take the speakers. Whatever a browser was playing carries over: the daemon picks the current
+  # song up where it was (see server_resume). fresh: start from the queue instead.
+  def start_server_playback!(transport: nil, fresh: false)
+    transaction do
+      Jukebox.where(server_playback: true).where.not(id: id).find_each(&:end_server_playback!)
+      carry = live? && is_playing?
+      attrs = { server_playback: true }
+      attrs.merge!(current_song_id: nil, current_position: 0, is_playing: false) if fresh
+      unless server_playback? && transport.nil?
+        attrs[:server_transport] = transport || (carry ? "play" : (current_song_id && !fresh ? "pause" : "stop"))
+      end
+      attrs[:current_position] = estimated_position if !fresh && attrs[:server_transport] == "pause"
+      update!(attrs)
+    end
+  end
+
+  # Give the speakers back. The song and position are kept, so a browser player that is open (or
+  # opened later) comes up paused at the same spot; nothing is left playing.
+  def end_server_playback!
+    update!(server_playback: false, server_transport: "stop", current_position: estimated_position, is_playing: false)
+  end
+
+  # play / pause / stop / skip for a server-played jukebox.
+  # quiet: a skip that is not held against the song (it follows a thumbs down, which already was).
+  def transport!(command, quiet: false)
+    command = command.to_s
+    raise ArgumentError, "unknown command #{command}" unless TRANSPORT_COMMANDS.include?(command)
+    raise ArgumentError, "this jukebox is not playing on the archive's speakers" unless server_playback?
+    case command
+    when "play"  then update!(server_transport: "play")
+    when "pause" then update!(server_transport: "pause", current_position: estimated_position, is_playing: false)
+    when "stop"  then update!(server_transport: "stop", current_song_id: nil, current_position: 0, is_playing: false)
+    when "skip"  then ArchiveNode.current.push_player_command!("skip", { "report" => !quiet })
+    end
+  end
+
+  # Where the current song is right now: the last reported position, moved on by the time since
+  # then while a player is live and playing.
+  def estimated_position
+    position = current_position.to_f
+    position += Time.current - last_status_update if is_playing? && live?
+    position
+  end
+
+  # The song a daemon taking over should start with, and where in it; nil to start from the queue.
+  def server_resume
+    return nil if server_transport == "stop" || current_song.nil?
+    position = estimated_position
+    length = current_song.duration.to_f
+    return nil if length.positive? && position >= length - 5
+    [ current_song, position ]
+  end
 
   scope :active, -> { where(status: 'active') }
   scope :public_jukeboxes, -> { where(private: false) }
@@ -213,6 +282,7 @@ class Jukebox < ApplicationRecord
   # Which role a join code grants on the guest page: :admin, :guest or nil.
   def guest_role_for(code)
     return nil if code.blank?
+    code = code.to_s
     return :admin if admin_password.present? && ActiveSupport::SecurityUtils.secure_compare(admin_password, code)
     return :guest if ActiveSupport::SecurityUtils.secure_compare(guest_password.to_s, code)
     nil
@@ -258,7 +328,31 @@ class Jukebox < ApplicationRecord
     enabled_playlists.order(:weight, :created_at)
   end
 
+  # What API clients (station pages, the player daemon) know a jukebox by.
+  def station_json
+    {
+      id: id, name: name, session_id: session_id, fill_mode: fill_mode,
+      station: station?, guest_password: guest_password,
+      radio: {
+        genre: radio_genre_mode, steer: radio_steer,
+        intensity: radio_intensity, variety: radio_variety,
+        learn: radio_learn?, requests_steer: requests_steer?,
+        seeds: radio_seed_ids
+      },
+      queue_length: ajb_queue_items.count,
+      live: live?,
+      server_playback: server_playback?, transport: server_transport
+    }
+  end
+
   private
+
+  # Open player / remote pages swap over when the speakers are taken or given back.
+  def announce_server_playback
+    ActionCable.server.broadcast("jukebox_#{id}", { type: "server_playback", on: server_playback? })
+  rescue => e
+    Rails.logger.warn "server_playback broadcast failed: #{e.message}"
+  end
 
   def update_setting!(key, value)
     update!(radio_settings: radio_settings.merge(key => value))

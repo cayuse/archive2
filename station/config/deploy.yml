@@ -1,0 +1,80 @@
+# Kamal deploy for the archive's PLAYER subsystem on a node with speakers (bigballs).
+#
+# Two containers, one service:
+#   archive-player-player-<version>   the daemon (this directory's image): polls the archive for
+#                                     which jukebox has the speakers and feeds OwnTone
+#   archive-player-owntone            accessory: OwnTone, the AirPlay engine, on the HOST network
+#                                     (mDNS speaker discovery and PTP timing need the real LAN stack)
+#
+# They are separate containers because Kamal always attaches an app container to its own docker
+# network, and Docker cannot combine that with host networking; the daemon does not need it anyway.
+# The daemon talks to the archive (ARCHIVE_URL) and to OwnTone (OWNTONE_URL, the host's LAN address).
+# Nothing here touches the archive app, its database or Redis.
+#
+# Secrets come from ~/.config/archive/player.env on the deploying machine (see .kamal/secrets).
+# Runbook: ../station/README.md
+service: archive-player
+image: cayuse/archive-player
+
+servers:
+  player:
+    hosts:
+      - 192.168.17.109
+    proxy: false
+    options:
+      # The daemon's own control page, LAN address only (it has no login). Optional: the archive's
+      # remote-control page does everything through the archive.
+      publish:
+        - "192.168.17.109:8337:8337"
+primary_role: player
+
+registry:
+  server: ghcr.io
+  username: cayuse
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+ssh:
+  user: sauce
+
+deploy_timeout: 60
+
+builder:
+  arch: amd64
+  context: .
+
+env:
+  clear:
+    # The public name on purpose: the play links the archive hands out are built from this host
+    # and OwnTone must be able to fetch them.
+    ARCHIVE_URL: https://archive.cavaforge.net
+    OWNTONE_URL: http://192.168.17.109:3689
+  secret:
+    - NODE_TOKEN          # archive: Settings -> Speakers
+    - ARCHIVE_EMAIL       # optional (control page's search / station list); may be empty
+    - ARCHIVE_PASSWORD
+
+volumes:
+  # Remembers what it handed to OwnTone, so a deploy or restart does not interrupt the music.
+  - "archive_player_data:/data"
+
+accessories:
+  owntone:
+    image: owntone/owntone:latest
+    host: 192.168.17.109
+    network: host
+    env:
+      clear:
+        UID: "1000"
+        GID: "100"
+    files:
+      - ../owntone/owntone.conf:/etc/owntone/owntone.conf
+    volumes:
+      # The existing OwnTone state on bigballs (library db, speaker pairing), reused as is.
+      - "/home/cayuse/owntone/cache:/var/cache/owntone"
+      - "/home/cayuse/owntone/media:/srv/media"
+
+aliases:
+  logs: app logs -f
+  shell: app exec --interactive --reuse "sh"
+  owntone-logs: accessory exec owntone --reuse "tail -n 100 /var/log/owntone.log"

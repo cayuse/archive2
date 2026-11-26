@@ -13,7 +13,8 @@ bash rails.sh bundle exec rails db:migrate             # any Rails command again
 bash psql.sh -c "select count(*) from songs"
 bash web.sh                                            # (re)start the app on http://127.0.0.1:3909 (production mode)
 bash test.sh [files]                                   # the app's minitest suite in its own database
-bash station_e2e.sh                                    # station.py against staging and a mock OwnTone
+bash station_e2e.sh                                    # station.py's own control page (account login) against staging and a mock OwnTone
+bash server_player_e2e.sh                              # server-side playback: node token, hand-off from a browser, remote transport
 WORK=../scripts bash rails.sh bundle exec rails runner /work/station_engine_test.rb   # radio checks on real data
 ```
 

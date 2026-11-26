@@ -39,6 +39,13 @@
             <div class="d-flex flex-wrap gap-2">
               <%= link_to "Tune", station_path(station), class: "btn btn-primary btn-sm" %>
               <%= link_to "Play in browser", player_jukebox_path(station), class: "btn btn-outline-success btn-sm", target: "_blank", rel: "noopener" %>
+              <% if local_playback_available? %>
+                <% if station.server_playback? %>
+                  <%= link_to "On the speakers: remote", player_jukebox_path(station), class: "btn btn-success btn-sm", target: "_blank", rel: "noopener" %>
+                <% else %>
+                  <%= button_to "Play on #{current_archive.name}'s speakers", server_playback_jukebox_path(station), method: :patch, params: { server_playback: 1, play: 1 }, class: "btn btn-outline-success btn-sm", form: { target: "_blank" } %>
+                <% end %>
+              <% end %>
               <% unless station.session_id == Jukebox.station_code(current_user) %>
                 <button type="button" class="btn btn-outline-danger btn-sm ms-auto" data-delete-station="<%= station.id %>" data-name="<%= station.name %>">Delete</button>
               <% end %>

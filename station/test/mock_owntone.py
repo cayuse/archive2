@@ -51,14 +51,14 @@ class H(BaseHTTPRequestHandler):
             if p == "/api/player":
                 cur = S["queue"][0] if S["queue"] and S["state"] != "stop" else None
                 self.out({"state": S["state"], "volume": S["volume"], "item_id": cur["id"] if cur else 0,
-                          "item_progress_ms": int((time.time() - S["started"]) * 1000) if cur else 0,
+                          "item_progress_ms": int((S.get("held", 0) if S["state"] == "pause" else time.time() - S["started"]) * 1000) if cur else 0,
                           "item_length_ms": int(SONG_SECONDS * 1000) if cur else 0})
             elif p == "/api/queue":
                 self.out({"count": len(S["queue"]), "items": S["queue"]})
             elif p == "/api/outputs":
                 self.out({"outputs": S["outputs"]})
             elif p == "/mock/log":
-                self.out({"played": S["log"]})
+                self.out({"played": S["log"], "seeks": S.get("seeks", []), "clears": S.get("clears", 0)})
             else:
                 self.out({"error": "?"}, 404)
 
@@ -80,7 +80,15 @@ class H(BaseHTTPRequestHandler):
         with L:
             if u.path == "/api/player/play":
                 if S["queue"] and S["state"] != "play":
-                    S["state"], S["started"] = "play", time.time()
+                    held = S.pop("held", 0.0) if S["state"] == "pause" else 0.0
+                    S["state"], S["started"] = "play", time.time() - held
+            elif u.path == "/api/player/pause":
+                if S["state"] == "play":
+                    S["state"], S["held"] = "pause", time.time() - S["started"]
+            elif u.path == "/api/player/seek":
+                if S["state"] == "play":
+                    S["started"] = time.time() - int(q["position_ms"][0]) / 1000.0
+                    S["seeks"] = S.get("seeks", []) + [int(q["position_ms"][0])]
             elif u.path == "/api/player/stop":
                 S["state"] = "stop"
             elif u.path == "/api/player/next":
@@ -93,6 +101,7 @@ class H(BaseHTTPRequestHandler):
                 S["volume"] = int(q["volume"][0])
             elif u.path == "/api/queue/clear":
                 S["queue"] = []
+                S["clears"] = S.get("clears", 0) + 1
             elif u.path.startswith("/api/outputs/"):
                 for o in S["outputs"]:
                     if o["id"] == u.path.rsplit("/", 1)[1]:

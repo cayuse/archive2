@@ -344,7 +344,12 @@ class Api::V1::GuestController < ApplicationController
       return render json: { success: false, message: 'Unknown command' }, status: 422
     end
 
-    broadcast_player_command(@jukebox, command)
+    if @jukebox.server_playback?
+      @jukebox.transport!(command)          # the node's daemon is the player
+      broadcast_playback_update(@jukebox)
+    else
+      broadcast_player_command(@jukebox, command)
+    end
     render json: { success: true, command: command }
   end
 

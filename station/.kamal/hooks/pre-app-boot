@@ -1,0 +1,17 @@
+#!/bin/sh
+# Only one daemon may feed OwnTone, and the control page has a fixed host port. So before the new
+# container boots, stop the previous Kamal one and (first cutover only) the old docker-compose
+# daemon "archive-station", which is stopped, not removed: rollback is `docker start archive-station`.
+# OwnTone keeps playing what it has queued; the new daemon carries on from there.
+set -e
+[ "$KAMAL_DESTINATION" = "staging" ] && user=cayuse || user=sauce
+
+for host in $(echo "$KAMAL_HOSTS" | tr ',' ' '); do
+  ssh "$user@$host" '
+    docker ps -q --filter label=service=archive-player --filter label=role=player | xargs -r docker stop
+    if [ -n "$(docker ps -q --filter name=^/archive-station$)" ]; then
+      echo "pre-app-boot: stopping legacy compose daemon archive-station (kept for rollback)"
+      docker stop archive-station
+    fi
+  '
+done

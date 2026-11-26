@@ -3,7 +3,8 @@ class JukeboxesController < ApplicationController
   before_action :authenticate_user!, except: [:guest, :guest_short]
   before_action :require_host!, except: [:guest, :guest_short]
   before_action :set_jukebox, only: [:show, :edit, :update, :destroy, :player, :guest, :server_playback]
-  before_action :ensure_owner, only: [:edit, :update, :destroy, :server_playback]
+  # show and player are owner-only too: they display the guest and admin codes and mint an API token.
+  before_action :ensure_owner, only: [:show, :edit, :update, :destroy, :player, :server_playback]
 
   def index
     # stations (personal radio) have their own page; this one lists party jukeboxes
@@ -116,7 +117,16 @@ class JukeboxesController < ApplicationController
   def server_playback
     authorize_local_playback!
     return if performed?
-    @jukebox.update(server_playback: ActiveModel::Type::Boolean.new.cast(params[:server_playback]))
+    if ActiveModel::Type::Boolean.new.cast(params[:server_playback])
+      # play=1 (the "Play on speakers" buttons): start playing and go straight to the remote.
+      if params[:play].present?
+        @jukebox.start_server_playback!(transport: "play")
+        return redirect_to player_jukebox_path(@jukebox)
+      end
+      @jukebox.start_server_playback!
+    elsif @jukebox.server_playback?
+      @jukebox.end_server_playback!
+    end
     redirect_to @jukebox, notice: @jukebox.server_playback? ?
       "This jukebox now plays on the archive's speakers. The player page is a remote control." :
       "This jukebox now plays in the host's browser."

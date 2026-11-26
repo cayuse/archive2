@@ -1,5 +1,9 @@
 # OwnTone on bigballs (AirPlay 2 engine for the headless jukebox)
 
+> **Deployment has moved.** OwnTone is now an accessory of the Kamal service `archive-player`
+> (`../station/config/deploy.yml`, runbook `../station/README.md`), which uploads `owntone.conf`
+> from this directory. The compose file here is the old hand-run setup, kept for rollback.
+
 Background and the overall plan: `../HEADLESS_JUKEBOX_RESEARCH.md`.
 
 - Runs as `cayuse` on bigballs in `~/owntone` (this directory copied there), image

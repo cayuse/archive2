@@ -1,4 +1,4 @@
-\restrict ytCRJILNRdvEO15hkWvHOvlrVqnXymYeGC7X8cxoxCUD9rxof4Tkg9kIcOUgT0m
+\restrict sZTgHXntYsqG3mS9mQlgkFTNATGcYujBExCR5m29N0fOWGI8G3lgWFrChGznNa0
 
 -- Dumped from database version 15.19 (Debian 15.19-1.pgdg13+2)
 -- Dumped by pg_dump version 15.20 (Debian 15.20-0+deb12u1)
@@ -256,7 +256,12 @@ CREATE TABLE public.archive_nodes (
     player_url character varying,
     lan_cidr character varying,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    player_token character varying,
+    player_commands jsonb DEFAULT '[]'::jsonb NOT NULL,
+    player_command_seq integer DEFAULT 0 NOT NULL,
+    player_state jsonb DEFAULT '{}'::jsonb NOT NULL,
+    player_seen_at timestamp(6) without time zone
 );
 
 
@@ -407,6 +412,7 @@ CREATE TABLE public.jukeboxes (
     radio_settings jsonb DEFAULT '{}'::jsonb NOT NULL,
     admin_password character varying,
     server_playback boolean DEFAULT false NOT NULL,
+    server_transport character varying DEFAULT 'stop'::character varying NOT NULL,
     CONSTRAINT check_positive_min_queue_length CHECK ((min_queue_length > 0)),
     CONSTRAINT check_positive_queue_refill_level CHECK ((queue_refill_level > 0))
 );
@@ -1270,6 +1276,13 @@ CREATE INDEX index_albums_on_total_tracks ON public.albums USING btree (total_tr
 --
 
 CREATE UNIQUE INDEX index_archive_nodes_on_node_id ON public.archive_nodes USING btree (node_id);
+
+
+--
+-- Name: index_archive_nodes_on_player_token; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_archive_nodes_on_player_token ON public.archive_nodes USING btree (player_token);
 
 
 --
@@ -2266,11 +2279,12 @@ ALTER PUBLICATION pub_archive ADD TABLE ONLY public.users;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict ytCRJILNRdvEO15hkWvHOvlrVqnXymYeGC7X8cxoxCUD9rxof4Tkg9kIcOUgT0m
+\unrestrict sZTgHXntYsqG3mS9mQlgkFTNATGcYujBExCR5m29N0fOWGI8G3lgWFrChGznNa0
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261126140000'),
 ('20261126130000'),
 ('20261126120100'),
 ('20261126120000'),

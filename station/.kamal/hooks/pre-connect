@@ -1,0 +1,6 @@
+#!/bin/sh
+# Refuse to deploy without the node's player token or the registry token (Kamal's dotenv turns a
+# failed $(...) into an empty string without complaint).
+set -e
+.kamal/read-secret NODE_TOKEN >/dev/null
+[ -n "$(sed -n 's/^KAMAL_REGISTRY_PASSWORD=//p' /home/sauce/secrets/jeedata/ghcr.env)" ] || { echo "pre-connect: GHCR token missing" >&2; exit 1; }

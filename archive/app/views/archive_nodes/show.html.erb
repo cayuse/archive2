@@ -1,0 +1,88 @@
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 theme-text-primary">This archive &amp; its speakers</h1>
+    <%= link_to "Back to Settings", settings_path, class: "btn btn-outline-secondary" %>
+  </div>
+
+  <% if notice %><div class="alert alert-success"><%= notice %></div><% end %>
+  <% if @node.errors.any? %><div class="alert alert-danger"><%= @node.errors.full_messages.to_sentence %></div><% end %>
+
+  <div class="row">
+    <div class="col-lg-7">
+      <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0 theme-text-primary">Node</h5></div>
+        <div class="card-body">
+          <%= form_with model: @node, url: archive_node_path, method: :patch, local: true do |f| %>
+            <div class="mb-3">
+              <%= f.label :name, class: "form-label" %>
+              <%= f.text_field :name, class: "form-control" %>
+              <div class="form-text">Shown as "Play on <em>name</em>'s speakers". Node id: <code><%= @node.node_id %></code></div>
+            </div>
+            <div class="form-check form-switch mb-3">
+              <%= f.check_box :local_playback, class: "form-check-input", role: "switch" %>
+              <%= f.label :local_playback, "Offer local (speaker) playback on this node", class: "form-check-label" %>
+              <div class="form-text">Who may use it is set per user (Users &rarr; edit &rarr; Local playback). Switching this off stops anything playing on the speakers.</div>
+            </div>
+            <div class="mb-3">
+              <%= f.label :player_url, "Local player page (optional)", class: "form-label" %>
+              <%= f.text_field :player_url, class: "form-control", placeholder: "http://192.168.x.x:8337" %>
+              <div class="form-text">The daemon's own control page, if you expose it on the LAN. Not needed: the remote-control page here does transport, volume and speakers through the archive.</div>
+            </div>
+            <div class="mb-3">
+              <%= f.label :lan_cidr, "LAN range (informational)", class: "form-label" %>
+              <%= f.text_field :lan_cidr, class: "form-control", placeholder: "192.168.17.0/24" %>
+            </div>
+            <%= f.submit "Save", class: "btn btn-primary" %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0 theme-text-primary">Player daemon</h5></div>
+        <div class="card-body">
+          <p>
+            <% if @node.player_online? %>
+              <span class="badge bg-success">● Online</span>
+            <% elsif @node.player_seen_at %>
+              <span class="badge bg-secondary">Offline</span> <span class="text-muted small">last seen <%= time_ago_in_words(@node.player_seen_at) %> ago</span>
+            <% else %>
+              <span class="badge bg-secondary">Never seen</span>
+            <% end %>
+          </p>
+          <% state = @node.player_state || {} %>
+          <% if state["error"].present? %><div class="alert alert-warning py-2 small"><%= state["error"] %></div><% end %>
+          <% if @node.player_online? %>
+            <p class="mb-1"><strong>Volume:</strong> <%= state["volume"] || "?" %></p>
+            <p class="mb-1"><strong>Speakers:</strong>
+              <% outs = Array(state["outputs"]) %>
+              <%= outs.any? ? outs.map { |o| "#{o['name']}#{' ✓' if o['selected']}" }.join(", ") : "none reported" %>
+            </p>
+          <% end %>
+          <p class="mb-3"><strong>On the speakers:</strong>
+            <% if @on_air %>
+              <%= link_to @on_air.name, player_jukebox_path(@on_air) %> (<%= @on_air.owner&.name %>, <%= @on_air.server_transport %>)
+            <% else %>
+              nothing
+            <% end %>
+          </p>
+
+          <label class="form-label">Player token</label>
+          <% if @node.player_token.present? %>
+            <input type="text" class="form-control font-monospace mb-2" readonly value="<%= @node.player_token %>" onclick="this.select()">
+          <% else %>
+            <p class="text-muted small">None yet.</p>
+          <% end %>
+          <%= button_to (@node.player_token.present? ? "Make a new token" : "Make a token"), regenerate_token_archive_node_path,
+                class: "btn btn-sm btn-outline-secondary",
+                form: { data: { turbo_confirm: "The daemon will stop working until it has the new token. Continue?" } } %>
+          <p class="text-muted small mt-2 mb-0">
+            The daemon (<code>station/station.py</code>) signs in with this as <code>NODE_TOKEN</code> in its <code>.env</code>.
+            With it the daemon can play any jukebox that is put on the speakers, for whoever owns it.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

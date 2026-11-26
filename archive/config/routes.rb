@@ -118,6 +118,11 @@ Rails.application.routes.draw do
 
   # A user's radio stations (jukeboxes on radio auto-fill) and the tuning page for one.
   resources :stations, only: [:index, :show]
+
+  # Admin: this archive node's local-playback settings and its player daemon
+  resource :archive_node, only: [:show, :update] do
+    post :regenerate_token
+  end
   
   # Upload interface
   resource :upload, only: [:show, :create], controller: 'upload'
@@ -158,8 +163,14 @@ Rails.application.routes.draw do
           patch 'queue/:song_id/promote', action: :promote_in_queue
           patch 'queue/:song_id/play_next', action: :play_next_in_queue
           post :playback_status
+          post :transport
+          post :server_playback
         end
       end
+
+      # This node's player daemon (and the volume / speaker controls of the remote page)
+      post 'node_player/sync', to: 'node_player#sync'
+      post 'node_player/command', to: 'node_player#command'
       
       # Guest access routes (read-only, password-protected)
       scope 'guest/:jukebox_id' do

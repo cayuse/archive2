@@ -1,9 +1,11 @@
 class Api::V1::JukeboxesController < ApplicationController
   include JukeboxBroadcasts
+  include NodePlayerAuth
 
   skip_before_action :verify_authenticity_token
   before_action :authenticate_api_user!
-  before_action :set_jukebox, only: [:status, :queue, :current_song, :playback_info, :history, :add_to_queue, :remove_from_queue, :move_in_queue, :promote_in_queue, :play_next_in_queue, :playback_status, :next_song, :radio_settings, :feedback, :tuning, :add_seed, :remove_seed, :keep_artist, :rename_station, :destroy_station]
+  before_action :set_jukebox, only: [:status, :queue, :current_song, :playback_info, :history, :add_to_queue, :remove_from_queue, :move_in_queue, :promote_in_queue, :play_next_in_queue, :playback_status, :next_song, :radio_settings, :feedback, :tuning, :add_seed, :remove_seed, :keep_artist, :rename_station, :destroy_station, :transport, :server_playback]
+  before_action :require_person!, only: [:index, :stations, :station, :server_playback]
 
   # List the authenticated user's own jukeboxes so player clients can offer
   # a picker instead of needing a pasted UUID.
@@ -48,6 +50,7 @@ class Api::V1::JukeboxesController < ApplicationController
         crossfade_duration: @jukebox.crossfade_duration,
         auto_play: @jukebox.auto_play,
         server_playback: @jukebox.server_playback?,
+        server: (@jukebox.server_playback? ? server_player_json : nil),
         # Last-known playback, so a reopened player can restore instead of
         # coming up blank. current_song is the row's current_song_id, not the
         # queue head (that's the #current_song action).
@@ -324,7 +327,40 @@ class Api::V1::JukeboxesController < ApplicationController
     render json: { success: false, message: 'Could not move song', errors: e.record.errors.full_messages }, status: 422
   end
 
+  # POST /api/v1/jukeboxes/:id/server_playback   on=true|false, [transport=play|pause|stop], [fresh=true]
+  # Put this jukebox on the archive's speakers (taking them from any other), or give them back.
+  def server_playback
+    node = ArchiveNode.current
+    unless node.local_playback? && @current_api_user.can_play_on?(node)
+      return render json: { success: false, message: 'Local playback is not available to you here.' }, status: 403
+    end
+    bool = ActiveModel::Type::Boolean.new
+    if bool.cast(params[:on])
+      @jukebox.start_server_playback!(transport: params[:transport].presence_in(Jukebox::SERVER_TRANSPORTS), fresh: bool.cast(params[:fresh]) == true)
+    elsif @jukebox.server_playback?
+      @jukebox.end_server_playback!
+    end
+    broadcast_playback_update(@jukebox)
+    render json: { success: true, jukebox: station_json(@jukebox) }
+  end
+
+  # POST /api/v1/jukeboxes/:id/transport   command=play|pause|stop|skip, [quiet=true]
+  # Transport for a jukebox playing on the archive's speakers (the remote-control page).
+  def transport
+    @jukebox.transport!(params[:command], quiet: ActiveModel::Type::Boolean.new.cast(params[:quiet]) == true)
+    broadcast_playback_update(@jukebox)
+    render json: { success: true, transport: @jukebox.server_transport }
+  rescue ArgumentError => e
+    render json: { success: false, message: e.message }, status: 422
+  end
+
   def playback_status
+    # A server-played jukebox is the daemon's to report on. A browser player that has not yet
+    # noticed the switch is told so here, and what it reports is ignored.
+    if @jukebox.server_playback? && !@node_player
+      return render json: { success: true, server_playback: true, message: 'Playing on the archive\'s speakers' }
+    end
+
     # Update jukebox with current playback status (with safe defaults)
     update_params = { last_status_update: Time.current }
 
@@ -356,7 +392,7 @@ class Api::V1::JukeboxesController < ApplicationController
       # Push the new now-playing state to subscribed guests.
       broadcast_playback_update(@jukebox)
 
-      render json: { success: true, message: 'Playback status updated' }
+      render json: { success: true, server_playback: @jukebox.server_playback?, message: 'Playback status updated' }
     rescue ActiveRecord::RecordInvalid => e
       Rails.logger.error "Playback status update failed: #{e.message}"
       Rails.logger.error "Validation errors: #{@jukebox.errors.full_messages}"
@@ -593,6 +629,9 @@ class Api::V1::JukeboxesController < ApplicationController
   private
 
   def authenticate_api_user!
+    # The node's player daemon: no person; set_jukebox lets it act for the on-air jukebox's owner.
+    return @node_player = true if node_player_request?
+
     token = extract_token_from_header
     
     if token.blank?
@@ -651,22 +690,30 @@ class Api::V1::JukeboxesController < ApplicationController
   end
 
   def station_json(jukebox)
-    {
-      id: jukebox.id, name: jukebox.name, session_id: jukebox.session_id, fill_mode: jukebox.fill_mode,
-      station: jukebox.station?, guest_password: jukebox.guest_password,
-      radio: {
-        genre: jukebox.radio_genre_mode, steer: jukebox.radio_steer,
-        intensity: jukebox.radio_intensity, variety: jukebox.radio_variety,
-        learn: jukebox.radio_learn?, requests_steer: jukebox.requests_steer?,
-        seeds: jukebox.radio_seed_ids
-      },
-      queue_length: jukebox.ajb_queue_items.count,
-      live: jukebox.live?
-    }
+    jukebox.station_json
+  end
+
+  # Collection actions belong to a person; the player daemon has no use for them.
+  def require_person!
+    render json: { success: false, message: 'Access denied' }, status: 403 unless @current_api_user
+  end
+
+  # What the remote-control page shows about the node's player.
+  def server_player_json
+    node = ArchiveNode.current
+    state = node.player_state || {}
+    { node: node.name, online: node.player_online?, transport: @jukebox.server_transport,
+      volume: state["volume"], outputs: state["outputs"] || [], error: state["error"] }
   end
 
   def set_jukebox
     @jukebox = Jukebox.find(params[:id])
+
+    if @node_player
+      return render json: { success: false, message: 'Not on the speakers' }, status: 403 unless @jukebox.server_playback?
+      @current_api_user = @jukebox.owner
+      return
+    end
 
     owner = @jukebox.owner == @current_api_user
     public_read = READ_ONLY_ACTIONS.include?(action_name) && @jukebox.public?

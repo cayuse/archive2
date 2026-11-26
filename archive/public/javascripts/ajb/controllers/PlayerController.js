@@ -268,8 +268,9 @@ class PlayerController {
   // Update playback status on server
   async updatePlaybackStatus(event = 'heartbeat') {
     try {
+      if (this.yielded) return;
       const state = this.playbackState.getState();
-      await this.apiService.updatePlaybackStatus({
+      const result = await this.apiService.updatePlaybackStatus({
         current_song_id: state.currentSong ? state.currentSong.id : null,
         position: state.currentTime,
         is_playing: state.isPlaying,
@@ -277,6 +278,8 @@ class PlayerController {
         event: event,
         diag: this.audioEngine.getDiagnostics()
       });
+      // Fallback for a missed cable message: the server says its own player has this jukebox now.
+      if (result && result.server_playback === true) this.yieldToServer();
     } catch (error) {
       console.warn('Playback status update failed (this is non-critical):', error.message);
       // Don't throw the error - this is just for real-time sync, not core functionality
@@ -406,10 +409,23 @@ class PlayerController {
             this.refreshNewestHistory(); // a consumed track became a history entry
           } else if (message.type === 'player_command') {
             this.handleRemoteCommand(message.command);
+          } else if (message.type === 'server_playback' && message.on) {
+            this.yieldToServer();
           }
         }
       }
     );
+  }
+
+  // The jukebox was switched to the archive's speakers: this browser stops being the player. The
+  // server already knows the song and position (our heartbeats) and hands them to its own player;
+  // the reload turns this page into the remote control.
+  yieldToServer() {
+    if (this.yielded) return;
+    this.yielded = true;
+    if (this.heartbeatInterval) { clearInterval(this.heartbeatInterval); this.heartbeatInterval = null; }
+    try { this.audioEngine.pause(); } catch (e) { /* nothing loaded */ }
+    window.location.reload();
   }
 
   // Transport commands relayed from an admin-code guest's phone.

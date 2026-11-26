@@ -1,21 +1,29 @@
-# Archive Station: the headless jukebox player. Feeds OwnTone (AirPlay) from an archive jukebox.
-# Host networking so it can reach OwnTone on localhost and bind its control page to the LAN address only.
+# The archive's player subsystem without Kamal, for any node with AirPlay speakers on its LAN:
+# the daemon (built from this directory) plus OwnTone. Production on bigballs uses Kamal instead
+# (config/deploy.yml, README.md); don't run both on one host.
 #
-#   cp .env.example .env   # fill in the account
-#   docker compose up -d
-#   open http://<BIND_HOST>:8337 from any machine on the LAN
+#   cp .env.example .env     # ARCHIVE_URL and NODE_TOKEN (archive: Settings -> Speakers)
+#   docker compose up -d --build
 services:
-  station:
-    image: python:3.12-alpine
-    container_name: archive-station
-    network_mode: host
-    working_dir: /app
-    command: ["python", "-u", "station.py"]
+  player:
+    build: .
+    container_name: archive-player
+    network_mode: host          # reaches OwnTone on localhost; BIND_HOST in .env keeps the page on the LAN address
     env_file: .env
-    environment:
-      - STATE_FILE=/data/station_state.json
     volumes:
-      - ./station.py:/app/station.py:ro
-      - ./index.html:/app/index.html:ro
       - ./data:/data
+    depends_on: [owntone]
+    restart: unless-stopped
+
+  owntone:
+    image: docker.io/owntone/owntone:latest
+    container_name: archive-player-owntone
+    network_mode: host          # mDNS speaker discovery and PTP timing need the real LAN stack
+    environment:
+      - UID=1000
+      - GID=100
+    volumes:
+      - ../owntone/owntone.conf:/etc/owntone/owntone.conf:ro
+      - ./owntone/cache:/var/cache/owntone
+      - ./owntone/media:/srv/media
     restart: unless-stopped

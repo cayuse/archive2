@@ -34,12 +34,57 @@ to bigballs, migrations applied, verified healthy). Four slices:
   from `/status`, a link to the node's `player_url`, no Howler), so closing/
   reopening it can't affect playback. Browser mode unchanged.
 
+- **V — Server-side playback, end to end (branch `feature/server-player`, not deployed).**
+  The archive holds the desired state; the node's daemon (`station/station.py`) follows it.
+  - *State.* `jukeboxes.server_transport` (play/pause/stop). `archive_nodes.player_token`
+    (daemon's secret, `X-Node-Token`), `player_commands` (one-shot: skip/volume/output/retune, 30 s
+    TTL, acked by seq), `player_state` + `player_seen_at` (what the daemon reports: speakers, volume, error).
+  - *One jukebox on air.* `Jukebox#start_server_playback!` takes the speakers from any other
+    jukebox; `end_server_playback!` gives them back; `transport!` is play/pause/stop/skip.
+  - *Daemon.* Polls `POST /api/v1/node_player/sync` every 2 s, plays whichever jukebox is on air
+    (party queue or radio, any owner) using the ordinary jukebox API with the node token (acting
+    for the jukebox's owner, only while it is on air). Without `NODE_TOKEN` it polls as its account
+    and plays only that account's jukeboxes. Its LAN control page is now just another remote: Start
+    puts a station on the speakers through the archive.
+  - *Hand-off.* Browser → speakers: the archive extrapolates the browser's position from its last
+    heartbeat, the daemon loads the same song and seeks there; the browser player is told (cable
+    message, or its next heartbeat answer) and reloads into the remote. Speakers → browser: the
+    archive records the position, the daemon stops, an open remote reloads into the browser player
+    restored paused at that spot (browsers will not autoplay); if no page is open it just stops.
+  - *Remote.* `/jukeboxes/:id/player` in server mode: play/pause, skip, stop, thumbs (radio),
+    volume, speaker selection, up next, daemon-offline warning, "give the speakers back". All of it
+    goes through the archive (`POST /api/v1/jukeboxes/:id/transport`, `/server_playback`,
+    `/api/v1/node_player/command`), so it works from anywhere and the daemon stays bound to
+    localhost. `player_url` is optional now. Admin-code guests' play/pause/skip reach the daemon too.
+  - *Stations.* "Play on <node>'s speakers" buttons on the station list and tuning pages.
+  - *Admin.* Settings → Speakers (`/archive_node`): name, local playback on/off, player URL, the
+    player token (+ regenerate), daemon status.
+  - *Security.* `jukeboxes#show` and `#player` are owner-only (they showed guest/admin codes and
+    minted a token for any moderator+). A non-string join code is a 401, not a 500.
+  - *Tests.* `test/models/jukebox_server_playback_test.rb`, `test/controllers/api/v1/node_player_test.rb`;
+    `library_tools/staging/server_player_e2e.sh` (node-token mode) and `station_e2e.sh` (account mode).
+  - *Packaging.* The player is its own Kamal service, `archive-player`, in `station/`
+    (`Dockerfile`, `config/deploy.yml`, `.kamal/`, `README.md` runbook): the daemon as the app image
+    and OwnTone as a host-network accessory (a Kamal app cannot be host-networked). `GET /up`
+    health check; the daemon remembers what it handed OwnTone (`/data` volume), so a deploy or
+    restart mid-song carries on without touching the queue. `owntone.conf` trusts Docker's
+    bridge ranges so the bridged daemon may use OwnTone's API. `station/docker-compose.yml` is
+    the same pair for a node without Kamal. NOT deployed: bigballs still runs the old hand-started
+    `owntone` + `archive-station` containers.
+  - *Known limits.* The daemon keeps one song lined up in OwnTone, so a request on a non-steering
+    party queue plays after that song. Seeking on takeover needs OwnTone to be playing first, so
+    the first second or two of the song may be heard before it jumps. Daemon restart mid-song
+    restarts that song at the estimated position (brief gap).
+
 ### Production state right now
 - Node row: `name="Home"`, `local_playback=true`, `player_url=nil`.
 - Grants: **cayuse** (`cayuse@mac.com`) and **Katya** (`katerina.krasko@gmail.com`).
 - Backup before deploy: `~/archive-backups/20261125-203625` on bigballs (dump +
   globals + SHA256SUMS). Rollback: `kamal rollback <ver>` or pg_restore.
-- `station.py` on bigballs was NOT changed by this work.
+- `station.py` on bigballs was NOT changed by slices I–IV. **Slice V replaces it**: deploy the
+  archive (migrate), make a player token (Settings → Speakers), put it in
+  `~/.config/archive/player.env` on gameforge, then cut the player over with Kamal
+  (`station/README.md`). Until the new daemon runs, server mode does nothing (the old one never polls).
 
 ## UNFINISHED — in rough priority order
 
@@ -65,40 +110,10 @@ saved/propagated/resumed elsewhere. The refactor the owner asked for:
   gated on sync, which is deferred (see #6). Build the model peer-safely now
   (UUID PKs already everywhere, origin stamp) without wiring sync.
 
-### 2. Slice C remainder — make server-mode actually drive playback
-The controller fork (IV) renders, but the *executor* for a server-played jukebox
-is the node's hidden task. Remaining:
-- Generalize `station.py` to drive ANY jukebox (classic queue or radio), not just
-  personal stations.
-- Handoff when the switch is flipped mid-play: hand current song+position between
-  the browser player and the daemon. (Permutations the owner settled: toggle OFF
-  while daemon playing → hand back to a browser player if one's open, else stop;
-  one OwnTone per node = at most one jukebox "live on the speakers" at a time, so
-  turning B on takes the speakers from A.)
-- Optionally let the controller page issue transport (play/pause/skip/stop) to the
-  daemon (CORS from the archive origin to the node daemon, or proxy via archive).
-  MVP today is status + a link to the local player page.
-
-### 3. Admin UI for the archive node (NOT built — owner will do later)
-No UI to configure `ArchiveNode` (enable `local_playback`, set `name`,
-`player_url`, `lan_cidr`). Currently set via console. Until there is one, enabling
-a node and setting its player link is a `kamal app exec --reuse "bin/rails runner …"`.
-
-### 4. `player_url` / local-player reachability
-`player_url` is blank in prod. The station daemon binds `127.0.0.1:8337` on
-bigballs (localhost-only) — not reachable from a browser as-is. Decide the real
-local-player URL (expose the daemon on the LAN, or a reverse-proxied path) before
-setting `player_url`, so the controller's "Open local player" link works.
-
-### 5. AJB admin-code leak on `jukeboxes#show` (from the code review, NOT fixed)
-`show` loads the jukebox unscoped and `ensure_owner` only guards edit/update/
-destroy, so any moderator+ can open another host's jukebox page and read its
-guest AND admin codes (Ed's change added the privileged admin code to what was
-already leaking — guest code + `api_token` leak the same way). Fix: scope `show`
-to `current_user.jukeboxes` or add `:show` to `ensure_owner`. Small; closes the
-older leaks too. Also optional: a malformed `password` param (`?password[]=x`)
-returns 500 instead of 401 in `Jukebox#guest_role_for` (`secure_compare` on a
-non-String) — harden with `params[:password].to_s`.
+### 2–5. Server-side playback end to end — BUILT on branch `feature/server-player` (2026-11-25), NOT yet committed/deployed
+Verified on staging (unit + API tests, two end-to-end runs against a mock OwnTone, one headless-Chrome
+pass of the hand-off). See "Slice V" below. Old items 2 (daemon drives any jukebox, hand-off,
+transport), 3 (node admin UI), 4 (`player_url` reachability) and 5 (code leak on `show`) are closed by it.
 
 ### 6. Sync extension (DEFERRED by owner — "don't mess with syncing")
 Existing jukeboxes are slave-only player endpoints; true peer sync has never been
@@ -125,7 +140,7 @@ headless tagger worker, library dedup.
 ## Dev / staging harness (gameforge)
 - `library_tools/staging/` scripts run a production-copy of the app locally:
   `setup.sh`, `web.sh` (prod-mode web on 127.0.0.1:3909), `rails.sh`, `psql.sh`,
-  `test.sh`, `station_e2e.sh`. Containers: `archive-staging-{db,redis,web}`.
+  `test.sh`, `station_e2e.sh`, `server_player_e2e.sh`. Containers: `archive-staging-{db,redis,web}`.
   Secrets/dump live in `~/archive-staging/` (outside the repo).
 - Read-only prod DB clone login for pulling a fresh dump: role `archive_clone`
   on `192.168.17.109:5432` db `archive_production` (see `~/archive-clone.env`).
