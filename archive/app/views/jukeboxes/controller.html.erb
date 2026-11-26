@@ -34,7 +34,16 @@
     .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#51607f; margin-right:6px; vertical-align:middle; }
     .dot.live { background:#36d17a; }
     .warn { background:#3a2a12; border:1px solid #6b4a17; color:#ffd58a; border-radius:12px; padding:12px 14px; margin:14px 0; display:none; }
-    ol.next { margin:0; padding-left:1.2rem; color:#c3c9de; } ol.next li { margin:.25rem 0; } ol.next small { color:#7f89a6; }
+    .q { list-style:none; margin:0; padding:0; }
+    .q li { display:flex; align-items:center; gap:8px; padding:8px 0; border-top:1px solid #1c2747; }
+    .q li:first-child { border-top:0; }
+    .q .n { width:1.6rem; color:#7f89a6; font-variant-numeric:tabular-nums; }
+    .q .what { flex:1; min-width:0; } .q .what b { display:block; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .q .what small { color:#7f89a6; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .q .req { color:#36d17a; }
+    .mini { border:1px solid #243154; background:transparent; color:#c3c9de; border-radius:8px; padding:6px 9px; cursor:pointer; font-size:.85rem; white-space:nowrap; }
+    .mini:hover { border-color:#5570ff; color:#fff; } .mini.danger:hover { border-color:#c0504d; }
+    .search { width:100%; box-sizing:border-box; padding:12px 14px; border-radius:10px; border:1px solid #243154; background:#0b1020; color:#e6e9f2; font-size:1rem; }
   </style>
 </head>
 <body>
@@ -74,7 +83,14 @@
 
     <div class="card">
       <h2>Up next</h2>
-      <ol class="next" id="next"><li class="muted">—</li></ol>
+      <ul class="q" id="next"><li class="muted">—</li></ul>
+      <p class="muted" style="margin:.8rem 0 0;font-size:.85rem">Requests play first, in the order asked. <em>Next</em> puts a song at the very front; <em>Bump</em> moves it up among the requests.</p>
+    </div>
+
+    <div class="card">
+      <h2>Add a song</h2>
+      <input type="search" class="search" id="find" placeholder="Search title, artist, album…" autocomplete="off">
+      <ul class="q" id="found" style="margin-top:.6rem"></ul>
     </div>
 
     <% if @jukebox.station? %>
@@ -140,12 +156,48 @@
     async function loadQueue() {
       try {
         const d = await call('GET', BASE + '/queue');
-        const q = (d.queue || []).slice(0, 8);
+        const q = (d.queue || []).slice(0, 25);
         $('next').innerHTML = q.length
-          ? q.map((i) => '<li>' + esc(i.song.title) + ' <small>' + esc(i.song.artist || '') + (i.source === 'requested' ? ' · requested' : '') + '</small></li>').join('')
+          ? q.map((i, n) => '<li><span class="n">' + (n + 1) + '</span><span class="what"><b>' + esc(i.song.title) + '</b><small>' +
+              esc([i.song.artist, i.song.album].filter(Boolean).join(' — ')) + (i.source === 'requested' ? ' · <span class="req">requested</span>' : '') + '</small></span>' +
+              (n > 0 ? '<button class="mini" data-act="play_next" data-id="' + esc(i.song.id) + '">Next</button>' : '') +
+              (i.source !== 'requested' ? '<button class="mini" data-act="promote" data-id="' + esc(i.song.id) + '">Bump</button>' : '') +
+              '<button class="mini danger" data-act="remove" data-id="' + esc(i.song.id) + '" title="Remove">✕</button></li>').join('')
           : '<li class="muted">Nothing queued yet</li>';
       } catch (e) {}
     }
+    $('next').onclick = async (e) => {
+      const b = e.target.closest('button[data-act]'); if (!b) return;
+      b.disabled = true;
+      const path = BASE + '/queue/' + b.dataset.id;
+      if (b.dataset.act === 'remove') await call('DELETE', path);
+      else await call('PATCH', path + '/' + b.dataset.act);
+      loadQueue();
+    };
+
+    let findTimer = null, findSeq = 0;
+    $('find').oninput = () => {
+      clearTimeout(findTimer);
+      findTimer = setTimeout(async () => {
+        const term = $('find').value.trim(), seq = ++findSeq;
+        if (term.length < 2) { $('found').innerHTML = ''; return; }
+        const d = await call('GET', '/api/v1/songs?limit=12&search=' + encodeURIComponent(term));
+        if (seq !== findSeq) return;
+        const songs = d.songs || [];
+        $('found').innerHTML = songs.length
+          ? songs.map((s) => '<li><span class="what"><b>' + esc(s.title) + '</b><small>' + esc([s.artist, s.album].filter(Boolean).join(' — ')) + '</small></span>' +
+              '<button class="mini" data-add="' + esc(s.id) + '">Request</button><button class="mini" data-add="' + esc(s.id) + '" data-next="1">Play next</button></li>').join('')
+          : '<li class="muted">Nothing found</li>';
+      }, 300);
+    };
+    $('found').onclick = async (e) => {
+      const b = e.target.closest('button[data-add]'); if (!b) return;
+      b.disabled = true;
+      const d = await call('POST', BASE + '/queue', { song_id: b.dataset.add, source: 'requested' });
+      if (b.dataset.next && (d.success || /already in the queue/i.test(d.message || ''))) await call('PATCH', BASE + '/queue/' + b.dataset.add + '/play_next');
+      b.textContent = d.success || b.dataset.next ? 'Added' : (d.message || 'Not added');
+      loadQueue();
+    };
 
     $('playpause').onclick = () => transport(((last.server || {}).transport) === 'play' ? 'pause' : 'play');
     $('skip').onclick = () => transport('skip');
@@ -172,7 +224,7 @@
 
     poll(); loadQueue();
     setInterval(poll, 2000);
-    setInterval(loadQueue, 6000);
+    setInterval(loadQueue, 4000);
   </script>
 </body>
 </html>

@@ -3,6 +3,8 @@
 # node's player token, and a mock OwnTone. Covers taking over from a browser player mid-song,
 # transport / volume / speakers from the remote, one jukebox taking the speakers from another,
 # handing back, and a daemon restart mid-song (the music must not be interrupted).
+# The daemon is run with LINE_UP_SECONDS=9999 (line the next song up at once) because several checks
+# look at the lined-up song; in production it waits until the last 20 seconds of a song.
 # Needs web.sh running. Touches only the test user's "E2E" jukeboxes.
 #
 #   bash server_player_e2e.sh                               # station.py straight from the repo
@@ -15,9 +17,9 @@ DATA=$(mktemp -d); chmod 777 "$DATA"; LOG=/tmp/server_player_e2e.log; : > $LOG; 
 start_daemon() {
   if [ -n "${PLAYER_IMAGE:-}" ]; then
     docker run -d --name archive-player-e2e --network host -v "$DATA":/data -e ARCHIVE_URL=http://127.0.0.1:3909 -e NODE_TOKEN=$TOKEN \
-      -e OWNTONE_URL=http://127.0.0.1:3691 -e BIND_HOST=127.0.0.1 -e BIND_PORT=8339 "$PLAYER_IMAGE" >/dev/null
+      -e OWNTONE_URL=http://127.0.0.1:3691 -e BIND_HOST=127.0.0.1 -e BIND_PORT=8339 -e LINE_UP_SECONDS=${LINE_UP_SECONDS:-9999} "$PLAYER_IMAGE" >/dev/null
   else
-    ARCHIVE_URL=http://127.0.0.1:3909 NODE_TOKEN=$TOKEN OWNTONE_URL=http://127.0.0.1:3691 BIND_HOST=127.0.0.1 BIND_PORT=8339 \
+    ARCHIVE_URL=http://127.0.0.1:3909 NODE_TOKEN=$TOKEN OWNTONE_URL=http://127.0.0.1:3691 BIND_HOST=127.0.0.1 BIND_PORT=8339 LINE_UP_SECONDS=${LINE_UP_SECONDS:-9999} \
     STATE_FILE="$DATA/station_state.json" python3 -u "$REPO/station/station.py" >> $LOG 2>&1 & STN=$!
   fi
 }

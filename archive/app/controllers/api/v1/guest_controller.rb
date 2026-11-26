@@ -268,6 +268,11 @@ class Api::V1::GuestController < ApplicationController
         return
       end
 
+      if @jukebox.playing_or_lined_up?(song)
+        render json: { success: true, outcome: "playing", message: "That song is playing now" }
+        return
+      end
+
       # Add song to queue as requested
       @jukebox.retune! if @jukebox.requests_steer?   # a request re-aims a personal station, not a party
       queue_item = @jukebox.ajb_queue_items.create!(

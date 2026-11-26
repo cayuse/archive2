@@ -265,6 +265,13 @@ class Jukebox < ApplicationRecord
 
   # Where the current song is right now: the last reported position, moved on by the time since
   # then while a player is live and playing.
+  # Is this song playing now, or already handed to the player as the one after? It is then no longer
+  # in the queue, so asking for it again would queue a second play straight after the first.
+  def playing_or_lined_up?(song)
+    song.id == current_song_id ||
+      ajb_played_songs.where("played_at > ?", 15.minutes.ago).order(played_at: :desc).pick(:song_id) == song.id
+  end
+
   def estimated_position
     position = current_position.to_f
     position += Time.current - last_status_update if is_playing? && live?

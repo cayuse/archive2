@@ -45,7 +45,11 @@ OWNTONE_URL = os.environ.get("OWNTONE_URL", "http://127.0.0.1:3689").rstrip("/")
 BIND_HOST = os.environ.get("BIND_HOST", "127.0.0.1")
 BIND_PORT = int(os.environ.get("BIND_PORT", "8337"))
 STATE_FILE = Path(os.environ.get("STATE_FILE", "/data/station_state.json"))
-LOOKAHEAD = 1          # songs kept queued in OwnTone after the current one (gapless hand-over)
+LOOKAHEAD = 1          # songs lined up in OwnTone after the current one (gapless hand-over)
+# The next song is only asked for this close to the end of the current one. Asking earlier would
+# take it off the archive's queue a whole song ahead: a request made meanwhile would have to wait
+# behind it, and every "up next" list would be one song out from what is heard.
+LINE_UP_SECONDS = float(os.environ.get("LINE_UP_SECONDS", "20"))
 TICK = 2.0             # seconds between looks at OwnTone
 HEARTBEAT = 10.0       # seconds between now-playing reports to the archive (it treats 30 s as "live")
 DIALS = ["danceability", "happiness", "aggression", "acousticness", "electronic", "instrumental"]
@@ -318,6 +322,15 @@ class Station:
             self.moved_on.add(song["id"])
             if report:
                 self.event(song, "skip", self.position)
+            # nothing is lined up until the song is nearly over, so get what follows now
+            p, items = self.owntone.player(), self.owntone.queue()
+            at = next((k for k, i in enumerate(items) if i["id"] == p.get("item_id")), None)
+            if at is None or at == len(items) - 1:
+                following = self.archive.next_song(self.jukebox["id"])
+                if following:
+                    self.by_url[following["play_url"]] = following
+                    self.owntone.add(following["play_url"])
+                    log("queued:", following.get("artist"), "-", following.get("title"))
             self.owntone.next()
 
     def event(self, song, kind, position=None):
@@ -492,7 +505,13 @@ class Station:
                 log("resuming:", song.get("artist"), "-", song.get("title"), "at %ds" % float(resume.get("position") or 0))
             self.fresh = False
             ahead = len(items) - (items.index(now) + 1 if now in items else 0)
-            want_ahead = LOOKAHEAD if now else LOOKAHEAD + 1
+            remaining = self.length - self.position if now and self.length else None
+            if not now:
+                want_ahead = 1                    # nothing playing: get the first song
+            elif remaining is None or remaining <= LINE_UP_SECONDS:
+                want_ahead = LOOKAHEAD            # near the end (or length unknown): line up what follows
+            else:
+                want_ahead = 0
             while ahead < want_ahead:
                 song = self.archive.next_song(self.jukebox["id"])
                 if not song:

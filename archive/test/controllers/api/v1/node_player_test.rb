@@ -96,4 +96,23 @@ class Api::V1::NodePlayerTest < ActionDispatch::IntegrationTest
     assert_equal true, json["jukebox"]["server"]["online"]
     assert_equal "play", json["jukebox"]["server"]["transport"]
   end
+  test "a song that is playing or already handed to the player cannot be requested again" do
+    playing, waiting = songs(:one), songs(:two)
+    @jukebox.start_server_playback!
+    @jukebox.update_columns(last_status_update: 1.hour.from_now)   # a player is reporting in, so guests may join
+    @jukebox.ajb_played_songs.create!(song: playing, played_at: Time.current, source: "requested")
+
+    post "/api/v1/guest/#{@jukebox.id}/request_song", params: { song_id: playing.id, password: "pppp" }
+    assert_equal [ true, "playing" ], json.values_at("success", "outcome"), response.body
+    post "/api/v1/jukeboxes/#{@jukebox.id}/queue", params: { song_id: playing.id }, headers: bearer(@owner)
+    assert_response :conflict
+    assert_equal 0, @jukebox.ajb_queue_items.count
+
+    post "/api/v1/guest/#{@jukebox.id}/request_song", params: { song_id: waiting.id, password: "pppp" }
+    assert_equal "added", json["outcome"]
+    travel 20.minutes do   # long over: asking again is a new request
+      post "/api/v1/guest/#{@jukebox.id}/request_song", params: { song_id: playing.id, password: "pppp" }
+      assert_equal "added", json["outcome"]
+    end
+  end
 end

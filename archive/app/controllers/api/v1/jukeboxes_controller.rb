@@ -293,6 +293,10 @@ class Api::V1::JukeboxesController < ApplicationController
       return render json: { success: false, message: "Song is already in the queue" }, status: 409
     end
 
+    if source == "requested" && @jukebox.playing_or_lined_up?(song)
+      return render json: { success: false, message: "That song is playing now" }, status: 409
+    end
+
     @jukebox.retune! if source == "requested" && @jukebox.requests_steer?   # the request re-aims the station
     queue_item = @jukebox.ajb_queue_items.create!(song: song, source: source)
     broadcast_queue_update(@jukebox)

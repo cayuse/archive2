@@ -310,7 +310,8 @@ class GuestController {
           added: `Added “${title}” to the queue`,
           already_queued: `“${title}” is already in the queue`,
           bumped: `Bumped “${title}” up the queue`,
-          already_requested: `“${title}” is already requested`
+          already_requested: `“${title}” is already requested`,
+          playing: `“${title}” is playing now`
         };
         this.showNotice(notices[result.outcome] || notices.added);
         return { success: true };
