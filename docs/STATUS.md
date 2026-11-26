@@ -167,6 +167,12 @@ Runs on Ruby 3.4.13 and Rails 8.1 since 2026-11-25 (was 3.2.5 / 8.0.2, both past
   Postgres 15 and writes `SET transaction_timeout`, which 15 rejects. Delete that line after
   regenerating; `bin/check` fails if it is present.
 
+- **Drop Box (built 2026-11-26, `docs/reference/INTAKE.md`)**. Still to do: the analysis reserve's
+  pull/push for the PC; AcoustID fingerprints; the API upload (`Api::V1::SongsController#bulk_upload`,
+  used by `utilities/`) and the manual create/update paths in `SongsController` still find artists,
+  albums and genres by name the old way and trust client-supplied names; they should go through
+  `LibraryImporter` or the Drop Box. `AudioFileProcessor` is only used by those paths now.
+
 Found by the 2026-11-26 review of the reference docs against the code, not fixed yet. None is
 on a path used daily.
 

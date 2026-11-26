@@ -31,6 +31,16 @@ servers:
       health-timeout: 10s
       health-retries: 3
 
+  # The Drop Box's worker: unpacks, identifies, tags and imports what people drop (rake intake:work).
+  # Same image, no port. Stopping it mid-batch is safe: the next worker carries on where it left off.
+  intake:
+    hosts:
+      - 192.168.17.109
+    cmd: bin/rails intake:work
+    proxy: false
+    options:
+      network: archive_default
+
 registry:
   server: ghcr.io
   username: cayuse
@@ -67,6 +77,7 @@ env:
     FORGERY_ORIGIN_CHECK: "true"
     ALLOW_ALL_HOSTS: "false"
     INLINE_AUDIO_PROCESSING: "true"
+    INTAKE_ROOT: /rails/intake
     USE_SIDEKIQ: "false"
     STORAGE_ROOT: /rails/storage
     ACTIVE_STORAGE_SERVICE: local
@@ -80,11 +91,16 @@ env:
     - DATABASE_URL
     - AWS_SES_SMTP_USERNAME
     - AWS_SES_SMTP_PASSWORD
+    # read-only login for the MusicBrainz mirror (bigballs :5433); without it nothing is looked up
+    - MUSICBRAINZ_URL
 
 volumes:
   # Active Storage blobs (the music files). Same host path compose used.
   - "/datatank/archive/psql_storage:/rails/storage"
   # Reuse the compose logs volume so log history carries over.
+  # The Drop Box: uploads waiting to be dealt with, and 30 days of untouched originals.
+  # Create it on the host first, owned by uid 1000 (see KAMAL_DEPLOY.md).
+  - "/datatank/archive/intake:/rails/intake"
   - "archive_archive_logs:/rails/log"
 
 aliases:

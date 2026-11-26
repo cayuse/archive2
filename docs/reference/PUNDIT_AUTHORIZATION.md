@@ -64,7 +64,7 @@ include `EncryptedTokenAuthentication` use the token's user as `pundit_user` and
 
 - `SongsController`: `policy_scope(Song)` for lists; `authorize @song` on show, edit, update,
   destroy; `authorize Song, :maintenance?` and `:bulk_update?`.
-- `UploadController`: `authorize Song, :upload?` before every action.
+- `IntakeController` (the Drop Box): `authorize Song, :upload?` before every action.
 - `ArtistsController`, `AlbumsController`, `GenresController`: `policy_scope` only.
 - `UsersController`: `policy_scope(User)`, `authorize @user`, and `:manage_password?` for the
   two password actions (on top of its own admin check).

@@ -11,6 +11,7 @@ module Intake
   MAX_ARCHIVE_ENTRIES = 20_000
   MAX_ARCHIVE_BYTES = 50.gigabytes
   MAX_NESTING = 3
+  WORKER_LOCK = 742_611_260   # advisory lock number held by the one running intake worker
 
   def self.root = Pathname.new(ENV["INTAKE_ROOT"].presence || Rails.root.join("tmp", "intake", Rails.env).to_s)
 

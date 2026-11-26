@@ -34,6 +34,11 @@ Migrations do NOT run automatically (the entrypoint only runs db:prepare when
 RUN_DB_SETUP_ON_START=true). When a release adds migrations: back up first (below), then
 `kamal app exec "bin/rails db:migrate"`.
 
+The `intake` role (the Drop Box worker) deploys with the app. It needs `/datatank/archive/intake` on
+the host, owned by uid 1000 (`mkdir -p /datatank/archive/intake` as cayuse, once), and
+`MUSICBRAINZ_URL` in `~/.config/archive/production.env` (read-only role `archive_mb_ro` on the
+MusicBrainz mirror; without it files are filed under their own tags). `kamal app logs -r intake`.
+
 ## Backup (always before a cutover or migration)
 ```bash
 ssh cayuse@192.168.17.109 'D=~/archive-backups/$(date +%Y%m%d-%H%M%S); mkdir -p $D &&

@@ -29,65 +29,21 @@ A song created by CSV import has no status at all.
 
 ## How a file gets in
 
-### Web upload
+### The Drop Box
 
-Moderators and admins (`SongPolicy#upload?`). "Upload Song" in the navigation bar.
+The way in for people: `/intake` ("Drop Box" in the navigation bar; moderators and admins,
+`SongPolicy#upload?`). It takes files, folders and archives, identifies them against MusicBrainz,
+rewrites their tags and files them. See `INTAKE.md`. `GET /upload` redirects there.
 
-1. `GET /upload` — a form with one field, the audio file.
-2. `POST /upload` (`UploadController#create`) — creates the song with the file attached,
-   status `needs_review`, the uploader as `user`, the original file name in
-   `original_filename`, and the file name (minus extension) as a provisional title.
-3. The file's tags are read (see below).
-4. Redirect to `GET /songs/:id/edit`, where the uploader checks the result, picks or types
-   the artist, album and genre, and saves (`PATCH /songs/:id`).
-
-### API upload
-
-`POST /api/v1/songs/bulk_upload`, one file per request, moderator or admin token. The tags
-are read inside the request by the controller itself (not by the job), and only fill in what
-the request's own parameters left blank. `skip_post_processing=true` skips reading tags.
-See `BULK_OPERATIONS_AND_API.md` and `archive_api.md`.
-
-### CSV import
-
-`/bulk_operations` creates song records with no audio file. Nothing is processed.
-
-## Accepted files
-
-The attachment's content type must be one of `audio/mpeg`, `audio/mp3`, `audio/x-m4a`,
-`audio/mp4`, `audio/ogg`, `audio/flac`, `audio/wav`, `audio/aac`. `file_format` is one of
-`mp3 m4a mp4 ogg flac wav aac`. Files are stored with Active Storage's local disk service (`archive/storage`, which is
-`/rails/storage` in the container).
-
-## Reading the tags
-
-`AudioFileProcessingJob` → `Song#extract_metadata_from_file` → `AudioFileProcessor`.
-
-The song's file is copied to a temp file and `ffprobe` (from the `ffmpeg` package in the
-Docker image) is run on it twice: once for the format tags, once for the duration. From the
-tags it takes `title`, `artist`, `album`, `genre` and `track` / `tracknumber` (the part
-before any `/`), plus the duration rounded to seconds, the format (from the content type)
-and the file size.
-
-The job then:
-
-- overwrites the song's title, track number, duration, format and size with whatever was found;
-- finds or creates the `Artist` by name, the `Album` by title and the `Genre` by name, and sets them;
-- sets the status to `completed` if the song now has a title and an artist, otherwise `needs_review`;
-- on an exception, sets `failed` and stores the message.
-
-The job does nothing if the song has no file, or is already `processing` or `completed`.
-
-There is no fallback to parsing the file name: `AudioFileProcessor` contains a file-name
-parser, but nothing calls it. A file with no tags simply stays `needs_review` with its
-provisional title.
+The rest of this document is about the older per-song job, which the API upload and the
+Maintenance page still use. It reads tags and files the song by them (`TagScanner`,
+`LibraryImporter`) but does not consult MusicBrainz or change the file.
 
 ### When the job runs
 
 Controlled by `INLINE_AUDIO_PROCESSING` (default `true`, and `true` in production):
 
-- `true` — `UploadController` runs the job inside the upload request, so the edit page
-  already shows the tags. The model does not enqueue anything.
+- `true` — the model does not enqueue anything; callers run the job themselves.
 - `false` — the model enqueues the job after a song is created, and again after an update
   while the song has a file and is still unprocessed (blank status, `pending`, `needs_review`, or
   `failed` with no error). Active Job's adapter is `:inline` in development and in

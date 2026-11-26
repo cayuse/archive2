@@ -4,6 +4,19 @@ namespace :intake do
     $stdout.sync = true
     running = true
     %w[INT TERM].each { |sig| trap(sig) { running = false } }
+    # a release that adds the drop box starts this worker before its migration has been run
+    until !running || IntakeBatch.table_exists?
+      puts "intake worker waiting for the database migration"
+      sleep 10
+      IntakeBatch.reset_column_information
+    end
+    # One worker at a time: a deploy starts the new worker before the old one has gone, and two of them
+    # must never share a batch. The lock belongs to this database session and is freed when the old
+    # worker exits, however it exits.
+    lock = ActiveRecord::Base.connection_pool.checkout
+    puts "intake worker waiting for the previous worker to finish" unless lock.select_value("select pg_try_advisory_lock(#{Intake::WORKER_LOCK})")
+    sleep 2 until !running || lock.select_value("select pg_try_advisory_lock(#{Intake::WORKER_LOCK})")
+    next unless running
     # a batch left mid-way by a worker that was stopped is picked up again
     IntakeBatch.where(status: "processing").update_all(status: "queued")
     puts "intake worker watching #{Intake.root}"

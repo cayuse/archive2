@@ -18,6 +18,7 @@ code on 2026-11-26 (except `UI_DESIGN_PASS.md`, which is a to-do list); the code
 |---|---|
 | `archive_api.md` | The `/api/v1` API: authentication, songs, playlists, jukeboxes and stations, speaker playback, guest endpoints. |
 | `BULK_OPERATIONS_AND_API.md` | The Bulk Operations page (CSV import/export, bulk delete) and bulk upload. |
+| `INTAKE.md` | The Drop Box: how dropped files, folders and archives are sorted, identified, tagged and imported. |
 | `SONG_PROCESSING_SYSTEM.md` | How uploaded audio is tagged, the processing statuses, the Maintenance page. |
 | `PUNDIT_AUTHORIZATION.md` | Roles and who may do what (Pundit policies and controller checks). |
 | `USER_MANAGEMENT.md` | Accounts, login, admin user management, email. |
