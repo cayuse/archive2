@@ -9,6 +9,7 @@ class Song < ApplicationRecord
   has_many :ajb_queue_items, dependent: :destroy
   has_many :ajb_played_songs, dependent: :destroy
   has_one :file_tag, class_name: "SongFileTag", dependent: :destroy
+  has_many :song_artist_credits, -> { order(:position) }, dependent: :destroy
   has_many :artist_credits, -> { order(:position) }, class_name: "SongArtistCredit", dependent: :destroy
   has_many :credited_artists, through: :artist_credits, source: :artist
   has_many :station_feedbacks, dependent: :destroy
