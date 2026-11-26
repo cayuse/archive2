@@ -197,7 +197,6 @@ Rails.application.routes.draw do
   get "bulk_operations", to: "bulk_operations#index"
   resource :bulk_operations, only: [] do
     collection do
-      post :upload_csv
       get :export_csv
       post :bulk_delete
     end

@@ -19,70 +19,8 @@
       <% end %>
       
       <div class="row">
-        <!-- CSV Upload -->
-        <div class="col-md-6 mb-4">
-          <div class="card">
-            <div class="card-header">
-              <h5 class="mb-0">
-                <i class="bi bi-upload"></i> Import Songs from CSV
-              </h5>
-            </div>
-            <div class="card-body">
-              <form action="<%= upload_csv_bulk_operations_path %>" method="post" enctype="multipart/form-data">
-                <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-                
-                <div class="mb-3">
-                  <label for="file" class="form-label">Select CSV File</label>
-                  <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
-                  <div class="form-text">
-                    Adds a song record for each row, without an audio file. Only the title is required; artists, albums and genres are matched by name or created.
-                  </div>
-                </div>
-                
-                <button type="submit" class="btn btn-primary">
-                  <i class="bi bi-upload"></i> Upload and Import
-                </button>
-              </form>
-              
-              <hr>
-              
-              <h6>CSV Template</h6>
-              <div class="table-responsive">
-                <table class="table table-sm table-bordered">
-                  <thead class="table-light">
-                    <tr>
-                      <th>title</th>
-                      <th>track_number</th>
-                      <th>duration</th>
-                      <th>file_format</th>
-                      <th>file_size</th>
-                      <th>artist_name</th>
-                      <th>album_title</th>
-                      <th>album_release_date</th>
-                      <th>genre_name</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Song Title</td>
-                      <td>1</td>
-                      <td>180</td>
-                      <td>mp3</td>
-                      <td>5242880</td>
-                      <td>Artist Name</td>
-                      <td>Album Title</td>
-                      <td>2023-01-01</td>
-                      <td>Rock</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-        
         <!-- Export and Delete -->
-        <div class="col-md-6 mb-4">
+        <div class="col-12 mb-4">
           <div class="card">
             <div class="card-header">
               <h5 class="mb-0">

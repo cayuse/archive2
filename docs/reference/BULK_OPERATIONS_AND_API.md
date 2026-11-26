@@ -2,7 +2,7 @@
 
 Three ways to work on many songs at once:
 
-1. the **Bulk Operations page** (`/bulk_operations`): CSV import, CSV export, delete by id;
+1. the **Bulk Operations page** (`/bulk_operations`): CSV export, delete by id;
 2. the **upload API** (`POST /api/v1/songs/bulk_upload`) and the scripts in `utilities/` that drive it;
 3. the **Maintenance page** (`/songs/maintenance`) for songs whose tags need attention — see `SONG_PROCESSING_SYSTEM.md`.
 
@@ -12,30 +12,6 @@ The full API is in `archive_api.md`.
 
 `/bulk_operations`, moderators and admins only (`BulkOperationsController`). It is not in the
 navigation bar; open it by URL. The page also shows counts of songs, artists, albums and genres.
-
-### CSV import
-
-`POST /bulk_operations/upload_csv`, form field `file`. The file must be CSV (by content type
-or `.csv` extension) with a header row:
-
-```csv
-title,track_number,duration,file_format,file_size,artist_name,album_title,album_release_date,genre_name
-"Song Title",1,180,mp3,5242880,"Artist Name","Album Title","2023-01-01","Rock"
-```
-
-Each row creates a **metadata-only song**: a song record with no audio file attached.
-
-- `title` is required; a row without one is skipped.
-- `artist_name`, `album_title` and `genre_name` are looked up by name and created if missing,
-  and set on the song. The album is only set when the row also has an artist (albums are
-  found by title and artist); `album_release_date` is used when the album is created.
-- `duration` (seconds), `track_number` and `file_size` must be positive integers; `file_format`
-  must be one of `mp3 m4a mp4 ogg flac wav aac`.
-- The importing user is recorded as the song's `user`.
-
-The import does not match rows against existing songs, so importing the same file twice
-creates duplicates. Afterwards the page reports how many songs were imported and the first
-ten skipped rows with the reason.
 
 ### CSV export
 
