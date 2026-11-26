@@ -45,12 +45,17 @@ def _init():
 
 
 def decode(path):
-    p = subprocess.run(["ffmpeg", "-v", "error", "-nostdin", "-i", str(path), "-vn", "-t", str(MAX_SECONDS),
-                        "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"], capture_output=True)
-    y = np.frombuffer(p.stdout, dtype=np.float32)
-    if y.size < SR:  # under one second of audio
-        raise RuntimeError("decode failed: " + p.stderr.decode("utf-8", "replace")[:200].strip())
-    return y
+    # Second attempt forces the MP3 reader: some files are MP3 audio under a .wav name or header,
+    # which ffmpeg's format guess gets wrong.
+    err = ""
+    for force in ([], ["-f", "mp3"]):
+        p = subprocess.run(["ffmpeg", "-v", "error", "-nostdin"] + force + ["-i", str(path), "-vn", "-t", str(MAX_SECONDS),
+                            "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"], capture_output=True)
+        y = np.frombuffer(p.stdout, dtype=np.float32)
+        if y.size >= SR:  # at least one second of audio
+            return y
+        err = err or p.stderr.decode("utf-8", "replace")[:200].strip() or "under one second of audio"
+    raise RuntimeError("decode failed: " + err)
 
 
 def work(row):
@@ -58,7 +63,16 @@ def work(row):
     path = next((p for p in (r / key[0:2] / key[2:4] / key for r in AUDIO_ROOTS) if p.exists()), None)
     if path is None:
         return song_id, "missing", None, None
+    return work_path((song_id, path))
+
+
+def work_path(row):
+    """Analyse one audio file at a known path. Used by the bulk run above and by archive_sync.py,
+    so songs analysed later are windowed exactly like the original library."""
+    song_id, path = row
     try:
+        if _fe is None:
+            _init()
         import librosa, librosa.feature.rhythm
         y = decode(path)
         dur = y.size / SR

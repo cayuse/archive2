@@ -31,3 +31,26 @@ A Linux equivalent of the staging setup, with no machine-specific paths, is in `
 
 Audio model: `laion/larger_clap_music_and_speech` via `transformers==4.46.3`. Do not use
 `laion/larger_clap_music`: its text side returns the same vector for every prompt.
+
+## Keeping up with new songs (after the big push)
+
+The server does not analyse audio. It exposes an analysis API (`GET /api/v1/analysis` describes it)
+and a GPU machine runs `scripts/archive_sync.py` now and then:
+
+```
+venv\Scripts\python scripts\archive_sync.py            # analyse what is pending, write it back
+venv\Scripts\python scripts\archive_sync.py --dry-run  # same, send nothing
+venv\Scripts\python scripts\archive_sync.py --check    # does this machine reproduce the server's stored values?
+powershell -File scripts\sync_archive.ps1              # the same with a log, for Task Scheduler
+```
+
+Settings: `ANALYSIS_URL` and `ANALYSIS_KEY` in the `.env` next to `scripts/` (never in git).
+It keeps a local copy of the library's embeddings in `work/sync/` (first run downloads all of them,
+later runs only changes), ranks each new song's dials against the existing library, writes results
+in small batches and reads every batch back. Existing songs' dials are never rewritten; an existing
+song's sound-alike list is resent only when a new song belongs in it. Files that cannot be decoded
+are remembered in `work/sync/unanalysable.json` and skipped until `--retry-failed`.
+
+`analyze_audio.py` now exposes `work_path` (one file at a known path) so new songs are windowed
+exactly like the original run, and `decode` retries as MP3 when ffmpeg's format guess fails (MP3
+audio under a WAV header).
