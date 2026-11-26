@@ -153,19 +153,52 @@ CLAP-text sidecar), expandable song rows in search, cover-art download
 the mirror), importer fix + dropbox intake (`library_tools/IMPORTER_FIX_PLAN.md`),
 headless tagger worker, library dedup.
 
-## Known debt (as of the 2026-11-25 cleanup pass)
+## Known debt (as of 2026-11-26)
 
 Runs on Ruby 3.4.13 and Rails 8.1 since 2026-11-25 (was 3.2.5 / 8.0.2, both past end of support).
 `config.load_defaults` is 8.1 (YJIT in production, unsafe relative redirects raise, the rest).
 
 
-- **Leftovers of the retired standalone jukeboxes** (removed 2026-11-25; code at tag
-  `pre-jukebox-removal`): the tables `sync_changes`, `slave_keys`, `jukebox_keys`,
-  `conflict_logs` (all empty) and `song_ratings` (5 rows, superseded by `station_feedbacks`), and
-  the publication `pub_archive`. Nothing in the app reads or writes them; they can be dropped in
-  a later migration. Postgres still runs with `wal_level=logical`, which is harmless.
-- **Reference docs are unreviewed** (see `docs/README.md`): moved and indexed, not checked
-  against the code.
+- **Database leftovers are gone** (2026-11-26): the retired sync tables, `song_ratings`, the
+  `pub_archive` publication and the `archive_production_before_repair` database were dropped
+  after a dump (`~/archive-backups/*-pre-sync-drop` on bigballs holds all of them). Postgres still
+  runs with `wal_level=logical`, which is harmless; changing it needs a database restart.
+- **`structure.sql` and pg_dump 17**: the staging image's `pg_dump` is newer than production's
+  Postgres 15 and writes `SET transaction_timeout`, which 15 rejects. Delete that line after
+  regenerating; `bin/check` fails if it is present.
+
+Found by the 2026-11-26 review of the reference docs against the code, not fixed yet. None is
+on a path used daily.
+
+Bugs:
+- `SongsController#bulk_update` passes unpermitted params to `update` and raises; no page calls it.
+- `GET /songs/new` and `SettingsController#preview_theme` have no template.
+- Theme Duplicate / Delete links (`settings/themes/show.html.erb`) use `data-method`, which Turbo
+  ignores, so they go out as GET.
+- `Api::V1::AudioFilesController` renders a status with no body in two places (missing template),
+  and `Api::V1::SongsController#show` raises for a song with no audio file.
+- An API request for a record that does not exist gets an HTML redirect to `/`, not a JSON 404
+  (`ApplicationController`'s `RecordNotFound` handler).
+- `Album.find_or_create_by(title:)` without the artist in the tagging job and the song
+  controllers files same-titled albums by different artists under one album.
+- `USE_SIDEKIQ=true` selects an adapter whose gem is not installed.
+- Possibly: theme asset URLs with an extension (`logo.svg`) may not match their route. Untested.
+
+Half-built or dead code:
+- Theme assets have no upload page; `themes.custom_css` and `css_variables` are stored, never used.
+  Unused theme partials, `ThemeMigrationService`, `SystemSetting.available_themes`.
+- `AudioFileProcessor`'s filename parser is never called, so untagged files get no fallback.
+- The public-read branch in the jukebox API is dead (`Jukebox` forces `private`).
+- The `PunditAuthorization` helpers are unused and no controller calls `verify_authorized`.
+- `/bulk_operations` is not linked from the navigation bar.
+- `STORAGE_ROOT` and `ACTIVE_STORAGE_SERVICE` in `config/deploy.yml` are ignored by the app.
+
+Worth knowing:
+- The ActionCable connection is unauthenticated: anyone who knows a jukebox's UUID can subscribe
+  to its stream of events.
+- `db/seeds.rb` creates `admin@musicarchive.com` with a known password; never seed production.
+- Streaming reads the whole file into memory on every Range request.
+- API tokens cannot be revoked before they expire; `POST /api/v1/auth/logout` does nothing.
 
 ## Dev / staging harness (gameforge)
 - `library_tools/staging/` scripts run a production-copy of the app locally:

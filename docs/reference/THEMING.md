@@ -1,231 +1,108 @@
-# Theming System Documentation
+# Theming
 
-This application uses a flexible CSS-based theming system that allows for easy customization of colors, layouts, and component positioning without modifying HTML templates.
+A theme in The Archive is a row in the database holding a set of colours. The app turns the
+active theme into CSS custom properties, and the stylesheets are written in terms of those
+properties. One theme is active for the whole site; there is no per-user theme.
 
-## Overview
+Theme images (logo, icons) are covered in `THEME_ASSETS.md`.
 
-The theming system is built on CSS custom properties (variables) and semantic CSS classes. This approach provides:
+## How it fits together
 
-- **Separation of concerns**: Colors and styling are defined in CSS, not HTML
-- **Easy theme switching**: Change themes by adding/removing CSS classes
-- **Flexible layouts**: Components can be repositioned without HTML changes
-- **Responsive design**: Themes adapt to different screen sizes
-- **Accessibility**: Built-in support for high-contrast themes
+1. `Theme` (table `themes`) stores the colours. `SystemSetting` key `current_theme` holds
+   the name of the active one. `Theme.current` returns it, falling back to the theme marked
+   `is_default`, then to the first theme.
+2. The layout (`app/views/layouts/application.html.erb`) puts `data-theme="<name>"` on
+   `<html>` and `<body>` and loads, in order: Bootstrap, the app's own stylesheet
+   (`application.css`, which pulls in `app.css` and `theme.css`), and the generated theme
+   stylesheet `/themes/<name>.css?v=<theme updated_at>`.
+3. `GET /themes/:theme.css` (`ThemesController#css`, no login, cached for an hour) returns
+   CSS built by `ThemeCssGenerator`: the theme's variables under `[data-theme="<name>"]` and
+   again under `:root`, the spacing / radius / shadow variables, and a handful of base rules
+   (body, headings, `.card`, `.btn-primary`).
+4. `app/assets/stylesheets/theme.css` holds the real styling. It defines the same variables
+   with the default theme's values (so pages look right before the generated sheet loads)
+   and styles components with `var(--…)`.
 
-## CSS Variables
+Changing a theme's colours therefore needs no deploy: save the theme and reload.
 
-The core of the theming system is CSS custom properties defined in `:root`:
+## Variables
 
-```css
-:root {
-  --primary-bg: #0f0f23;
-  --secondary-bg: #1a1a2e;
-  --card-bg: #16213e;
-  --accent-color: #4f46e5;
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #64748b;
-  /* ... more variables */
-}
-```
+Each is a column on `themes` (underscores instead of dashes, no leading `--`).
 
-## Semantic CSS Classes
+| Variable | Default | |
+|---|---|---|
+| `--primary-bg` | `#0f0f23` | page background |
+| `--secondary-bg` | `#1a1a2e` | cards, panels |
+| `--accent-color`, `--accent-hover`, `--accent-active` | `#4f46e5`, `#6366f1`, `#3730a3` | primary buttons, accents |
+| `--text-primary`, `--text-secondary`, `--text-muted`, `--text-inverse` | `#f8fafc`, `#cbd5e1`, `#64748b`, `#ffffff` | text |
+| `--border-color` | `#334155` | |
+| `--shadow-color`, `--overlay-color` | `rgba(0, 0, 0, 0.1)`, `rgba(0, 0, 0, 0.5)` | |
+| `--success-color`, `--warning-color`, `--danger-color` | `#10b981`, `#f59e0b`, `#ef4444` | |
+| `--button-bg`, `--button-hover`, `--button-active` | `#374151`, `#4b5563`, `#1f2937` | secondary buttons |
+| `--highlight-color` | `#3b82f6` | |
+| `--link-color`, `--link-hover` | `#60a5fa`, `#93c5fd` | |
+| `--heading-color`, `--card-header-text` | (blank) | optional; fall back to `--text-primary` |
 
-Instead of hard-coding colors in HTML, use these semantic classes:
+Colours must be hex (`#rgb` or `#rrggbb`). `shadow_color` and `overlay_color` may also be
+`rgb()` / `rgba()`. There is no `--card-bg`; cards use `--secondary-bg`.
 
-### Text Colors
-- `.theme-text-primary` - Primary text color
-- `.theme-text-secondary` - Secondary text color  
-- `.theme-text-muted` - Muted text color
-- `.theme-text-light` - Light text color
+Not theme-specific, but available everywhere: `--spacing-xs` … `--spacing-xl`,
+`--radius-sm` … `--radius-xl`, `--shadow-sm` / `-md` / `-lg`.
 
-### Background Colors
-- `.theme-bg-primary` - Primary background
-- `.theme-bg-secondary` - Secondary background
-- `.theme-bg-card` - Card background
+The `themes` table also has `css_variables` (jsonb) and `custom_css` (text). They are stored
+but nothing reads them: a theme cannot currently add its own CSS rules, only change colours.
 
-### Component Classes
-- `.theme-card-content` - Card content with proper text colors
-- `.theme-form-label` - Form label styling
-- `.theme-form-help` - Help text styling
+## Managing themes
 
-## Available Themes
+Admins only: **System Settings → Theme** (`/themes`, handled by `SettingsController`).
 
-### Default Dark Theme
-The default theme with dark colors and blue accents.
+| Action | Route |
+|---|---|
+| List | `GET /themes` |
+| New / create | `GET /themes/new`, `POST /themes` |
+| Show (colours and assets) | `GET /themes/:id` |
+| Edit / update | `GET /themes/:id/edit`, `PATCH /themes/:id` |
+| Delete (not the default theme) | `DELETE /themes/:id` |
+| Duplicate (copies colours and assets; named `<name>_copy_<timestamp>`) | `POST /themes/:id/duplicate` |
+| Make active | `POST /themes/:id/switch` |
+| Export | `GET /themes/:id/export` |
 
-### Light Theme
-```html
-<body class="theme-light">
-```
-Clean, light interface with blue accents.
+A theme's `name` is its identifier in URLs and in `data-theme`: lower-case letters, digits,
+`-` and `_` only. `display_name` is what people see.
 
-### High Contrast Theme
-```html
-<body class="theme-high-contrast">
-```
-High contrast theme for accessibility with bright colors on dark backgrounds.
+Export writes the generated CSS and the theme's assets to
+`app/assets/stylesheets/themes/<name>/` on the server's filesystem; it does not download
+anything. In the production container that directory is lost on the next deploy.
 
-### Sunset Theme
-```html
-<body class="theme-sunset">
-```
-Warm orange and brown color scheme.
+`GET /themes/:id/preview` is routed but has no template.
 
-### Ocean Theme
-```html
-<body class="theme-ocean">
-```
-Cool blue ocean-inspired colors.
+`bin/rails db:seed` creates the `default` theme and sets it as current.
 
-## Layout Options
+## Writing views and CSS
 
-### Default Layout
-Standard layout with top navigation.
+Use the variables, or the helper classes from `theme.css`, instead of fixed colours or
+Bootstrap's `text-white` / `text-light`:
 
-### Sidebar Layout
-```html
-<body class="theme-layout-sidebar">
-```
-Navigation moves to a sidebar on the left.
-
-### Center Layout
-```html
-<body class="theme-layout-center">
-```
-Content is centered with max-width.
-
-### Full Width Layout
-```html
-<body class="theme-layout-fullwidth">
-```
-Content uses full viewport width.
-
-## Combining Themes and Layouts
-
-You can combine themes and layouts:
-
-```html
-<body class="theme-ocean theme-layout-sidebar">
-```
-
-## Usage in HTML
-
-### Before (Hard-coded colors)
-```html
-<div class="card-body text-white">
-  <dt class="text-white">Title:</dt>
-  <dd class="text-white">Song Title</dd>
-</div>
-```
-
-### After (Semantic classes)
-```html
-<div class="card-body theme-card-content">
-  <dt class="theme-text-primary">Title:</dt>
-  <dd class="theme-text-primary">Song Title</dd>
-</div>
-```
-
-## Creating Custom Themes
-
-To create a new theme:
-
-1. Add a new CSS class in `app/assets/stylesheets/themes.css`:
-
-```css
-.theme-custom {
-  --primary-bg: #your-color;
-  --secondary-bg: #your-color;
-  --card-bg: #your-color;
-  --accent-color: #your-color;
-  --text-primary: #your-color;
-  --text-secondary: #your-color;
-  --text-muted: #your-color;
-  --border-color: #your-color;
-  /* ... other variables */
-}
-```
-
-2. Apply the theme:
-```html
-<body class="theme-custom">
-```
-
-## Theme Switcher Component
-
-Include the theme switcher in your layout:
+| Class | |
+|---|---|
+| `.theme-text-primary`, `.theme-text-secondary`, `.theme-text-muted`, `.theme-text-inverse` | text colour |
+| `.theme-bg-primary`, `.theme-bg-secondary` | background |
+| `.theme-border` | border colour |
+| `.theme-shadow-sm`, `.theme-shadow-md`, `.theme-shadow-lg` | box shadow |
+| `.theme-card-content` | a card body with themed text |
+| `.theme-form-label`, `.theme-form-help` | form label and help text |
 
 ```erb
-<%= render 'layouts/theme_switcher' %>
-```
-
-This provides a dropdown menu to switch between themes and layouts, with persistence using localStorage.
-
-## Responsive Design
-
-Themes automatically adapt to different screen sizes:
-
-- **Mobile**: Sidebar layouts stack vertically
-- **Tablet**: Adjusted spacing and sizing
-- **Desktop**: Full layout options available
-
-## Accessibility Features
-
-- High contrast theme for visual impairments
-- Semantic color classes for screen readers
-- Flexible layouts for different viewing preferences
-- Keyboard navigation support
-
-## Best Practices
-
-1. **Use semantic classes**: Always use `.theme-text-primary` instead of `text-white`
-2. **Test with different themes**: Ensure your content works with all themes
-3. **Consider accessibility**: Test with high contrast theme
-4. **Keep layouts flexible**: Don't hard-code positioning
-5. **Document custom themes**: Add comments explaining color choices
-
-## File Structure
-
-```
-app/assets/stylesheets/
-├── application.css          # Main styles with CSS variables
-├── themes.css              # Theme definitions
-└── app.css                 # Additional styles
-
-app/views/layouts/
-└── _theme_switcher.html.erb # Theme switcher component
-```
-
-## Migration Guide
-
-To migrate existing hard-coded colors:
-
-1. Replace `text-white` with `theme-text-primary`
-2. Replace `text-light` with `theme-text-secondary`
-3. Replace `text-muted` with `theme-text-muted`
-4. Replace `card-body text-white` with `card-body theme-card-content`
-5. Replace form labels with `theme-form-label`
-
-## Examples
-
-### Card with proper theming:
-```html
 <div class="card">
-  <div class="card-header">
-    <h5 class="mb-0">Song Information</h5>
-  </div>
+  <div class="card-header"><h5 class="mb-0">Song Information</h5></div>
   <div class="card-body theme-card-content">
     <dl class="row">
       <dt class="col-sm-4 theme-text-primary">Title:</dt>
-      <dd class="col-sm-8 theme-text-primary">Song Title</dd>
+      <dd class="col-sm-8 theme-text-primary"><%= @song.title %></dd>
     </dl>
   </div>
 </div>
-```
 
-### Form with proper theming:
-```html
 <div class="mb-3">
   <%= form.label :title, class: "form-label theme-form-label" %>
   <%= form.text_field :title, class: "form-control" %>
@@ -233,4 +110,30 @@ To migrate existing hard-coded colors:
 </div>
 ```
 
-This theming system provides maximum flexibility while maintaining clean, semantic HTML that's easy to maintain and customize. 
+```css
+.my-widget {
+  background: var(--secondary-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+```
+
+Rules that should apply to one theme only can be scoped with `[data-theme="<name>"]` in
+`theme.css`, but that is a code change, not something a theme record can carry.
+
+## Leftovers from the old file-based system
+
+Themes used to be directories of CSS and images under `app/assets`. Those directories are
+gone, but some code that assumed them remains and is not used:
+
+- `app/views/layouts/_theme_switcher.html.erb` (a browser-side switcher for `theme-light`,
+  `theme-ocean` and similar body classes that no longer exist) and
+  `app/views/settings/themes/_switcher.html.erb` — neither is rendered anywhere;
+- `SystemSetting.available_themes` and the `tab=theme` branch of `SettingsController#update`,
+  which look for themes on disk;
+- `ThemeMigrationService`, which imported file-based themes into the database.
+
+The per-view card classes (`song-view-song-information`, `settings-view-settings-panel`, …)
+and the body layout classes (`theme-layout-sidebar`, …) described in earlier versions of
+this document do not exist.

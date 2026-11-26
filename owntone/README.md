@@ -4,7 +4,7 @@
 > (`../station/config/deploy.yml`, runbook `../station/README.md`), which uploads `owntone.conf`
 > from this directory. The compose file here is the old hand-run setup, kept for rollback.
 
-Background and the overall plan: `../docs/reference/HEADLESS_JUKEBOX_RESEARCH.md`.
+Background and the overall plan: `../docs/history/HEADLESS_JUKEBOX_RESEARCH.md`.
 
 - Runs as `cayuse` on bigballs in `~/owntone` (this directory copied there), image
   `docker.io/owntone/owntone:latest`, host networking.

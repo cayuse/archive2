@@ -2,7 +2,7 @@
 
 Written 2026-11-25 against branch `feature/library-metadata` and the live system on
 bigballs. This is a proposal; nothing here is built yet. Background on the house
-station and OwnTone: `HEADLESS_JUKEBOX_RESEARCH.md`, `owntone/README.md`.
+station and OwnTone: `../history/HEADLESS_JUKEBOX_RESEARCH.md`, `owntone/README.md`.
 
 ## Status
 

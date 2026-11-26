@@ -1,274 +1,119 @@
-# Song Processing System
+# Song processing
 
-## Overview
+What happens to an audio file between upload and being a tagged song in the library:
+upload, reading the file's tags, the processing status, and the Maintenance page where a
+moderator fixes what the tags could not fill in.
 
-The music archive now includes a comprehensive song processing system that handles audio file uploads, metadata extraction, and maintenance workflows. This system supports both interactive web uploads and bulk API imports.
+This covers the basic tags only (title, artist, album, genre, track, duration). The deeper
+analysis that radio depends on (audio features, embeddings, neighbours, MusicBrainz ids) is
+done by separate tools: see `../../library_tools/README.md`.
 
-## 🎵 **Processing Statuses**
+## Processing statuses
 
-Songs can have the following processing statuses:
+`songs.processing_status` (a string; errors go in `songs.processing_error`):
 
-- **`new`** - Recently imported, needs metadata review
-- **`pending`** - Queued for processing
-- **`processing`** - Currently being processed
-- **`completed`** - Successfully processed with complete metadata
-- **`failed`** - Processing failed with error details
-- **`needs_review`** - Has partial metadata, needs manual review
+| Status | Meaning | Set by |
+|---|---|---|
+| `needs_review` | Uploaded; the song lacks a title or an artist. | upload, the processing job |
+| `processing` | The job is reading the file right now. | the processing job |
+| `completed` | The song has a title and an artist. | the processing job, or any save (see below) |
+| `failed` | Reading the file raised an error; the message is in `processing_error`. | the processing job, the edit page, a retry |
+| `pending` | A failed song being retried (momentary). | `SongsController#update` |
 
-## 🔄 **Upload Workflows**
+"Complete" means only **title and artist are present** (`Song#has_complete_metadata?`).
+Album and genre are optional. A `before_save` callback moves any `needs_review` song with
+both to `completed`, so filling in the artist on the edit page is enough.
 
-### **Web UI Upload Flow**
+The model also accepts `new`, and the views have a badge for it, but nothing sets it.
+A song created by CSV import has no status at all.
 
-1. **Upload Page** (`/songs/upload`)
-   - User selects audio file
-   - Optional: pre-select album/genre
-   - File validation (format, size)
+## How a file gets in
 
-2. **Processing**
-   - Background job extracts metadata
-   - Updates song with extracted information
-   - Sets appropriate processing status
+### Web upload
 
-3. **Review Page** (`/songs/:id/edit`)
-   - Shows extracted metadata
-   - User can review and edit information
-   - Form pre-filled with extracted data
-   - Save to complete the process
+Moderators and admins (`SongPolicy#upload?`). "Upload Song" in the navigation bar.
 
-### **API Bulk Upload Flow**
+1. `GET /upload` — a form with one field, the audio file.
+2. `POST /upload` (`UploadController#create`) — creates the song with the file attached,
+   status `needs_review`, the uploader as `user`, the original file name in
+   `original_filename`, and the file name (minus extension) as a provisional title.
+3. The file's tags are read (see below).
+4. Redirect to `GET /songs/:id/edit`, where the uploader checks the result, picks or types
+   the artist, album and genre, and saves (`PATCH /songs/:id`).
 
-1. **Bulk Upload** (`POST /api/v1/songs/bulk`)
-   - Non-interactive processing
-   - Multiple songs processed in background
-   - Status determined by metadata completeness:
-     - Complete metadata → `completed`
-     - Partial metadata → `needs_review`
-     - No metadata → `new`
+### API upload
 
-2. **Background Processing**
-   - AudioFileProcessingJob handles metadata extraction
-   - Updates song records with extracted information
-   - Sets processing status based on results
+`POST /api/v1/songs/bulk_upload`, one file per request, moderator or admin token. The tags
+are read inside the request by the controller itself (not by the job), and only fill in what
+the request's own parameters left blank. `skip_post_processing=true` skips reading tags.
+See `BULK_OPERATIONS_AND_API.md` and `archive_api.md`.
 
-## 🛠️ **Maintenance Interface**
+### CSV import
 
-### **Access**
-- Available to moderators and admins
-- Navigation: "Maintenance" in main menu
+`/bulk_operations` creates song records with no audio file. Nothing is processed.
 
-### **Features**
+## Accepted files
 
-1. **Status Filtering**
-   - Filter by processing status
-   - Quick statistics dashboard
-   - Focus on songs needing attention
+The attachment's content type must be one of `audio/mpeg`, `audio/mp3`, `audio/x-m4a`,
+`audio/mp4`, `audio/ogg`, `audio/flac`, `audio/wav`, `audio/aac`. `file_format` is one of
+`mp3 m4a mp4 ogg flac wav aac`. Files are stored with Active Storage's local disk service (`archive/storage`, which is
+`/rails/storage` in the container).
 
-2. **Bulk Operations**
-   - Select multiple songs
-   - Bulk update status, genre, album
-   - Mass processing capabilities
+## Reading the tags
 
-3. **Individual Actions**
-   - Edit song metadata
-   - Retry failed processing
-   - View processing errors
+`AudioFileProcessingJob` → `Song#extract_metadata_from_file` → `AudioFileProcessor`.
 
-### **Maintenance Workflow**
+The song's file is copied to a temp file and `ffprobe` (from the `ffmpeg` package in the
+Docker image) is run on it twice: once for the format tags, once for the duration. From the
+tags it takes `title`, `artist`, `album`, `genre` and `track` / `tracknumber` (the part
+before any `/`), plus the duration rounded to seconds, the format (from the content type)
+and the file size.
 
-1. **Review New Imports**
-   - Songs with `new` status
-   - Add missing metadata manually
-   - Mark as `completed` when done
+The job then:
 
-2. **Fix Failed Songs**
-   - Songs with `failed` status
-   - Review error messages
-   - Retry processing or fix manually
+- overwrites the song's title, track number, duration, format and size with whatever was found;
+- finds or creates the `Artist` by name, the `Album` by title and the `Genre` by name, and sets them;
+- sets the status to `completed` if the song now has a title and an artist, otherwise `needs_review`;
+- on an exception, sets `failed` and stores the message.
 
-3. **Review Partial Metadata**
-   - Songs with `needs_review` status
-   - Complete missing information
-   - Verify extracted data accuracy
+The job does nothing if the song has no file, or is already `processing` or `completed`.
 
-## 📊 **Metadata Extraction**
+There is no fallback to parsing the file name: `AudioFileProcessor` contains a file-name
+parser, but nothing calls it. A file with no tags simply stays `needs_review` with its
+provisional title.
 
-### **Supported Formats**
-- MP3 (ID3 tags)
-- M4A/MP4 (iTunes metadata)
-- OGG (Vorbis comments)
-- FLAC (metadata blocks)
-- WAV (limited metadata)
-- AAC (iTunes metadata)
+### When the job runs
 
-### **Extracted Information**
-- **Basic**: title, track_number, duration
-- **File**: format, size, bitrate
-- **Artist**: name (creates/finds artist record)
-- **Album**: title, release_date (creates/finds album record)
-- **Genre**: name (creates/finds genre record)
+Controlled by `INLINE_AUDIO_PROCESSING` (default `true`, and `true` in production):
 
-### **Fallback Processing**
-- If no metadata tags found, parses filename
-- Extracts artist/album/title from filename patterns
-- Sets status to `needs_review` for manual verification
+- `true` — `UploadController` runs the job inside the upload request, so the edit page
+  already shows the tags. The model does not enqueue anything.
+- `false` — the model enqueues the job after a song is created, and again after an update
+  while the song has a file and is still unprocessed (blank status, `pending`, `needs_review`, or
+  `failed` with no error). Active Job's adapter is `:inline` in development and in
+  production (`USE_SIDEKIQ=false`), so the job still runs in the request.
 
-## 🔧 **Technical Implementation**
+## The edit page and retry
 
-### **Models**
+`GET /songs/:id/edit`, moderators and admins.
 
-#### **Song Model**
-```ruby
-# Processing status methods
-def processing_pending?
-def processing_in_progress?
-def processing_completed?
-def processing_failed?
-def needs_review?
-def new_import?
+- If the song has a file and no status yet, the tags are read on the spot and saved; when
+  the file has no album or genre tag the song is put in "Unknown Album" / "Unknown Genre".
+- A `failed` song has a "Retry Processing" button on its own page (`/songs/:id`; it sends
+  `PATCH /songs/:id?retry_processing=true`), which reads the tags again the same way and
+  returns to the edit page.
+- Artist, album and genre are picked with autocomplete (`/artists/search`, `/albums/search`,
+  `/genres/search`) or typed as new names.
 
-# Metadata completeness
-def has_complete_metadata?
-def has_partial_metadata?
-def has_no_metadata?
+Deleting a song (`DELETE /songs/:id`) is admin only.
 
-# Metadata extraction
-def extract_metadata_from_file
-```
+## Maintenance page
 
-#### **Scopes**
-```ruby
-scope :pending_processing
-scope :processing
-scope :completed
-scope :failed
-scope :needs_review
-scope :new_imports
-scope :needs_attention
-```
+`GET /songs/maintenance`, moderators and admins; "Maintenance" in the navigation bar.
 
-### **Controllers**
+A paged list of songs filtered by status: **Needs Review** (the default), **Failed** or
+**All** (`?status=needs_review|failed|all`; any other status value works in the URL). Each
+row shows the original file name, status and error, with Edit and (for admins) Delete.
 
-#### **SongsController**
-- `upload` - Upload form
-- `process_upload` - Handle file upload
-- `edit` - Review extracted metadata
-- `maintenance` - Admin maintenance interface
-- `bulk_update` - Bulk operations
-
-#### **API Controllers**
-- Automatic status assignment based on metadata
-- Background processing for bulk uploads
-- Error handling and status updates
-
-### **Background Jobs**
-
-#### **AudioFileProcessingJob**
-- Processes audio files asynchronously
-- Extracts metadata using AudioFileProcessor
-- Updates song records with results
-- Sets appropriate processing status
-- Handles errors gracefully
-
-### **Views**
-
-#### **Upload Flow**
-- `upload.html.erb` - File upload form
-- `edit.html.erb` - Metadata review/edit
-- `show.html.erb` - Song details with status
-
-#### **Maintenance**
-- `maintenance.html.erb` - Admin interface
-- Bulk selection and operations
-- Status filtering and statistics
-
-## 🚀 **Usage Examples**
-
-### **Web Upload**
-```bash
-# 1. Navigate to upload page
-GET /songs/upload
-
-# 2. Select file and upload
-POST /songs/process_upload
-
-# 3. Review extracted metadata
-GET /songs/:id/edit
-
-# 4. Save with corrections
-PATCH /songs/:id
-```
-
-### **API Bulk Upload**
-```bash
-# Upload multiple songs
-POST /api/v1/songs/bulk
-Content-Type: application/json
-
-{
-  "songs": [
-    {
-      "title": "Song Title",
-      "artist_name": "Artist Name",
-      "album_title": "Album Title",
-      "genre_name": "Rock"
-    }
-  ]
-}
-```
-
-### **Maintenance**
-```bash
-# View songs needing attention
-GET /songs/maintenance?status=needs_attention
-
-# Bulk update status
-POST /songs/bulk_update
-{
-  "song_ids": [1, 2, 3],
-  "updates": {
-    "processing_status": "completed"
-  }
-}
-```
-
-## 🔒 **Permissions**
-
-### **Upload Permissions**
-- **Moderators/Admins**: Can upload songs
-- **Users**: Can view songs only
-
-### **Maintenance Permissions**
-- **Moderators/Admins**: Full maintenance access
-- **Users**: No maintenance access
-
-### **API Permissions**
-- **API Key Required**: For bulk operations
-- **Rate Limiting**: Applied to prevent abuse
-
-## 📈 **Monitoring & Analytics**
-
-### **Statistics Dashboard**
-- Songs by processing status
-- Metadata completeness rates
-- Processing success/failure rates
-- Recent activity metrics
-
-### **Error Tracking**
-- Failed processing logs
-- Error message storage
-- Retry mechanism for failed jobs
-
-## 🔄 **Future Enhancements**
-
-### **Planned Features**
-- Real-time processing status updates (WebSocket)
-- Advanced metadata extraction (lyrics, artwork)
-- Batch processing improvements
-- Integration with external metadata APIs
-- Audio fingerprinting for duplicate detection
-
-### **Performance Optimizations**
-- Parallel processing for bulk uploads
-- Caching for frequently accessed metadata
-- Database indexing for status queries
-- File compression for storage efficiency 
+There are no multi-select or bulk actions on this page. `POST /songs/bulk_update` is routed
+but no page uses it.

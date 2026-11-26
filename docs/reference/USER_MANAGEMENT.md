@@ -1,197 +1,97 @@
-# User Management System
+# User management
 
-## Overview
+Accounts in The Archive: how they are created, how people log in, and what an admin can do
+with them. Roles and permissions are in `PUNDIT_AUTHORIZATION.md`.
 
-The Music Archive app includes a comprehensive user management system that allows administrators to create new users and automatically send them welcome emails with temporary passwords.
+## Accounts
 
-## Features
+There is no self-registration. An admin creates every account.
 
-### 🔐 Authentication
-- **Login System**: Users can log in with email and password
-- **Session Management**: Secure session-based authentication
-- **Role-Based Access**: Different permissions based on user roles
+`users` table: `id` (UUID), `email` (unique, lower-cased and trimmed before validation),
+`name` (2–50 characters), `role` (integer: `user` 0, `moderator` 1, `admin` 2, `dj` 3),
+`password_digest` (bcrypt, via `has_secure_password`), timestamps.
 
-### 👥 User Roles
-- **User**: Basic access to browse music and create playlists
-- **Moderator**: Can manage content and moderate user-generated content
-- **Admin**: Full access including user management
+Deleting a user also deletes their playlists, stations, jukeboxes, station feedback and
+playback grants.
 
-### 📧 Email Notifications
-- **Welcome Emails**: Automatically sent when admins create new users
-- **Temporary Passwords**: Secure random passwords generated for new users
-- **Professional Templates**: HTML and text email templates included
+## Logging in
 
-## Admin User Management
+| Route | |
+|---|---|
+| `GET /login` | the form |
+| `POST /login` | `email`, `password`; sets `session[:user_id]` and redirects to `/` |
+| `DELETE /logout` (also `GET /logout`) | clears the session |
 
-### Creating New Users
-1. **Login as Admin**: Use admin credentials to access the system
-2. **Navigate to User Management**: Click "Manage Users" in the navigation
-3. **Add New User**: Click "Add New User" button
-4. **Fill Form**: Enter:
-   - **Full Name**: User's display name
-   - **Email**: User's email address
-   - **Role**: Select appropriate role (defaults to 'user')
-5. **Submit**: System will:
-   - Generate a secure temporary password
-   - Create the user account
-   - Send welcome email with login credentials
-   - Redirect to user list with success message
+Sessions are cookie sessions. There is no "forgot password" flow, no email verification, no
+lockout and no session timeout. A user who forgets their password asks an admin to reset it.
 
-### Managing Existing Users
-- **View All Users**: See complete list with roles and contact info
-- **Edit Users**: Modify names, emails, and roles
-- **Delete Users**: Remove users from the system (with confirmation)
+API clients log in with `POST /api/v1/auth/login` and get a bearer token instead; see
+`archive_api.md`.
 
-## Email System
+## Admin: Manage Users
 
-### Welcome Email Features
-- **Professional Design**: Clean, responsive HTML template
-- **Login Information**: Clear display of email and temporary password
-- **Security Notes**: Instructions for password change on first login
-- **Feature Overview**: Brief description of what users can do
-- **Fallback Text**: Plain text version for email clients that don't support HTML
+"Manage Users" in the navigation bar (`/users`), admins only. Routes: `resources :users`
+without `show`, plus two password actions.
 
-### Email Configuration
-- **Development**: Uses `letter_opener` gem to preview emails in browser
-- **Production**: Configured for SMTP delivery (update settings as needed)
+**Create** (`/users/new`): name, email and role. On save the app generates a 12-character
+alphanumeric temporary password (`SecureRandom.alphanumeric(12)`) and emails it to the new
+user (`UserMailer#welcome_email`, sent during the request). The password is not shown to the
+admin.
 
-## Security Features
+**Edit** (`/users/:id/edit`): name, email, role, and one "Local playback" checkbox per
+archive node that offers local playback (these are the playback grants that let the user
+play on that node's speakers). The same page has:
 
-### Password Security
-- **Temporary Passwords**: 12-character alphanumeric passwords
-- **Secure Generation**: Uses `SecureRandom.alphanumeric(12)`
-- **Password Change**: Users should change password on first login
-- **bcrypt Hashing**: All passwords securely hashed
+- **Set password** (`PATCH /users/:id/set_password`): the admin types a new password
+  (at least 6 characters) twice.
+- **Reset password** (`POST /users/:id/reset_password`): generates a new temporary password
+  and sends the welcome email again.
 
-### Access Control
-- **Admin-Only Creation**: Only admins can create new users
-- **Role-Based Authorization**: Pundit policies enforce permissions
-- **Session Security**: Secure session management
-- **Input Validation**: Email format and uniqueness validation
+Both are written to the Rails log with the admin's and the user's email.
 
-## Technical Implementation
+**Delete** (`DELETE /users/:id`): an admin cannot delete their own account.
 
-### Key Components
+## Profile
 
-#### Controllers
-- `UsersController`: Admin user management (CRUD operations)
-- `SessionsController`: Authentication (login/logout)
+Every user can change their own name, email and password at `/profile/edit` (the avatar link
+in the navigation bar). Leaving the password fields blank keeps the current password.
+Nothing forces a user to change a temporary password (the welcome email says they will be
+prompted on first login; they are not).
 
-#### Models
-- `User`: User model with roles, validations, and associations
-- `UserMailer`: Email functionality for welcome messages
+## Email
 
-#### Views
-- User management interface with modern UI
-- Login form with error handling
-- Email templates (HTML and text)
+- **Development**: `letter_opener` opens each email in the browser.
+- **Test**: the `:test` delivery method.
+- **Production**: SMTP through AWS SES. Settings come from the environment
+  (`config/deploy.yml`): `AWS_SES_SMTP_HOST`, `AWS_SES_SMTP_PORT`, `AWS_SES_SMTP_DOMAIN`,
+  and the secrets `AWS_SES_SMTP_USERNAME` / `AWS_SES_SMTP_PASSWORD`. The sender is
+  `MAILER_FROM_EMAIL` (default `noreply@cavaforge.net`); links in the email use `APP_HOST`.
 
-#### Routes
+The welcome email has HTML and text templates in `app/views/user_mailer/`.
+
+## First admin
+
+`bin/rails db:seed` creates `admin@musicarchive.com` with the password `admin123` (and the
+default theme and site settings) if that user does not exist. Change the password, or the
+email and password, straight away on any installation that is reachable by others.
+
+From the console:
+
 ```ruby
-# Authentication
-get '/login', to: 'sessions#new'
-post '/login', to: 'sessions#create'
-delete '/logout', to: 'sessions#destroy'
+User.create!(name: "Jane Doe", email: "jane@example.com", role: "admin",
+             password: "…", password_confirmation: "…")
 
-# User management (admin only)
-resources :users, except: [:show]
+user.admin?             # admin
+user.moderator?         # moderator or admin
+user.dj?                # dj
+user.can_host_jukebox?  # dj, moderator or admin
 ```
 
-### Database Schema
-```sql
-users table:
-- id (primary key)
-- email (unique, indexed)
-- name (not null)
-- role (enum: user, moderator, admin)
-- password_digest (bcrypt hash)
-- timestamps
-```
+## Code
 
-## Setup Instructions
-
-### Initial Setup
-1. **Run Migrations**: `bin/rails db:migrate`
-2. **Seed Database**: `bin/rails db:seed` (creates admin user)
-3. **Start Server**: `bin/rails server`
-
-### Admin Access
-- **Email**: `admin@musicarchive.com`
-- **Password**: `admin123`
-
-### Testing Email
-- **Development**: Emails open in browser automatically
-- **Production**: Configure SMTP settings in `config/environments/production.rb`
-
-## Usage Examples
-
-### Creating a New User (Admin)
-```ruby
-# In Rails console
-user = User.new(
-  name: "John Doe",
-  email: "john@example.com",
-  role: "user"
-)
-user.password = SecureRandom.alphanumeric(12)
-user.save!
-
-# Send welcome email
-UserMailer.welcome_email(user, user.password).deliver_now
-```
-
-### Checking User Roles
-```ruby
-user.admin?     # => true/false
-user.moderator? # => true/false (includes admins)
-user.user?      # => true/false
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Email Not Sending**
-   - Check development configuration in `config/environments/development.rb`
-   - Verify `letter_opener` gem is installed
-   - Check server logs for errors
-
-2. **Authentication Issues**
-   - Ensure user exists in database
-   - Verify password is correct
-   - Check session configuration
-
-3. **Permission Errors**
-   - Verify user has appropriate role
-   - Check Pundit policies are properly configured
-   - Ensure admin access for user management
-
-### Development Tips
-- Use `bin/rails console` to inspect users
-- Check email previews in browser during development
-- Use `bin/rails routes` to verify routing
-- Monitor server logs for debugging
-
-## Future Enhancements
-
-### Potential Improvements
-- **Password Reset**: Self-service password reset functionality
-- **Email Verification**: Email confirmation for new accounts
-- **User Profiles**: Extended user profile information
-- **Activity Logging**: Track user actions and changes
-- **Bulk Operations**: Import/export user data
-- **Advanced Roles**: More granular permission system
-
-### Security Enhancements
-- **Two-Factor Authentication**: Additional security layer
-- **Account Lockout**: Prevent brute force attacks
-- **Session Timeout**: Automatic logout after inactivity
-- **Audit Trail**: Log all administrative actions
-
-## Support
-
-For issues or questions about the user management system:
-1. Check the server logs for error messages
-2. Verify database migrations are up to date
-3. Test email configuration in development
-4. Review Pundit authorization policies 
+- `UsersController` — admin management and the password actions
+- `SessionsController` — login and logout
+- `ProfileController` — the user's own profile
+- `User`, `UserPolicy`, `UserMailer`
+- Tests: `test/controllers/users_controller_test.rb`, `sessions_controller_test.rb`,
+  `test/policies/user_policy_test.rb`, `test/mailers/user_mailer_test.rb`

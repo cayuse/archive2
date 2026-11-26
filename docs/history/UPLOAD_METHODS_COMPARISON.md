@@ -1,3 +1,5 @@
+> **Historical record (2025).** Moved from `utilities/`. Two of the three scripts compared here (`direct_upload.py`, `direct_fs_upload.py`) do not exist. The upload scripts that do are described in `../../utilities/README.md`.
+
 # Upload Methods Comparison
 
 This document compares the three different upload methods available for the Music Archive system.

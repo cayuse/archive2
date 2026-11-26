@@ -1,3 +1,5 @@
+> **Historical record (2026-11-24).** Research notes written before the speaker player was built; several options discussed here (the legacy `jukebox/` and `player/` apps, Option E) were dropped and that code has been removed. For the system as built see `../../station/README.md`, `../../owntone/README.md` and `../STATUS.md`.
+
 # Headless Jukebox → AirPlay 2: research notes
 
 Date: 2026-11-24. Status: research only, nothing built. Goal: run a jukebox with no

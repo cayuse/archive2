@@ -1,3 +1,5 @@
+> **Historical record (2025-10).** The original design for the jukebox (AJB), including a separate `jukebox.cavaforge.net` guest site and schema that were never built that way. It does not describe the current system. For what exists now see `../STATUS.md`, `../reference/archive_api.md` (jukebox, station and guest endpoints) and `../../station/README.md` (speaker playback).
+
 # Archive Jukebox (AJB) - Design Document
 
 ## Project Overview

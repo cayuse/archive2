@@ -1,3 +1,5 @@
+> **Historical record (2025-07).** The direct-upload endpoints (`/api/v1/songs/direct_upload`, `/create_from_blob`) and `utilities/direct_upload.py` described here no longer exist. Uploads go through `POST /api/v1/songs/bulk_upload`; see `../reference/BULK_OPERATIONS_AND_API.md`.
+
 # Direct Upload Guide for Music Archive
 
 ## Overview

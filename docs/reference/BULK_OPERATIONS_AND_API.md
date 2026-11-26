@@ -1,365 +1,99 @@
-# Bulk Operations & API System
+# Bulk operations and bulk upload
 
-## Overview
+Three ways to work on many songs at once:
 
-The Music Archive now supports comprehensive bulk operations and API access for managing thousands of songs efficiently. This system provides both web-based interfaces and programmatic access for external applications and music players.
+1. the **Bulk Operations page** (`/bulk_operations`): CSV import, CSV export, delete by id;
+2. the **upload API** (`POST /api/v1/songs/bulk_upload`) and the scripts in `utilities/` that drive it;
+3. the **Maintenance page** (`/songs/maintenance`) for songs whose tags need attention — see `SONG_PROCESSING_SYSTEM.md`.
 
-## 🚀 Key Features
+The full API is in `archive_api.md`.
 
-### 1. **Bulk Song Import**
-- **CSV Upload**: Import thousands of songs via CSV files
-- **JSON API**: Programmatic bulk creation via API
-- **Auto-Association**: Automatically creates/finds artists, albums, and genres
-- **Error Handling**: Detailed error reporting for failed imports
+## Bulk Operations page
 
-### 2. **API Access**
-- **RESTful API**: Complete API for external applications
-- **Token Authentication**: Secure Bearer token authentication
-- **Audio Streaming**: Range-request supported audio streaming
-- **Search API**: Full-text search with pagination
+`/bulk_operations`, moderators and admins only (`BulkOperationsController`). It is not in the
+navigation bar; open it by URL. The page also shows counts of songs, artists, albums and genres.
 
-### 3. **Music Player Integration**
-- **Playlist Management**: Add/remove/reorder songs in playlists
-- **Audio Streaming**: HTTP range requests for seeking
-- **Search Integration**: Real-time search with suggestions
+### CSV import
 
-## 📊 Bulk Operations
+`POST /bulk_operations/upload_csv`, form field `file`. The file must be CSV (by content type
+or `.csv` extension) with a header row:
 
-### Web Interface
-Access via: `/bulk_operations` (moderator/admin only)
-
-**Features:**
-- CSV file upload with validation
-- Export all songs to CSV
-- Bulk delete by song IDs
-- Library statistics dashboard
-- Recent songs table
-
-### CSV Import Format
 ```csv
 title,track_number,duration,file_format,file_size,artist_name,album_title,album_release_date,genre_name
 "Song Title",1,180,mp3,5242880,"Artist Name","Album Title","2023-01-01","Rock"
 ```
 
-### API Bulk Operations
+Each row creates a **metadata-only song**: a song record with no audio file attached.
+
+- `title` is required; a row without one is skipped.
+- `artist_name`, `album_title` and `genre_name` are looked up by name and created if missing,
+  and set on the song. The album is only set when the row also has an artist (albums are
+  found by title and artist); `album_release_date` is used when the album is created.
+- `duration` (seconds), `track_number` and `file_size` must be positive integers; `file_format`
+  must be one of `mp3 m4a mp4 ogg flac wav aac`.
+- The importing user is recorded as the song's `user`.
+
+The import does not match rows against existing songs, so importing the same file twice
+creates duplicates. Afterwards the page reports how many songs were imported and the first
+ten skipped rows with the reason.
+
+### CSV export
+
+`GET /bulk_operations/export_csv` downloads `songs_export_<date>.csv` with every song:
+
+```
+id,title,track_number,duration,file_format,file_size,artist_name,album_title,album_release_date,genre_name,created_at,updated_at
+```
+
+The export has the import's columns plus `id`, `created_at` and `updated_at`. It is not a
+round trip: importing an export creates new songs rather than updating the exported ones.
+
+### Bulk delete
+
+`POST /bulk_operations/bulk_delete`, form field `song_ids`: song ids (UUIDs, e.g. the `id`
+column of the export) separated by commas, spaces or new lines. Each song found is destroyed
+together with its audio file. Anything that is not a UUID, and any id with no song, is
+reported back; the rest are still deleted.
+
+## Uploading audio files in bulk
+
+There is one upload endpoint. It takes one file per request:
+
 ```bash
-# Bulk create songs
-curl -X POST http://localhost:3000/api/v1/songs/bulk_create \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"songs": [{"title": "Song", "artist_name": "Artist", ...}]}'
-
-# Upload CSV file
-curl -X POST http://localhost:3000/api/v1/songs/bulk_upload \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -F "file=@songs.csv"
-
-# Export songs
-curl -H "Authorization: Bearer YOUR_TOKEN" \
-  "http://localhost:3000/api/v1/songs/export?format=csv" \
-  -o songs_export.csv
-```
-
-## 🎵 API Endpoints
-
-### Authentication
-```bash
-# Login
-POST /api/v1/auth/login
-# Logout
-POST /api/v1/auth/logout
-```
-
-### Songs
-```bash
-# List songs (paginated)
-GET /api/v1/songs?page=1&per_page=50
-
-# Get single song
-GET /api/v1/songs/:id
-
-# Bulk operations
-POST /api/v1/songs/bulk_create
-PUT /api/v1/songs/bulk_update
-DELETE /api/v1/songs/bulk_destroy
-POST /api/v1/songs/bulk_upload
-GET /api/v1/songs/export
-```
-
-### Audio Files
-```bash
-# Stream audio (with range requests)
-GET /api/v1/audio_files/:id/stream
-
-# Download audio
-GET /api/v1/audio_files/:id/download
-```
-
-### Playlists
-```bash
-# List playlists
-GET /api/v1/playlists
-
-# Get playlist with songs
-GET /api/v1/playlists/:id
-
-# Playlist management
-POST /api/v1/playlists/:id/add_song
-DELETE /api/v1/playlists/:id/remove_song
-PUT /api/v1/playlists/:id/reorder_songs
-```
-
-### Search
-```bash
-# Search all types
-GET /api/v1/search?q=rock&type=all
-
-# Search specific types
-GET /api/v1/search?q=rock&type=songs
-GET /api/v1/search?q=beatles&type=artists
-GET /api/v1/search?q=rock&type=genres
-
-# Search suggestions
-GET /api/v1/search/suggestions?q=rock
-```
-
-### Health Check
-```bash
-# System health
-GET /api/v1/health
-```
-
-## 🎧 Music Player Integration
-
-### JavaScript Example
-```javascript
-class MusicPlayer {
-  constructor(apiToken) {
-    this.apiToken = apiToken;
-    this.baseUrl = 'http://localhost:3000/api/v1';
-  }
-  
-  async searchSongs(query) {
-    const response = await fetch(
-      `${this.baseUrl}/search?q=${encodeURIComponent(query)}&type=songs`,
-      {
-        headers: {
-          'Authorization': `Bearer ${this.apiToken}`
-        }
-      }
-    );
-    return response.json();
-  }
-  
-  async streamSong(songId, startByte = 0) {
-    const response = await fetch(
-      `${this.baseUrl}/audio_files/${songId}/stream`,
-      {
-        headers: {
-          'Authorization': `Bearer ${this.apiToken}`,
-          'Range': `bytes=${startByte}-`
-        }
-      }
-    );
-    return response.blob();
-  }
-  
-  async getPlaylist(playlistId) {
-    const response = await fetch(
-      `${this.baseUrl}/playlists/${playlistId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${this.apiToken}`
-        }
-      }
-    );
-    return response.json();
-  }
-}
-```
-
-### Python Integration Example
-```python
-import requests
-
-class MusicArchiveAPI:
-    def __init__(self, base_url, email, password):
-        self.base_url = base_url
-        self.token = self.login(email, password)
-    
-    def login(self, email, password):
-        response = requests.post(f"{self.base_url}/api/v1/auth/login", json={
-            "email": email,
-            "password": password
-        })
-        return response.json()["token"]
-    
-    def bulk_create_songs(self, songs_data):
-        headers = {"Authorization": f"Bearer {self.token}"}
-        response = requests.post(
-            f"{self.base_url}/api/v1/songs/bulk_create",
-            headers=headers,
-            json={"songs": songs_data}
-        )
-        return response.json()
-    
-    def upload_csv(self, csv_file_path):
-        headers = {"Authorization": f"Bearer {self.token}"}
-        with open(csv_file_path, 'rb') as f:
-            files = {"file": f}
-            response = requests.post(
-                f"{self.base_url}/api/v1/songs/bulk_upload",
-                headers=headers,
-                files=files
-            )
-        return response.json()
-
-# Usage
-api = MusicArchiveAPI("http://localhost:3000", "admin@musicarchive.com", "admin123")
-result = api.upload_csv("songs.csv")
-```
-
-## 🔧 Performance Optimizations
-
-### For Bulk Operations
-1. **Batch Processing**: Process songs in batches of 100-500
-2. **Database Transactions**: Wrap bulk operations in transactions
-3. **Background Jobs**: Use background jobs for very large imports
-4. **Memory Management**: Stream large files to avoid memory issues
-
-### For API Access
-1. **Pagination**: All list endpoints support pagination
-2. **Eager Loading**: Includes associations to reduce N+1 queries
-3. **Caching**: Consider implementing response caching
-4. **Rate Limiting**: Implement client-side rate limiting
-
-### For Audio Streaming
-1. **Range Requests**: Support HTTP range requests for seeking
-2. **Chunked Streaming**: Stream files in chunks to avoid memory issues
-3. **Content-Type Headers**: Proper MIME type detection
-4. **File Size Limits**: Configure appropriate file size limits
-
-## 🔒 Security Features
-
-### Authentication
-- Bearer token authentication for all API endpoints
-- Token-based session management
-- Role-based access control (user, moderator, admin)
-
-### Authorization
-- Moderator/admin required for bulk operations
-- User-specific playlist access
-- Public/private playlist support
-
-### Input Validation
-- CSV format validation
-- File type validation
-- Data sanitization
-- SQL injection prevention
-
-## 📈 Scalability Considerations
-
-### Database
-- PostgreSQL full-text search with GIN indexes
-- Proper foreign key constraints
-- Database connection pooling
-- Query optimization
-
-### Storage
-- Active Storage for file management
-- Configurable storage backends (local, S3, etc.)
-- File format validation
-- Virus scanning (recommended)
-
-### API
-- RESTful design principles
-- Consistent error handling
-- Versioned API endpoints
-- Comprehensive documentation
-
-## 🚀 Usage Scenarios
-
-### 1. **Large Music Library Import**
-```bash
-# Prepare CSV file with thousands of songs
-# Upload via web interface or API
-# Monitor progress and handle errors
-# Verify import results
-```
-
-### 2. **External Music Player**
-```javascript
-// Player connects to API
-// Searches for songs
-// Streams audio with seeking support
-// Manages playlists
-// Handles authentication
-```
-
-### 3. **Backup and Migration**
-```bash
-# Export all songs to CSV
-# Import to new system
-# Verify data integrity
-# Handle missing files
-```
-
-### 4. **Bulk Metadata Updates**
-```bash
-# Export current data
-# Update in spreadsheet
-# Import updated data
-# Verify changes
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-```bash
-# Database
-DATABASE_URL=postgresql://user:pass@localhost/music_archive
-
-# Storage
-ACTIVE_STORAGE_SERVICE=local  # or s3, gcs, etc.
-
-# API Settings
-API_RATE_LIMIT=1000  # requests per hour
-MAX_FILE_SIZE=100MB
-```
-
-### Production Considerations
-1. **HTTPS**: Use HTTPS for all API communication
-2. **CORS**: Configure CORS for web applications
-3. **Rate Limiting**: Implement server-side rate limiting
-4. **Monitoring**: Add API usage monitoring
-5. **Backup**: Regular database and file backups
-
-## 📚 Documentation
-
-- **API Documentation**: `API_DOCUMENTATION.md`
-- **Usage Notes**: `USAGENOTES.txt`
-- **Authorization**: `PUNDIT_AUTHORIZATION.md`
-
-## 🆘 Troubleshooting
-
-### Common Issues
-1. **CSV Import Errors**: Check CSV format and required columns
-2. **Authentication Errors**: Verify token and user permissions
-3. **File Upload Issues**: Check file size and format limits
-4. **Performance Issues**: Monitor database and storage usage
-
-### Debug Commands
-```bash
-# Check API health
-curl http://localhost:3000/api/v1/health
-
-# Test authentication
+# 1. log in (moderator or admin)
 curl -X POST http://localhost:3000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email": "admin@musicarchive.com", "password": "admin123"}'
+  -d '{"email": "you@example.com", "password": "…"}'
+# → { "success": true, "api_token": "…", "expires_at": …, "user": { … } }
 
-# View API routes
-rails routes | grep api
+# 2. upload a file
+curl -X POST http://localhost:3000/api/v1/songs/bulk_upload \
+  -H "Authorization: Bearer $API_TOKEN" \
+  -F "audio_file=@/path/to/song.mp3"
 ```
 
-This comprehensive system provides everything needed to manage thousands of songs efficiently while supporting external applications and music players. 
+Optional form fields: `filename`, `title`, `artist_name`, `album_title`, `genre_name`,
+`track_number`, `duration`, `skip_post_processing=true`. What happens to the file after that
+is described in `SONG_PROCESSING_SYSTEM.md`.
+
+To upload a directory tree, use the scripts in `utilities/` (see `utilities/README.md`).
+Both log in, walk the directory and call `bulk_upload` once per file, recording progress in
+a SQLite file so an interrupted run can be resumed:
+
+```bash
+python3 utilities/bulk_upload.py ~/Music --url https://archive.example --username you@example.com --verbose
+python3 utilities/universal_upload.py ~/Music --url https://archive.example --username you@example.com --concurrent 5
+```
+
+`bulk_upload.py` uploads one file at a time; `universal_upload.py` uploads several at once
+and is more careful with odd file names.
+
+The token lasts 2 days by default; pass `expires_in` (seconds, up to 30 days) to `login`
+for a long run, or call `POST /api/v1/auth/refresh`.
+
+## What does not exist
+
+Earlier versions of this document listed endpoints that were never built or have been
+removed: `songs/bulk_create`, `songs/bulk_update`, `songs/bulk_destroy`, `songs/export`,
+`songs/direct_upload`, `songs/create_from_blob`, and `/api/v1/search`. To search, use the
+`search` parameter of `GET /api/v1/songs`. To change many songs, use the web pages.

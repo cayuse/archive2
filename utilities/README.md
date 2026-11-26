@@ -1,12 +1,17 @@
-# Music Archive Utilities
+# The Archive: utilities
 
-This directory contains utilities for bulk importing audio files into the Music Archive Rails application.
+Scripts for uploading audio files in bulk to The Archive, plus a few tag-inspection tools.
+
+Both upload scripts work the same way: log in with `POST /api/v1/auth/login` (a moderator or
+admin account), walk a directory, and send each file to `POST /api/v1/songs/bulk_upload`.
+The archive reads the tags and stores the file. The endpoint is described in
+`../docs/reference/archive_api.md` and `../docs/reference/BULK_OPERATIONS_AND_API.md`.
 
 ## Shared Tracking Module
 
 ### `import_tracker.py` - Shared Tracking Module
 
-A comprehensive SQLite-based tracking system that both upload scripts use for uniform tracking capabilities.
+A SQLite-based tracking module that both upload scripts use.
 
 **Features:**
 - **Cross-Script Compatibility**: Both upload scripts use the same tracking database
@@ -39,11 +44,11 @@ tracker.record_file_failure(file_id, error_msg, error_type)
 
 ### 1. Bulk Upload Script (`bulk_upload.py`)
 
-A comprehensive Python script for bulk uploading audio files through the Rails API with robust tracking, resume capabilities, and detailed error reporting.
+Uploads audio files one at a time through the API, with tracking, resume and error reporting.
 
 **Features:**
 - **Rails API Integration**: Uploads through Rails API endpoints
-- **Comprehensive Tracking**: Uses shared SQLite tracking module
+- **Tracking**: Uses shared SQLite tracking module
 - **Resume Capability**: Can resume interrupted imports from where they left off
 - **Error Reporting**: Detailed error tracking with quick summaries and verbose reports
 - **Batch Processing**: Support for processing files in batches for testing
@@ -52,21 +57,23 @@ A comprehensive Python script for bulk uploading audio files through the Rails A
 
 ### 2. Universal Upload Script (`universal_upload.py`)
 
-A cross-platform Python script for bulk uploading audio files with direct filesystem access, bypassing Rails for maximum speed.
+Uploads through the same API endpoint as `bulk_upload.py`, several files at a time, and is
+more defensive about paths and file names. It does not write to the archive's storage
+directly (the tracking database labels its uploads `direct_fs` for historical reasons).
 
 **Features:**
-- **Direct Filesystem Access**: Bypasses Rails API for maximum upload speed
+- **Rails API Integration**: Uploads through `POST /api/v1/songs/bulk_upload`
 - **Cross-platform Compatibility**: Works across Linux, Mac, Windows
 - **Full Unicode Support**: Handles any Unicode characters, spaces, special characters
 - **Concurrent Uploads**: Configurable concurrent upload limits
-- **Comprehensive Tracking**: Uses shared SQLite tracking module
+- **Tracking**: Uses shared SQLite tracking module
 - **Resume Capability**: Can resume interrupted imports
 - **Error Reporting**: Detailed error tracking and recovery
 - **Robust Path Handling**: Normalizes paths for any filesystem
 
 ## Usage
 
-### Bulk Upload (Rails API)
+### Bulk Upload (one file at a time)
 ```bash
 # Start fresh import
 python3 bulk_upload.py ~/Music --start-over --verbose
@@ -81,7 +88,7 @@ python3 bulk_upload.py ~/Music --max-count 100
 python3 bulk_upload.py ~/Music --show-errors
 ```
 
-### Universal Upload (Direct Filesystem)
+### Universal Upload (concurrent)
 ```bash
 # Start fresh import with concurrent uploads
 python3 universal_upload.py ~/Music --start-over --concurrent 10 --verbose
@@ -100,6 +107,7 @@ python3 universal_upload.py ~/Music --show-errors
 
 ### Mode Options
 - `--start-over`: Start fresh, ignore existing tracking data
+- `--clear-db`: Clear the tracking database before starting
 - `--resume`: Resume from last successful import
 - `--show-errors`: Show error summary and exit
 - `--show-errors-verbose`: Show detailed error information and exit
@@ -107,6 +115,7 @@ python3 universal_upload.py ~/Music --show-errors
 ### Processing Limits
 - `--max-count N`: Maximum number of files to process
 - `--continue-from N`: Continue from this offset (for batch processing)
+- `--batch-size N`: Batch size (see `--help`)
 
 ### Tracking Options
 - `--tracking-db PATH`: SQLite database for tracking progress (default: import_tracking.db)
@@ -114,7 +123,7 @@ python3 universal_upload.py ~/Music --show-errors
 ### Authentication Options
 - `--url URL`: Base URL of the archive (default: http://localhost:3000)
 - `--username USERNAME`: Username/email for authentication
-- `--password PASSWORD`: Password for authentication
+- `--password PASSWORD`: Password for authentication (`universal_upload.py` prompts if it is omitted)
 
 ### Other Options
 - `-d, --dry-run`: Show what would be uploaded without actually uploading
@@ -145,15 +154,15 @@ Both scripts use a shared SQLite database (`import_tracking.db` by default) to t
 
 ## Cross-Script Compatibility
 
-The shared tracking module enables powerful workflows:
+Because the tracking database is shared, the scripts can be mixed:
 
 ### Mixed Upload Strategies
 ```bash
-# Start with fast direct upload
+# Start with concurrent uploads
 python3 universal_upload.py ~/Music --max-count 1000 --concurrent 10
 
-# Switch to Rails API for problematic files
-python3 bulk_upload.py ~/Music --resume --show-errors-verbose
+# Carry on one file at a time
+python3 bulk_upload.py ~/Music --resume
 ```
 
 ### Resume Across Scripts
@@ -245,25 +254,20 @@ python3 bulk_upload.py ~/Music --continue-from 1000 --max-count 1000
 python3 bulk_upload.py ~/Music --continue-from 2000
 ```
 
-## Performance Comparison
+## Which script
 
-### Bulk Upload (`bulk_upload.py`)
-- **Speed**: Slower (HTTP uploads through Rails)
-- **Reliability**: High (Rails handles all processing)
-- **Use Case**: When you want Rails to handle metadata extraction and processing
-- **Best For**: Smaller batches, when you need Rails processing
+Both go through the same endpoint, so the archive does the same work per file either way
+(it reads the tags with `ffprobe` inside the upload request).
 
-### Universal Upload (`universal_upload.py`)
-- **Speed**: Much faster (direct filesystem access)
-- **Reliability**: High (bypasses Rails bottlenecks)
-- **Use Case**: Large bulk imports where speed is critical
-- **Best For**: 65k+ file imports, when you want maximum speed
+- `bulk_upload.py`: one upload at a time. Slower, gentlest on the server.
+- `universal_upload.py`: `--concurrent N` uploads at once (default 5), and handles awkward
+  paths (Windows/WSL, Unicode, odd characters) more carefully.
 
 ## Tag Extractor Scripts
 
 ### Standalone Tag Extractor (`standalone_tag_extractor.rb`)
 
-A comprehensive Ruby script for extracting metadata from audio files using both `wahwah` and `ffprobe`.
+A Ruby script for extracting metadata from audio files using both `wahwah` and `ffprobe`.
 
 #### Features
 - Extracts all possible metadata tags
@@ -290,13 +294,10 @@ Specialized version for Windows environments with WSL compatibility.
 
 Extracts metadata from files already uploaded to Active Storage.
 
-## Upload Method Comparison
-
-See `UPLOAD_METHODS_COMPARISON.md` for detailed comparison of different upload approaches and their performance characteristics.
-
 ## API Documentation
 
-See `API_DOCUMENTATION.md` for Rails API endpoint documentation.
+See `API_DOCUMENTATION.md` for the two endpoints these scripts use, and
+`../docs/reference/archive_api.md` for the whole API.
 
 ## Test Scripts
 
@@ -307,7 +308,7 @@ See `API_DOCUMENTATION.md` for Rails API endpoint documentation.
 - Python 3.6+
 - Ruby 2.7+ (for tag extractors)
 - ffmpeg/ffprobe (for comprehensive metadata extraction)
-- Rails 8 application running
+- The Archive running and reachable, and a moderator or admin account
 
 ## Troubleshooting
 
@@ -333,22 +334,6 @@ See `API_DOCUMENTATION.md` for Rails API endpoint documentation.
 3. Use `--dry-run` to test without uploading
 4. Start with small batches using `--max-count`
 
-## Choosing the Right Script
-
-### Use `bulk_upload.py` when:
-- You want Rails to handle all metadata extraction
-- You need Rails processing and validation
-- You're doing smaller batches
-- You want maximum reliability over speed
-
-### Use `universal_upload.py` when:
-- You need maximum upload speed
-- You're doing large bulk imports (65k+ files)
-- You want to bypass Rails bottlenecks
-- You're doing the initial bulk import
-
-For your 65k file import, I recommend starting with `universal_upload.py` for speed, then using `bulk_upload.py` for any files that need Rails processing.
-
 ## Benefits of Shared Tracking Module
 
 ### **1. Uniform Tracking**
@@ -367,7 +352,7 @@ For your 65k file import, I recommend starting with `universal_upload.py` for sp
 - Consistent API across all upload tools
 
 ### **4. Rich Querying**
-- `track_utils.py` provides comprehensive database management
+- `track_utils.py` queries and manages the tracking database
 - Export capabilities for analysis
 - Statistical reporting across all jobs
 

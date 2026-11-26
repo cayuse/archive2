@@ -1,1373 +1,305 @@
-# Archive API Specification
+# The Archive API
 
-## Overview
+The JSON API under `/api/v1`. It serves the browser pages (the party-jukebox player, the guest
+page, the station pages), the speaker daemon in `station/`, and the upload scripts in
+`utilities/`. This document lists what the code implements. The source of truth is
+`archive/config/routes.rb` and `archive/app/controllers/api/v1/`.
 
-This document defines the comprehensive API specification for the Archive music management system. The API provides programmatic access to all core functionality including authentication, music library management, playlist operations, bulk operations, and audio file streaming.
+## Conventions
 
-## Project Scope
+- All ids are UUID strings.
+- Responses are JSON. Most carry `"success": true|false`; failures add `"message"`. The
+  playlist endpoints are the exception: they use `"error"` / `"errors"` and their list and
+  show responses have no `success` key.
+- There is no rate limiting, no CORS configuration and no API for artists, albums, genres,
+  users or search-as-a-resource. Song search is the `search` parameter of `GET /api/v1/songs`.
+- A record that does not exist is handled by `ApplicationController`'s `RecordNotFound`
+  handler, which redirects to `/` (HTML) rather than returning a JSON 404, except where an
+  action rescues it itself (noted below).
 
-This API focuses on two primary goals:
+## Authentication
 
-1. Bulk ingest of music files and light metadata fixes
-   - Supported: direct upload, create from blob, bulk upload, bulk create, light bulk update
-   - Not supported: destructive operations (e.g., bulk delete), heavy tag editing workflows
+There are four ways a request is authenticated, depending on the endpoint.
 
-2. Player/Jukebox foundation
-   - Supported: fast search, browse, and playback via progressive streaming with HTTP Range
-   - Out of scope: adaptive streaming (HLS/DASH) and advanced playlist collaboration features
+| Who | How | Used by |
+|---|---|---|
+| A user | `Authorization: Bearer <token>` | everything except the guest and health endpoints |
+| A logged-in browser | the session cookie | `GET /api/v1/songs/:id`, `/download`, `/stream` only |
+| The node's player daemon | `X-Node-Token: <archive_nodes.player_token>` | `/api/v1/jukeboxes/:id/...` and `/api/v1/node_player/sync` |
+| A party guest | `password=<guest or admin code>` parameter | `/api/v1/guest/:jukebox_id/...` |
 
-## API Design Principles
+### The bearer token
 
-### Authentication & Authorization
-- **Token-based Authentication**: All API endpoints require Bearer token authentication
-- **Role-based Access Control**: Three user roles (user, moderator, admin) with different permission levels
-- **Secure Token Management**: Tokens expire after 2 days and can be verified/refreshed
+The token is a JSON payload (`user_id`, `email`, `role`, `exp`, `iat`, `iss`) encrypted and
+signed with `ActiveSupport::MessageEncryptor` using the app's `secret_key_base`, then Base64
+(URL-safe) encoded. It cannot be forged or altered without the key. It is not stored, so
+there is no per-token revocation; it stops working when it expires.
 
-**Authentication Flow**:
-1. Client sends credentials to `/api/v1/auth/login`
-2. Server validates credentials and returns a Base64-encoded token
-3. Client includes token in all subsequent requests: `Authorization: Bearer <token>`
-4. Server validates token on each request and returns user context
-5. Token expires after 2 days - client must re-authenticate
-
-### Response Format
-All successful responses use a consistent JSON structure. Error responses follow RFC 7807 (application/problem+json).
-
-Successful (2xx) response envelope:
-```json
-{
-  "success": true,
-  "message": "Human-readable message",
-  "data": { /* response data */ },
-  "pagination": { /* pagination info when applicable */ }
-}
-```
-
-Error response (RFC 7807):
-Content-Type: application/problem+json
-```json
-{
-  "type": "about:blank",
-  "title": "Unauthorized",
-  "status": 401,
-  "detail": "Invalid or expired token",
-  "instance": "/api/v1/auth/verify"
-}
-```
-
-Validation error (422) with field details:
-```json
-{
-  "type": "https://api.example.com/problems/validation-error",
-  "title": "Unprocessable Entity",
-  "status": 422,
-  "detail": "Validation failed",
-  "errors": { "title": ["can't be blank"], "file_format": ["unsupported"] }
-}
-```
-
-**JSON-First Design**:
-- All API endpoints return JSON by default
-- Consistent field naming and data types across all endpoints
-- Proper HTTP status codes with JSON error responses
-
-### Error Handling
-- **HTTP Status Codes**: Proper use of HTTP status codes (200, 201, 400, 401, 403, 404, 422, 500)
-- **Validation Errors**: Detailed field-level validation errors for 422 responses
-- **Rate Limiting**: Consider implementing rate limiting for production use
-
-### Endpoint Discovery
-- **Base URL**: All API endpoints are prefixed with `/api/v1/`
-- **Health Check**: `/api/v1/health` provides system status and endpoint availability
-- **Versioning**: API version is included in the URL path for future compatibility
-
-### Pagination & Sorting Standard
-- Pagination params:
-  - `limit` (integer, default: 50, max: 500)
-  - `offset` (integer, default: 0)
-- Sorting params:
-  - `sort` (string, optional; per-resource whitelist)
-  - `order` (string, `asc` or `desc`, default depends on `sort`)
-- Allowed primary sorts (per endpoint whitelist):
-  - Songs: `created_at`, `title`, `artist`, `album`, `duration`
-  - Artists: `created_at`, `name`, `song_count`, `album_count`
-  - Albums: `created_at`, `title`, `release_year`, `song_count`
-  - Genres: `created_at`, `name`, `song_count`
-  - Playlists: `created_at`, `name`, `song_count`
-- Default ordering (deterministic):
-  - List endpoints (when `sort` not provided): `created_at desc` with `id` as tiebreaker
-  - Search endpoints:
-    - `full_text`: `match_score desc, created_at desc` with `id` tiebreaker
-    - `multi_term`: `created_at desc` with `id` tiebreaker
-- Notes:
-  - IDs are UUIDs; use them only as deterministic tie-breakers, not user-facing sorts.
-  - The server clamps `limit` to the max and validates `sort` against the whitelist.
-  - All list/search responses include `pagination: { total, limit, offset, has_more }`.
-
-### Data Types & ID Conventions
-- All resource identifiers are strings containing UUIDs.
-- All `id` fields in responses are strings (UUIDs).
-- All request parameters and bodies that reference resources (e.g., `artist_id`, `album_id`, `genre_id`, `user_id`, `song_id`, arrays like `song_ids`) MUST be strings (UUIDs).
-- Numeric fields (e.g., counts, durations, years, sizes) remain numeric.
-
-### Search Parameters Standard
-- Common params:
-  - `q` (string): Search query (required unless endpoint specifies otherwise)
-  - `mode` (string): `multi_term` (AND term matching) or `full_text` (relevance-ranked). Default: `multi_term`.
-  - `limit` (integer, default: 50, max: 500)
-  - `offset` (integer, default: 0)
-- Global search (`GET /api/v1/search`):
-  - `type` (string): One of `songs`, `artists`, `albums`, `genres`, `all` (default: `all`).
-  - `limit`/`offset` apply per-type when `type=all`.
-  - Sorting is per-type; global endpoint does not accept a single `sort`/`order` parameter.
-- Per-resource search (`/api/v1/search/{resource}`):
-  - Accept resource-specific filters (e.g., `artist_id`, `album_id`, etc.).
-  - Accept `sort` and `order` as defined in Pagination & Sorting Standard with relevance-first default for `full_text`.
-  - Echo `mode` in the response body.
-
-### Sparse Fields & Includes
-- Purpose: Reduce over-fetching and allow selective embedding of related data.
-- Sparse fields:
-  - `fields` controls top-level fields on the primary resource list/detail.
-  - Per-type overrides for includes via `fields[<type>]`.
-  - Example: `?fields=id,title,artist,album,genre,duration` and `&fields[albums]=id,title`
-- Includes (whitelisted per resource):
-  - Songs may include: `artist,album,genre`
-  - Albums may include: `artist,songs`
-  - Artists may include: `albums,songs`
-  - Genres may include: `songs`
-- Limits and safety:
-  - Pagination applies to the primary collection only.
-  - Embedded collections are bounded by server caps (e.g., first 10); use dedicated endpoints for full pagination.
-  - Reject deep nesting and unknown includes.
-- Deterministic ordering for embeds:
-  - album.songs: `track_number asc, title asc`
-  - artist.albums: `release_year asc, title asc`
-  - artist.songs / genre.songs: `title asc`
-- Examples:
-  - Songs list with minimal fields and embedded names:
-    - `GET /api/v1/songs?fields=id,title,artist,album,genre&include=artist,album&fields[artists]=id,name&fields[albums]=id,title`
-  - Album detail with bounded songs:
-    - `GET /api/v1/albums/:id?include=songs&fields[songs]=id,title,track_number`
-
-## User Roles & Permissions
-
-### User (role: 0)
-- View all music content (songs, artists, albums, genres)
-- Create and manage personal playlists
-- View public playlists from other users
-- Download/stream audio files
-- Update own profile
-
-### Moderator (role: 1)
-- All user permissions
-- Create, edit, and update songs, artists, albums, genres
-- Upload audio files
-- Access bulk operations
-- Manage playlist content
-
-### Admin (role: 2)
-- All moderator permissions
-- Full CRUD operations on all data
-- User account management
-- System configuration
-- Delete any content
-
-## Authentication Endpoints
+The web pages that call the API (stations, the jukebox player) mint a 2-day token for the
+logged-in user server-side (`ApiTokenIssuer`), so they do not call `login`.
 
 ### POST /api/v1/auth/login
-**Purpose**: Authenticate user and receive API token
 
-**Request Body**:
-```json
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
+Parameters: `email`, `password`, optional `expires_in` (seconds; default 2 days, capped at
+30 days).
 
-**Response** (200 OK):
 ```json
 {
   "success": true,
   "message": "Authentication successful",
-  "api_token": "base64_encoded_token",
-  "user": {
-    "id": "6f0d9c2a-9d3b-4a68-8f7f-1a2b3c4d5e6f",
-    "name": "User Name",
-    "email": "user@example.com",
-    "role": "moderator"
-  }
+  "api_token": "…",
+  "expires_at": 1795000000,
+  "user": { "id": "6f0d9c2a-…", "name": "User Name", "email": "user@example.com", "role": "moderator" }
 }
 ```
 
-**Error Response** (401 Unauthorized):
-Content-Type: application/problem+json
-```json
-{
-  "type": "about:blank",
-  "title": "Unauthorized",
-  "status": 401,
-  "detail": "Invalid email or password"
-}
-```
+Wrong credentials: 401 `{ "success": false, "message": "Invalid email or password" }`.
 
-### POST /api/v1/auth/logout
-**Purpose**: Logout user (invalidate token on client side)
+### POST /api/v1/auth/refresh
 
-**Headers**: `Authorization: Bearer <token>`
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "message": "Logged out successfully"
-}
-```
+Bearer token required. Returns a fresh `api_token` and `expires_at` (same `expires_in`
+rule) plus `user`. The old token keeps working until it expires.
 
 ### GET /api/v1/auth/verify
-**Purpose**: Verify token validity and get current user info
 
-**Headers**: `Authorization: Bearer <token>`
+Bearer token required. Returns `{ success, message, user }`.
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "message": "API token is valid",
-  "user": {
-    "id": "6f0d9c2a-9d3b-4a68-8f7f-1a2b3c4d5e6f",
-    "name": "User Name",
-    "email": "user@example.com",
-    "role": "moderator"
-  }
-}
-```
+### POST /api/v1/auth/logout
 
-## Songs Endpoints
+Bearer token required. Returns success and does nothing else; the token stays valid until
+it expires. Clients just discard it.
+
+### Token errors
+
+401 with `message` one of `Missing API token`, `API token expired`, `Invalid API token`.
+
+## Roles
+
+`users.role` is `user`, `moderator`, `admin` or `dj`. In the API:
+
+- any authenticated user can list, read, stream and download songs, and manage their own playlists;
+- `moderator` and `admin` can upload (`bulk_upload`);
+- `dj`, `moderator` and `admin` can host jukeboxes and stations (`User#can_host_jukebox?`);
+- speaker playback also needs a playback grant on the node (`User#can_play_on?`).
+
+## Songs
 
 ### GET /api/v1/songs
-**Purpose**: List songs with pagination and filtering
 
-**Headers**: `Authorization: Bearer <token>`
+Bearer token. Parameters:
 
-**Query Parameters**:
-- `limit` (integer, default: 50): Number of songs per page
-- `offset` (integer, default: 0): Number of songs to skip
-- `q` (string): Search query using multi-term AND logic (splits query into terms, requires ALL terms to be found across ANY field)
-- `status` (string): Filter by processing status (pending, completed, failed, needs_review)
-- `genre_id` (string): Filter by genre ID (UUID)
-- `artist_id` (string): Filter by artist ID (UUID)
-- `album_id` (string): Filter by album ID (UUID)
-- `sort` (string, optional): One of `created_at`, `title`, `artist`, `album`, `duration`
-- `order` (string, optional): `asc` or `desc` (default: `desc` for `created_at`, `asc` for text sorts)
+- `page` (default 1), `limit` (default 50, clamped to 1..100)
+- `sort_by`: `created_at` (default), `title`, `duration`, `track_number`, `processing_status`
+- `sort_order`: `asc` or `desc` (default `desc`)
+- `search`: up to 10 whitespace-separated terms; every term must match the title, artist
+  name, album title or genre name (case-insensitive substring)
 
-**Response** (200 OK):
 ```json
 {
   "success": true,
   "songs": [
-    {
-      "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
-      "title": "Song Title",
-      "artist": "Artist Name",
-      "album": "Album Title",
-      "genre": "Rock",
-      "duration": 180,
-      "processing_status": "completed",
-      "created_at": "2023-01-01T00:00:00Z",
-      "updated_at": "2023-01-01T00:00:00Z",
-      "audio_url": "https://example.com/rails/active_storage/blobs/...",
-      "stream_url": "https://example.com/api/v1/audio_files/1/stream"
-    }
+    { "id": "…", "title": "…", "artist": "…", "album": "…", "genre": "…", "duration": 180,
+      "track_number": 1, "file_format": "mp3", "processing_status": "completed",
+      "created_at": "2026-01-01T00:00:00.000Z" }
   ],
-  "pagination": { "total": 1000, "limit": 50, "offset": 0, "has_more": true }
+  "pagination": { "current_page": 1, "total_pages": 20, "total_count": 1000, "limit": 50 }
 }
 ```
 
 ### GET /api/v1/songs/:id
-**Purpose**: Get detailed information about a specific song
 
-**Headers**: `Authorization: Bearer <token>`
+Bearer token or browser session. Returns `song` with `id`, `title`, `artist`, `album`,
+`genre` (names), `duration`, `file_format`, `file_size`, `download_url`, `stream_url`.
+With `?include=binary` it returns the audio file itself instead.
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "song": {
-    "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
-    "title": "Song Title",
-    "track_number": 1,
-    "duration": 180,
-    "file_format": "mp3",
-    "file_size": 5242880,
-    "processing_status": "completed",
-    "processing_error": null,
-    "original_filename": "song.mp3",
-    "created_at": "2023-01-01T00:00:00Z",
-    "updated_at": "2023-01-01T00:00:00Z",
-    "artist": {
-      "id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
-      "name": "Artist Name",
-      "country": "USA",
-      "formed_year": 1990
-    },
-    "album": {
-      "id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
-      "title": "Album Title",
-      "release_year": 2023,
-      "total_tracks": 12
-    },
-    "genre": {
-      "id": "9e8d7c6b-5a4f-3210-b1a2-c3d4e5f6a7b8",
-      "name": "Rock",
-      "color": "#ff0000",
-      "description": "Rock music"
-    },
-    "audio_file_url": "https://example.com/rails/active_storage/blobs/...",
-    "stream_url": "https://example.com/api/v1/audio_files/1/stream",
-    "download_url": "https://example.com/api/v1/audio_files/1/download"
-  }
-}
-```
+### GET /api/v1/songs/:id/stream and /download
 
-<!-- Removed: songs bulk_create is out of scope; songs are created only via upload endpoints -->
+Bearer token or browser session. `stream` serves the audio inline and honours a `Range`
+header (206 with `Content-Range`); `download` sends it as an attachment. Both answer 404
+`This song has no audio file` when nothing is attached.
+
+### GET /api/v1/songs/:id/radio
+
+Bearer token. Songs that sound like this one.
+
+- `count` (default 20, max 100)
+- `exclude_ids` (array or comma-separated, first 500 used)
+- `genre`: `any` (default), `adjacent`, `strict`
+- a value from -1 to 1 for any of `energy`, `danceability`, `happiness`, `aggression`,
+  `acousticness`, `electronic`, `instrumental`, `speech`
+
+Returns `seed`, `analyzed` (whether the seed has audio features), `steer` and `songs`
+(each with `id`, `title`, `artist`, `artist_id`, `album`, `album_id`, `genre`, `duration`,
+`dials`). The caller's feedback on their first station is applied.
+
+### POST /api/v1/songs/:id/rate
+
+Bearer token. `value` = 1 (thumbs up), -1 (thumbs down) or 0 (clear). Kept for older
+players; the thumb is recorded on the caller's first station. New clients use
+`POST /api/v1/jukeboxes/:id/feedback`.
 
 ### POST /api/v1/songs/bulk_upload
-**Purpose**: Upload audio file with metadata (moderator/admin only). Song records MUST be created with an attached file.
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body** (multipart/form-data):
-- `audio_file` (file): Audio file to upload
-- `filename` (string): Original filename
-- `title` (string, optional): Song title
-- `artist_name` (string, optional): Artist name
-- `album_title` (string, optional): Album title
-- `genre_name` (string, optional): Genre name
-- `track_number` (integer, optional): Track number
-- `duration` (integer, optional): Duration in seconds
-- `skip_post_processing` (boolean, optional): Skip metadata extraction
-
-**Response** (201 Created):
-```json
-{
-  "success": true,
-  "message": "Song uploaded successfully",
-  "song": {
-    "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
-    "title": "Song Title",
-    "processing_status": "needs_review",
-    "created_at": "2023-01-01T00:00:00Z"
-  }
-}
-```
-
-### PUT /api/v1/songs/bulk_update
-**Purpose**: Update multiple songs at once (moderator/admin only). Limited to light metadata edits (e.g., `title`, `track_number`, `artist_id`/`album_id`/`genre_id`).
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body**:
-```json
-{
-  "songs": [
-    {
-      "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
-      "title": "Updated Title",
-      "track_number": 3,
-      "artist_id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
-      "album_id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
-      "genre_id": "9e8d7c6b-5a4f-3210-b1a2-c3d4e5f6a7b8"
-    }
-  ]
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "message": "Bulk update completed",
-  "results": [
-    {
-      "success": true,
-      "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
-      "title": "Updated Title"
-    }
-  ],
-  "summary": {
-    "total": 1,
-    "successful": 1,
-    "failed": 0
-  }
-}
-```
-
-<!-- Removed: bulk destroy is out of scope for this API -->
-
-<!-- Removed: songs export is out of scope for public API -->
-
-### POST /api/v1/songs/direct_upload
-**Purpose**: Get direct upload URL for Active Storage (moderator/admin only)
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body**:
-```json
-{
-  "filename": "song.mp3",
-  "content_type": "audio/mpeg",
-  "byte_size": 5242880,
-  "checksum": "optional_checksum"
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "direct_upload": {
-    "url": "https://storage.example.com/upload",
-    "headers": {
-      "Content-Type": "audio/mpeg"
-    },
-    "signed_id": "signed_blob_id"
-  }
-}
-```
-
-### POST /api/v1/songs/create_from_blob
-**Purpose**: Create song record from uploaded blob (moderator/admin only)
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body**:
-```json
-{
-  "blob_signed_id": "signed_blob_id",
-  "filename": "song.mp3",
-  "metadata": {
-    "title": "Song Title",
-    "artist_name": "Artist Name",
-    "album_title": "Album Title",
-    "genre_name": "Rock"
-  },
-  "skip_post_processing": false
-}
-```
-
-**Response** (201 Created):
-```json
-{
-  "success": true,
-  "message": "Song created successfully from blob",
-  "song": {
-    "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
-    "title": "Song Title",
-    "processing_status": "needs_review",
-    "created_at": "2023-01-01T00:00:00Z"
-  }
-}
-```
-
-## Artists Endpoints
-
-### GET /api/v1/artists
-**Purpose**: List artists with pagination and search
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `limit` (integer, default: 50): Number of artists per page
-- `offset` (integer, default: 0): Number of artists to skip
-- `search` (string): Search query for artist name or country
-- `sort` (string, optional): One of `created_at`, `name`, `song_count`, `album_count`
-- `order` (string, optional): `asc` or `desc` (default: `asc` for `name`)
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "artists": [
-    {
-      "id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
-      "name": "Artist Name",
-      "country": "USA",
-      "formed_year": 1990,
-      "song_count": 25,
-      "album_count": 3,
-      "created_at": "2023-01-01T00:00:00Z"
-    }
-  ],
-  "pagination": { "total": 100, "limit": 50, "offset": 0, "has_more": true }
-}
-```
-
-### GET /api/v1/artists/:id
-**Purpose**: Get detailed information about a specific artist
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "artist": {
-    "id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
-    "name": "Artist Name",
-    "biography": "Artist biography...",
-    "country": "USA",
-    "formed_year": 1990,
-    "website": "https://artist.com",
-    "song_count": 25,
-    "album_count": 3,
-    "songs": [
-      {
-        "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
-        "title": "Song Title",
-        "album": "Album Title",
-        "duration": 180
-      }
-    ],
-    "albums": [
-      {
-        "id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
-        "title": "Album Title",
-        "release_year": 2023,
-        "song_count": 12
-      }
-    ],
-    "created_at": "2023-01-01T00:00:00Z"
-  }
-}
-```
-
-<!-- Removed: artists bulk_create is out of scope; artists are created/linked via song upload/edit -->
-
-<!-- Removed: artists export is out of scope for public API -->
-
-## Albums Endpoints
-
-### GET /api/v1/albums
-**Purpose**: List albums with pagination and search
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `limit` (integer, default: 50): Number of albums per page
-- `offset` (integer, default: 0): Number of albums to skip
-- `search` (string): Search query for album title or artist name
-- `artist_id` (string): Filter by artist ID (UUID)
-- `sort` (string, optional): One of `created_at`, `title`, `release_year`, `song_count`
-- `order` (string, optional): `asc` or `desc` (default: `asc` for `title`)
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "albums": [
-    {
-      "id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
-      "title": "Album Title",
-      "artist": "Artist Name",
-      "release_year": 2023,
-      "total_tracks": 12,
-      "song_count": 12,
-      "cover_image_url": "https://example.com/cover.jpg",
-      "created_at": "2023-01-01T00:00:00Z"
-    }
-  ],
-  "pagination": { "total": 50, "limit": 50, "offset": 0, "has_more": false }
-}
-```
-
-### GET /api/v1/albums/:id
-**Purpose**: Get detailed information about a specific album
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "album": {
-    "id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
-    "title": "Album Title",
-    "artist": {
-      "id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
-      "name": "Artist Name"
-    },
-    "release_year": 2023,
-    "total_tracks": 12,
-    "duration": 2400,
-    "cover_image_url": "https://example.com/cover.jpg",
-    "song_count": 12,
-    "songs": [
-      {
-        "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
-        "title": "Song Title",
-        "track_number": 1,
-        "duration": 180,
-        "genre": "Rock"
-      }
-    ],
-    "created_at": "2023-01-01T00:00:00Z"
-  }
-}
-```
-
-<!-- Removed: albums bulk_create is out of scope; albums are created/linked via song upload/edit -->
-
-<!-- Removed: albums export is out of scope for public API -->
-
-## Genres Endpoints
-
-### GET /api/v1/genres
-**Purpose**: List genres with pagination and search
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `limit` (integer, default: 50): Number of genres per page
-- `offset` (integer, default: 0): Number of genres to skip
-- `search` (string): Search query for genre name
-- `sort` (string, optional): One of `created_at`, `name`, `song_count`
-- `order` (string, optional): `asc` or `desc` (default: `asc` for `name`)
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "genres": [
-    {
-      "id": "9e8d7c6b-5a4f-3210-b1a2-c3d4e5f6a7b8",
-      "name": "Rock",
-      "color": "#ff0000",
-      "description": "Rock music",
-      "song_count": 150,
-      "created_at": "2023-01-01T00:00:00Z"
-    }
-  ],
-  "pagination": { "total": 20, "limit": 50, "offset": 0, "has_more": false }
-}
-```
-
-### GET /api/v1/genres/:id
-**Purpose**: Get detailed information about a specific genre
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "genre": {
-    "id": "9e8d7c6b-5a4f-3210-b1a2-c3d4e5f6a7b8",
-    "name": "Rock",
-    "color": "#ff0000",
-    "description": "Rock music",
-    "song_count": 150,
-    "songs": [
-      {
-        "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
-        "title": "Song Title",
-        "artist": "Artist Name",
-        "album": "Album Title",
-        "duration": 180
-      }
-    ],
-    "created_at": "2023-01-01T00:00:00Z"
-  }
-}
-```
-
-<!-- Removed: genres bulk_create is out of scope; genres are created/linked via song upload/edit -->
-
-<!-- Removed: genres export is out of scope for public API -->
-
-## Playlists Endpoints
-
-### GET /api/v1/playlists
-**Purpose**: List playlists accessible to the user
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `limit` (integer, default: 20): Number of playlists per page
-- `offset` (integer, default: 0): Number of playlists to skip
-- `user_id` (string, optional): Filter by user ID (UUID, admin only)
-- `sort` (string, optional): One of `created_at`, `name`, `song_count`
-- `order` (string, optional): `asc` or `desc` (default: `desc` for `created_at`, `asc` for `name`)
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "playlists": [
-    {
-      "id": "11111111-2222-3333-4444-555555555555",
-      "name": "My Playlist",
-      "description": "A great playlist",
-      "is_public": true,
-      "song_count": 25,
-      "user": {
-        "id": "6f0d9c2a-9d3b-4a68-8f7f-1a2b3c4d5e6f",
-        "name": "User Name",
-        "email": "user@example.com"
-      },
-      "created_at": "2023-01-01T00:00:00Z"
-    }
-  ],
-  "pagination": { "total": 100, "limit": 20, "offset": 0, "has_more": true }
-}
-```
-
-### GET /api/v1/playlists/:id
-**Purpose**: Get detailed information about a specific playlist
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "playlist": {
-    "id": "11111111-2222-3333-4444-555555555555",
-    "name": "My Playlist",
-    "description": "A great playlist",
-    "is_public": true,
-    "song_count": 25,
-    "user": {
-      "id": "6f0d9c2a-9d3b-4a68-8f7f-1a2b3c4d5e6f",
-      "name": "User Name",
-      "email": "user@example.com"
-    },
-    "songs": [
-      {
-        "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
-        "title": "Song Title",
-        "track_number": 1,
-        "duration": 180,
-        "position": 1,
-        "artist": {
-          "id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
-          "name": "Artist Name"
-        },
-        "album": {
-          "id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
-          "title": "Album Title"
-        },
-        "genre": {
-          "id": "9e8d7c6b-5a4f-3210-b1a2-c3d4e5f6a7b8",
-          "name": "Rock"
-        },
-        "audio_file_url": "https://example.com/rails/active_storage/blobs/...",
-        "stream_url": "https://example.com/api/v1/audio_files/1/stream"
-      }
-    ],
-    "created_at": "2023-01-01T00:00:00Z"
-  }
-}
-```
-
-<!-- Removed: playlist mutation endpoints. API is read-only for playlists; management occurs via website UI. -->
-
-### DELETE /api/v1/playlists/:id/remove_song
-**Purpose**: Remove a song from a playlist (playlist owner only)
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body**:
-```json
-{
-  "song_id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a"
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "message": "Song removed from playlist",
-  "playlist": {
-    /* full playlist object with updated songs */
-  }
-}
-```
-
-### PUT /api/v1/playlists/:id/reorder_songs
-**Purpose**: Reorder songs in a playlist (playlist owner only)
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body**:
-```json
-{
-  "song_order": [3, 1, 2, 5, 4]
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "message": "Playlist reordered successfully",
-  "playlist": {
-    /* full playlist object with reordered songs */
-  }
-}
-```
-
-## Audio Files Endpoints
-
-### GET /api/v1/audio_files/:id
-**Purpose**: Get audio file metadata and URLs
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "song_id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
-  "title": "Song Title",
-  "artist": "Artist Name",
-  "album": "Album Title",
-  "duration": 180,
-  "file_format": "mp3",
-  "file_size": 5242880,
-  "stream_url": "https://example.com/api/v1/audio_files/1/stream",
-  "download_url": "https://example.com/api/v1/audio_files/1/download"
-}
-```
-
-### GET /api/v1/audio_files/:id/stream
-**Purpose**: Progressive streaming with HTTP Range support (no HLS/DASH)
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Optional Headers**:
-- `Range: bytes=0-1023` (for partial content requests)
-
-**Response** (200 OK or 206 Partial Content):
-- Content-Type: appropriate audio MIME type (e.g., audio/mpeg, audio/mp4, audio/flac)
-- Accept-Ranges: bytes
-- Content-Length: file size (or range size for partial requests)
-- Content-Range: bytes 0-1023/5242880 (for partial requests)
-
-**Stream Response**: Binary audio data
-
-**Notes**:
-- Supports HEAD for metadata only (Content-Type, Content-Length, Accept-Ranges).
-- Authentication required on each request or via short-lived signed URLs.
-
-### GET /api/v1/audio_files/:id/download
-**Purpose**: Download audio file
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Response** (200 OK):
-- Content-Type: audio/mpeg (or appropriate audio type)
-- Content-Disposition: attachment; filename="Artist - Song.mp3"
-- Content-Length: file size
-
-**Download Response**: Binary audio data
-
-## Health Check Endpoint
-
-### GET /api/v1/health
-**Purpose**: Check system health and API availability
-
-**Headers**: None required
-
-**Response** (200 OK):
-```json
-{
-  "status": "healthy",
-  "timestamp": "2023-01-01T00:00:00Z",
-  "checks": {
-    "database": true,
-    "storage": true,
-    "search": true
-  },
-  "version": "1.0.0"
-}
-```
-
-**Response** (503 Service Unavailable):
-```json
-{
-  "status": "unhealthy",
-  "timestamp": "2023-01-01T00:00:00Z",
-  "checks": {
-    "database": false,
-    "storage": true,
-    "search": true
-  },
-  "version": "1.0.0"
-}
-```
-
-## Search Endpoints
-
-### GET /api/v1/search
-**Purpose**: Global search across all content types with fast results
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `q` (string, required): Search query
-- `type` (string, optional): Content type filter (`songs`, `artists`, `albums`, `genres`, `all`)
-- `mode` (string, optional): Search mode (`multi_term` for AND logic, `full_text` for relevance-based, default: `multi_term`)
-- `limit` (integer, default: 20): Number of results per content type
-- `offset` (integer, default: 0): Number of results to skip
-
-**Search Modes**:
-- **`multi_term`**: Splits query into terms, requires ALL terms to be found across ANY field (current songs view behavior)
-- **`full_text`**: Uses PostgreSQL full-text search with relevance ranking
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "query": "strait run",
-  "mode": "multi_term",
-  "results": {
-    "songs": [
-      {
-        "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
-        "title": "Strait Run",
-        "artist": "Artist Name",
-        "album": "Album Title",
-        "genre": "Rock",
-        "duration": 180,
-        "match_score": null
-      }
-    ],
-    "artists": [
-      {
-        "id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
-        "name": "Strait Run Band",
-        "song_count": 5,
-        "match_score": null
-      }
-    ],
-    "albums": [
-      {
-        "id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
-        "title": "Strait Run Collection",
-        "artist": "Artist Name",
-        "song_count": 12,
-        "match_score": null
-      }
-    ],
-    "genres": []
-  },
-  "summary": {
-    "total_results": 3,
-    "songs_count": 1,
-    "artists_count": 1,
-    "albums_count": 1,
-    "genres_count": 0
-  },
-  "pagination": {
-    "limit": 20,
-    "offset": 0,
-    "has_more": false
-  }
-}
-```
-
-### GET /api/v1/search/songs
-**Purpose**: Advanced song search with filtering and fast results
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `q` (string, required): Search query
-- `mode` (string, optional): Search mode (`multi_term`, `full_text`, default: `multi_term`)
-- `artist_id` (integer, optional): Filter by artist ID
-- `album_id` (integer, optional): Filter by album ID
-- `genre_id` (integer, optional): Filter by genre ID
-- `status` (string, optional): Filter by processing status
-- `duration_min` (integer, optional): Minimum duration in seconds
-- `duration_max` (integer, optional): Maximum duration in seconds
-- `limit` (integer, default: 50): Number of results per page
-- `offset` (integer, default: 0): Number of results to skip
-- `sort` (string, optional): One of `relevance` (full_text only), `created_at`, `title`, `artist`, `album`, `duration`
-- `order` (string, optional): `asc` or `desc` (default: `relevance desc` for full_text, otherwise `created_at desc`)
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "query": "strait run",
-  "mode": "multi_term",
-  "filters": {
-    "artist_id": null,
-    "album_id": null,
-    "genre_id": null,
-    "status": null,
-    "duration_min": null,
-    "duration_max": null
-  },
-  "songs": [
-    {
-      "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
-      "title": "Strait Run",
-      "artist": "Artist Name",
-      "album": "Album Title",
-      "genre": "Rock",
-      "duration": 180,
-      "processing_status": "completed",
-      "created_at": "2023-01-01T00:00:00Z",
-      "match_score": null,
-      "stream_url": "https://example.com/api/v1/audio_files/1/stream"
-    }
-  ],
-  "pagination": { "total": 1, "limit": 50, "offset": 0, "has_more": false }
-}
-```
-
-### GET /api/v1/search/artists
-**Purpose**: Fast artist search with filtering
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `q` (string, required): Search query
-- `mode` (string, optional): Search mode (`multi_term`, `full_text`, default: `multi_term`)
-- `country` (string, optional): Filter by country
-- `has_songs` (boolean, optional): Only artists with songs
-- `limit` (integer, default: 20): Number of results per page
-- `offset` (integer, default: 0): Number of results to skip
-- `sort` (string, optional): One of `relevance` (full_text only), `created_at`, `name`, `song_count`, `album_count`
-- `order` (string, optional): `asc` or `desc` (default: `relevance desc` for full_text, otherwise `name asc`)
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "query": "beatles",
-  "mode": "multi_term",
-  "artists": [
-    {
-      "id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
-      "name": "The Beatles",
-      "country": "UK",
-      "formed_year": 1960,
-      "song_count": 150,
-      "album_count": 12,
-      "match_score": null
-    }
-  ],
-  "pagination": { "total": 1, "limit": 20, "offset": 0, "has_more": false }
-}
-```
-
-### GET /api/v1/search/albums
-**Purpose**: Fast album search with filtering
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `q` (string, required): Search query
-- `mode` (string, optional): Search mode (`multi_term`, `full_text`, default: `multi_term`)
-- `artist_id` (integer, optional): Filter by artist ID
-- `release_year_min` (integer, optional): Minimum release year
-- `release_year_max` (integer, optional): Maximum release year
-- `has_songs` (boolean, optional): Only albums with songs
-- `limit` (integer, default: 20): Number of results per page
-- `offset` (integer, default: 0): Number of results to skip
-- `sort` (string, optional): One of `relevance` (full_text only), `created_at`, `title`, `release_year`, `song_count`
-- `order` (string, optional): `asc` or `desc` (default: `relevance desc` for full_text, otherwise `title asc`)
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "query": "abbey road",
-  "mode": "multi_term",
-  "albums": [
-    {
-      "id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
-      "title": "Abbey Road",
-      "artist": "The Beatles",
-      "release_year": 1969,
-      "song_count": 17,
-      "cover_image_url": "https://example.com/cover.jpg",
-      "match_score": null
-    }
-  ],
-  "pagination": { "total": 1, "limit": 20, "offset": 0, "has_more": false }
-}
-```
-
-### GET /api/v1/search/suggestions
-**Purpose**: Get search suggestions for autocomplete functionality
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `q` (string, required): Partial search query (minimum 2 characters)
-- `type` (string, optional): Content type (`songs`, `artists`, `albums`, `genres`, `all`, default: `all`)
-- `limit` (integer, default: 10): Number of suggestions per type
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "query": "stra",
-  "suggestions": {
-    "songs": [
-      {
-        "id": "2f6c7c80-1d4d-4a4a-8c5a-2e2b2f3d9b1a",
-        "title": "Strait Run",
-        "artist": "Artist Name",
-        "type": "song"
-      }
-    ],
-    "artists": [
-      {
-        "id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
-        "name": "Strait Run Band",
-        "type": "artist"
-      }
-    ],
-    "albums": [
-      {
-        "id": "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
-        "title": "Strait Run Collection",
-        "artist": "Artist Name",
-        "type": "album"
-      }
-    ],
-    "genres": []
-  }
-}
-```
-
-## Missing Endpoints (To Be Implemented)
-
-### User Management Endpoints
-- `GET /api/v1/users` - List users (admin only)
-- `POST /api/v1/users` - Create user (admin only)
-- `GET /api/v1/users/:id` - Get user details (admin only)
-- `PUT /api/v1/users/:id` - Update user (admin only)
-- `DELETE /api/v1/users/:id` - Delete user (admin only)
-- `POST /api/v1/users/:id/reset_password` - Reset user password (admin only)
-
-### Playlist Management Endpoints
-- `POST /api/v1/playlists` - Create new playlist
-- `PUT /api/v1/playlists/:id` - Update playlist details
-- `DELETE /api/v1/playlists/:id` - Delete playlist
-
-### Statistics Endpoints
-- `GET /api/v1/stats` - System statistics (admin only)
-- `GET /api/v1/stats/songs` - Song statistics
-- `GET /api/v1/stats/users` - User statistics (admin only)
-
-### System Endpoints
-- `GET /api/v1/system/settings` - Get system settings (admin only)
-- `PUT /api/v1/system/settings` - Update system settings (admin only)
-- `GET /api/v1/system/status` - Detailed system status (admin only)
-
-## Implementation Notes
-
-### Rails Tools & Best Practices
-1. **API Versioning**: Use Rails API versioning with namespaced controllers
-2. **Serializers**: Use `active_model_serializers` for consistent JSON responses
-3. **Error Handling**: Implement standardized error handling with custom exception classes
-4. **Service Objects**: Use service objects for complex business logic (search, bulk operations)
-5. **Built-in Caching**: Leverage Rails built-in caching for frequently accessed data
-6. **Background Jobs**: Use Rails built-in ActiveJob for bulk operations and file processing
-
-### Active Model Serializers Implementation
-**Benefits:**
-- Consistent JSON structure across all endpoints
-- Easy to maintain and update
-- Built-in association handling
-- Custom attribute methods
-- Versioning support
-
-**Example Implementation:**
-```ruby
-# Gemfile
-gem 'active_model_serializers'
-
-# app/serializers/song_serializer.rb
-class SongSerializer < ActiveModel::Serializer
-  attributes :id, :title, :track_number, :duration, :file_format, 
-             :file_size, :processing_status, :created_at, :updated_at
-  
-  belongs_to :artist, serializer: ArtistSerializer
-  belongs_to :album, serializer: AlbumSerializer  
-  belongs_to :genre, serializer: GenreSerializer
-  
-  def audio_url
-    object.audio_file.attached? ? rails_blob_url(object.audio_file) : nil
-  end
-  
-  def stream_url
-    object.audio_file.attached? ? api_v1_audio_file_stream_url(object) : nil
-  end
-  
-  def download_url
-    object.audio_file.attached? ? api_v1_audio_file_download_url(object) : nil
-  end
-end
-
-# app/controllers/api/v1/songs_controller.rb
-def index
-  @songs = Song.includes(:artist, :album, :genre)
-               .limit([params[:limit].to_i, 500].compact.min.presence || 50)
-               .offset(params[:offset].to_i.presence || 0)
-  
-  render json: @songs, each_serializer: SongSerializer
-end
-
-def show
-  @song = Song.includes(:artist, :album, :genre).find(params[:id])
-  render json: @song, serializer: SongSerializer
-end
-```
-
-**Usage in Controllers:**
-```ruby
-# Instead of manual JSON building:
-render json: {
-  success: true,
-  songs: @songs.map { |song| song_to_json(song) }
-}
-
-# Use serializers:
-render json: {
-  success: true,
-  songs: ActiveModelSerializers::SerializableResource.new(@songs, each_serializer: SongSerializer)
-}
-```
-
-### Authentication Options
-
-#### Current Token System (CRITICAL SECURITY ISSUE)
-**⚠️ SECURITY WARNING: This system is vulnerable to attack!**
-
-**Vulnerabilities:**
-- ❌ **No cryptographic signature** - Anyone can create valid tokens
-- ❌ **Role escalation** - Users can promote themselves to admin
-- ❌ **User impersonation** - Can access any user's data
-- ❌ **No tamper detection** - Tokens can be modified
-- ❌ **No revocation** - Compromised tokens work for 2 days
-
-**DO NOT USE ON PUBLIC INTERNET**
-
-#### JWT Authentication (REQUIRED FOR PUBLIC INTERNET)
-**Pros:**
-- ✅ **Cryptographically signed** - Tamper-proof tokens
-- ✅ **Industry standard** - Widely supported
-- ✅ **Built-in expiration** - Automatic handling
-- ✅ **Custom claims** - Can include additional data
-- ✅ **Stateless** - No database lookups required
-
-**Cons:**
-- ⚠️ **Additional complexity** - Requires JWT gem
-- ⚠️ **Larger token size** - More bandwidth usage
-- ⚠️ **No built-in revocation** - Need separate revocation system
-
-**Implementation Required:**
-```ruby
-# Gemfile
-gem 'jwt'
-
-# Token generation
-payload = {
-  user_id: user.id,
-  email: user.email,
-  role: user.role,
-  exp: 2.days.from_now.to_i,
-  iat: Time.current.to_i,
-  jti: SecureRandom.uuid
-}
-token = JWT.encode(payload, Rails.application.secret_key_base, 'HS256')
-
-# Token validation
-payload = JWT.decode(token, Rails.application.secret_key_base, true, { algorithm: 'HS256' })[0]
-```
-
-#### API Token System (Future Enhancement)
-For long-lived tokens (weekend jukebox use):
-- Generate persistent API tokens stored in database
-- User can create/revoke their own tokens
-- Tokens can have custom expiration (hours to months)
-- Better for external integrations
-
-**Implementation:**
-```ruby
-# Add to User model
-has_many :api_tokens, dependent: :destroy
-
-# New model: ApiToken
-class ApiToken < ApplicationRecord
-  belongs_to :user
-  validates :name, presence: true
-  validates :token, presence: true, uniqueness: true
-  
-  before_create :generate_token
-  
-  def expired?
-    expires_at.present? && expires_at < Time.current
-  end
-  
-  private
-  
-  def generate_token
-    self.token = SecureRandom.urlsafe_base64(32)
-  end
-end
-```
-
-### Security Considerations (CRITICAL FOR PUBLIC INTERNET)
-1. **JWT Authentication**: REQUIRED - Replace current token system immediately
-2. **Rate Limiting**: REQUIRED - Implement rack-attack for API protection
-3. **Input Validation**: Use strong parameters and model validations
-4. **SQL Injection**: Use parameterized queries and avoid raw SQL
-5. **File Upload Security**: Validate file types and scan for malware
-6. **CORS**: Configure CORS properly for web client access
-7. **HTTPS**: Enforce HTTPS in production (force_ssl = true)
-8. **Security Headers**: Add proper security headers
-9. **Token Revocation**: Implement API token revocation system
-10. **Audit Logging**: Log all API access and security events
-
-### Immediate Security Actions Required
-1. **Disable API endpoints** until JWT is implemented
-2. **Implement JWT authentication** with proper signing
-3. **Add rate limiting** to prevent brute force attacks
-4. **Force HTTPS** in production
-5. **Add security headers** and CORS configuration
-6. **Implement token revocation** system
-7. **Add audit logging** for security monitoring
-
-### Performance Optimizations
-1. **Database Indexing**: Ensure proper indexes on frequently queried fields
-2. **Eager Loading**: Use `includes` to avoid N+1 queries
-3. **Pagination**: Implement cursor-based pagination for large datasets
-4. **Built-in Caching**: Use Rails.cache for expensive operations and frequently accessed data
-5. **CDN**: Use CDN for audio file delivery
-6. **Compression**: Enable gzip compression for API responses
-
-### Search Performance
-1. **Multi-term Search**: Uses ILIKE with proper indexing for fast partial matches
-2. **Full-text Search**: Leverages PostgreSQL's `search_vector` and `ts_rank` for relevance-based results
-3. **Database Indexes**: Ensure indexes on `title`, `name` fields and `search_vector` columns
-4. **Query Optimization**: Use `includes` to preload associations and avoid N+1 queries
-5. **Result Caching**: Cache frequent search queries for improved response times
-6. **Pagination**: Limit results to prevent large result sets from impacting performance
-
-### Error Handling
-1. **Consistent Error Format**: Use standardized error response format
-2. **Logging**: Log all API errors with appropriate detail
-3. **Monitoring**: Implement API monitoring and alerting
-4. **Graceful Degradation**: Handle partial failures gracefully
-
-This API specification provides comprehensive coverage of the Archive music management system, enabling full programmatic control while maintaining security and performance standards.
+
+Bearer token, moderator or admin (otherwise 403). Uploads **one** audio file per request,
+as `multipart/form-data`:
+
+- `audio_file` (required)
+- `filename`, `title`, `artist_name`, `album_title`, `genre_name`, `track_number`, `duration` (optional)
+- `skip_post_processing=true` to skip reading the file's tags
+
+The title defaults to the file name. Unless skipped, tags are read with `ffprobe` during the
+request and fill in whatever the parameters left blank. The song ends up `completed` (it has a
+title and an artist), `needs_review`, or `failed`. Response is 201 with `song`
+(`id`, `title`, `artist`, `album`, `genre`, `processing_status`, `created_at`); 422 when no
+file was sent or the record is invalid; 500 with the error message on anything else.
+
+## Audio files
+
+An older pair of streaming endpoints, addressed by song id. Bearer token only (no session).
+
+- `GET /api/v1/audio_files/:id` — `song_id`, `title`, `artist`, `album`, `duration`,
+  `file_format`, `file_size`, `checksum` (Active Storage's Base64 MD5), `stream_url`, `download_url`
+- `GET /api/v1/audio_files/:id/stream` — chunked, honours `Range`
+- `GET /api/v1/audio_files/:id/download` — attachment
+
+The playlist endpoints return these URLs; the jukebox endpoints return the
+`/api/v1/songs/:id/stream` ones.
+
+## Playlists
+
+Bearer token. A user can list and read their own playlists and public ones. An admin's list
+includes everyone's, but reading someone else's private playlist is still refused. Only the
+owner can change a playlist or its songs; the owner or an admin can delete it. A refused
+action is 403 `{ "success": false, "message": "Not authorized" }`.
+
+| Endpoint | Parameters | Notes |
+|---|---|---|
+| `GET /api/v1/playlists` | `page`, `per_page` (default 20) | `playlists`, `pagination` (`current_page`, `total_pages`, `total_count`) |
+| `GET /api/v1/playlists/:id` | | `playlist` with `songs` in order |
+| `POST /api/v1/playlists` | `name` (required), `description`, `is_public`, `song_ids[]` | 201; creates it for the caller |
+| `PATCH /api/v1/playlists/:id` | `name`, `description`, `is_public` | |
+| `DELETE /api/v1/playlists/:id` | | |
+| `POST /api/v1/playlists/:id/add_song` | `song_id`, optional `position` | |
+| `POST /api/v1/playlists/:id/add_songs` | `song_ids[]` | appends in the given order, skips songs already present and unknown ids |
+| `DELETE /api/v1/playlists/:id/remove_song` | `song_id` | 404 if the song is not in the playlist |
+| `PUT /api/v1/playlists/:id/reorder_songs` | `song_order[]` (song ids in the new order) | |
+
+A playlist is returned as `id`, `name`, `description`, `is_public`, `created_at`,
+`updated_at`, `user` (`id`, `name`, `email`), `song_count`, and when songs are included,
+`songs` (each with `id`, `title`, `track_number`, `duration`, `file_format`, `position`,
+`artist`, `album`, `genre` as `{id, name|title}`, `audio_file_url`, `stream_url`).
+
+## Jukeboxes and stations
+
+A **party jukebox** is a queue that guests add requests to; it refills itself from its
+playlists or by radio. A **station** is a personal radio; it is a `Station` record played
+through a jukebox whose `session_id` starts with `station-`, and the API addresses it by
+that jukebox's id. Both use the endpoints below.
+
+All of these need a bearer token (or the node token, see "Speaker playback"). A jukebox is
+only accessible to its owner: anyone else gets 403 `Access denied`. The collection
+endpoints additionally require the DJ, moderator or admin role (403
+`Not allowed to host a jukebox`), except `GET /api/v1/jukeboxes`.
+
+### Collection
+
+| Endpoint | What it does |
+|---|---|
+| `GET /api/v1/jukeboxes` | The caller's jukeboxes: `id`, `name`, `session_id`, `status`, crossfade settings, `auto_play`, `queue_count`, `playlists`. |
+| `GET /api/v1/jukeboxes/stations` | The caller's stations (creating the first one, "My Station", if they have none). |
+| `POST /api/v1/jukeboxes/station` | Open a station. No parameters: the first station. `station_id`: that one. `song_id`: restart it from that song. `new=true` with `song_id` and/or `playlist_id` (`playlist_mode` = `inspire` or `only`) and optional `name`: make a new station. A user can have 40. |
+| `GET /api/v1/jukeboxes/shared_stations` | Every station someone has shared, with owner, seeds, playlists, thumb counts, how many copies exist and whether the caller has one. |
+| `POST /api/v1/jukeboxes/copy_station` | `station_id` (a Station id from `shared_stations`), optional `name`: the caller's own copy. |
+
+Station responses use the jukebox's `station_json`: `id`, `name`, `session_id`,
+`fill_mode`, `station`, `guest_password`, `radio` (`genre`, `steer`, `intensity`,
+`variety`, `learn`, `requests_steer`, `seeds`), `queue_length`, `live`, `server_playback`,
+`transport`, `station_id`, `shared`, `name_edited`, `permanent`, `copied_from`, `playlists`.
+
+### Station settings
+
+| Endpoint | Parameters |
+|---|---|
+| `PATCH /api/v1/jukeboxes/:id/station` | `name` — rename (stations only) |
+| `DELETE /api/v1/jukeboxes/:id/station` | remove the station and what it learned; the first station cannot be removed |
+| `PATCH /api/v1/jukeboxes/:id/share` | `shared=true|false` |
+| `PATCH /api/v1/jukeboxes/:id/radio_settings` | `genre` (`any`/`adjacent`/`strict`), `intensity` (-1..1 or `auto`), `variety` (0..1), `learn`, `requests_steer`, any dial (-1..1), `reset_steer=true` |
+| `GET /api/v1/jukeboxes/:id/tuning` | everything that shapes the station, for the tuning page |
+| `POST /api/v1/jukeboxes/:id/seeds` | `song_id` |
+| `DELETE /api/v1/jukeboxes/:id/seeds/:song_id` | |
+| `POST /api/v1/jukeboxes/:id/artists/:artist_id/keep` | put back an artist that thumbs-down removed |
+| `POST /api/v1/jukeboxes/:id/feedback` | `song_id`, `kind` (`up`, `down`, `tired`, `never`, `clear`, `skip`, `finished`), optional `position`. `down`, `tired` and `never` also drop the song from the auto-filled queue and re-aim the station. |
+
+### Queue and playback
+
+| Endpoint | What it does |
+|---|---|
+| `GET /api/v1/jukeboxes/:id/status` | Name, status, crossfade settings, `server_playback`, `server` (the node's player state when on the speakers), `is_playing`, `current_position`, `current_song`. |
+| `GET /api/v1/jukeboxes/:id/queue` | The queue: requested songs first, then auto-filled (`source` = `requested` or `random`), each with song details and stream/download URLs. |
+| `GET /api/v1/jukeboxes/:id/current_song` | The head of the queue (not what is playing). |
+| `GET /api/v1/jukeboxes/:id/next_song` | Tops the queue up if it is below `min_queue_length`, removes the head, records it in the play history and returns it with `stream_url`, `download_url` and `play_url` (a 12-hour `/s/:token` link that needs no header). 204 when there is nothing to play. |
+| `GET /api/v1/jukeboxes/:id/playback_info` | What the player last reported. |
+| `GET /api/v1/jukeboxes/:id/history` | `page`, `per_page` (default 25, max 100). Most recent first. |
+| `POST /api/v1/jukeboxes/:id/queue` | `song_id`, optional `source` (default `requested`). 409 if it is already queued. |
+| `DELETE /api/v1/jukeboxes/:id/queue/:song_id` | Remove a song. |
+| `PATCH /api/v1/jukeboxes/:id/queue/:song_id` | `position` — move it. |
+| `PATCH /api/v1/jukeboxes/:id/queue/:song_id/promote` | Turn an auto-filled song into a request. |
+| `PATCH /api/v1/jukeboxes/:id/queue/:song_id/play_next` | Put it at the top. |
+| `POST /api/v1/jukeboxes/:id/playback_status` | The player's heartbeat: `current_song_id`, `position`, `is_playing`, `volume`, optional `event` / `diag` (logged only). A jukebox is "live" while one arrived in the last 30 seconds. |
+
+### Speaker playback
+
+One jukebox at a time can play on the archive node's speakers, through the daemon in
+`station/` (see `../../station/README.md`).
+
+| Endpoint | What it does |
+|---|---|
+| `POST /api/v1/jukeboxes/:id/server_playback` | `on=true|false`, optional `transport` (`play`/`pause`/`stop`), `fresh=true`. Takes the speakers (from any other jukebox) or gives them back. Needs local playback enabled on the node and a playback grant; otherwise 403. |
+| `POST /api/v1/jukeboxes/:id/transport` | `command` = `play`, `pause`, `stop` or `skip`, optional `quiet=true`. Only for a jukebox that is on the speakers. |
+| `POST /api/v1/node_player/sync` | The daemon's poll (every 2 s): sends `state` (`outputs`, `volume`, `owntone_state`, `error`) and `ack`; gets `node`, the on-air `jukebox` (with a `resume` song and position) and pending `commands`. |
+| `POST /api/v1/node_player/command` | A user with a playback grant: `cmd=volume` with `value` 0..100, or `cmd=output` with `id` and `selected`. |
+
+The daemon sends `X-Node-Token` instead of a bearer token. With it, it may call the
+`/api/v1/jukeboxes/:id/...` member endpoints for the jukebox that is on the speakers, acting
+as that jukebox's owner; for any other jukebox it gets 403 `Not on the speakers`. Without a
+node token configured, it can poll `sync` with a user's bearer token and is then only given
+that user's jukebox.
+
+## Guest endpoints
+
+For the guest page of a party jukebox. No account: every request carries
+`password=<code>`. The guest code gives the `guest` role, the admin code the `admin` role.
+The jukebox must be live (a player has reported in the last 30 seconds), otherwise 403.
+Errors: 400 no jukebox id, 404 unknown jukebox, 401 missing or wrong code, 403 admin code
+required.
+
+| Endpoint | Role | What it does |
+|---|---|---|
+| `GET /api/v1/guest/:jukebox_id/status` | guest | Jukebox name, status, the caller's `role`, playback state. |
+| `GET /api/v1/guest/:jukebox_id/current_song` | guest | What is playing. No audio URLs are given to guests. |
+| `GET /api/v1/guest/:jukebox_id/queue` | guest | The next 50 queue entries and `total_count`. |
+| `GET /api/v1/guest/:jukebox_id/playback_info` | guest | Current song, position, volume, crossfade settings. |
+| `GET /api/v1/guest/:jukebox_id/history` | guest | `page`, `per_page`. |
+| `GET /api/v1/guest/:jukebox_id/search_songs` | guest | `q`, `page`, `per_page` (default 50). Same multi-term search as the song list. |
+| `POST /api/v1/guest/:jukebox_id/request_song` | guest | `song_id`. `outcome` is `added`, `already_requested`, `already_queued`, or `bumped` (admin code, song was auto-filled). |
+| `POST /api/v1/guest/:jukebox_id/promote_song` | admin | `song_id` — turn an auto-filled song into a request. |
+| `DELETE /api/v1/guest/:jukebox_id/queue/:song_id` | admin | Remove a song. |
+| `POST /api/v1/guest/:jukebox_id/player_command` | admin | `command` = `play`, `pause` or `skip`. Relayed to the host's browser player over the cable, or applied to the speakers when the jukebox is on them. |
+| `GET /api/v1/guest/:jukebox_id/test` | guest | Debug endpoint. |
+
+## Live updates (ActionCable)
+
+`/cable`, channel `JukeboxChannel`, subscribed with `jukebox_id` (the UUID). The connection
+is not authenticated. Messages are JSON with a `type`:
+
+- `queue_update` — the queue changed; re-fetch it
+- `playback_status_update` — `data` holds `current_song`, `position`, `is_playing`, `volume`, `crossfade_duration`, `timestamp`
+- `player_command` — `command` = `play`/`pause`/`skip`, for the host's browser player
+
+## Other endpoints
+
+- `GET /api/v1/health` — no authentication. `{ status, timestamp, checks: { database, storage, search }, version }`; 503 when a check fails.
+- `GET /s/:token` — not under `/api/v1`. Streams one song with no login, given a signed,
+  expiring token (`SongPlayToken`). Honours `Range`. The song page makes these links, and
+  `next_song` and `node_player/sync` return one as `play_url`.
+- `GET /up` — Rails' own health check.

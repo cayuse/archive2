@@ -758,7 +758,7 @@ CREATE TABLE public.users (
     password_digest character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT check_valid_role CHECK ((role = ANY (ARRAY[0, 1, 2])))
+    CONSTRAINT check_valid_role CHECK ((role = ANY (ARRAY[0, 1, 2, 3])))
 );
 
 
@@ -2088,6 +2088,7 @@ ALTER TABLE ONLY public.songs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261126170000'),
 ('20261126160000'),
 ('20261126150000'),
 ('20261126140000'),

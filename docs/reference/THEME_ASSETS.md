@@ -1,172 +1,69 @@
-# Theme Assets System
+# Theme assets
 
-## Overview
+Images that belong to a theme: logos, icons and other images. They are stored in the
+database, not in `app/assets`. For colours and theme management see `THEMING.md`.
 
-The theme system supports organized asset management with separate folders for different types of assets.
+## Storage
 
-## Directory Structure
+Table `theme_assets`, model `ThemeAsset`, `belongs_to :theme`:
 
-```
-app/assets/images/themes/{theme_name}/
-├── logo.svg                    # Theme logo
-├── icons/                      # Theme-specific icons
-│   ├── music-note.svg
-│   ├── play.svg
-│   ├── pause.svg
-│   └── volume.svg
-└── images/                     # Theme-specific images
-    ├── background-pattern.svg
-    └── other-images.png
-```
+| Column | |
+|---|---|
+| `asset_type` | `logo`, `icon` or `image` |
+| `filename` | unique per theme and asset type |
+| `display_name`, `description` | |
+| `file_data` | the file itself (`bytea`) |
+| `content_type`, `file_size` | |
+| `checksum` | SHA-256 of `file_data` (`ThemeAsset#validate_checksum!` checks it) |
 
-## Helper Methods
+`Theme` has `theme_assets` plus `logos`, `icons` and `images` scoped by type. Deleting a
+theme deletes its assets; duplicating a theme copies them.
 
-### Icon Helpers
-```erb
-<!-- Display an icon -->
-<%= theme_icon_tag('play.svg') %>
+## Serving
 
-<!-- With custom options -->
-<%= theme_icon_tag('play.svg', width: 32, height: 32, class: 'custom-class') %>
+`GET /themes/:theme/assets/:asset_type/:filename` (`ThemesController#asset`, no login)
+sends the file inline with its stored content type, or 404. `:theme` is the theme's `name`,
+`:asset_type` is singular (`logo`, `icon`, `image`).
 
-<!-- Get icon path -->
-<%= theme_icon_path('play.svg') %>
-```
+## Helpers
 
-### Image Helpers
-```erb
-<!-- Display an image -->
-<%= theme_image_tag('background-pattern.svg') %>
+In `ApplicationHelper`, all relative to the current theme:
 
-<!-- With custom options -->
-<%= theme_image_tag('background.svg', class: 'img-fluid', style: 'max-width: 200px;') %>
+| Helper | Returns |
+|---|---|
+| `theme_asset_path(asset_type, filename)` | `/themes/<current>/assets/<asset_type>/<filename>` |
+| `theme_logo_path` | the path of the theme's first logo, or `/icon.svg` if it has none |
+| `theme_icon_path(filename)` | the icon's path if the theme has it, else `/icon.svg` |
+| `theme_image_path(filename)` | the image's path if the theme has it, else `/icon.svg` |
+| `current_theme`, `theme_css_path` | the theme's name; its stylesheet URL |
 
-<!-- Get image path -->
-<%= theme_image_path('background.svg') %>
-```
+The navigation bar's logo is `theme_logo_path`. There are no `theme_icon_tag` /
+`theme_image_tag` helpers; use `image_tag theme_icon_path("play.svg")`.
 
-### Logo Helper
-```erb
-<!-- Display theme logo -->
-<img src="<%= theme_logo_path %>" alt="Logo">
+## Adding an asset
 
-<!-- Get logo path -->
-<%= theme_logo_path %>
-```
+There is no upload form. The theme's page (`/themes/:id`) lists its icons, images and
+logos but cannot add or remove them. Add one from the Rails console:
 
-### General Asset Helper
-```erb
-<!-- For any theme asset -->
-<%= theme_asset_path('custom-asset.svg') %>
+```ruby
+theme = Theme.find_by!(name: "default")
+File.open("logo.svg", "rb") do |f|
+  data = f.read
+  theme.theme_assets.create!(
+    asset_type: "logo", filename: "logo.svg", display_name: "Logo",
+    file_data: data, content_type: "image/svg+xml",
+    checksum: Digest::SHA256.hexdigest(data), file_size: data.bytesize
+  )
+end
 ```
 
-## Adding Assets to a Theme
+(`ThemeAsset.create_from_upload(theme, asset_type, uploaded_file, display_name)` does the
+same for an `ActionDispatch::Http::UploadedFile`; no controller calls it.)
 
-### 1. Create Theme Directory
-```bash
-mkdir -p app/assets/images/themes/new-theme/icons
-mkdir -p app/assets/images/themes/new-theme/images
-```
+`ThemeAsset::STANDARD_ICONS` and `STANDARD_IMAGES` list conventional file names
+(`songs.png`, `background.jpg`, …); nothing requires or uses them.
 
-### 2. Add Assets
-```bash
-# Add icons
-cp my-icon.svg app/assets/images/themes/new-theme/icons/
+## Not used
 
-# Add images
-cp my-image.png app/assets/images/themes/new-theme/images/
-
-# Add logo
-cp my-logo.svg app/assets/images/themes/new-theme/logo.svg
-```
-
-### 3. Compile Assets
-```bash
-bin/rails assets:precompile
-```
-
-## Asset Types
-
-### Icons
-- **Location**: `icons/` folder
-- **Format**: SVG recommended for scalability
-- **Usage**: UI elements, buttons, navigation
-- **Helper**: `theme_icon_tag()` and `theme_icon_path()`
-
-### Images
-- **Location**: `images/` folder
-- **Format**: SVG, PNG, JPG supported
-- **Usage**: Backgrounds, decorative elements
-- **Helper**: `theme_image_tag()` and `theme_image_path()`
-
-### Logo
-- **Location**: Root theme folder
-- **Format**: SVG recommended
-- **Usage**: Brand identity, navigation
-- **Helper**: `theme_logo_path()`
-
-## Best Practices
-
-### 1. File Naming
-- Use kebab-case: `music-note.svg`
-- Be descriptive: `play-button.svg` not `btn.svg`
-- Include format: `background-pattern.svg`
-
-### 2. SVG Optimization
-- Use vector graphics when possible
-- Optimize SVG files for web
-- Include proper viewBox attributes
-
-### 3. Asset Organization
-- Group related icons together
-- Use consistent naming conventions
-- Document custom assets
-
-### 4. Performance
-- Use SVG for icons (scalable, small file size)
-- Optimize images for web
-- Consider lazy loading for large images
-
-## Example Theme Structure
-
-```
-app/assets/images/themes/default/
-├── logo.svg
-├── icons/
-│   ├── music-note.svg
-│   ├── play.svg
-│   ├── pause.svg
-│   ├── volume.svg
-│   ├── settings.svg
-│   └── user.svg
-└── images/
-    ├── background-pattern.svg
-    ├── hero-image.svg
-    └── decorative-element.svg
-```
-
-## CSS Integration
-
-Theme assets can be referenced in CSS using the asset pipeline:
-
-```css
-.theme-background {
-  background-image: url(asset-path("themes/default/images/background-pattern.svg"));
-}
-
-.theme-icon {
-  background-image: url(asset-path("themes/default/icons/music-note.svg"));
-}
-```
-
-## Auto-Discovery
-
-The system automatically discovers new themes and their assets:
-1. Scans `app/assets/stylesheets/themes/` for theme CSS files
-2. Scans `app/assets/images/themes/` for theme assets
-3. Updates available themes in settings
-4. Makes new assets immediately available
-
-## Testing Assets
-
-Visit the theme settings page to see a demo of all available theme assets for the current theme. 
+`app/views/settings/_theme_demo.html.erb` is left over from the old file-based assets. It is
+not rendered anywhere and calls helpers that no longer exist.
