@@ -21,6 +21,13 @@ module JukeboxBroadcasts
     Rails.logger.warn "queue_update broadcast failed: #{e.message}"
   end
 
+  # Relay a transport command (play, pause, skip) to the host's player page.
+  def broadcast_player_command(jukebox, command)
+    ActionCable.server.broadcast(jukebox_stream(jukebox), { type: 'player_command', command: command })
+  rescue => e
+    Rails.logger.warn "player_command broadcast failed: #{e.message}"
+  end
+
   # Push the current now-playing state, including enough song detail that guests
   # can render it without an extra request.
   def broadcast_playback_update(jukebox)

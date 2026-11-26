@@ -6,6 +6,7 @@ class GuestState {
       authenticated: false,
       jukeboxId: null,
       password: null,
+      role: 'guest',              // 'guest' or 'admin', decided by the join code
       
       // Current playback
       currentSong: null,
@@ -32,7 +33,8 @@ class GuestState {
       offline: false,             // jukebox has no live player → show closed screen
       loading: false,
       error: null,
-      
+      notice: null,               // transient confirmation ("Added …")
+
       // Jukebox info
       jukeboxName: '',
       jukeboxStatus: 'inactive'
@@ -45,9 +47,7 @@ class GuestState {
   }
 
   setState(newState) {
-    console.log('🔍 GuestState setState called with:', newState);
     this.state = { ...this.state, ...newState };
-    console.log('🔍 GuestState new state after update:', this.state);
     this.notifyListeners();
   }
 
@@ -59,11 +59,7 @@ class GuestState {
   }
 
   notifyListeners() {
-    console.log('🔍 GuestState notifyListeners called with', this.listeners.length, 'listeners');
-    this.listeners.forEach((listener, index) => {
-      console.log('🔍 GuestState notifying listener', index, 'with state:', this.getState());
-      listener(this.getState());
-    });
+    this.listeners.forEach((listener) => listener(this.getState()));
   }
 
   // Helper methods
@@ -88,12 +84,7 @@ class GuestState {
   }
 
   setSearchResults(results, pagination, query) {
-    console.log('🔍 GuestState setSearchResults called with:', {
-      resultsLength: results?.length || 0,
-      pagination: pagination,
-      query: query
-    });
-    this.setState({ 
+    this.setState({
       searchResults: results, 
       searchPagination: pagination, 
       searchQuery: query 

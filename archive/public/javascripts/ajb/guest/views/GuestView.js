@@ -1,158 +1,100 @@
-// Guest View - React components for the guest interface
-// VERSION 2.0 - Fixed focus preservation and debouncing
+// Guest View - React components for the guest interface (no JSX, no build step)
+const h = React.createElement;
+
 const GuestView = {
+  // State keys the UI renders from; anything else in GuestState is ignored here.
+  UI_KEYS: [
+    'authenticated', 'role', 'offline', 'loading', 'error', 'notice', 'currentView',
+    'currentSong', 'currentPosition', 'isPlaying', 'queue', 'totalQueueCount',
+    'history', 'historyHasMore', 'jukeboxName',
+    'searchResults', 'searchQuery', 'searchLoading', 'searchPagination'
+  ],
+
   // Main Guest App Component
   GuestApp: function() {
-    console.log('🔍 GuestApp component rendering/re-rendering');
-    
-    const [state, setState] = React.useState(() => {
-      console.log('🔍 GuestApp useState initializer called');
-      return {
-        authenticated: false,
-        loading: false,
-        error: null,
-        currentView: 'auth'
-      };
-    });
+    const [state, setState] = React.useState({ authenticated: false, currentView: 'now-playing' });
+    const [controller, setController] = React.useState(null);
+    // True while rejoining with a remembered code, so the join form doesn't flash.
+    const [resuming, setResuming] = React.useState(true);
 
-    const [controller, setController] = React.useState(() => {
-      console.log('🔍 GuestApp controller useState initializer called');
-      return null;
-    });
-
-    // Track component lifecycle
     React.useEffect(() => {
-      console.log('🔍 GuestApp component mounted');
-      return () => {
-        console.log('🔍 GuestApp component unmounting');
-      };
-    }, []);
+      const config = window.AJB_GUEST_CONFIG;
+      if (!config || !config.jukeboxId) return;
 
-    // Track re-renders
-    React.useEffect(() => {
-      console.log('🔍 GuestApp re-rendered');
-      console.log('🔍 GuestApp current state:', state);
-      console.log('🔍 GuestApp controller exists:', !!controller);
-    });
+      const guestController = new GuestController(config.jukeboxId, config.password, config.sessionId);
+      setController(guestController);
 
-    // Initialize controller on mount
-    React.useEffect(() => {
-      if (window.AJB_GUEST_CONFIG && window.AJB_GUEST_CONFIG.jukeboxId) {
-        const guestController = new GuestController(
-          window.AJB_GUEST_CONFIG.jukeboxId,
-          window.AJB_GUEST_CONFIG.password,
-          window.AJB_GUEST_CONFIG.sessionId
-        );
-        
-        setController(guestController);
-        
-        // Subscribe to state changes - only update when relevant fields change
-        const unsubscribe = guestController.state.subscribe((newState) => {
-          console.log('🔍 GuestApp state subscription callback triggered');
-          console.log('🔍 GuestApp newState:', newState);
-          console.log('🔍 GuestApp newState.searchResults.length:', newState?.searchResults?.length || 0);
-          console.log('🔍 GuestApp newState.searchQuery:', newState?.searchQuery);
-          console.log('🔍 GuestApp newState.searchLoading:', newState?.searchLoading);
-          
-          setState(prev => {
-            console.log('🔍 GuestApp setState called with prev state:', prev);
-            
-            // Only update if something actually changed that affects the UI
-            const newStateToSet = {
-              ...prev,
-              authenticated: newState.authenticated,
-              offline: newState.offline,
-              loading: newState.loading,
-              error: newState.error,
-              currentView: newState.currentView,
-              currentSong: newState.currentSong,
-              currentPosition: newState.currentPosition,
-              isPlaying: newState.isPlaying,
-              volume: newState.volume,
-              queue: newState.queue,
-              totalQueueCount: newState.totalQueueCount,
-              history: newState.history,
-              historyHasMore: newState.historyHasMore,
-              jukeboxName: newState.jukeboxName,
-              jukeboxStatus: newState.jukeboxStatus,
-              searchResults: newState.searchResults,
-              searchQuery: newState.searchQuery,
-              searchLoading: newState.searchLoading
-            };
-            
-            // Check if anything actually changed
-            const hasChanges = Object.keys(newStateToSet).some(key => {
-              return JSON.stringify(prev[key]) !== JSON.stringify(newStateToSet[key]);
-            });
-            
-            if (!hasChanges) {
-              console.log('🔍 GuestApp no actual changes, skipping state update');
-              return prev; // Return same state to prevent re-render
-            }
-            
-            console.log('🔍 GuestApp new state to set:', newStateToSet);
-            return newStateToSet;
-          });
+      const unsubscribe = guestController.state.subscribe((newState) => {
+        setState((prev) => {
+          const next = {};
+          GuestView.UI_KEYS.forEach((key) => { next[key] = newState[key]; });
+          // Skip the re-render when nothing the UI shows has changed.
+          const changed = GuestView.UI_KEYS.some(
+            (key) => JSON.stringify(prev[key]) !== JSON.stringify(next[key])
+          );
+          return changed ? next : prev;
         });
+      });
 
-        return () => {
-          unsubscribe();
-          if (guestController) {
-            guestController.destroy();
-          }
-        };
-      }
+      guestController.resumeSession().finally(() => setResuming(false));
+
+      return () => {
+        unsubscribe();
+        guestController.destroy();
+      };
     }, []);
 
-    // Handle authentication
-    const handleAuthenticate = async (password) => {
-      if (controller) {
-        await controller.authenticate(password);
-      }
-    };
+    const config = window.AJB_GUEST_CONFIG || {};
+    const jukeboxName = state.jukeboxName || config.jukeboxName || 'Jukebox';
 
-    // Handle view switching
-    const switchToNowPlaying = () => controller && controller.switchToNowPlaying();
-    const switchToRequestSongs = () => controller && controller.switchToRequestSongs();
-    const switchToHistory = () => controller && controller.switchToHistory();
-
-    if (!controller) {
-      return React.createElement('div', { className: 'text-center p-4' },
-        React.createElement('div', { className: 'spinner-border text-primary', role: 'status' },
-          React.createElement('span', { className: 'visually-hidden' }, 'Loading...')
-        ),
-        React.createElement('p', { className: 'mt-3' }, 'Initializing guest interface...')
+    if (!controller || (resuming && !state.authenticated)) {
+      return h('div', { className: 'ajb-loading' },
+        h('div', { className: 'spinner-border', role: 'status' }),
+        h('p', null, 'Loading…')
       );
     }
 
     if (state.offline) {
-      return React.createElement(GuestView.ClosedView);
+      return h(GuestView.ClosedView);
     }
 
     if (!state.authenticated) {
-      return React.createElement(GuestView.AuthView, {
-        onAuthenticate: handleAuthenticate,
+      return h(GuestView.AuthView, {
+        jukeboxName,
+        onAuthenticate: (password) => controller.authenticate(password),
         loading: state.loading,
         error: state.error
       });
     }
 
-    return React.createElement('div', { className: 'guest-app' },
-      React.createElement(GuestView.Header, {
+    const views = {
+      'now-playing': GuestView.NowPlayingView,
+      'request-songs': GuestView.RequestSongsView,
+      'play-history': GuestView.HistoryView
+    };
+
+    return h('div', { className: 'ajb-app' },
+      h(GuestView.Header, {
+        jukeboxName,
+        isAdmin: state.role === 'admin',
+        isPlaying: !!state.isPlaying,
+        hasSong: !!state.currentSong,
         currentView: state.currentView,
-        onSwitchToNowPlaying: switchToNowPlaying,
-        onSwitchToRequestSongs: switchToRequestSongs,
-        onSwitchToHistory: switchToHistory
+        onLeave: () => controller.leave(),
+        onSwitch: {
+          'now-playing': () => controller.switchToNowPlaying(),
+          'request-songs': () => controller.switchToRequestSongs(),
+          'play-history': () => controller.switchToHistory()
+        }
       }),
-      (state.currentView === 'now-playing'
-        ? React.createElement(GuestView.NowPlayingView, { controller, state })
-        : state.currentView === 'play-history'
-          ? React.createElement(GuestView.HistoryView, { controller, state })
-          : React.createElement(GuestView.RequestSongsView, { controller, state })),
-      state.error && React.createElement(GuestView.ErrorMessage, {
+      state.error && h(GuestView.ErrorMessage, {
         error: state.error,
-        onDismiss: () => controller && controller.state.clearError()
-      })
+        onDismiss: () => controller.state.clearError()
+      }),
+      h('main', { className: 'ajb-main' },
+        h(views[state.currentView] || GuestView.NowPlayingView, { controller, state })
+      ),
+      state.notice && h('div', { className: 'ajb-toast', role: 'status' }, state.notice)
     );
   },
 
@@ -160,18 +102,18 @@ const GuestView = {
   ClosedView: function() {
     const cfg = window.AJB_GUEST_CONFIG || {};
     const name = cfg.jukeboxName || 'This jukebox';
-    return React.createElement('div', { className: 'text-center', style: { padding: '4rem 1.5rem' } },
-      React.createElement('div', { style: { fontSize: '4.5rem', lineHeight: 1 } }, '🎉'),
-      React.createElement('h1', { className: 'mt-4 mb-2' }, `${name} is closed`),
-      React.createElement('p', { className: 'lead text-muted mb-4' }, 'Thanks for coming! 👋'),
-      React.createElement('p', { className: 'text-muted small' },
+    return h('div', { className: 'ajb-closed' },
+      h('div', { className: 'ajb-closed-emoji' }, '🎉'),
+      h('h1', null, `${name} is closed`),
+      h('p', { className: 'ajb-muted' }, 'Thanks for coming! 👋'),
+      h('p', { className: 'ajb-muted ajb-small' },
         'The host stopped the music. If they start it back up, just reload this page to rejoin.'
       )
     );
   },
 
   // Authentication View
-  AuthView: function({ onAuthenticate, loading, error }) {
+  AuthView: function({ jukeboxName, onAuthenticate, loading, error }) {
     const [password, setPassword] = React.useState('');
 
     const handleSubmit = (e) => {
@@ -179,126 +121,77 @@ const GuestView = {
       onAuthenticate(password);
     };
 
-    return React.createElement('div', { className: 'auth-container' },
-      React.createElement('div', { className: 'row justify-content-center' },
-        React.createElement('div', { className: 'col-md-6' },
-          React.createElement('div', { className: 'card' },
-            React.createElement('div', { className: 'card-body text-center' },
-              React.createElement('h2', { className: 'card-title mb-4' }, '🎵 Join Jukebox'),
-              React.createElement('p', { className: 'card-text mb-4' },
-                'Enter the jukebox password to join and see what\'s playing'
-              ),
-              React.createElement('form', { onSubmit: handleSubmit, autoComplete: 'off' },
-                React.createElement('div', { className: 'mb-3' },
-                  React.createElement('input', {
-                    // type=text (not password): this is a shared party code people
-                    // read off a screen/QR, so masking buys nothing and it stops
-                    // password managers (1Password etc.) from hijacking the field.
-                    type: 'text',
-                    className: 'form-control',
-                    placeholder: 'Jukebox Code',
-                    value: password,
-                    onChange: (e) => setPassword(e.target.value),
-                    required: true,
-                    disabled: loading,
-                    name: 'jukebox-access-code',
-                    autoComplete: 'off',
-                    'data-1p-ignore': 'true',
-                    'data-lpignore': 'true',
-                    'data-bwignore': 'true',
-                    'data-dashlane-ignore': 'true',
-                    'data-form-type': 'other'
-                  })
-                ),
-                React.createElement('button', {
-                  type: 'submit',
-                  className: 'btn btn-primary btn-lg w-100',
-                  disabled: loading
-                }, loading ? 'Connecting...' : 'Join Jukebox')
-              ),
-              error && React.createElement('div', { className: 'alert alert-danger mt-3' },
-                error
-              )
-            )
-          )
-        )
+    return h('div', { className: 'ajb-auth' },
+      h('div', { className: 'ajb-card ajb-auth-card' },
+        h('div', { className: 'ajb-auth-icon' }, '🎵'),
+        h('h1', { className: 'ajb-auth-title' }, jukeboxName),
+        h('p', { className: 'ajb-muted' }, 'Enter the jukebox code to see what’s playing and request songs.'),
+        h('form', { onSubmit: handleSubmit, autoComplete: 'off' },
+          h('input', {
+            // type=text (not password): this is a shared party code people
+            // read off a screen/QR, so masking buys nothing and it stops
+            // password managers (1Password etc.) from hijacking the field.
+            type: 'text',
+            className: 'ajb-input',
+            placeholder: 'Jukebox code',
+            'aria-label': 'Jukebox code',
+            value: password,
+            onChange: (e) => setPassword(e.target.value),
+            required: true,
+            disabled: loading,
+            autoCapitalize: 'none',
+            autoCorrect: 'off',
+            name: 'jukebox-access-code',
+            autoComplete: 'off',
+            'data-1p-ignore': 'true',
+            'data-lpignore': 'true',
+            'data-bwignore': 'true',
+            'data-dashlane-ignore': 'true',
+            'data-form-type': 'other'
+          }),
+          h('button', { type: 'submit', className: 'ajb-btn ajb-btn-primary ajb-btn-block', disabled: loading },
+            loading ? 'Connecting…' : 'Join')
+        ),
+        error && h('div', { className: 'ajb-alert', role: 'alert' }, error)
       )
     );
   },
 
-  // Header with navigation
-  Header: function({ currentView, onSwitchToNowPlaying, onSwitchToRequestSongs, onSwitchToHistory }) {
-    return React.createElement('div', { className: 'guest-header mb-4' },
-      React.createElement('nav', { className: 'navbar navbar-expand-lg navbar-dark bg-primary' },
-        React.createElement('div', { className: 'container-fluid' },
-          React.createElement('span', { className: 'navbar-brand mb-0 h1' }, '🎵 Guest View'),
-          React.createElement('div', { className: 'navbar-nav ms-auto' },
-            React.createElement('button', {
-              className: `nav-link btn btn-link ${currentView === 'now-playing' ? 'active' : ''}`,
-              onClick: onSwitchToNowPlaying
-            }, 'Now Playing'),
-            React.createElement('button', {
-              className: `nav-link btn btn-link ${currentView === 'request-songs' ? 'active' : ''}`,
-              onClick: onSwitchToRequestSongs
-            }, 'Request Songs'),
-            React.createElement('button', {
-              className: `nav-link btn btn-link ${currentView === 'play-history' ? 'active' : ''}`,
-              onClick: onSwitchToHistory
-            }, 'Play History')
-          )
+  // One compact bar: jukebox name + live state, then the three tabs.
+  Header: function({ jukeboxName, isAdmin, isPlaying, hasSong, currentView, onSwitch, onLeave }) {
+    const tabs = [
+      ['now-playing', 'fa-music', 'Now Playing'],
+      ['request-songs', 'fa-magnifying-glass', 'Request'],
+      ['play-history', 'fa-clock-rotate-left', 'History']
+    ];
+    const stateLabel = isPlaying ? 'Playing' : (hasSong ? 'Paused' : 'Idle');
+
+    return h('header', { className: 'ajb-header' },
+      h('div', { className: 'ajb-header-top' },
+        h('span', { className: 'ajb-header-name' }, jukeboxName),
+        isAdmin && h('span', { className: 'ajb-tag' }, 'Admin'),
+        h('span', { className: 'ajb-header-gap' }),
+        h('span', { className: `ajb-pill ${isPlaying ? 'is-playing' : ''}` },
+          h('span', { className: 'ajb-pill-dot' }), stateLabel),
+        h('button', {
+          type: 'button',
+          className: 'ajb-leave',
+          title: 'Leave (enter a different code)',
+          'aria-label': 'Leave this jukebox',
+          onClick: onLeave
+        }, h('i', { className: 'fas fa-right-from-bracket' }))
+      ),
+      h('nav', { className: 'ajb-tabs', role: 'tablist' },
+        tabs.map(([view, icon, label]) =>
+          h('button', {
+            key: view,
+            type: 'button',
+            role: 'tab',
+            'aria-selected': currentView === view,
+            className: `ajb-tab ${currentView === view ? 'is-active' : ''}`,
+            onClick: onSwitch[view]
+          }, h('i', { className: `fas ${icon}` }), h('span', null, label))
         )
-      )
-    );
-  },
-
-  // Play History View — infinite-scrolling, with a re-request ("play it again")
-  // button per song.
-  HistoryView: function({ controller, state }) {
-    const history = state.history || [];
-    const hasMore = !!state.historyHasMore;
-
-    const handleScroll = function(e) {
-      const el = e.target;
-      if (hasMore && (el.scrollHeight - el.scrollTop - el.clientHeight) < 80) {
-        controller && controller.loadMoreHistory();
-      }
-    };
-    const reRequest = (songId) => controller && controller.requestSong(songId);
-
-    const body = history.length === 0
-      ? React.createElement('p', { className: 'text-muted text-center' }, 'Nothing has played yet.')
-      : React.createElement('ul', { className: 'list-group' },
-          history.map(function(item) {
-            return React.createElement('li', {
-              key: item.id,
-              className: 'list-group-item d-flex justify-content-between align-items-center'
-            },
-              React.createElement('div', { className: 'text-truncate me-2' },
-                React.createElement('div', { className: 'text-truncate' }, item.song.title),
-                React.createElement('small', { className: 'text-muted' }, item.song.artist || 'Unknown Artist')
-              ),
-              React.createElement('div', { className: 'd-flex align-items-center gap-2 flex-shrink-0' },
-                item.source === 'requested'
-                  ? React.createElement('span', { className: 'badge bg-success', title: 'Guest request' }, 'request')
-                  : React.createElement('span', { className: 'badge bg-light text-muted', title: 'Auto-filled' }, 'auto'),
-                React.createElement('button', {
-                  className: 'btn btn-sm btn-outline-primary',
-                  title: 'Request again',
-                  onClick: function() { reRequest(item.song.id); }
-                }, React.createElement('i', { className: 'fas fa-rotate-right' }))
-              )
-            );
-          })
-        );
-
-    return React.createElement('div', { className: 'history-view' },
-      React.createElement('h5', { className: 'mb-3' }, 'Play History'),
-      React.createElement('div', {
-        style: { maxHeight: '60vh', overflowY: 'auto' },
-        onScroll: handleScroll
-      },
-        body,
-        hasMore && React.createElement('div', { className: 'text-center text-muted small py-2' }, 'Scroll for more…')
       )
     );
   },
@@ -306,410 +199,336 @@ const GuestView = {
   // Now Playing View
   NowPlayingView: function({ controller, state }) {
     React.useEffect(() => {
-      // Load initial data
       controller.updatePlaybackInfo();
       controller.updateQueue();
     }, [controller]);
 
-    return React.createElement('div', { className: 'now-playing-view' },
-      React.createElement('div', { className: 'row' },
-        React.createElement('div', { className: 'col-md-6' },
-          React.createElement(GuestView.CurrentSongDisplay, { song: state.currentSong }),
-          React.createElement(GuestView.ProgressBar, {
-            currentTime: parseFloat(state.currentPosition) || 0,
-            duration: state.currentSong?.duration || 0,
-            isPlaying: state.isPlaying
-          })
-        ),
-        React.createElement('div', { className: 'col-md-6' },
-          React.createElement(GuestView.QueueDisplay, {
-            queue: state.queue,
-            onPromote: (songId) => controller && controller.promoteSong(songId)
-          })
-        )
-      )
+    const isAdmin = state.role === 'admin';
+
+    return h('div', { className: 'ajb-now' },
+      h('div', { className: 'ajb-now-side' },
+        h(GuestView.CurrentSongDisplay, {
+          song: state.currentSong,
+          position: parseFloat(state.currentPosition) || 0,
+          isPlaying: !!state.isPlaying
+        }),
+        isAdmin && h(GuestView.Transport, {
+          isPlaying: !!state.isPlaying,
+          onCommand: (command) => controller.sendPlayerCommand(command)
+        })
+      ),
+      h(GuestView.QueueDisplay, {
+        queue: state.queue || [],
+        totalCount: state.totalQueueCount || 0,
+        isAdmin,
+        onPromote: (song) => controller.promoteSong(song.id, song.title),
+        onRemove: (song) => controller.removeSong(song.id, song.title)
+      })
     );
   },
 
-  // Current Song Display
-  CurrentSongDisplay: function({ song }) {
+  // Admin code only: remote control for the host's player.
+  Transport: function({ isPlaying, onCommand }) {
+    return h('section', { className: 'ajb-card ajb-transport', 'aria-label': 'Player controls' },
+      h('button', {
+        type: 'button',
+        className: 'ajb-btn ajb-btn-primary',
+        onClick: () => onCommand(isPlaying ? 'pause' : 'play')
+      }, h('i', { className: `fas ${isPlaying ? 'fa-pause' : 'fa-play'}` }), isPlaying ? ' Pause' : ' Play'),
+      h('button', { type: 'button', className: 'ajb-btn ajb-btn-ghost', onClick: () => onCommand('skip') },
+        h('i', { className: 'fas fa-forward-step' }), ' Skip')
+    );
+  },
+
+  // Current song card with a progress bar
+  CurrentSongDisplay: function({ song, position, isPlaying }) {
     if (!song) {
-      return React.createElement('div', { className: 'card mb-3' },
-        React.createElement('div', { className: 'card-body text-center' },
-          React.createElement('h5', { className: 'card-title' }, 'No Song Playing'),
-          React.createElement('p', { className: 'card-text text-muted' }, 'Waiting for music to start...')
+      return h('section', { className: 'ajb-card ajb-current is-empty' },
+        h('div', { className: 'ajb-current-art' }, h('i', { className: 'fas fa-music' })),
+        h('div', { className: 'ajb-current-body' },
+          h('h2', { className: 'ajb-current-title' }, 'Nothing playing'),
+          h('p', { className: 'ajb-muted' }, 'Waiting for the host to start the music…')
         )
       );
     }
 
-    return React.createElement('div', { className: 'card mb-3' },
-      React.createElement('div', { className: 'card-body' },
-        React.createElement('h5', { className: 'card-title' }, song.title || 'Unknown Title'),
-        React.createElement('h6', { className: 'card-subtitle mb-2 text-muted' }, 
-          song.artist || 'Unknown Artist'
-        ),
-        React.createElement('p', { className: 'card-text' },
-          React.createElement('small', { className: 'text-muted' }, 
-            song.album || 'Unknown Album'
-          )
-        ),
-        React.createElement('p', { className: 'card-text' },
-          React.createElement('small', { className: 'text-muted' },
-            `Duration: ${GuestState.formatTime(song.duration || 0)}`
-          )
-        )
+    return h('section', { className: 'ajb-card ajb-current' },
+      h('div', { className: `ajb-current-art ${isPlaying ? 'is-playing' : ''}` },
+        h('i', { className: `fas ${isPlaying ? 'fa-volume-high' : 'fa-pause'}` })),
+      h('div', { className: 'ajb-current-body' },
+        h('div', { className: 'ajb-eyebrow' }, isPlaying ? 'Now playing' : 'Paused'),
+        h('h2', { className: 'ajb-current-title' }, song.title || 'Unknown title'),
+        h('p', { className: 'ajb-current-artist' }, song.artist || 'Unknown artist'),
+        song.album && h('p', { className: 'ajb-muted ajb-small' }, song.album),
+        h(GuestView.ProgressBar, {
+          // Remount per song so the ticker restarts from the new track's position.
+          key: song.id,
+          position,
+          duration: song.duration || 0,
+          isPlaying
+        })
       )
     );
   },
 
-  // Progress Bar
-  ProgressBar: function({ currentTime, duration, isPlaying }) {
-    const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-    const timeRemaining = Math.max(duration - currentTime, 0);
+  // The host reports its position every ~10s; between reports we advance the
+  // bar locally so it moves smoothly instead of jumping.
+  ProgressBar: function({ position, duration, isPlaying }) {
+    const [shown, setShown] = React.useState(position);
 
-    return React.createElement('div', { className: 'progress-container mb-3' },
-      React.createElement('div', { className: 'progress mb-2', style: { height: '10px' } },
-        React.createElement('div', {
-          className: `progress-bar ${isPlaying ? 'bg-success' : 'bg-secondary'}`,
-          role: 'progressbar',
-          style: { width: `${progress}%` },
-          'aria-valuenow': progress,
-          'aria-valuemin': 0,
-          'aria-valuemax': 100
+    React.useEffect(() => {
+      setShown(position);
+      if (!isPlaying) return;
+      const syncedAt = Date.now();
+      const timer = setInterval(() => {
+        setShown(position + (Date.now() - syncedAt) / 1000);
+      }, 250);
+      return () => clearInterval(timer);
+    }, [position, isPlaying]);
+
+    const current = duration > 0 ? Math.min(shown, duration) : shown;
+    const percent = duration > 0 ? (current / duration) * 100 : 0;
+
+    return h('div', { className: 'ajb-progress' },
+      h('div', {
+        className: 'ajb-progress-track',
+        role: 'progressbar',
+        'aria-valuemin': 0,
+        'aria-valuemax': 100,
+        'aria-valuenow': Math.round(percent)
+      },
+        h('div', {
+          className: `ajb-progress-fill ${isPlaying ? 'is-playing' : ''}`,
+          style: { width: `${percent}%` }
         })
       ),
-      React.createElement('div', { className: 'd-flex justify-content-between' },
-        React.createElement('small', { className: 'text-muted' },
-          GuestState.formatTime(currentTime)
-        ),
-        React.createElement('small', { className: 'text-muted' },
-          `-${GuestState.formatTime(timeRemaining)}`
-        )
+      h('div', { className: 'ajb-progress-times' },
+        h('span', null, GuestState.formatTime(current)),
+        h('span', null, `-${GuestState.formatTime(Math.max(duration - current, 0))}`)
       )
     );
   },
 
-  // Queue Display
-  QueueDisplay: function({ queue, onPromote }) {
-    return React.createElement('div', { className: 'card' },
-      React.createElement('div', { className: 'card-header d-flex justify-content-between align-items-center' },
-        React.createElement('h6', { className: 'card-title mb-0' }, 'Upcoming Songs'),
-        React.createElement('span', { className: 'badge bg-primary' }, queue.length)
+  // Upcoming songs, numbered in the order they will play
+  QueueDisplay: function({ queue, totalCount, isAdmin, onPromote, onRemove }) {
+    return h('section', { className: 'ajb-card ajb-queue' },
+      h('div', { className: 'ajb-card-head' },
+        h('h2', { className: 'ajb-card-title' }, 'Up next'),
+        h('span', { className: 'ajb-count' }, totalCount || queue.length)
       ),
-      React.createElement('div', { className: 'card-body p-0' },
-        queue.length === 0 ?
-          React.createElement('div', { className: 'p-3 text-center text-muted' },
-            'No songs in queue'
-          ) :
-          React.createElement('div', { 
-            className: 'list-group list-group-flush',
-            style: { 
-              maxHeight: '400px', 
-              overflowY: 'auto' 
-            }
-          },
-            queue.map((item, index) =>
-              React.createElement('div', {
-                key: `${item.song.id}-${index}`,
-                className: `list-group-item ${item.source === 'requested' ? 'list-group-item-warning' : ''}`,
-                style: { fontSize: '0.9em' }
-              },
-                React.createElement('div', { className: 'd-flex justify-content-between align-items-start' },
-                  React.createElement('div', { className: 'flex-grow-1' },
-                    React.createElement('h6', { className: 'mb-1', style: { fontSize: '1em' } }, item.song.title),
-                    React.createElement('p', { className: 'mb-1 text-muted', style: { fontSize: '0.85em' } },
-                      item.song.artist || 'Unknown Artist'
-                    ),
-                    React.createElement('small', { className: 'text-muted', style: { fontSize: '0.8em' } },
-                      GuestState.formatTime(item.song.duration || 0)
-                    )
-                  ),
-                  React.createElement('div', { className: 'd-flex flex-column align-items-end' },
-                    React.createElement('span', { className: 'badge bg-secondary mb-1', style: { fontSize: '0.7em' } },
-                      item.source === 'requested' ? 'Requested' : 'Random'
-                    ),
-                    React.createElement('small', { className: 'text-muted', style: { fontSize: '0.75em' } },
-                      `#${item.position}`
-                    ),
-                    item.source !== 'requested' && onPromote && React.createElement('button', {
-                      className: 'btn btn-sm btn-outline-primary mt-1',
-                      style: { fontSize: '0.7em' },
-                      title: 'Bump into the request queue',
-                      onClick: () => onPromote(item.song.id)
-                    },
-                      React.createElement('i', { className: 'fas fa-arrow-up' }),
-                      ' Bump'
-                    )
-                  )
-                )
-              )
-            )
+      queue.length === 0
+        ? h('p', { className: 'ajb-empty' }, 'The queue is empty. Request a song to get things going.')
+        : h('ol', { className: 'ajb-list' },
+            queue.map((item, index) => {
+              const requested = item.source === 'requested';
+              return h('li', { key: item.song.id, className: `ajb-row ${requested ? 'is-requested' : ''}` },
+                h('span', { className: 'ajb-row-index' }, index + 1),
+                h('div', { className: 'ajb-row-text' },
+                  h('div', { className: 'ajb-row-title' }, item.song.title),
+                  h('div', { className: 'ajb-row-sub' },
+                    `${item.song.artist || 'Unknown artist'} · ${GuestState.formatTime(item.song.duration || 0)}`)
+                ),
+                requested && h('span', { className: 'ajb-tag' }, 'Requested'),
+                isAdmin && !requested && h('button', {
+                  type: 'button',
+                  className: 'ajb-btn ajb-btn-ghost',
+                  title: 'Move this song ahead of the auto-picked ones',
+                  'aria-label': `Bump ${item.song.title}`,
+                  onClick: () => onPromote(item.song)
+                }, h('i', { className: 'fas fa-arrow-up' })),
+                isAdmin && h('button', {
+                  type: 'button',
+                  className: 'ajb-btn ajb-btn-ghost ajb-btn-danger',
+                  title: 'Remove from the queue',
+                  'aria-label': `Remove ${item.song.title}`,
+                  onClick: () => onRemove(item.song)
+                }, h('i', { className: 'fas fa-trash' }))
+              );
+            })
           )
-      )
     );
   },
-
 
   // Request Songs View
   RequestSongsView: function({ controller, state }) {
-    console.log('🔍 RequestSongsView component rendering/re-rendering');
-    console.log('🔍 RequestSongsView state:', {
-      searchResults: state?.searchResults?.length || 0,
-      searchLoading: state?.searchLoading,
-      searchQuery: state?.searchQuery,
-      currentView: state?.currentView
-    });
-    
-    const handleRequestSong = (song) => {
-      console.log('🔍 RequestSongsView handleRequestSong called for song:', song.id);
-      controller.requestSong(song.id);
+    const [text, setText] = React.useState(state.searchQuery || '');
+    const debounce = React.useRef(null);
+
+    React.useEffect(() => () => clearTimeout(debounce.current), []);
+
+    const runSearch = (value) => {
+      setText(value);
+      clearTimeout(debounce.current);
+      const query = value.trim();
+      if (!query) {
+        controller.clearSearch();
+        return;
+      }
+      debounce.current = setTimeout(() => controller.searchSongs(query), 400);
     };
 
-    // Initialize static search input after component mounts
-    React.useEffect(() => {
-      console.log('🔍 RequestSongsView component mounted - initializing static search');
-      initializeStaticSearch(controller);
-      
-      return () => {
-        console.log('🔍 RequestSongsView component unmounting');
-        cleanupStaticSearch();
-      };
-    }, [controller]);
+    const results = state.searchResults || [];
+    const pagination = state.searchPagination;
+    const query = (state.searchQuery || '').trim();
+    const searching = !!state.searchLoading;
+    const queueSource = {};
+    (state.queue || []).forEach((item) => { queueSource[item.song.id] = item.source; });
 
-    // Track component lifecycle
-    React.useEffect(() => {
-      console.log('🔍 RequestSongsView component mounted');
-      return () => {
-        console.log('🔍 RequestSongsView component unmounting');
-      };
-    }, []);
+    let body;
+    if (!text.trim()) {
+      body = h('p', { className: 'ajb-empty' },
+        'Search by song, artist, album or genre. Requests play before the auto-picked songs.');
+    } else if (results.length === 0 && (searching || text.trim() !== query)) {
+      body = h('p', { className: 'ajb-empty' },
+        h('span', { className: 'spinner-border spinner-border-sm', role: 'status' }), ' Searching…');
+    } else if (results.length === 0) {
+      body = h('p', { className: 'ajb-empty' }, `No songs found for “${query}”. Try fewer or different words.`);
+    } else {
+      body = h(React.Fragment, null,
+        h('div', { className: 'ajb-card-head' },
+          h('h2', { className: 'ajb-card-title' }, 'Results'),
+          pagination && h('span', { className: 'ajb-count' },
+            pagination.total_count > results.length
+              ? `${results.length} of ${pagination.total_count}`
+              : `${results.length}`)
+        ),
+        h('ul', { className: 'ajb-list' },
+          results.map((song) => h(GuestView.SearchResultRow, {
+            key: song.id,
+            song,
+            queuedAs: queueSource[song.id],
+            isAdmin: state.role === 'admin',
+            onRequest: () => controller.requestSong(song.id, song.title)
+          }))
+        ),
+        pagination && pagination.has_more && h('button', {
+          type: 'button',
+          className: 'ajb-btn ajb-btn-ghost ajb-btn-block ajb-more',
+          disabled: searching,
+          onClick: () => controller.loadMoreSearchResults()
+        }, searching ? 'Loading…' : 'Load more')
+      );
+    }
 
-    // Track re-renders
-    React.useEffect(() => {
-      console.log('🔍 RequestSongsView re-rendered');
-    });
-
-    return React.createElement('div', { className: 'request-songs-view' },
-      React.createElement('div', { className: 'row' },
-        React.createElement('div', { className: 'col-12' },
-          React.createElement('div', { className: 'card mb-4' },
-            React.createElement('div', { className: 'card-body' },
-              React.createElement('h5', { className: 'card-title' }, 'Request a Song'),
-              React.createElement('p', { className: 'card-text text-muted' },
-                'Search for songs and click to add them to the queue. Requested songs will play before random songs.'
-              ),
-              // Static search input container - React never touches the input element
-              React.createElement('div', { 
-                id: 'static-search-container',
-                className: 'mb-3' 
-              })
-            )
-          ),
-          // Search results - only this part updates when results change
-          React.createElement(GuestView.SearchResultsContainer, {
-            key: 'search-results', // Key ensures proper re-rendering
-            results: state.searchResults,
-            loading: state.searchLoading,
-            pagination: state.searchPagination,
-            onRequestSong: handleRequestSong
-          })
-        )
-      )
+    return h('div', { className: 'ajb-request' },
+      h('div', { className: 'ajb-search' },
+        h('i', { className: 'fas fa-magnifying-glass ajb-search-icon' }),
+        h('input', {
+          type: 'search',
+          className: 'ajb-input ajb-search-input',
+          placeholder: 'Search songs, artists, albums…',
+          'aria-label': 'Search songs',
+          value: text,
+          autoComplete: 'off',
+          autoCorrect: 'off',
+          enterKeyHint: 'search',
+          onChange: (e) => runSearch(e.target.value)
+        }),
+        text && h('button', {
+          type: 'button',
+          className: 'ajb-search-clear',
+          'aria-label': 'Clear search',
+          onClick: () => runSearch('')
+        }, h('i', { className: 'fas fa-xmark' }))
+      ),
+      h('section', { className: 'ajb-card' }, body)
     );
   },
 
-  // Search Results Container - only updates when results change
-  SearchResultsContainer: React.memo(function({ results, loading, pagination, onRequestSong }) {
-    console.log('🔍 SearchResultsContainer rendering - results count:', results.length, 'loading:', loading);
-    
-    // Only render if we have results or are loading
-    if (results.length === 0 && !loading) {
-      return null;
+  // One search result. The button reflects where the song already stands in
+  // the queue, so a request never ends in an "already queued" error.
+  SearchResultRow: function({ song, queuedAs, isAdmin, onRequest }) {
+    const [busy, setBusy] = React.useState(false);
+    const request = async () => {
+      setBusy(true);
+      await onRequest();
+      setBusy(false);
+    };
+    const details = [song.artist || 'Unknown artist', GuestState.formatTime(song.duration || 0), song.album]
+      .filter(Boolean).join(' · ');
+
+    let action;
+    if (queuedAs === 'requested') {
+      action = h('span', { className: 'ajb-tag is-done' }, h('i', { className: 'fas fa-check' }), ' Requested');
+    } else if (queuedAs && !isAdmin) {
+      // Only an admin code can reorder the queue, so a guest just sees it's coming.
+      action = h('span', { className: 'ajb-tag is-quiet' }, 'In queue');
+    } else if (queuedAs) {
+      action = h('button', { type: 'button', className: 'ajb-btn ajb-btn-ghost', disabled: busy, onClick: request },
+        h('i', { className: 'fas fa-arrow-up' }), ' Bump');
+    } else {
+      action = h('button', { type: 'button', className: 'ajb-btn ajb-btn-primary', disabled: busy, onClick: request },
+        busy ? 'Adding…' : 'Request');
     }
 
-    return React.createElement(GuestView.SearchResults, {
-      results: results,
-      onRequestSong: onRequestSong,
-      loading: loading,
-      pagination: pagination
-    });
-  }, function(prevProps, nextProps) {
-    // Only re-render if results, loading, or pagination actually changed
-    const resultsChanged = prevProps.results.length !== nextProps.results.length;
-    const loadingChanged = prevProps.loading !== nextProps.loading;
-    const paginationChanged = JSON.stringify(prevProps.pagination) !== JSON.stringify(nextProps.pagination);
-    
-    const shouldUpdate = resultsChanged || loadingChanged || paginationChanged;
-    console.log('🔍 SearchResultsContainer memo comparison:', {
-      resultsChanged,
-      loadingChanged,
-      paginationChanged,
-      shouldUpdate
-    });
-    
-    return !shouldUpdate; // Return true to skip re-render, false to re-render
-  }),
+    return h('li', { className: 'ajb-row' },
+      h('div', { className: 'ajb-row-text' },
+        h('div', { className: 'ajb-row-title' }, song.title),
+        h('div', { className: 'ajb-row-sub' }, details)
+      ),
+      action
+    );
+  },
 
-  // Search Results
-  SearchResults: function({ results, onRequestSong, loading, pagination }) {
-    return React.createElement('div', { className: 'card' },
-      React.createElement('div', { className: 'card-header d-flex justify-content-between align-items-center' },
-        React.createElement('h6', { className: 'card-title mb-0' }, 'Search Results'),
-        pagination && React.createElement('span', { className: 'badge bg-secondary' }, 
-          `${results.length} of ${pagination.total_count} songs`
-        )
+  // Play History View: infinite-scrolling, with a "play it again" button per song.
+  HistoryView: function({ controller, state }) {
+    const history = state.history || [];
+    const hasMore = !!state.historyHasMore;
+    const sentinel = React.useRef(null);
+
+    // Load the next page when the end of the list scrolls into view.
+    React.useEffect(() => {
+      if (!hasMore || !sentinel.current) return;
+      const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) controller.loadMoreHistory();
+      });
+      observer.observe(sentinel.current);
+      return () => observer.disconnect();
+    }, [hasMore, history.length, controller]);
+
+    // The song on air is recorded as played the moment it starts.
+    const playingId = state.currentSong && state.isPlaying ? state.currentSong.id : null;
+    const playedAt = (iso) => iso
+      ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+      : null;
+
+    return h('section', { className: 'ajb-card ajb-history' },
+      h('div', { className: 'ajb-card-head' },
+        h('h2', { className: 'ajb-card-title' }, 'Played'),
+        history.length > 0 && h('span', { className: 'ajb-muted ajb-small' }, 'Tap ↻ to hear one again')
       ),
-      loading && React.createElement('div', { className: 'card-body text-center' },
-        React.createElement('div', { className: 'spinner-border spinner-border-sm text-primary', role: 'status' },
-          React.createElement('span', { className: 'visually-hidden' }, 'Searching...')
-        ),
-        React.createElement('small', { className: 'ms-2 text-muted' }, 'Searching...')
-      ),
-      !loading && React.createElement('div', { className: 'card-body p-0' },
-        results.length === 0 ?
-          React.createElement('div', { className: 'p-3 text-center text-muted' },
-            'No songs found. Try different search terms.'
-          ) :
-          React.createElement('div', { 
-            className: 'list-group list-group-flush',
-            style: { 
-              maxHeight: '500px', 
-              overflowY: 'auto' 
-            }
-          },
-            results.map((song) =>
-              React.createElement('div', {
-                key: song.id,
-                className: 'list-group-item list-group-item-action',
-                onClick: () => onRequestSong(song),
-                style: { fontSize: '0.9em' }
-              },
-                React.createElement('div', { className: 'd-flex justify-content-between align-items-start' },
-                  React.createElement('div', { className: 'flex-grow-1' },
-                    React.createElement('h6', { className: 'mb-1', style: { fontSize: '1em' } }, song.title),
-                    React.createElement('p', { className: 'mb-1 text-muted', style: { fontSize: '0.85em' } },
-                      song.artist || 'Unknown Artist'
-                    ),
-                    React.createElement('small', { className: 'text-muted', style: { fontSize: '0.8em' } },
-                      song.album ? `${song.album} • ` : '',
-                      song.genre ? `${song.genre} • ` : '',
-                      GuestState.formatTime(song.duration || 0)
-                    )
-                  ),
-                  React.createElement('button', {
-                    className: 'btn btn-sm btn-outline-primary',
-                    onClick: (e) => {
-                      e.stopPropagation();
-                      onRequestSong(song);
-                    },
-                    style: { fontSize: '0.8em' }
-                  }, 'Request')
-                )
-              )
-            )
-          )
-      )
+      history.length === 0
+        ? h('p', { className: 'ajb-empty' }, 'Nothing has played yet.')
+        : h('ul', { className: 'ajb-list' },
+            history.map((item, index) => {
+              const onAir = index === 0 && item.song.id === playingId;
+              const sub = [item.song.artist || 'Unknown artist', playedAt(item.played_at)].filter(Boolean).join(' · ');
+              return h('li', { key: item.id, className: 'ajb-row' },
+                h('div', { className: 'ajb-row-text' },
+                  h('div', { className: 'ajb-row-title' }, item.song.title),
+                  h('div', { className: 'ajb-row-sub' }, sub)
+                ),
+                item.source === 'requested' && h('span', { className: 'ajb-tag ajb-hide-narrow' }, 'Requested'),
+                onAir ? h('span', { className: 'ajb-tag is-done' }, 'Playing now') : h('button', {
+                  type: 'button',
+                  className: 'ajb-btn ajb-btn-ghost',
+                  title: 'Request again',
+                  'aria-label': `Request ${item.song.title} again`,
+                  onClick: () => controller.requestSong(item.song.id, item.song.title)
+                }, h('i', { className: 'fas fa-rotate-right' }))
+              );
+            })
+          ),
+      hasMore && h('div', { ref: sentinel, className: 'ajb-empty ajb-small' }, 'Loading more…')
     );
   },
 
   // Error Message
   ErrorMessage: function({ error, onDismiss }) {
-    return React.createElement('div', { className: 'alert alert-danger alert-dismissible fade show', role: 'alert' },
-      React.createElement('strong', null, 'Error: '),
-      error,
-      React.createElement('button', {
-        type: 'button',
-        className: 'btn-close',
-        onClick: onDismiss,
-        'aria-label': 'Close'
-      })
+    return h('div', { className: 'ajb-alert', role: 'alert' },
+      h('span', null, error),
+      h('button', { type: 'button', className: 'ajb-alert-close', onClick: onDismiss, 'aria-label': 'Dismiss' },
+        h('i', { className: 'fas fa-xmark' }))
     );
   }
 };
-
-// Static search input - completely outside React tree
-let staticSearchTimeout = null;
-
-function initializeStaticSearch(controller) {
-  console.log('🔍 Initializing static search - VERSION 2.0');
-  
-  const container = document.getElementById('static-search-container');
-  if (!container) {
-    console.error('Static search container not found');
-    return;
-  }
-
-  // Create static HTML that React never touches
-  container.innerHTML = `
-    <div class="input-group">
-      <input 
-        id="static-search-input" 
-        type="text" 
-        class="form-control" 
-        placeholder="Search for songs, artists, or albums... (type to search)"
-      />
-      <button 
-        id="static-clear-search" 
-        type="button" 
-        class="btn btn-outline-secondary" 
-        style="display: none;" 
-        title="Clear search"
-      >
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    <small class="text-muted">
-      Type any words from song title, artist, album, or genre. More words = fewer results.
-    </small>
-  `;
-
-  const searchInput = document.getElementById('static-search-input');
-  const clearBtn = document.getElementById('static-clear-search');
-
-  // Search handler with proper debouncing
-  const handleSearch = (e) => {
-    const query = e.target.value.trim();
-    console.log('🔍 Static search handler called with query:', query);
-    
-    // Clear existing timeout
-    if (staticSearchTimeout) {
-      clearTimeout(staticSearchTimeout);
-    }
-
-    // Show/hide clear button
-    clearBtn.style.display = query ? 'block' : 'none';
-
-    // Set new timeout for search (500ms debounce)
-    if (query) {
-      staticSearchTimeout = setTimeout(() => {
-        console.log('🔍 Static search timeout fired, calling controller.searchSongs');
-        controller.searchSongs(query);
-      }, 500);
-    } else {
-      console.log('🔍 Static search clearing results (empty query)');
-      controller.state.setSearchResults([], null, '');
-    }
-  };
-
-  // Clear handler
-  const handleClear = () => {
-    console.log('🔍 Static search clear handler called');
-    searchInput.value = '';
-    searchInput.focus();
-    handleSearch({ target: searchInput });
-  };
-
-  // Add event listeners
-  searchInput.addEventListener('input', handleSearch);
-  clearBtn.addEventListener('click', handleClear);
-
-  console.log('🔍 Static search initialized successfully - VERSION 2.0');
-}
-
-function cleanupStaticSearch() {
-  console.log('🔍 Cleaning up static search');
-  if (staticSearchTimeout) {
-    clearTimeout(staticSearchTimeout);
-    staticSearchTimeout = null;
-  }
-}

@@ -1,0 +1,54 @@
+# "Live" test stack: this checkout's code against a copy of the real Archive
+# database and the real audio files. Runs beside the dev stack (own database,
+# port 3002). Nothing here writes to production: the database is a local
+# restore of a dump, and the audio share is mounted read-only.
+#
+#   ARCHIVE_DUMP=/path/to/archive.dump \
+#   ARCHIVE_LIVE_STORAGE=/Volumes/<share>/<active storage root> \
+#   docker compose -f docker-compose.live.yml up        # http://localhost:3002
+#
+#   docker compose -f docker-compose.live.yml down -v   # drop the restored copy
+#
+# ARCHIVE_DUMP is a pg_dump -Fc of archive_production; it is restored on first
+# boot only. ARCHIVE_LIVE_STORAGE is the directory that holds Active Storage's
+# two-letter folders (the server's storage root), e.g. a mounted SMB share.
+# Login: live-test@example.test / admin123. Jukebox "Live Test", codes guest / boss.
+# Set AJB_LAN_HOST to this machine's network address (macOS: ipconfig getifaddr en0)
+# so guest QR codes work from a phone when the player is opened on localhost.
+name: archive-live
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  archive:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: bin/docker-live
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:password@db/archive_live
+      AJB_LAN_HOST: ${AJB_LAN_HOST:-}
+    ports:
+      - "${ARCHIVE_LIVE_PORT:-3002}:3000"
+    volumes:
+      - .:/app
+      - bundle:/usr/local/bundle
+      - ${ARCHIVE_DUMP:?set ARCHIVE_DUMP to a pg_dump -Fc file}:/dump/archive.dump:ro
+      - ${ARCHIVE_LIVE_STORAGE:?set ARCHIVE_LIVE_STORAGE to the audio storage root}:/app/storage:ro
+
+volumes:
+  pgdata:
+  bundle:

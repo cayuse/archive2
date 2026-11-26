@@ -27,8 +27,7 @@ class GuestController {
   }
 
   handleStateChange(state) {
-    // Handle any global state changes
-    console.log('Guest state changed:', state);
+    // Hook for global state changes; nothing needed yet.
   }
 
   // Authentication. The password typed into the AuthView is passed in here and
@@ -52,7 +51,9 @@ class GuestController {
       }
       if (result.success) {
         this.state.setAuthentication(this.jukeboxId, this.password);
+        this.rememberCode(this.password);
         this.state.setState({
+          role: result.jukebox.role === 'admin' ? 'admin' : 'guest',
           jukeboxName: result.jukebox.name,
           jukeboxStatus: result.jukebox.status,
           currentSong: result.jukebox.current_song_id ? {
@@ -69,6 +70,7 @@ class GuestController {
         this.subscribeRealtime();
         this.refreshNow();
         this.startPeriodicUpdates();
+        if (!this.onVisibilityChange) this.watchVisibility();
 
         return { success: true };
       }
@@ -82,6 +84,66 @@ class GuestController {
     } finally {
       this.state.setLoading(false);
     }
+  }
+
+  // The join code is kept in this browser so a reload does not ask for it
+  // again. Phones reload the page when they wake from sleep or return from
+  // another app, which used to drop guests back at the join screen.
+  storageKey() {
+    return `ajb-guest-code:${this.jukeboxId}`;
+  }
+
+  storedCode() {
+    try {
+      return window.localStorage.getItem(this.storageKey());
+    } catch (error) {
+      return null; // storage blocked (private mode): fall back to asking
+    }
+  }
+
+  rememberCode(code) {
+    try {
+      window.localStorage.setItem(this.storageKey(), code);
+    } catch (error) { /* storage blocked: the code just won't survive a reload */ }
+  }
+
+  forgetCode() {
+    try {
+      window.localStorage.removeItem(this.storageKey());
+    } catch (error) { /* nothing stored */ }
+  }
+
+  // Rejoin with the remembered code, if there is one. A code the host has
+  // since changed is forgotten, and the join screen shows without an error.
+  async resumeSession() {
+    const code = this.storedCode();
+    if (!code) return false;
+    const result = await this.authenticate(code);
+    if (!result.success && !result.offline) {
+      this.forgetCode();
+      this.state.clearError();
+    }
+    return !!result.success;
+  }
+
+  // Back to the join screen, e.g. to switch between the guest and admin code.
+  leave() {
+    this.forgetCode();
+    this.destroy();
+    this.password = null;
+    this.apiService.password = null;
+    this.state.setState({ authenticated: false, role: 'guest', currentView: 'now-playing', error: null });
+  }
+
+  // Timers and the socket are suspended while a phone sleeps, so catch up as
+  // soon as the page is visible again instead of waiting for the next poll.
+  watchVisibility() {
+    this.onVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && this.state.getState().authenticated) {
+        this.refreshNow();
+      }
+    };
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
   }
 
   // The jukebox went (or is) offline. Stop everything and reload, so the
@@ -195,59 +257,101 @@ class GuestController {
   }
 
   // Search songs
+  // page 1 replaces the results; later pages append ("Load more").
   async searchSongs(query, page = 1) {
-    console.log('🔍 GuestController searchSongs called with query:', query, 'page:', page);
+    const requestId = (this.searchRequestId = (this.searchRequestId || 0) + 1);
     try {
-      console.log('🔍 GuestController setting searchLoading=true and searchQuery=', query);
       this.state.setState({ searchLoading: true, searchQuery: query });
-      
-      console.log('🔍 GuestController calling apiService.searchSongs');
       const result = await this.apiService.searchSongs(query, page);
-      console.log('🔍 GuestController search result:', result);
-      
+      // A newer search started while this one was in flight: drop this result.
+      if (requestId !== this.searchRequestId) return;
       if (result.success) {
-        console.log('🔍 GuestController setting search results:', result.songs?.length || 0, 'songs');
-        this.state.setSearchResults(result.songs, result.pagination, query);
+        const songs = page > 1
+          ? this.state.getState().searchResults.concat(result.songs)
+          : result.songs;
+        this.state.setSearchResults(songs, result.pagination, query);
       }
     } catch (error) {
-      console.error('🔍 GuestController search failed:', error);
+      console.error('Search failed:', error);
       this.state.setError('Search failed: ' + error.message);
     } finally {
-      console.log('🔍 GuestController setting searchLoading=false');
-      this.state.setState({ searchLoading: false });
+      if (requestId === this.searchRequestId) {
+        this.state.setState({ searchLoading: false });
+      }
     }
   }
 
-  // Request a song
-  async requestSong(songId) {
+  loadMoreSearchResults() {
+    const { searchQuery, searchPagination, searchLoading } = this.state.getState();
+    if (searchLoading || !searchPagination || !searchPagination.has_more) return;
+    return this.searchSongs(searchQuery, searchPagination.current_page + 1);
+  }
+
+  clearSearch() {
+    this.searchRequestId = (this.searchRequestId || 0) + 1;
+    this.state.setState({ searchLoading: false });
+    this.state.setSearchResults([], null, '');
+  }
+
+  // Short confirmation shown at the bottom of the screen, then cleared.
+  showNotice(text) {
+    clearTimeout(this.noticeTimeout);
+    this.state.setState({ notice: text });
+    this.noticeTimeout = setTimeout(() => this.state.setState({ notice: null }), 3000);
+  }
+
+  // Request a song. The server bumps it instead if it is already auto-queued.
+  async requestSong(songId, title = 'Song') {
     try {
-      this.state.setLoading(true);
-      
       const result = await this.apiService.requestSong(songId);
       if (result.success) {
-        // Refresh the queue to show the new request
         await this.updateQueue();
-        
-        // Show success message (could be handled by UI)
-        console.log('Song requested successfully');
+        const notices = {
+          added: `Added “${title}” to the queue`,
+          already_queued: `“${title}” is already in the queue`,
+          bumped: `Bumped “${title}” up the queue`,
+          already_requested: `“${title}” is already requested`
+        };
+        this.showNotice(notices[result.outcome] || notices.added);
         return { success: true };
       }
     } catch (error) {
       console.error('Request failed:', error);
       this.state.setError('Failed to request song: ' + error.message);
       return { success: false, error: error.message };
-    } finally {
-      this.state.setLoading(false);
     }
   }
 
   // Promote a random queued song into the request queue
-  async promoteSong(songId) {
+  async promoteSong(songId, title = 'Song') {
     const result = await this.apiService.promoteSong(songId);
     if (result.success) {
       await this.updateQueue();
+      this.showNotice(`Bumped “${title}” up the queue`);
     } else {
       this.state.setError(result.message || 'Could not promote song');
+    }
+    return result;
+  }
+
+  // Admin code only: take a song out of the queue.
+  async removeSong(songId, title = 'Song') {
+    const result = await this.apiService.removeSong(songId);
+    if (result.success) {
+      await this.updateQueue();
+      this.showNotice(`Removed “${title}”`);
+    } else {
+      this.state.setError(result.message || 'Could not remove song');
+    }
+    return result;
+  }
+
+  // Admin code only: play, pause or skip on the host's player. The new state
+  // comes back through the normal playback updates.
+  async sendPlayerCommand(command) {
+    const result = await this.apiService.playerCommand(command);
+    if (!result.success) {
+      this.state.setError(result.message || 'Could not reach the player');
     }
     return result;
   }
@@ -314,6 +418,10 @@ class GuestController {
   // Cleanup
   destroy() {
     this.stopPeriodicUpdates();
+    if (this.onVisibilityChange) {
+      document.removeEventListener('visibilitychange', this.onVisibilityChange);
+      this.onVisibilityChange = null;
+    }
     if (this.cableSubscription) {
       this.cableSubscription.unsubscribe();
       this.cableSubscription = null;

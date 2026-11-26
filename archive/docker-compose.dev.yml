@@ -1,0 +1,47 @@
+# Local development stack: Postgres + Archive (with the built-in AJB jukebox).
+#
+#   docker compose -f docker-compose.dev.yml up            # http://localhost:3000
+#   docker compose -f docker-compose.dev.yml down -v       # throw the database away
+#
+# First boot loads db/structure.sql and seeds 25 generated songs (db/dev_seeds.rb).
+# Login: admin@musicarchive.com / admin123. Jukebox "Dev Party", guest password "guest".
+# Postgres is not published to the host, so it cannot clash with a local server.
+# Set AJB_LAN_HOST to this machine's network address (macOS: ipconfig getifaddr en0)
+# so guest QR codes work from a phone when the player is opened on localhost.
+name: archive-dev
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  archive:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: bin/docker-dev
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      AJB_LAN_HOST: ${AJB_LAN_HOST:-}
+    ports:
+      - "${ARCHIVE_DEV_PORT:-3000}:3000"
+    volumes:
+      - .:/app
+      - bundle:/usr/local/bundle
+
+volumes:
+  pgdata:
+  bundle:

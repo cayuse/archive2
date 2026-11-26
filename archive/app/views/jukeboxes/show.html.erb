@@ -48,6 +48,9 @@
                 <div class="col-md-6">
                   <% if @jukebox.has_password? %>
                     <p><strong>Guest Code:</strong> <code class="text-primary"><%= @jukebox.guest_password %></code></p>
+                    <% if @jukebox.admin_password.present? %>
+                      <p><strong>Admin Code:</strong> <code class="text-primary"><%= @jukebox.admin_password %></code></p>
+                    <% end %>
                   <% else %>
                     <p><strong>Guest Code:</strong> <span class="text-muted">None set</span></p>
                   <% end %>
@@ -117,7 +120,7 @@
             <div class="card-body">
               <p class="mb-1"><strong>Short URL</strong> <span class="text-muted small">(easy to type / for flyers)</span></p>
               <div class="input-group mb-3">
-                <input type="text" class="form-control" value="<%= short_guest_url(@jukebox.session_id) %>" readonly>
+                <input type="text" class="form-control" value="<%= guest_join_url(@jukebox) %>" readonly>
                 <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard(this.previousElementSibling)">
                   <i class="fas fa-copy"></i>
                 </button>
@@ -182,7 +185,7 @@ function copyToClipboard(element) {
   (function () {
     var el = document.getElementById('guest-qr');
     if (!el || typeof QRCode === 'undefined') return;
-    var url = <%= short_guest_url(@jukebox.session_id).to_json.html_safe %>;
+    var url = <%= guest_join_url(@jukebox).to_json.html_safe %>;
     new QRCode(el, { text: url, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
     // Point the download button at the rendered image.
     var dl = document.getElementById('guest-qr-download');

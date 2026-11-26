@@ -242,7 +242,12 @@ class GuestApiService {
       }
 
       const data = await response.json();
-      return { success: true, message: data.message || 'Song requested successfully', queue_item: data.queue_item };
+      return {
+        success: true,
+        outcome: data.outcome || 'added',
+        message: data.message || 'Song requested successfully',
+        queue_item: data.queue_item
+      };
     } catch (error) {
       console.error('Error requesting song:', error);
       throw error;
@@ -274,5 +279,30 @@ class GuestApiService {
       console.error('Error promoting song:', error);
       return { success: false, message: error.message };
     }
+  }
+
+  // Admin-code actions. Both return { success, message } rather than throwing.
+  async adminRequest(method, path, body = null) {
+    try {
+      const queryString = this.buildQueryString();
+      const response = await fetch(`${this.baseUrl}/${path}${queryString ? '?' + queryString : ''}`, {
+        method,
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
+        body: body ? JSON.stringify(body) : undefined
+      });
+      const data = await response.json().catch(() => ({}));
+      return { success: response.ok, message: data.message || (response.ok ? '' : `HTTP ${response.status}`) };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  removeSong(songId) {
+    return this.adminRequest('DELETE', `queue/${songId}`);
+  }
+
+  playerCommand(command) {
+    return this.adminRequest('POST', 'player_command', { command });
   }
 }

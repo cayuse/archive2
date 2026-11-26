@@ -1,0 +1,164 @@
+{
+  "about": "Prompts for the AI-generated sample songs. Every song here is made up for this project: the captions and lyrics are original, and no existing song, artist or recording is referenced. Give each entry to an AI music generator and save the result as clips/<name>.mp3 (30 seconds); see GENERATING_SONGS.md. Styles are tried in order against a song's genre name and the first match wins.",
+  "seconds": 30,
+  "styles": [
+    {
+      "style": "classical",
+      "genres": "classical|opera|baroque|soundtrack|new age|easy listening|holiday|instrumental",
+      "clips": [
+        { "name": "classical-high", "energy": "high", "bpm": 132, "language": "unknown", "lyrics": "[Instrumental]",
+          "caption": "A lively orchestral allegro: bright strings carrying a quick dancing melody, woodwinds answering, timpani and brass at the peaks. Concert hall sound, joyful and grand." },
+        { "name": "classical-low", "energy": "low", "bpm": 66, "language": "unknown", "lyrics": "[Instrumental]",
+          "caption": "A slow, tender solo piano adagio with soft sustained strings underneath. Intimate, reflective and calm, lots of space between the notes." }
+      ]
+    },
+    {
+      "style": "jazz",
+      "genres": "jazz|swing|big band|lounge",
+      "clips": [
+        { "name": "jazz-high", "energy": "high", "bpm": 168, "language": "unknown", "lyrics": "[Instrumental]",
+          "caption": "Up-tempo big band swing: walking upright bass, ride cymbal, punchy brass section hits and a hot tenor saxophone solo. Exuberant dance hall energy." },
+        { "name": "jazz-low", "energy": "low", "bpm": 72, "language": "unknown", "lyrics": "[Instrumental]",
+          "caption": "A late-night jazz trio ballad: brushed drums, warm upright bass and a gentle piano melody. Smoky, relaxed and unhurried." }
+      ]
+    },
+    {
+      "style": "blues",
+      "genres": "blues",
+      "clips": [
+        { "name": "blues-high", "energy": "high", "bpm": 120, "language": "en",
+          "caption": "A driving electric blues shuffle with a gritty male vocal, stinging lead guitar licks, harmonica and a pounding rhythm section. Roadhouse energy.",
+          "lyrics": "[Verse]\nWoke up this morning, the coffee pot was dry\nWoke up this morning, the coffee pot was dry\nMy old truck won't start and the rent is riding high\n\n[Chorus]\nBut I got my six string and the band is on tonight" },
+        { "name": "blues-low", "energy": "low", "bpm": 60, "language": "en",
+          "caption": "A slow, aching twelve-bar blues: weeping electric guitar, soft organ, a weary soulful male vocal. Late, dark and heartfelt.",
+          "lyrics": "[Verse]\nRain on the window, counting every drop\nRain on the window, counting every drop\nThe clock keeps on walking and my thinking will not stop" }
+      ]
+    },
+    {
+      "style": "reggae",
+      "genres": "reggae|ska|dub",
+      "clips": [
+        { "name": "reggae-high", "energy": "high", "bpm": 150, "language": "en",
+          "caption": "Bouncy upbeat ska: choppy offbeat guitar, a bright horn section riff, walking bass and an energetic male vocal. Sunny and danceable.",
+          "lyrics": "[Verse]\nShoes by the door and the sun coming up\nEverybody moving with a paper coffee cup\n\n[Chorus]\nStep it up, step it up, the morning is ours\nStep it up, step it up, we got hours and hours" },
+        { "name": "reggae-low", "energy": "low", "bpm": 76, "language": "en",
+          "caption": "Laid-back roots reggae with a one-drop drum beat, deep round bass, offbeat organ skank and a warm relaxed male vocal. Easy and sunny.",
+          "lyrics": "[Verse]\nSlow down the river, slow down the day\nLet the little worries float on away\n\n[Chorus]\nEasy now, easy, under the tree\nEasy now, easy, come sit with me" }
+      ]
+    },
+    {
+      "style": "metal",
+      "genres": "metal|punk|industrial",
+      "clips": [
+        { "name": "metal-high", "energy": "high", "bpm": 170, "language": "en",
+          "caption": "Fast aggressive metal: heavily distorted down-tuned rhythm guitars, double kick drums, a shouted harsh male vocal and a screaming guitar lead. Furious and loud.",
+          "lyrics": "[Verse]\nIron in the engine, fire in the wire\nEvery wall around me climbing higher\n\n[Chorus]\nBreak it down, tear it out\nBreak it down, hear me shout" },
+        { "name": "metal-low", "energy": "low", "bpm": 80, "language": "en",
+          "caption": "A slow brooding doom-laden rock piece: clean dark arpeggiated guitar, distant heavy chords, a low mournful male vocal. Ominous and spacious.",
+          "lyrics": "[Verse]\nAsh on the water, smoke on the hill\nThe bells have stopped ringing, the valley is still" }
+      ]
+    },
+    {
+      "style": "rock",
+      "genres": "rock|alternative",
+      "clips": [
+        { "name": "rock-high-1", "energy": "high", "bpm": 140, "language": "en",
+          "caption": "A driving anthemic rock song: crunchy electric guitar riff, pounding drums, a strong male lead vocal and a big sing-along chorus. Stadium energy.",
+          "lyrics": "[Verse]\nHeadlights cutting through the county line\nRadio is broken but we're doing fine\n\n[Chorus]\nTurn it up, we are never going home\nTurn it up, let the whole night roll" },
+        { "name": "rock-high-2", "energy": "high", "bpm": 126, "language": "en",
+          "caption": "Jangly upbeat alternative rock with a female lead vocal, chiming guitars, a melodic bass line and tight punchy drums. Bright and restless.",
+          "lyrics": "[Verse]\nPainted my name on a borrowed guitar\nSold all my records and I bought a used car\n\n[Chorus]\nI'm not waiting for the weather to change\nI'm not waiting, I'm already on my way" },
+        { "name": "rock-low", "energy": "low", "bpm": 84, "language": "en",
+          "caption": "A mellow soft rock ballad: clean electric guitar arpeggios, gentle drums, warm bass and a tender male vocal. Wistful and slow.",
+          "lyrics": "[Verse]\nPorch light is on though it's nearly dawn\nI kept your sweater since the day you've gone\n\n[Chorus]\nSlow, slow, the summer leaves\nSlow, slow, and nobody grieves" }
+      ]
+    },
+    {
+      "style": "hiphop",
+      "genres": "hip hop|rap",
+      "clips": [
+        { "name": "hiphop-high", "energy": "high", "bpm": 96, "language": "en",
+          "caption": "Hard-hitting boom bap hip hop: punchy kick and snare, deep sub bass, a chopped piano stab loop and a confident rhythmic male rap vocal.",
+          "lyrics": "[Verse]\nUp before the sun with a pocket full of plans\nNotebook, headphones, hammer in my hands\nBuilding every day, brick by brick by brick\nNever in a hurry but I never miss a lick" },
+        { "name": "hiphop-low", "energy": "low", "bpm": 80, "language": "unknown", "lyrics": "[Instrumental]",
+          "caption": "A laid-back lo-fi hip hop beat: dusty mellow drums, soft electric piano chords, vinyl crackle and a sleepy bass line. Relaxed study music." }
+      ]
+    },
+    {
+      "style": "rnb",
+      "genres": "r&b|soul|funk|disco",
+      "clips": [
+        { "name": "rnb-high", "energy": "high", "bpm": 108, "language": "en",
+          "caption": "An upbeat funk and soul groove: slap bass, tight rhythm guitar scratches, a horn section and a powerful joyful female vocal. Dance floor energy.",
+          "lyrics": "[Verse]\nFriday on my shoulders and a rhythm in my shoes\nEverybody's talking but I've got nothing to lose\n\n[Chorus]\nGet on up, get on the floor\nGet on up, give me some more" },
+        { "name": "rnb-low", "energy": "low", "bpm": 68, "language": "en",
+          "caption": "A smooth slow jam: silky electric piano, soft finger-snap beat, deep warm bass and an intimate breathy female vocal with lush harmonies.",
+          "lyrics": "[Verse]\nCandle on the table, city turning blue\nAll the noise is fading when I'm next to you\n\n[Chorus]\nStay a little longer, stay" }
+      ]
+    },
+    {
+      "style": "electronic",
+      "genres": "electr|dance|techno|trance|house",
+      "clips": [
+        { "name": "electronic-high", "energy": "high", "bpm": 128, "language": "unknown", "lyrics": "[Instrumental]",
+          "caption": "Driving club techno: four-on-the-floor kick, rolling bass line, sharp hi-hats, a pulsing synth arpeggio that builds and opens up. Hypnotic and energetic." },
+        { "name": "electronic-low", "energy": "low", "bpm": 90, "language": "unknown", "lyrics": "[Instrumental]",
+          "caption": "Dreamy ambient downtempo electronica: slow soft beat, wide warm synth pads, a gentle bell-like melody and deep sub bass. Floating and calm." }
+      ]
+    },
+    {
+      "style": "latin",
+      "genres": "latin|salsa|cumbia|reggaeton|tango|mariachi|world",
+      "clips": [
+        { "name": "latin-high", "energy": "high", "bpm": 96, "language": "es",
+          "caption": "A festive salsa band: congas and timbales, montuno piano, bright trumpets and a lively male vocal with a call-and-response chorus. Party atmosphere.",
+          "lyrics": "[Verse]\nLa noche está caliente, la luna va a bailar\nLa gente de mi barrio ya quiere celebrar\n\n[Chorus]\nBaila, baila, que suene el tambor\nBaila, baila, con todo el corazón" },
+        { "name": "latin-low", "energy": "low", "bpm": 80, "language": "es",
+          "caption": "A romantic slow bolero: nylon-string guitars, soft bongos, upright bass and a warm heartfelt male vocal. Tender and nostalgic.",
+          "lyrics": "[Verse]\nBajo la lluvia te vuelvo a recordar\nLas calles vacías me quieren hablar\n\n[Chorus]\nDespacio, despacio, se va la canción" }
+      ]
+    },
+    {
+      "style": "country",
+      "genres": "country|texas|bluegrass|western",
+      "clips": [
+        { "name": "country-high-1", "energy": "high", "bpm": 128, "language": "en",
+          "caption": "An upbeat honky-tonk country song: twangy telecaster guitar, fiddle, pedal steel, a shuffling train beat and a cheerful male vocal with a drawl.",
+          "lyrics": "[Verse]\nMud on the tires and a dog in the back\nTwo-lane highway and a brown paper sack\n\n[Chorus]\nGonna dance till the neon burns out tonight\nBoots on the boards and the fiddle playing right" },
+        { "name": "country-high-2", "energy": "high", "bpm": 112, "language": "en",
+          "caption": "A bright modern country song with a confident female lead vocal, strummed acoustic guitars, banjo rolls, big drums and a catchy chorus.",
+          "lyrics": "[Verse]\nMama said the big town would chew me up whole\nI packed a suitcase and a pocketful of soul\n\n[Chorus]\nWatch me go, watch me shine\nDusty little girl on the Nashville line" },
+        { "name": "country-low", "energy": "low", "bpm": 76, "language": "en",
+          "caption": "A slow country ballad: crying pedal steel guitar, soft acoustic strumming, brushed drums and a lonesome male vocal. Heartbroken and gentle.",
+          "lyrics": "[Verse]\nEmpty chair at the kitchen table\nI'd call you up if I was able\n\n[Chorus]\nLonesome is a long, long road" }
+      ]
+    },
+    {
+      "style": "folk",
+      "genres": "folk|gospel|religious|christian|children|singer",
+      "clips": [
+        { "name": "folk-high", "energy": "high", "bpm": 124, "language": "en",
+          "caption": "A stomping folk sing-along: strummed acoustic guitars, mandolin, hand claps, a kick drum on every beat and a group of voices joining the chorus. Warm and joyful.",
+          "lyrics": "[Verse]\nBring your brothers and your sisters and a chair\nThere is room around the fire and a song to share\n\n[Chorus]\nHey ho, the harvest is in\nHey ho, let the dancing begin" },
+        { "name": "folk-low", "energy": "low", "bpm": 96, "language": "en",
+          "caption": "A quiet fingerpicked acoustic folk song with a soft close female vocal and a little harmonica. Intimate, simple and honest.",
+          "lyrics": "[Verse]\nPaper lanterns on the kitchen door\nSnow came early like the year before\n\n[Chorus]\nRiver under ice, keep moving on" }
+      ]
+    },
+    {
+      "style": "pop",
+      "genres": "pop|oldies|vocal|unclassifiable|other",
+      "clips": [
+        { "name": "pop-high-1", "energy": "high", "bpm": 120, "language": "en",
+          "caption": "A sparkling dance-pop song: punchy drums, bouncing synth bass, bright synth hooks and a catchy female vocal with stacked harmonies in the chorus.",
+          "lyrics": "[Verse]\nGlitter on my jacket and the city on my phone\nEvery little light says I'm never alone\n\n[Chorus]\nOh oh oh, we light up the night\nOh oh oh, everything is right" },
+        { "name": "pop-high-2", "energy": "high", "bpm": 104, "language": "en",
+          "caption": "A feel-good mid-tempo pop song with a smooth male vocal, funky clean guitar, claps, warm bass and a whistled hook. Sunny and easygoing.",
+          "lyrics": "[Verse]\nWindows down and nowhere I have to be\nSaturday is spelling out my name for me\n\n[Chorus]\nGood day, good day, look at that sky\nGood day, good day, we're getting by" },
+        { "name": "pop-low", "energy": "low", "bpm": 88, "language": "en",
+          "caption": "A soft emotional pop ballad: gentle piano, subtle strings, light percussion and a clear vulnerable female vocal. Quiet and bittersweet.",
+          "lyrics": "[Verse]\nI kept the ticket from the very first show\nFolded in a book where nobody would know\n\n[Chorus]\nIf you ever wonder, I remember it all" }
+      ]
+    }
+  ]
+}
