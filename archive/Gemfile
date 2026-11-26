@@ -36,7 +36,7 @@ gem "redis", ">= 4.0.1"
 gem "csv", "~> 3.2"
 
 # JSON processing
-gem "json", "~> 2.6"
+gem "json", "~> 3.1"
 
 # Pagination
 gem "kaminari", "~> 1.2"
