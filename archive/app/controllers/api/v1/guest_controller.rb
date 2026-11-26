@@ -114,7 +114,9 @@ class Api::V1::GuestController < ApplicationController
           }
         }
       end,
-      total_count: @jukebox.ajb_queue_items.count
+      total_count: @jukebox.ajb_queue_items.count,
+      # taken by the player to follow the current song; plays before everything in `queue`
+      lined_up: lined_up_json(@jukebox.lined_up_song)
     }
   end
 
@@ -359,6 +361,12 @@ class Api::V1::GuestController < ApplicationController
   end
 
   private
+
+  def lined_up_json(song, urls: false)
+    return nil unless song
+    json = { id: song.id, title: song.title, artist: song.artist&.name, album: song.album&.title, duration: song.duration }
+    urls ? json.merge(download_url: download_api_v1_song_url(song), stream_url: stream_api_v1_song_url(song)) : json
+  end
 
   def require_guest_admin!
     return if @guest_role == :admin

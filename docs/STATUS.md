@@ -153,6 +153,17 @@ CLAP-text sidecar), expandable song rows in search, cover-art download
 the mirror), importer fix + dropbox intake (`library_tools/IMPORTER_FIX_PLAN.md`),
 headless tagger worker, library dedup.
 
+## Browser player: gapless and locked phones (2026-11-26)
+
+The browser player takes the next song 20 seconds before the current one ends (the same rule as
+the speakers), loads it in a second Howl and starts it in the 'end' event: measured gap 4 ms in
+headless Chrome (`library_tools/staging/browser_player_e2e.sh`). The point on iOS is that the
+audio never goes quiet long enough for a locked phone to be put to sleep; that is untested on a
+real iPhone. Howler is kept: its unlocked `<audio>` pool and 'unlock' event are what the iOS
+stall recovery stands on (see the history in `docs/history/ajb_design.md` and commits e2096f8,
+5afe868). Every "up next" list shows the song already taken as its first row. Player diagnostics
+are also written to `log/player_diagnostics.log` on the log volume, so they survive deploys.
+
 ## Known debt (as of 2026-11-26)
 
 Runs on Ruby 3.4.13 and Rails 8.1 since 2026-11-25 (was 3.2.5 / 8.0.2, both past end of support).

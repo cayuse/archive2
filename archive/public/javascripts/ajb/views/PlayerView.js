@@ -38,6 +38,7 @@ const PlayerView = {
       let playerController;
       try {
         playerController = new PlayerController(config.jukeboxId, config.apiToken, config.sessionId);
+        window.ajbPlayer = playerController;   // reachable from the console (and the staging browser test)
       } catch (error) {
         console.error('Error creating PlayerController:', error);
         setState(prev => ({ ...prev, error: `Failed to initialize player: ${error.message}` }));
@@ -317,6 +318,16 @@ const PlayerView = {
         : el('ol', { className: 'ajb-list' },
             items.map((item, index) => {
               const requested = item.source === 'requested';
+              if (item.source === 'lined_up') {
+                return el('li', { key: item.id, className: 'ajb-row is-requested' },
+                  el('span', { className: 'ajb-row-index' }, index + 1),
+                  el('div', { className: 'ajb-row-text' },
+                    el('div', { className: 'ajb-row-title' }, item.song.title),
+                    el('div', { className: 'ajb-row-sub' }, item.song.artist || 'Unknown artist')
+                  ),
+                  el('span', { className: 'ajb-tag' }, 'Up next')
+                );
+              }
               return el('li', { key: item.id, className: `ajb-row ${requested ? 'is-requested' : ''}` },
                 el('span', { className: 'ajb-row-index' }, index + 1),
                 el('div', { className: 'ajb-row-text' },
@@ -325,7 +336,7 @@ const PlayerView = {
                 ),
                 requested && el('span', { className: 'ajb-tag ajb-hide-narrow' }, 'Requested'),
                 el('div', { className: 'ajb-row-actions' },
-                  index > 0 && action('fa-angles-up', `Play ${item.song.title} next`, () => onPlayNext(item.song.id)),
+                  index > (items[0].source === 'lined_up' ? 1 : 0) && action('fa-angles-up', `Play ${item.song.title} next`, () => onPlayNext(item.song.id)),
                   !requested && action('fa-arrow-up', `Bump ${item.song.title} ahead of auto-picked songs`,
                     () => onPromote(item.song.id)),
                   action('fa-trash', `Remove ${item.song.title}`, () => onRemove(item.song.id), 'ajb-btn-danger')

@@ -321,6 +321,17 @@ const GuestView = {
         : h('ol', { className: 'ajb-list' },
             queue.map((item, index) => {
               const requested = item.source === 'requested';
+              if (item.source === 'lined_up') {
+                return h('li', { key: 'lined-' + item.song.id, className: 'ajb-row is-requested' },
+                  h('span', { className: 'ajb-row-index' }, index + 1),
+                  h('div', { className: 'ajb-row-text' },
+                    h('div', { className: 'ajb-row-title' }, item.song.title),
+                    h('div', { className: 'ajb-row-sub' },
+                      `${item.song.artist || 'Unknown artist'} · ${GuestState.formatTime(item.song.duration || 0)}`)
+                  ),
+                  h('span', { className: 'ajb-tag' }, 'Up next')
+                );
+              }
               return h('li', { key: item.song.id, className: `ajb-row ${requested ? 'is-requested' : ''}` },
                 h('span', { className: 'ajb-row-index' }, index + 1),
                 h('div', { className: 'ajb-row-text' },

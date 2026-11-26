@@ -3,6 +3,10 @@ class AudioEngine {
   constructor() {
     this.sound = null;
     this.currentSong = null;
+    // The song after this one, already loading in its own Howl so it can start the instant the
+    // current one ends: no gap, and on a locked iPhone the audio never stops long enough for iOS
+    // to put the page to sleep. { song, howl } or null. See preload() / playPreloaded().
+    this.next = null;
     this.isPlaying = false;
     this.isPaused = false;
     this.isStopped = true;
@@ -60,76 +64,8 @@ class AudioEngine {
         this.sound.unload();
       }
 
-      // Create new Howl instance.
-      // html5: true forces playback through an HTML5 <audio> element instead of
-      // the Web Audio API. iOS/iPadOS suspends the Web Audio context when the
-      // screen locks (killing playback), but allows an <audio> element to keep
-      // playing in the background — so this is what lets the jukebox survive a
-      // sleeping phone/tablet. Prefer the Range-capable stream endpoint.
-      this.sound = new Howl({
-        src: [song.stream_url || song.download_url],
-        format: ['mp3', 'm4a', 'ogg'],
-        html5: true,
-        volume: this.currentVolume, // Apply persistent volume setting
-        onload: () => {
-          console.log('Audio: Loaded successfully');
-        },
-        onplay: () => {
-          this.isPlaying = true;
-          this.isPaused = false;
-          this.isStopped = false;
-          this._playRetries = 0;
-          this._clearPlayWatchdog();
-          this.setMediaSessionPlaybackState('playing');
-          console.log('Audio: Started playing');
-          if (this.onPlay) this.onPlay();
-        },
-        onpause: () => {
-          this.isPlaying = false;
-          this.isPaused = true;
-          this.setMediaSessionPlaybackState('paused');
-          console.log('Audio: Paused');
-          if (this.onPause) this.onPause();
-        },
-        onstop: () => {
-          this.isPlaying = false;
-          this.isPaused = false;
-          this.isStopped = true;
-          this.setMediaSessionPlaybackState('none');
-          console.log('Audio: Stopped');
-          if (this.onStop) this.onStop();
-        },
-        onend: () => {
-          this.isPlaying = false;
-          this.isPaused = false;
-          this.isStopped = true;
-          console.log('Audio: Ended');
-          if (this.onEnd) this.onEnd();
-        },
-        onerror: (id, error) => {
-          console.error('Audio error:', error);
-          this.isPlaying = false;
-          this.isPaused = false;
-          this.isStopped = true;
-          this.setMediaSessionPlaybackState('none');
-          if (this.onError) this.onError(error);
-        },
-        onplayerror: (id, error) => {
-          // The <audio> element couldn't start — almost always a locked audio
-          // context on iOS (screen asleep when the track auto-advanced).
-          // Resume on the first unlock, and let the watchdog keep retrying.
-          console.warn('Audio: play blocked, will retry on unlock', error);
-          this._emitDiag('play_blocked');
-          if (this.sound) {
-            this.sound.once('unlock', () => {
-              if (this._wantPlaying && !this.isPlaying && this.sound) {
-                try { this.sound.play(); } catch (e) {}
-              }
-            });
-          }
-          this._armPlayWatchdog();
-        }
-      });
+      // html5: true (see _createHowl) is what lets playback survive a sleeping iPhone.
+      this.sound = this._createHowl(song);
 
       // Surface the track on the OS lock screen / control center.
       this.updateMediaSessionMetadata(song);
@@ -148,6 +84,148 @@ class AudioEngine {
       console.error('Failed to load and play song:', error);
       return false;
     }
+  }
+
+  // One Howl per song. Every handler first checks that its Howl is the one playing: a preloaded
+  // Howl (this.next) must not touch the engine's state until playPreloaded() makes it current.
+  //
+  // html5: true forces playback through an HTML5 <audio> element instead of the Web Audio API.
+  // iOS/iPadOS suspends the Web Audio context when the screen locks (killing playback), but allows
+  // an <audio> element to keep playing in the background. Howler hands out <audio> elements from
+  // a pool it unlocks on the first tap, which is why a later song may start without a tap.
+  // Prefer the Range-capable stream endpoint.
+  _createHowl(song, { preload = true } = {}) {
+    const howl = new Howl({
+      src: [song.stream_url || song.download_url],
+      format: ['mp3', 'm4a', 'ogg'],   // Howler pairs format[i] with src[i]: with one src it only checks 'mp3', which every browser plays, so it never refuses a file
+      html5: true,
+      preload: preload,
+      volume: this.currentVolume, // Apply persistent volume setting
+      onload: () => {
+        console.log('Audio: Loaded', howl === this.sound ? 'current' : 'next', song.title);
+      },
+      onplay: () => {
+        if (howl !== this.sound) return;
+        this.isPlaying = true;
+        this.isPaused = false;
+        this.isStopped = false;
+        this._playRetries = 0;
+        this._clearPlayWatchdog();
+        this.setMediaSessionPlaybackState('playing');
+        console.log('Audio: Started playing');
+        if (this.onPlay) this.onPlay();
+      },
+      onpause: () => {
+        if (howl !== this.sound) return;
+        this.isPlaying = false;
+        this.isPaused = true;
+        this.setMediaSessionPlaybackState('paused');
+        console.log('Audio: Paused');
+        if (this.onPause) this.onPause();
+      },
+      onstop: () => {
+        if (howl !== this.sound) return;
+        this.isPlaying = false;
+        this.isPaused = false;
+        this.isStopped = true;
+        this.setMediaSessionPlaybackState('none');
+        console.log('Audio: Stopped');
+        if (this.onStop) this.onStop();
+      },
+      onend: () => {
+        if (howl !== this.sound) return;
+        this.isPlaying = false;
+        this.isPaused = false;
+        this.isStopped = true;
+        console.log('Audio: Ended');
+        if (this.onEnd) this.onEnd();
+      },
+      onloaderror: (id, error) => {
+        if (howl !== this.sound) {
+          // The next song could not be loaded ahead: drop it; it is loaded again when its turn comes.
+          console.warn('Audio: preloading the next song failed', error);
+          if (this.next && this.next.howl === howl) this.next.failed = true;
+          this._emitDiag('preload_error');
+          return;
+        }
+        console.error('Audio error:', error);
+        this.isPlaying = false;
+        this.isPaused = false;
+        this.isStopped = true;
+        this.setMediaSessionPlaybackState('none');
+        if (this.onError) this.onError(error);
+      },
+      onplayerror: (id, error) => {
+        if (howl !== this.sound) return;
+        // The <audio> element couldn't start — almost always a locked audio
+        // context on iOS (screen asleep when the track auto-advanced).
+        // Resume on the first unlock, and let the watchdog keep retrying.
+        console.warn('Audio: play blocked, will retry on unlock', error);
+        this._emitDiag('play_blocked');
+        howl.once('unlock', () => {
+          if (howl === this.sound && this._wantPlaying && !this.isPlaying) {
+            try { howl.play(); } catch (e) {}
+          }
+        });
+        this._armPlayWatchdog();
+      }
+    });
+    return howl;
+  }
+
+  // --- The next song, loaded ahead ----------------------------------------
+
+  // Start loading the song after this one. Called by the controller near the end of the current
+  // song, once the archive has handed over what comes next.
+  preload(song) {
+    if (!song) return;
+    if (this.next && this.next.song.id === song.id) return;
+    this.dropPreloaded();
+    try {
+      this.next = { song: song, howl: this._createHowl(song), failed: false };
+      this._emitDiag('preload');
+    } catch (e) {
+      console.warn('Audio: could not preload the next song', e);
+      this.next = null;
+    }
+  }
+
+  hasPreloaded() {
+    return !!this.next;
+  }
+
+  preloadedSong() {
+    return this.next ? this.next.song : null;
+  }
+
+  // Make the preloaded song the current one and start it at once. Must run synchronously in the
+  // 'end' event (no await before it): iOS lets a page that is still playing start the next sound,
+  // not one that has gone quiet. Returns the song, or null when nothing was preloaded.
+  playPreloaded() {
+    if (!this.next) return null;
+    const { song, howl, failed } = this.next;
+    this.next = null;
+    const previous = this.sound;
+    this.sound = failed ? this._createHowl(song) : howl;
+    if (failed) { try { howl.unload(); } catch (e) {} }
+    this.currentSong = song;
+    this._wantPlaying = true;
+    this._playRetries = 0;
+    this._lastProgressPos = null;
+    this._progressStallTicks = 0;
+    this._clearPlayWatchdog();
+    this.updateMediaSessionMetadata(song);
+    this.sound.play();
+    this._armPlayWatchdog();
+    // Only now let go of the song that just ended, so there is never a moment with nothing playing.
+    if (previous) { try { previous.unload(); } catch (e) {} }
+    return song;
+  }
+
+  dropPreloaded() {
+    if (!this.next) return;
+    try { this.next.howl.unload(); } catch (e) {}
+    this.next = null;
   }
 
   // Play current song
@@ -350,6 +428,17 @@ class AudioEngine {
       remaining: (typeof dur === 'number' && isFinite(dur) && dur > 0) ? r(dur - pos) : null
     };
     try {
+      // How far the next song got loading ahead (on iOS: does it buffer at all before its turn?)
+      if (this.next) {
+        const node = this.next.howl._sounds && this.next.howl._sounds[0] && this.next.howl._sounds[0]._node;
+        d.next = { id: this.next.song.id, howl: this.next.howl.state(), failed: this.next.failed };
+        if (node) {
+          d.next.ready = node.readyState;
+          d.next.buf = node.buffered && node.buffered.length ? r(node.buffered.end(node.buffered.length - 1)) : 0;
+        }
+      }
+    } catch (e) { /* diagnostics must never break playback */ }
+    try {
       if (this.sound) {
         d.howl = this.sound.state(); // 'unloaded' | 'loading' | 'loaded'
         // Reach the underlying HTML5 <audio> element (html5: true mode) for the
@@ -452,6 +541,7 @@ class AudioEngine {
   destroy() {
     this._wantPlaying = false;
     this._clearPlayWatchdog();
+    this.dropPreloaded();
     if (this.sound) {
       this.sound.unload();
       this.sound = null;

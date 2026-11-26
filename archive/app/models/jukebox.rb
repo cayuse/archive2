@@ -265,6 +265,20 @@ class Jukebox < ApplicationRecord
 
   # Where the current song is right now: the last reported position, moved on by the time since
   # then while a player is live and playing.
+  # The song the player has already taken from the queue to play after the current one (players
+  # take it in the last seconds of a song, to start it without a gap), or nil. It is no longer in
+  # the queue, so lists show it separately as "lined up".
+  def lined_up_song
+    return nil unless current_song_id
+    taken = ajb_played_songs.where("played_at > ?", 15.minutes.ago).order(played_at: :desc).limit(2).to_a
+    latest = taken.first
+    return nil unless latest && latest.song_id != current_song_id
+    # it must have been taken after the song now playing (not a leftover from before it)
+    current_taken = ajb_played_songs.where(song_id: current_song_id).order(played_at: :desc).pick(:played_at)
+    return nil if current_taken.nil? || current_taken > latest.played_at
+    latest.song
+  end
+
   # Is this song playing now, or already handed to the player as the one after? It is then no longer
   # in the queue, so asking for it again would queue a second play straight after the first.
   def playing_or_lined_up?(song)

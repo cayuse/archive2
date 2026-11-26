@@ -247,7 +247,9 @@ class GuestController {
       const result = await this.apiService.getQueue();
       if (result.offline) { this.handleOffline(); return; }
       if (result.success) {
-        this.state.setQueue(result.queue, result.total_count);
+        const lined = result.lined_up;
+        this.state.setQueue((lined ? [{ source: 'lined_up', song: lined }] : []).concat(result.queue || []),
+                            (result.total_count || 0) + (lined ? 1 : 0));
       }
     } catch (error) {
       // Don't surface a global error from the background poll — it would repaint

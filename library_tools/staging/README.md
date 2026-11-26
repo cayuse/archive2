@@ -24,3 +24,11 @@ Notes:
   `web.sh` after changing Ruby or views.
 - Rails commands write `archive/db/schema.rb`; the repo does not track it, so the scripts delete it.
 - `setup.sh` creates a login for tests (`station-test@example.invalid`, password in `.env`).
+
+## Browser player across song changes
+
+`bash browser_player_e2e.sh` (web.sh running; needs google-chrome and node 22+) plays a staging
+jukebox in headless Chrome through real song changes: the next song is taken only in the last
+20 seconds, shown as "up next", started from the preload, and the gap between songs is measured;
+skips mid-song and just after a prefetch are covered. It uses the songs whose audio files exist on
+staging (the Drop Box imports). It cannot test iOS: no lock screen, no iOS audio rules.

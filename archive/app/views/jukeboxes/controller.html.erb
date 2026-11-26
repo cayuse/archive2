@@ -157,13 +157,18 @@
       try {
         const d = await call('GET', BASE + '/queue');
         const q = (d.queue || []).slice(0, 25);
-        $('next').innerHTML = q.length
-          ? q.map((i, n) => '<li><span class="n">' + (n + 1) + '</span><span class="what"><b>' + esc(i.song.title) + '</b><small>' +
+        const lined = d.lined_up
+          ? '<li><span class="n">1</span><span class="what"><b>' + esc(d.lined_up.title) + '</b><small>' +
+            esc([d.lined_up.artist, d.lined_up.album].filter(Boolean).join(' — ')) + ' · <span class="req">up next</span></small></span></li>'
+          : '';
+        const shift = d.lined_up ? 1 : 0;
+        $('next').innerHTML = lined + (q.length
+          ? q.map((i, n) => '<li><span class="n">' + (n + 1 + shift) + '</span><span class="what"><b>' + esc(i.song.title) + '</b><small>' +
               esc([i.song.artist, i.song.album].filter(Boolean).join(' — ')) + (i.source === 'requested' ? ' · <span class="req">requested</span>' : '') + '</small></span>' +
-              (n > 0 ? '<button class="mini" data-act="play_next" data-id="' + esc(i.song.id) + '">Next</button>' : '') +
+              (n + shift > 0 ? '<button class="mini" data-act="play_next" data-id="' + esc(i.song.id) + '">Next</button>' : '') +
               (i.source !== 'requested' ? '<button class="mini" data-act="promote" data-id="' + esc(i.song.id) + '">Bump</button>' : '') +
               '<button class="mini danger" data-act="remove" data-id="' + esc(i.song.id) + '" title="Remove">✕</button></li>').join('')
-          : '<li class="muted">Nothing queued yet</li>';
+          : (lined ? '' : '<li class="muted">Nothing queued yet</li>'));
       } catch (e) {}
     }
     $('next').onclick = async (e) => {

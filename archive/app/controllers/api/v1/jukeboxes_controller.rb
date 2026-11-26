@@ -95,7 +95,9 @@ class Api::V1::JukeboxesController < ApplicationController
           },
           created_at: item.created_at
         }
-      end
+      end,
+      # taken by the player to follow the current song; plays before everything in `queue`
+      lined_up: lined_up_json(@jukebox.lined_up_song, urls: true)
     }
   end
 
@@ -439,7 +441,9 @@ class Api::V1::JukeboxesController < ApplicationController
       if params[:event].present? || params[:diag].present?
         diag = params[:diag]
         diag_json = diag.respond_to?(:to_unsafe_h) ? diag.to_unsafe_h.to_json : diag.to_json
-        Rails.logger.info("[AJB diag] jukebox=#{@jukebox.id} event=#{params[:event]} diag=#{diag_json}")
+        line = "[AJB diag] jukebox=#{@jukebox.id} event=#{params[:event]} diag=#{diag_json}"
+        Rails.logger.info(line)
+        PlayerDiagnostics.log(line)
       end
 
       # Push the new now-playing state to subscribed guests.
@@ -681,6 +685,12 @@ class Api::V1::JukeboxesController < ApplicationController
   end
 
   private
+
+  def lined_up_json(song, urls: false)
+    return nil unless song
+    json = { id: song.id, title: song.title, artist: song.artist&.name, album: song.album&.title, duration: song.duration }
+    urls ? json.merge(download_url: download_api_v1_song_url(song), stream_url: stream_api_v1_song_url(song)) : json
+  end
 
   def authenticate_api_user!
     # The node's player daemon: no person; set_jukebox lets it act for the on-air jukebox's owner.

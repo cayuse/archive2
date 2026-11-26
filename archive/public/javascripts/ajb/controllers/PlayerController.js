@@ -1,4 +1,11 @@
 // AJB PlayerController - Business logic for the player
+
+// The next song is taken from the archive this many seconds before the current one ends and loaded
+// in the background, so it starts without a gap (and a locked iPhone never goes quiet). Taking it
+// earlier would hold it off the queue a whole song: a request made meanwhile would wait behind it.
+// Same rule as the speakers (station/station.py, LINE_UP_SECONDS).
+const PREFETCH_SECONDS = 20;
+
 class PlayerController {
   constructor(jukeboxId, apiToken, sessionId = null) {
     this.jukeboxId = jukeboxId;
@@ -146,8 +153,32 @@ class PlayerController {
         this.playbackState.updateTime(currentTime, duration);
         // Keep the lock-screen scrubber in sync.
         this.audioEngine.updateMediaSessionPosition();
+        this.maybePrefetch(currentTime, duration);
       }
     }, 1000); // Update every second
+  }
+
+  // Near the end of the current song, take the next one from the archive and load it ahead.
+  maybePrefetch(currentTime, duration) {
+    const song = this.playbackState.currentSong;
+    if (!song || this.yielded || this.pauseAfterSong || this.prefetchPromise) return;
+    if (this.audioEngine.hasPreloaded() || this.prefetchedAfter === song.id) return;
+    if (!duration || !isFinite(duration) || duration - currentTime > PREFETCH_SECONDS) return;
+    this.prefetchedAfter = song.id;   // once per song, even if the archive had nothing
+    this.prefetchPromise = (async () => {
+      try {
+        const result = await this.apiService.getNextSong();
+        if (result.success && result.song) {
+          this.audioEngine.preload(result.song);
+          this.loadQueue();            // it left the queue
+          this.refreshNewestHistory();
+        }
+      } catch (e) {
+        console.warn('Prefetch of the next song failed; it will be fetched when this one ends:', e.message);
+      } finally {
+        this.prefetchPromise = null;
+      }
+    })();
   }
 
   // Play the next song
@@ -158,6 +189,14 @@ class PlayerController {
     if (this.awaitingResume) {
       this.awaitingResume = false;
       this.notifyPauseMode();
+    }
+
+    // The next song is already loaded: start it now, before anything is awaited (see AudioEngine#playPreloaded).
+    if (this.startPreloaded()) return;
+    // It is on its way (a skip just before the end): wait for it rather than take yet another song.
+    if (this.prefetchPromise) {
+      await this.prefetchPromise;
+      if (this.startPreloaded()) return;
     }
 
     this.isLoading = true;
@@ -190,6 +229,15 @@ class PlayerController {
       this.isLoading = false;
       this.notifyLoading(false);
     }
+  }
+
+  startPreloaded() {
+    const song = this.audioEngine.playPreloaded();
+    if (!song) return false;
+    this.playbackState.setCurrentSong(song);
+    console.log(`Playing (preloaded): ${song.title} by ${song.artist}`);
+    this.updatePlaybackStatus('advance_done');
+    return true;
   }
 
   // Play button
@@ -303,7 +351,9 @@ class PlayerController {
     try {
       const result = await this.apiService.getQueue();
       if (result.success) {
-        this.queue = result.queue || [];
+        // the song already taken to follow this one is no longer in the queue: show it first
+        const lined = result.lined_up;
+        this.queue = (lined ? [{ id: 'lined-' + lined.id, source: 'lined_up', song: lined }] : []).concat(result.queue || []);
         this.notifyQueueChange();
       }
     } catch (error) {
