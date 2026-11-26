@@ -9,7 +9,7 @@ dest=${KAMAL_DESTINATION:+--filter label=destination=$KAMAL_DESTINATION}
 
 for host in $(echo "$KAMAL_HOSTS" | tr ',' ' '); do
   ssh "$user@$host" "
-    for c in \$(docker ps -q --filter label=service=archive --filter label=role=web $dest); do
+    for c in \$(docker ps -q --filter label=service=archive $dest); do
       if docker inspect \$c --format '{{json .NetworkSettings.Networks}}' | grep -q '\"kamal\"'; then
         docker network disconnect kamal \$c && echo \"post-app-boot: detached \$c from kamal network\"
       fi
