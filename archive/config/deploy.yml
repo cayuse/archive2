@@ -78,6 +78,9 @@ env:
     ALLOW_ALL_HOSTS: "false"
     INLINE_AUDIO_PROCESSING: "true"
     INTAKE_ROOT: /rails/intake
+    # bigballs is the peers' schema primary: its migrations change shared tables for every peer
+    # (PeerMigration#on_peers, docs/PEERS.md). No effect until its database is a pglogical node.
+    PEER_SCHEMA_PRIMARY: "true"
     USE_SIDEKIQ: "false"
     STORAGE_ROOT: /rails/storage
     ACTIVE_STORAGE_SERVICE: local

@@ -6,6 +6,7 @@ namespace :peer do
   task status: :environment do
     puts "node:          #{PeerSync.node_name || '(not a peer: pglogical not set up)'}"
     puts "archive node:  #{SystemSetting.archive_node_id}"
+    puts "schema:        #{PeerSync.schema_fingerprint} (shared tables; equal on every peer)  mode: #{PeerSync.mode}"
     PeerSync.subscriptions.each do |s|
       still = PeerSync.syncing_tables(s["subscription_name"])
       puts "receives from: #{s['provider_node']} (#{s['subscription_name']}): #{s['status']}#{still.any? ? ", still copying #{still.size} tables" : ''}"
@@ -21,6 +22,12 @@ namespace :peer do
   task files: :environment do
     present, total, missing = PeerSync.file_presence
     puts "#{present} of #{total} files present#{missing.any? ? "; missing e.g. #{missing.join(', ')}" : ''}"
+  end
+
+  desc "Restart subscriptions that stopped on an error (pglogical does not)"
+  task heal: :environment do
+    restarted = PeerSync.heal!
+    puts restarted.any? ? "restarted #{restarted.join(', ')}" : "nothing stopped"
   end
 
   desc "Make this database a peer node: PEER_NAME=bigballs PEER_DSN='host=... port=... dbname=... user=... password=...'"

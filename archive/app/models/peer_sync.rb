@@ -28,9 +28,74 @@ module PeerSync
     schema_migrations ar_internal_metadata
   ].freeze
 
+  DDL = /\A\s*(CREATE|ALTER|DROP|COMMENT|GRANT|REVOKE)\b/i
+
   module_function
 
   def conn = ActiveRecord::Base.connection
+
+  # :standalone (no pglogical: development, tests, staging, a lone archive), :primary (the node whose
+  # migrations change shared tables' schema for everyone: PEER_SCHEMA_PRIMARY=true) or :replica.
+  def mode
+    return :standalone unless installed? && node_name
+    ENV["PEER_SCHEMA_PRIMARY"] == "true" ? :primary : :replica
+  end
+
+  # Runs the block (migration statements), keeps the schema statements it executed, and undoes them:
+  # replicate_ddl! runs them again, for every node at once.
+  def capture_ddl(connection)
+    statements = []
+    listener = ActiveSupport::Notifications.subscribe("sql.active_record") do |*, payload|
+      statements << payload[:sql].strip if payload[:sql].match?(DDL) && payload[:name] != "SCHEMA"
+    end
+    connection.transaction(requires_new: true) do
+      yield
+      raise ActiveRecord::Rollback
+    end
+    statements
+  ensure
+    ActiveSupport::Notifications.unsubscribe(listener) if listener
+  end
+
+  # The command replicate_ddl_command sends: the statements, plus replication-set membership for
+  # shared tables created (added) or dropped (removed first), so their rows replicate from the first
+  # one on every node. pglogical runs it with an empty search_path; Rails names tables unqualified.
+  def ddl_command(statements)
+    lines = [ "set local search_path = public" ]
+    statements.each do |sql|
+      dropped = sql[/\ADROP TABLE\s+(?:IF EXISTS\s+)?"?(\w+)"?/i, 1]
+      lines << "select pglogical.replication_set_remove_table('#{SET}', 'public.#{dropped}')" if dropped && SHARED_TABLES.include?(dropped)
+      lines << sql
+      created = sql[/\ACREATE TABLE\s+(?:IF NOT EXISTS\s+)?"?(\w+)"?/i, 1]
+      lines << "select pglogical.replication_set_add_table('#{SET}', 'public.#{created}', false)" if created && SHARED_TABLES.include?(created)
+    end
+    lines.join(";\n") + ";"
+  end
+
+  def replicate_ddl!(statements)
+    return if statements.empty?
+    conn.execute("select pglogical.replicate_ddl_command(#{quote(ddl_command(statements))}, array[#{quote(SET)}])")
+  end
+
+  # A digest of the shared tables' columns: equal on every node when their schemas agree.
+  def schema_fingerprint
+    rows = conn.select_rows(<<~SQL)
+      select table_name, column_name, data_type, is_nullable, coalesce(column_default, '')
+      from information_schema.columns where table_schema = 'public' and table_name in (#{SHARED_TABLES.map { |t| quote(t) }.join(', ')})
+      order by 1, 2
+    SQL
+    Digest::SHA256.hexdigest(rows.map { |r| r.join("|") }.join("\n"))[0, 12]
+  end
+
+  # pglogical does not restart a subscription that stopped on an error. Try again (harmless if the
+  # cause is still there: it stops again). Returns the names restarted.
+  def heal!
+    subscriptions.select { |s| s["status"] == "down" }.map do |s|
+      conn.execute("select pglogical.alter_subscription_disable(#{quote(s['subscription_name'])}, true)")
+      conn.execute("select pglogical.alter_subscription_enable(#{quote(s['subscription_name'])}, true)")
+      s["subscription_name"]
+    end
+  end
   def quote(value) = conn.quote(value)
 
   def unclassified_tables

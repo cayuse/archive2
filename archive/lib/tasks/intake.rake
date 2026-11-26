@@ -21,12 +21,20 @@ namespace :intake do
     IntakeBatch.where(status: "processing").update_all(status: "queued")
     puts "intake worker watching #{Intake.root}"
     last_prune = nil
+    last_heal = nil
     while running
       if (batch = IntakeBatch.claim_next)
         puts "#{Time.current.iso8601} batch #{batch.id} (#{batch.name})"
         IntakeProcessor.new(batch).run
         puts "#{Time.current.iso8601}   #{batch.reload.counts.inspect}#{" ERROR #{batch.error}" if batch.error}"
       else
+        # The worker runs on every node, so it also restarts stopped peer subscriptions
+        # (pglogical does not; docs/PEERS.md).
+        if PeerSync.installed? && (last_heal.nil? || last_heal < 2.minutes.ago)
+          healed = PeerSync.heal! rescue []
+          puts "#{Time.current.iso8601} restarted peer subscriptions #{healed.join(', ')}" if healed.any?
+          last_heal = Time.current
+        end
         if last_prune.nil? || last_prune < 1.hour.ago
           cleared = Intake.prune_originals
           puts "#{Time.current.iso8601} removed the kept originals of #{cleared} old drops" if cleared.positive?

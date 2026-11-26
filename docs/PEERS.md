@@ -250,24 +250,85 @@ After that, cron on each host pulls what is new every 5 minutes (`/var/log/archi
 Until a song's file has arrived on a peer, playing it there fails with "audio file missing";
 everything else about the song is already there.
 
-## Releases (code and migrations)
+## Continued development
 
-- **Deploy every peer** after bigballs: `kamal deploy`, then
-  `kamal deploy -c config/deploy.peer.yml -d <peer>` for each peer.
-- **Migrate every peer before code depends on the migration.** A change replicated into a peer
-  whose table lacks the new column stops that subscription until the peer is migrated (it then
-  carries on by itself). So: additive migrations first, on every peer
-  (`kamal app exec "bin/rails db:migrate" $P --roles web --reuse`); remove a column only after
-  every peer runs code that no longer uses it.
-- **A new shared table**: classify it in `PeerSync`, migrate every peer, then run
-  `peer:setup_node` (same arguments as before) on every peer: it adds the new tables to the
-  replication set and the others copy their rows.
-- **Postgres**: keep every peer on the same image. A major version change is a project of its own.
+Development carries on as before: on gameforge, against staging, with the test suite. Nothing
+there is a peer, so everything below changes nothing for day-to-day work. What changes is how a
+release that touches shared tables reaches the peers.
+
+### What goes wrong without care (seen on the test pair)
+
+- **A node ahead of the others stops them.** A shared-table column that exists on one node and not
+  on another stops the second node's subscription at the first row that carries it ("unknown column
+  name"). pglogical does not restart it by itself.
+- **A node behind the others undoes newer changes.** Replication sends whole rows. A node whose
+  incoming replication is stopped, but which still takes writes, sends its stale copy of a row as
+  the newest version; it overwrites the newer value everywhere, and when the stopped subscription
+  resumes, the newer value is now "older" and is dropped. (Last-update-wins is per row: two peers
+  editing different columns of the same row at the same moment also keep only one edit.)
+- **A data migration run on every node runs N times.** Rows it creates (random ids) appear N
+  times; updates are applied N times.
+
+### The rules
+
+1. **Schema of shared tables: `on_peers`.** bigballs is the *schema primary*
+   (`PEER_SCHEMA_PRIMARY=true` in `config/deploy.yml`). Its migrations send shared-table changes
+   through the replication stream (`pglogical.replicate_ddl_command`), so every node applies them
+   at the same point, before any row that uses them. A new shared table is put in every node's
+   replication set in the same step, so its rows replicate from the first one. On the other peers
+   the block is skipped; where there are no peers it simply runs.
+
+   ```ruby
+   def up
+     on_peers { add_column :playlists, :mood, :string }
+     once_on_peers { Playlist.reset_column_information; Playlist.update_all(mood: "calm") }
+     add_column :jukeboxes, :lights, :boolean        # a LOCAL table: as usual, on every node
+   end
+
+   def down
+     on_peers { remove_column :playlists, :mood }
+   end
+   ```
+
+2. **Data in shared tables: `once_on_peers`.** Runs on the schema primary only; the rows replicate.
+3. **Local tables: as always.** Every node migrates its own.
+4. **No renames of shared tables or columns.** During a release other peers still run the old code
+   for a few minutes. Add the new column, copy (`once_on_peers`), move the code over, drop the old
+   one in a later release.
+5. **Expand, then contract.** A release must work against the schema of the release before it:
+   new columns nullable or with a default; remove a column only once every peer runs code that no
+   longer uses it.
+6. **New tables**: classify them in `PeerSync` (a test fails otherwise).
+
+`test/migrations_peer_rules_test.rb` checks every migration written after peers were introduced:
+a shared table changed outside `on_peers`/`once_on_peers`, or renamed, fails CI. A deliberate
+exception carries a comment saying why: `# peers: <reason>`.
+
+### A release
+
+1. Rehearse it on the gameforge pair if it has migrations: `bash library_tools/staging/peer_rehearsal.sh`
+   migrates the stand-in (as schema primary) from the working tree, deploys and migrates the
+   gameforge peer, and compares them; `peer_rehearsal.sh rollback` undoes it.
+2. bigballs first: `kamal deploy`, then `kamal app exec --reuse "bin/rails db:migrate"`. Its
+   shared-table changes go out to every peer through the stream.
+3. `kamal peer` until every peer's reader shows `behind` near zero.
+4. Each peer: `kamal deploy $P`, then `kamal app exec "bin/rails db:migrate" $P --roles web --reuse`
+   (shared parts are skipped there: they already arrived).
+5. `kamal peer` and `kamal peer $P`: the `schema:` fingerprint must be the same on every node,
+   every subscription `replicating`.
+
+A peer that is offline during a release catches up when it is back: its subscription waits (the
+changes are kept for it, up to `max_slot_wal_keep_size`), it is deployed and migrated as in step 4,
+and the schema changes it missed arrive in order. Deploy it before it takes writes, if you can.
+
+Stopped subscriptions are restarted automatically: the Drop Box worker, which runs on every node,
+tries every 2 minutes (`peer:heal` does it by hand). A subscription that keeps stopping has a cause
+to fix: `kamal accessory logs db $P` / `docker logs archive-db-1` shows the error.
 
 ## Day to day
 
-- `kamal peer` / `kamal peer $P`: node, subscriptions, how far behind each reader is, dangling
-  references. `peer:files`: files present.
+- `kamal peer` / `kamal peer $P`: node, schema fingerprint, subscriptions, how far behind each
+  reader is, dangling references. `peer:files`: files present.
 - Conflicts: `docker logs archive-db-1 2>&1 | grep CONFLICT` (bigballs), `kamal accessory logs db $P`.
   They are resolved; the log is for curiosity and for spotting something that keeps clashing.
 - **Sound analysis**: run the analysis client against one peer only (bigballs); its results
@@ -321,6 +382,11 @@ Then take its line out of `/etc/archive/file-peers` and its key out of `archive-
 - File pulls between the real bigballs and gameforge as dry runs (no music copied): the key on
   bigballs is restricted the same way (`cayuse` standing in for `archive-sync`).
 - Converting a Postgres 15.14 data directory to the 15.20 pglogical image.
+- Continued development: a schema change made on one node only stopped the other's subscription,
+  and a node writing while behind undid a newer change (why the rules exist); schema changes and
+  new shared tables sent through the stream; a release with a shared-table migration rehearsed
+  across the pair and rolled back (same fingerprint, data set once, replication never stopped);
+  a stopped subscription restarted by the worker within 80 s once its cause was fixed.
 
 Not tested: converting production itself (step 2), WireGuard between sites (all tests were on
 one LAN), a full 467 GB seed, variants A and B of reaching a peer (configs validated only), and
@@ -340,3 +406,6 @@ more than two peers.
 | `archive/.kamal/peer-secrets-common`, `.kamal/peer-secrets.<peer>`, `.kamal/peer-hooks/` | peer secrets and hooks, apart from production's |
 | `archive/app/models/peer_sync.rb`, `lib/tasks/peer.rake` | shared/local tables, `rake peer:*` |
 | `archive/app/models/concerns/natural_id.rb` | ids derived from natural keys |
+| `archive/lib/peer_migration.rb` | `on_peers` / `once_on_peers` for migrations |
+| `archive/test/migrations_peer_rules_test.rb` | new migrations must follow the rules |
+| `library_tools/staging/peer_rehearsal.sh` | rehearse a release on the gameforge pair |
