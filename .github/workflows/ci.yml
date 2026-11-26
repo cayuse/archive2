@@ -58,7 +58,7 @@ jobs:
           bundler-cache: true
           working-directory: archive
       - name: Static security scan (fails on anything not in config/brakeman.ignore)
-        run: bin/brakeman --no-pager -q
+        run: bundle exec brakeman --no-pager -q   # the locked version; Dependabot keeps it current
 
   player:
     name: Player daemon
