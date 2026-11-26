@@ -8,7 +8,7 @@ docker rm -f archive-staging-web archive-staging-intake >/dev/null 2>&1 || true
 mkdir -p "$STAGING_DIR/intake"
 docker run -d --name archive-staging-web --network host --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -v "$REPO/archive":/rails -v archive_dev_bundle:/usr/local/bundle -v "$STAGING_DIR/intake":/intake \
-  -e INTAKE_ROOT=/intake -e MUSICBRAINZ_URL \
+  -e INTAKE_ROOT=/intake -e MUSICBRAINZ_URL -e ALLOW_ALL_HOSTS=true \
   -e RAILS_ENV=production -e SECRET_KEY_BASE=$STAGING_SECRET -e REDIS_URL=redis://127.0.0.1:63799/1 \
   -e RAILS_LOG_TO_STDOUT=1 -e RAILS_SERVE_STATIC_FILES=1 -e INLINE_AUDIO_PROCESSING=true \
   -e DATABASE_URL="$(db_url)" archive-dev bundle exec rails server -b "${BIND:-127.0.0.1}" -p 3909 >/dev/null
