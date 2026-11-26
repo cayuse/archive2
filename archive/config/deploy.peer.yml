@@ -97,4 +97,4 @@ accessories:
 
 aliases:
   console: app exec --interactive --reuse "bin/rails console"
-  peer: app exec --reuse "bin/rails peer:status"
+  peer: app exec --reuse --roles web "bin/rails peer:status"

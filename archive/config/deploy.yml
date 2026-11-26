@@ -106,5 +106,6 @@ volumes:
 aliases:
   console: app exec --interactive --reuse "bin/rails console"
   shell: app exec --interactive --reuse "bash"
+  peer: app exec --reuse --roles web "bin/rails peer:status"     # docs/PEERS.md
   logs: app logs -f
   dbc: app exec --interactive --reuse "bin/rails dbconsole"

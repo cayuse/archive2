@@ -131,20 +131,11 @@ existing station/radio jukebox and its feedback); the player daemon is unchanged
 Old items 2 (daemon drives any jukebox, hand-off, transport), 3 (node admin UI), 4 (`player_url`
 reachability) and 5 (code leak on `show`) are closed and deployed.
 
-### 6. Sync extension (DEFERRED by owner — "don't mess with syncing")
-Existing jukeboxes are slave-only player endpoints; true peer sync has never been
-attempted and is out of scope for now. For the record, when it's time:
-- `pub_archive` (pg logical replication, master→slaves) publishes only 15 core
-  tables; the new metadata is NOT replicated: `song_file_tags`,
-  `song_audio_features`, `song_embeddings`, `song_neighbors`,
-  `song_artist_credits`, `genre_affinities` (FKs all point only at published
-  tables, so adding them is safe one-way). Keep node-local (do NOT publish):
-  `jukeboxes`, `ajb_queue_items`, `ajb_played_songs`, `station_feedbacks`.
-- App-level two-way scaffold exists but is not wired: `sync_changes` change-log
-  (only `song`/`album`/`artist`/`genre` emit `SyncChange`, none of the new
-  models), `slave_keys`/`jukebox_keys` (random `key_hash` node auth),
-  `conflict_logs`, `PowerSyncService` (jukebox app, commented-out initializer).
-  UUID PKs everywhere are the "random key" that makes multi-master collision-free.
+### 6. Peers (built and tested on gameforge 2026-11-26; production not converted)
+Two-way sync between archives: pglogical for the shared tables (`PeerSync`), rsync pulls for
+the files, Kamal for each peer. Playbook and test record: `docs/PEERS.md`. Step 2 there (converting
+bigballs' database to the pglogical image, about a minute of downtime) is the first change to
+production and has not been done. The old app-level sync scaffold (`sync_changes` etc.) is gone.
 
 ### 7. Other design items (see `reference/UI_DESIGN_PASS.md`, not built)
 Devices/sites model, unified Now Playing, mood search (dial filters + chips +

@@ -7,6 +7,7 @@
 | `../README.md` | What is in the repository, how to run, check and deploy it. |
 | `STATUS.md` | What is built and deployed, what is not, and the gotchas learned along the way. |
 | `../archive/KAMAL_DEPLOY.md` | Deploying the app (backup, deploy, migrate, rollback, staging). |
+| `PEERS.md` | Running more than one archive: peers kept in step both ways (database by pglogical, files by rsync), the end-to-end playbook. |
 | `../station/README.md` | The player service: how it works, deploy, settings, testing. |
 | `../library_tools/staging/README.md` | The staging harness (production-copy database, tests, end-to-end scripts). |
 | `../library_tools/README.md` | Library maintenance tools. |
