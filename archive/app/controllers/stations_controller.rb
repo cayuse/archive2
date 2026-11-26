@@ -1,5 +1,6 @@
 # A user's radio stations and the page that tunes one. The pages are shells: they load and change
-# everything through /api/v1/jukeboxes (stations are jukeboxes), using a token minted here.
+# everything through /api/v1/jukeboxes, using a token minted here. A station is a Station record;
+# the pages address it by the jukebox that plays it on this node (Station#runtime!).
 class StationsController < ApplicationController
   include ApiTokenIssuer
 
@@ -9,14 +10,15 @@ class StationsController < ApplicationController
   def index
     Jukebox.station_for(current_user)
     @stations = Jukebox.stations_for(current_user)
+    @playlists = Playlist.where("is_public = TRUE OR user_id = ?", current_user.id).order(:name)
     @api_token = api_token_for(current_user)
   end
 
   def show
-    @station = Jukebox.stations_for(current_user).find(params[:id])
+    # by the id of the station's jukebox (what the pages link to) or of the Station itself
+    @station = Jukebox.stations_for(current_user).find { |j| j.id == params[:id] || j.station_id == params[:id] }
+    return redirect_to stations_path, alert: "That station does not exist." unless @station
     @api_token = api_token_for(current_user)
-  rescue ActiveRecord::RecordNotFound
-    redirect_to stations_path, alert: "That station does not exist."
   end
 
   private

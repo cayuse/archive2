@@ -56,12 +56,39 @@ const StationsPage = (function () {
         const data = await api('POST', '/jukeboxes/station', { song_id: songId, new: true });
         window.location = '/stations/' + data.jukebox.id;
       });
+    if ($('new-station-playlist-go')) $('new-station-playlist-go').onclick = async () => {
+      const data = await api('POST', '/jukeboxes/station', { new: true, playlist_id: $('new-station-playlist').value, playlist_mode: $('new-station-playlist-mode').value });
+      window.location = '/stations/' + data.jukebox.id;
+    };
+    loadShared();
+    $('shared-list').onclick = async e => {
+      const b = e.target.closest('button[data-copy-station]');
+      if (!b) return;
+      const data = await api('POST', '/jukeboxes/copy_station', { station_id: b.dataset.copyStation });
+      window.location = '/stations/' + data.jukebox.id;
+    };
     $('stations-list').onclick = async e => {
       const b = e.target.closest('button[data-delete-station]');
-      if (!b || !confirm('Delete the station "' + b.dataset.name + '" and what it has learned?')) return;
+      if (!b || !confirm('Delete the station "' + b.dataset.name + '" and what it has learned? (Copies other people made of it keep working.)')) return;
       await api('DELETE', '/jukeboxes/' + b.dataset.deleteStation + '/station');
       window.location.reload();
     };
+  }
+
+  async function loadShared() {
+    const data = await api('GET', '/jukeboxes/shared_stations');
+    const stations = data.stations || [];
+    $('shared-block').classList.toggle('d-none', !stations.length);
+    $('shared-list').innerHTML = stations.map(s => {
+      const about = [s.playlists.length ? 'Playlist: ' + s.playlists.join(', ') : '',
+                     s.seeds.length ? 'Built around ' + s.seeds.map(x => x.title + (x.artist ? ' by ' + x.artist : '')).join(', ') : ''].filter(Boolean).join('. ');
+      return `<div class="col-md-6 col-lg-4 mb-3"><div class="card h-100"><div class="card-body d-flex flex-column">
+        <h5 class="card-title theme-text-primary mb-1">${esc(s.name)}</h5>
+        <p class="theme-text-secondary small mb-1">by ${esc(s.owner || 'someone')}</p>
+        <p class="theme-text-secondary small flex-grow-1 mb-2">${esc(about)}</p>
+        <div><button type="button" class="btn btn-sm ${s.copied ? 'btn-outline-secondary' : 'btn-primary'}" data-copy-station="${esc(s.id)}">${s.copied ? 'Open my copy' : 'Add to my stations'}</button></div>
+      </div></div></div>`;
+    }).join('');
   }
 
   // ---- tuning page
@@ -144,6 +171,7 @@ const StationsPage = (function () {
     $('genre-mode').onclick = e => { const b = e.target.closest('button[data-genre]'); if (b) setSound({ genre: b.dataset.genre }); };
     $('dials').onclick = e => { const b = e.target.closest('button[data-dial]'); if (b) setSound({ [b.dataset.dial]: Number(b.dataset.v) }); };
     $('reset-sound').onclick = () => setSound({ reset_steer: true, genre: 'any', variety: 0.5 });
+    $('shared').onchange = () => api('PATCH', base() + '/share', { shared: $('shared').checked });
     $('rename-station').onclick = async () => {
       const name = prompt('Station name', station ? station.name : '');
       if (!name || !name.trim()) return;

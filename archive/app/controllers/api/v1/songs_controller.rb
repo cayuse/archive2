@@ -147,7 +147,7 @@ class Api::V1::SongsController < ApplicationController
     steer = params.permit(*SongAudioFeature::DIALS).to_h
     songs = SongRadio.new(seed: @song, exclude_ids: exclude, steer: steer, intensity: steer["energy"],
                           genre_mode: params[:genre], user: @current_api_user,
-                          station: Jukebox.first_station(@current_api_user))
+                          station: Station.first_for(@current_api_user, create: false))
                      .next_songs((params[:count] || 20).to_i.clamp(1, 100))
     render json: {
       success: true,
@@ -163,7 +163,7 @@ class Api::V1::SongsController < ApplicationController
   # POST /api/v1/jukeboxes/:id/feedback, which is per station and has more kinds.
   def rate
     value = StationFeedback.rate!(user: @current_api_user, song: @song, value: params[:value],
-                                  jukebox: Jukebox.first_station(@current_api_user))
+                                  station: Station.first_for(@current_api_user, create: false))
     render json: { success: true, song_id: @song.id, value: value }
   end
 

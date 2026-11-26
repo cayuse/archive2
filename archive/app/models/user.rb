@@ -5,6 +5,7 @@ class User < ApplicationRecord
   # Associations
   has_many :playlists, dependent: :destroy
   has_many :station_feedbacks, dependent: :destroy
+  has_many :stations, dependent: :destroy
   has_many :jukeboxes, foreign_key: :owner_id, dependent: :destroy
   has_many :playback_grants, dependent: :destroy
   has_many :playback_nodes, through: :playback_grants, source: :archive_node

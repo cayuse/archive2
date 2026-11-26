@@ -31,5 +31,5 @@ echo "== old page's /api/rate still works"; post /api/rate "{\"song_id\":\"$(cur
 echo "== switch to the first station"; FIRST=$(curl -s $S/api/stations | python3 -c "import json,sys; print(json.load(sys.stdin)['stations'][0]['id'])"); post /api/start "{\"station_id\":\"$FIRST\"}" >/dev/null; sleep 5; curl -s $S/api/state | show
 echo "== stop"; post /api/stop '{}' | python3 -c "import json,sys; s=json.load(sys.stdin); print('  playing=%s' % s['playing'])"
 echo "== what the archive recorded"
-bash "$HERE/psql.sh" -At -F' | ' -c "select f.kind, round(f.position::numeric,0), j.name, left(s.title,40) from station_feedbacks f join users u on u.id=f.user_id left join jukeboxes j on j.id=f.jukebox_id join songs s on s.id=f.song_id where u.email='station-test@example.invalid' and f.created_at > now() - interval '3 minutes' order by f.created_at" | sed 's/^/  /'
+bash "$HERE/psql.sh" -At -F' | ' -c "select f.kind, round(f.position::numeric,0), st.name, left(s.title,40) from station_feedbacks f join users u on u.id=f.user_id left join stations st on st.id=f.station_id join songs s on s.id=f.song_id where u.email='station-test@example.invalid' and f.created_at > now() - interval '3 minutes' order by f.created_at" | sed 's/^/  /'
 echo "== station log tail"; tail -8 /tmp/station_e2e.log | sed 's/^/  /'

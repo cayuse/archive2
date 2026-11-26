@@ -2,7 +2,7 @@
 # needs: songs that must not play, artists taken off the station, a "taste" direction in sound
 # space, and leanings on the mood dials.
 #
-#   taste = StationTaste.new(user: user, station: jukebox)
+#   taste = StationTaste.new(user: user, station: station)     # a Station, or nil for the user's own thumbs
 #   taste.blocked_ids          # Set of song ids that must not be picked
 #   taste.removed_artist_ids   # Set: thumbed down twice on this station with no thumbs up
 #   taste.vector               # unit vector (Array<Float>) or nil when there is nothing to go on
@@ -66,19 +66,21 @@ class StationTaste
   private
 
   def load_feedback
-    rows = StationFeedback.current.where(user_id: @user.id)
-                          .where("kind IN ('tired','never') OR jukebox_id IS NOT DISTINCT FROM ?", @station&.id)
-                          .order(created_at: :desc).pluck(:song_id, :kind, :position)
-    by_kind = rows.group_by { |_, kind, _| kind }
-    @liked_ids = (by_kind["up"] || []).map(&:first).first(RECENT)
-    @disliked_ids = (by_kind["down"] || []).map(&:first).first(RECENT)
+    # the station's log (for a copy: including what it inherited), newest first
+    rows = StationFeedback.log_for(user: @user, station: @station)
+                          .order(created_at: :desc).pluck(:song_id, :kind, :position, :created_at)
+    by_kind = rows.group_by { |_, kind, _, _| kind }
+    thumbs = StationFeedback.thumbs(rows.map { |song_id, kind, _, at| [ song_id, kind, at ] })
+    newest_first = thumbs.sort_by { |_, (_, at)| at }.reverse
+    @liked_ids = newest_first.select { |_, (kind, _)| kind == "up" }.map(&:first).first(RECENT)
+    @disliked_ids = newest_first.select { |_, (kind, _)| kind == "down" }.map(&:first).first(RECENT)
     @finished_ids = (by_kind["finished"] || []).map(&:first).first(RECENT).uniq - @liked_ids - @disliked_ids
-    (by_kind["skip"] || []).first(RECENT).each do |song_id, _, position|
+    (by_kind["skip"] || []).first(RECENT).each do |song_id, _, position, _|
       @skipped[song_id] += 1 if position.nil? || position < StationFeedback::EARLY_SKIP
     end
     @skipped.except!(*@liked_ids)
     @blocked_ids = Set.new(@disliked_ids)
-    %w[tired never].each { |kind| (by_kind[kind] || []).each { |song_id, _, _| @blocked_ids << song_id } }
+    %w[tired never].each { |kind| (by_kind[kind] || []).each { |song_id, *| @blocked_ids << song_id } }
     @skipped.each { |song_id, n| @blocked_ids << song_id if n >= SKIPS_TO_BLOCK }
     load_artists
   end
@@ -91,7 +93,7 @@ class StationTaste
     @liked_ids.each { |id| votes[artist_of[id]][:up] += 1 if artist_of[id] }
     @disliked_ids.each { |id| votes[artist_of[id]][:down] += 1 if artist_of[id] }
     @artist_votes = votes
-    kept = Set.new(@station&.radio_kept_artist_ids || [])
+    kept = Set.new(@station&.kept_artist_ids || [])
     votes.each do |artist_id, v|
       if v[:down] >= ARTIST_DOWNS && v[:up].zero? && !kept.include?(artist_id.to_s)
         @removed_artist_ids << artist_id

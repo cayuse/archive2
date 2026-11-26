@@ -22,9 +22,9 @@ class SongsController < ApplicationController
     @genre_mode = SongRadio::GENRE_MODES.include?(params[:genre]) ? params[:genre] : "any"
     station = Jukebox.first_station(current_user)
     @songs = SongRadio.new(seed: @song, steer: @steer, intensity: @steer["energy"], genre_mode: @genre_mode,
-                           user: current_user, station: station)
+                           user: current_user, station: station&.station)
                       .next_songs((params[:count] || 25).to_i.clamp(1, 100))
-    @ratings = StationFeedback.standings(user: current_user, song_ids: @songs.map(&:id) + [ @song.id ], jukebox: station)
+    @ratings = StationFeedback.standings(user: current_user, song_ids: @songs.map(&:id) + [ @song.id ], station: station&.station)
                               .transform_values { |standing| standing == "up" ? 1 : -1 }
   end
 
@@ -45,7 +45,7 @@ class SongsController < ApplicationController
   # Thumbs given here belong to the user's first station (or to the user alone if they have none).
   def rate
     authorize @song, :show?
-    value = StationFeedback.rate!(user: current_user, song: @song, value: params[:value], jukebox: Jukebox.first_station(current_user))
+    value = StationFeedback.rate!(user: current_user, song: @song, value: params[:value], station: Station.first_for(current_user, create: false))
     render json: { success: true, song_id: @song.id, value: value }
   end
   

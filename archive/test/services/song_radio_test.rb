@@ -34,9 +34,9 @@ class SongRadioTest < ActiveSupport::TestCase
   end
 
   test "thumbed-down songs and removed artists do not play on that station" do
-    station = Jukebox.create_station!(@user, name: "t")
+    station = Jukebox.create_station!(@user, name: "t").station
     @near.select { |s| s.artist_id == artists(:one).id }.first(2).each do |s|
-      StationFeedback.record!(user: @user, jukebox: station, song: s, kind: "down")
+      StationFeedback.record!(user: @user, station: station, song: s, kind: "down")
     end
     songs = SongRadio.new(seed: @seed, user: @user, station: station, random: Random.new(1)).next_songs(12)
     assert songs.any?

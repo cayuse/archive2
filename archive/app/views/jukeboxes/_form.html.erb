@@ -117,6 +117,23 @@
               </div>
             </div>
 
+            <% my_stations = jukebox.station? ? [] : Station.for_user(current_user).to_a %>
+            <% if my_stations.any? %>
+              <div class="mb-3">
+                <label class="form-label" for="jukebox_station_id">Radio station</label>
+                <select class="form-select" id="jukebox_station_id" name="jukebox[station_id]">
+                  <option value="">Its own (follows requests, learns separately)</option>
+                  <% my_stations.each do |st| %>
+                    <option value="<%= st.id %>" <%= "selected" if jukebox.station_id == st.id %>><%= st.name %></option>
+                  <% end %>
+                </select>
+                <div class="form-text">
+                  With radio auto-fill, play from one of your stations: its seeds, its tuning and what it has learned.
+                  Thumbs given at the party then teach that station too.
+                </div>
+              </div>
+            <% end %>
+
             <div class="mb-3 form-check">
               <input type="hidden" name="jukebox[requests_steer]" value="0">
               <input type="checkbox" class="form-check-input" id="jukebox_requests_steer" name="jukebox[requests_steer]" value="1" <%= "checked" if jukebox.requests_steer? %>>

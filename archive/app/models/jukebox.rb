@@ -4,7 +4,9 @@ class Jukebox < ApplicationRecord
   has_many :playlists, through: :jukebox_playlist_assignments
   has_many :ajb_queue_items, dependent: :destroy
   has_many :ajb_played_songs, dependent: :destroy
-  has_many :station_feedbacks, dependent: :destroy
+  # The Station this jukebox plays from: its seeds, tuning and what it has learned live there.
+  belongs_to :station, optional: true
+  after_destroy { station.destroy if station&.implicit? }
 
   validates :name, presence: true, length: { maximum: 255 }
   # Guests always join with a password — a jukebox can't exist without one.
@@ -22,52 +24,87 @@ class Jukebox < ApplicationRecord
   FILL_MODES = %w[random radio].freeze
   validates :fill_mode, inclusion: { in: FILL_MODES }
 
-  # A user's stations: jukeboxes on radio auto-fill with no playlists, so they draw on the whole
-  # library. Recognised by this session_id prefix. Everyone who may host has a first one ("My
-  # Station", created on first use) and can add more, each with its own seeds, tuning and feedback.
+  # A person's stations are Station records (durable, theirs, copyable). Each has a runtime jukebox
+  # on this node that plays it: a jukebox on radio auto-fill with no playlists of its own,
+  # recognised by this session_id prefix. The station pages and the player daemon work with these
+  # runtime jukeboxes; the methods below hand them out.
   STATION_PREFIX = "station-".freeze
-  MAX_STATIONS = 40
-  class TooManyStations < StandardError; end
+  MAX_STATIONS = Station::MAX_PER_USER
+  TooManyStations = Station::TooMany
 
   scope :stations, -> { where("session_id LIKE ?", "#{STATION_PREFIX}%") }
+  scope :station_runtimes, -> { stations }
 
   def self.station_code(user)
     "#{STATION_PREFIX}#{user.id.to_s.delete('-').first(12)}"
   end
 
+  # The jukebox that plays +station+ here.
+  def self.create_runtime_for!(station)
+    code = station_code(station.user)
+    code = "#{code}-#{SecureRandom.hex(3)}" unless station.permanent? && !exists?(session_id: code)
+    create!(owner: station.user, station: station, session_id: code, name: station.name, fill_mode: "radio",
+            guest_password: SecureRandom.alphanumeric(8).downcase, min_queue_length: 2, queue_refill_level: 4)
+  end
+
+  # The user's first station ("My Station"), made on first use.
   def self.station_for(user)
-    code = station_code(user)
-    find_by(owner_id: user.id, session_id: code) || create_station!(user, name: "My Station", session_id: code)
+    Station.first_for(user).runtime!
   end
 
   # The user's first station if it exists already (never creates one).
   def self.first_station(user)
-    find_by(owner_id: user.id, session_id: station_code(user))
+    Station.first_for(user, create: false)&.runtime!
   end
 
   def self.stations_for(user)
-    stations.where(owner_id: user.id).order(:created_at)
+    stations = Station.for_user(user).to_a
+    stations.each(&:runtime!)
+    station_runtimes.where(station_id: stations.map(&:id)).includes(:station).sort_by { |j| stations.index(j.station) }
   end
 
-  # A new station for the user, optionally started from a song (named after it unless given a name).
-  def self.create_station!(user, name: nil, song: nil, session_id: nil)
-    raise TooManyStations, "You already have #{MAX_STATIONS} stations" if session_id.nil? && stations_for(user).count >= MAX_STATIONS
-    station = create!(
-      owner: user, session_id: session_id || "#{station_code(user)}-#{SecureRandom.hex(3)}",
-      name: (name.presence || (song ? "#{song.title} Radio" : "New Station")).to_s.first(255), fill_mode: "radio",
-      guest_password: SecureRandom.alphanumeric(8).downcase,
-      min_queue_length: 2, queue_refill_level: 4
-    )
-    station.start_from!(song) if song
-    station
+  # A new station for the user, started from a song and / or a playlist.
+  def self.create_station!(user, name: nil, song: nil, playlist: nil, playlist_mode: "inspire")
+    station = Station.start!(user, name: name, song: song, playlist: playlist, playlist_mode: playlist_mode)
+    fresh = !station.jukeboxes.station_runtimes.exists?
+    jukebox = station.runtime!
+    jukebox.ajb_queue_items.create!(song: song, source: "requested") if song && fresh
+    jukebox
   end
 
   def radio?
     fill_mode == "radio"
   end
 
+  # Is this the runtime jukebox of a person's station (rather than a party jukebox)?
   def station?
     session_id.to_s.start_with?(STATION_PREFIX)
+  end
+  alias_method :station_runtime?, :station?
+
+  # Tuning lives on the station. A jukebox with no station yet has none (reads) and gets a private
+  # station of its own the first time something is stored or learned (radio_station).
+  def radio_settings
+    station ? station.settings : (super || {})
+  end
+
+  def radio_station
+    return station if station
+    update!(station: Station.implicit_for(self))
+    station
+  end
+
+  def write_radio_settings!(settings)
+    radio_station.write_settings!(settings)
+  end
+
+  # Songs the radio must stay inside: this jukebox's playlists and / or the station's "only"
+  # playlists. nil = the whole library.
+  def radio_allowed_song_ids
+    playlist_ids = jukebox_playlist_assignments.enabled.pluck(:playlist_id)
+    mine = playlist_ids.any? ? PlaylistsSong.where(playlist_id: playlist_ids).pluck(:song_id) : nil
+    only = station&.playlist_song_ids(only: true)
+    mine && only ? (mine & only) : (mine || only)
   end
 
   def radio_genre_mode
@@ -151,7 +188,7 @@ class Jukebox < ApplicationRecord
     %w[learn requests_steer].each do |flag|
       settings[flag] = ActiveModel::Type::Boolean.new.cast(attrs[flag]) == true if attrs.key?(flag)
     end
-    update!(radio_settings: settings)
+    write_radio_settings!(settings)
     retune!
   end
 
@@ -159,7 +196,7 @@ class Jukebox < ApplicationRecord
   # song goes to the front. What the station learned from thumbs is kept.
   def start_from!(song)
     transaction do
-      update!(radio_settings: radio_settings.merge("seeds" => [ song.id ])) if radio?
+      write_radio_settings!(radio_settings.merge("seeds" => [ song.id ])) if radio?
       ajb_queue_items.delete_all
       ajb_queue_items.create!(song: song, source: "requested")
     end
@@ -341,7 +378,11 @@ class Jukebox < ApplicationRecord
       },
       queue_length: ajb_queue_items.count,
       live: live?,
-      server_playback: server_playback?, transport: server_transport
+      server_playback: server_playback?, transport: server_transport,
+      station_id: station_id, shared: station&.shared? || false, name_edited: station&.name_edited? || false,
+      permanent: station&.permanent? || false,
+      copied_from: station&.parent && { name: station.parent.name, owner: station.parent.user&.name },
+      playlists: station ? station.station_playlists.includes(:playlist).map { |l| { id: l.playlist_id, name: l.playlist&.name, mode: l.mode } } : []
     }
   end
 
@@ -355,7 +396,7 @@ class Jukebox < ApplicationRecord
   end
 
   def update_setting!(key, value)
-    update!(radio_settings: radio_settings.merge(key => value))
+    write_radio_settings!(radio_settings.merge(key => value))
     retune!
   end
 

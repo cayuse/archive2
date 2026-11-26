@@ -141,11 +141,14 @@ Rails.application.routes.draw do
         collection do
           post :station
           get :stations
+          get :shared_stations
+          post :copy_station
         end
         member do
           patch :radio_settings
           patch :station, action: :rename_station
           delete :station, action: :destroy_station
+          patch :share, action: :share_station
           post :feedback
           get :tuning
           post :seeds, action: :add_seed

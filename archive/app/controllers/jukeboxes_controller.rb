@@ -82,9 +82,22 @@ class JukeboxesController < ApplicationController
 
   # Radio options kept in radio_settings rather than in columns of their own.
   def save_radio_options
+    bind_station
     value = params.dig(:jukebox, :requests_steer)
     return if value.nil? || @jukebox.requests_steer? == (value.to_s == "1")
-    @jukebox.update!(radio_settings: @jukebox.radio_settings.merge("requests_steer" => value.to_s == "1"))
+    @jukebox.write_radio_settings!(@jukebox.radio_settings.merge("requests_steer" => value.to_s == "1"))
+  end
+
+  # A party jukebox can play from one of the owner's stations (its seeds, tuning and taste)
+  # instead of keeping a private radio of its own. Blank = its own.
+  def bind_station
+    return if @jukebox.station? || !params[:jukebox].key?(:station_id)
+    chosen = Station.for_user(current_user).find_by(id: params[:jukebox][:station_id].presence)
+    return if chosen&.id == @jukebox.station_id || (chosen.nil? && (@jukebox.station.nil? || @jukebox.station.implicit?))
+    old = @jukebox.station
+    @jukebox.update!(station: chosen)
+    old.destroy if old&.implicit?
+    @jukebox.retune!
   end
 
   def assign_playlists_to_jukebox

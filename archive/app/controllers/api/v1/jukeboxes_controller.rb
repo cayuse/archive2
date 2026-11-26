@@ -4,8 +4,8 @@ class Api::V1::JukeboxesController < ApplicationController
 
   skip_before_action :verify_authenticity_token
   before_action :authenticate_api_user!
-  before_action :set_jukebox, only: [:status, :queue, :current_song, :playback_info, :history, :add_to_queue, :remove_from_queue, :move_in_queue, :promote_in_queue, :play_next_in_queue, :playback_status, :next_song, :radio_settings, :feedback, :tuning, :add_seed, :remove_seed, :keep_artist, :rename_station, :destroy_station, :transport, :server_playback]
-  before_action :require_person!, only: [:index, :stations, :station, :server_playback]
+  before_action :set_jukebox, only: [:status, :queue, :current_song, :playback_info, :history, :add_to_queue, :remove_from_queue, :move_in_queue, :promote_in_queue, :play_next_in_queue, :playback_status, :next_song, :radio_settings, :feedback, :tuning, :add_seed, :remove_seed, :keep_artist, :rename_station, :destroy_station, :share_station, :transport, :server_playback]
+  before_action :require_person!, only: [:index, :stations, :station, :shared_stations, :copy_station, :server_playback]
 
   # List the authenticated user's own jukeboxes so player clients can offer
   # a picker instead of needing a pasted UUID.
@@ -138,44 +138,84 @@ class Api::V1::JukeboxesController < ApplicationController
     render json: { success: true, stations: Jukebox.stations_for(@current_api_user).map { |j| station_json(j) } }
   end
 
-  # POST /api/v1/jukeboxes/station   [station_id] [song_id] [new=true] [name]
-  # A station of the caller's. With nothing: their first station (created on first use).
-  #   station_id          that station
+  # POST /api/v1/jukeboxes/station   [station_id] [song_id] [playlist_id] [playlist_mode] [new=true] [name]
+  # A station of the caller's, as the jukebox that plays it. With nothing: their first station.
+  #   station_id          that station (the id of its jukebox)
   #   song_id             restart the station from that song (it becomes the seed)
-  #   new=true            make a new station (from song_id when given), named +name+ or after the song
+  #   new=true            make a new station from song_id and / or playlist_id (playlist_mode:
+  #                       inspire = the playlist sets the sound, only = stay inside it), named
+  #                       +name+ or after what it was started from
   def station
     return render_no_host unless @current_api_user.can_host_jukebox?
     song = params[:song_id].present? ? Song.find(params[:song_id]) : nil
     if ActiveModel::Type::Boolean.new.cast(params[:new])
-      jukebox = Jukebox.create_station!(@current_api_user, name: params[:name], song: song)
+      playlist = params[:playlist_id].present? ? visible_playlists.find(params[:playlist_id]) : nil
+      jukebox = Jukebox.create_station!(@current_api_user, name: params[:name], song: song, playlist: playlist, playlist_mode: params[:playlist_mode])
     else
-      jukebox = params[:station_id].present? ? Jukebox.stations_for(@current_api_user).find(params[:station_id]) : Jukebox.station_for(@current_api_user)
+      jukebox = params[:station_id].present? ? station_runtime(params[:station_id]) : Jukebox.station_for(@current_api_user)
       jukebox.start_from!(song) if song
     end
     broadcast_queue_update(jukebox) if song
     render json: { success: true, jukebox: station_json(jukebox) }
   rescue ActiveRecord::RecordNotFound
-    render json: { success: false, message: 'Song or station not found' }, status: 404
+    render json: { success: false, message: 'Song, playlist or station not found' }, status: 404
   rescue Jukebox::TooManyStations => e
+    render json: { success: false, message: e.message }, status: 422
+  end
+
+  # GET /api/v1/jukeboxes/shared_stations
+  # Stations other people have shared, to copy.
+  def shared_stations
+    return render_no_host unless @current_api_user.can_host_jukebox?
+    mine = Station.for_user(@current_api_user).where.not(parent_id: nil).pluck(:parent_id).to_set
+    stations = Station.shared_by_others(@current_api_user).includes(:user)
+    seeds = Song.includes(:artist).where(id: stations.flat_map(&:seed_ids)).index_by(&:id)
+    render json: { success: true, stations: stations.map { |s|
+      { id: s.id, name: s.name, owner: s.user&.name, copied: mine.include?(s.id),
+        seeds: s.seed_ids.filter_map { |id| seeds[id] && { title: seeds[id].title, artist: seeds[id].artist&.name } }.first(3),
+        playlists: s.playlists.map(&:name) }
+    } }
+  end
+
+  # POST /api/v1/jukeboxes/copy_station   station_id= (a Station id from shared_stations) [name]
+  # The caller's own copy of a shared station: same recipe, everything it had learned so far, and
+  # from here on its own. Nothing of the original changes.
+  def copy_station
+    return render_no_host unless @current_api_user.can_host_jukebox?
+    source = Station.listed.where("shared = TRUE OR user_id = ?", @current_api_user.id).find(params[:station_id])
+    jukebox = source.copy_for!(@current_api_user, name: params[:name]).runtime!
+    render json: { success: true, jukebox: station_json(jukebox) }
+  rescue ActiveRecord::RecordNotFound
+    render json: { success: false, message: 'Station not found or not shared' }, status: 404
+  rescue Station::TooMany => e
     render json: { success: false, message: e.message }, status: 422
   end
 
   # PATCH /api/v1/jukeboxes/:id/station   name=
   def rename_station
     return render json: { success: false, message: 'Not a station' }, status: 422 unless @jukebox.station?
-    @jukebox.update!(name: params[:name].to_s.strip.first(255))
-    render json: { success: true, jukebox: station_json(@jukebox) }
+    @jukebox.radio_station.rename!(params[:name])
+    render json: { success: true, jukebox: station_json(@jukebox.reload) }
   rescue ActiveRecord::RecordInvalid => e
     render json: { success: false, message: e.record.errors.full_messages.to_sentence }, status: 422
   end
 
+  # PATCH /api/v1/jukeboxes/:id/share   shared=true|false
+  # Let other people see this station and copy it.
+  def share_station
+    return render json: { success: false, message: 'Not a station' }, status: 422 unless @jukebox.station?
+    @jukebox.radio_station.update!(shared: ActiveModel::Type::Boolean.new.cast(params[:shared]) == true)
+    render json: { success: true, jukebox: station_json(@jukebox) }
+  end
+
   # DELETE /api/v1/jukeboxes/:id/station
-  # Removes a station and what it learned. The first station ("My Station") cannot be removed.
+  # Removes a station and what it learned. Copies other people made of it keep working. The first
+  # station ("My Station") cannot be removed.
   def destroy_station
-    if !@jukebox.station? || @jukebox.session_id == Jukebox.station_code(@current_api_user)
+    if !@jukebox.station? || @jukebox.station.nil? || @jukebox.station.permanent?
       return render json: { success: false, message: 'This station cannot be removed' }, status: 422
     end
-    @jukebox.destroy!
+    @jukebox.station.remove!
     render json: { success: true }
   end
 
@@ -194,7 +234,7 @@ class Api::V1::JukeboxesController < ApplicationController
   def feedback
     song = Song.find(params[:song_id])
     kind = params[:kind].to_s
-    standing = StationFeedback.record!(user: @current_api_user, jukebox: @jukebox, song: song, kind: kind, position: params[:position])
+    standing = StationFeedback.record!(user: @current_api_user, station: @jukebox.radio_station, song: song, kind: kind, position: params[:position])
     if kind.in?(%w[down tired never])
       @jukebox.ajb_queue_items.where(song_id: song.id, source: 'random').delete_all
       @jukebox.retune!
@@ -534,7 +574,7 @@ class Api::V1::JukeboxesController < ApplicationController
   # otherwise uses the whole library. Returns how many were added; the caller tops up the rest at random.
   def add_radio_songs!(need)
     exclude = @jukebox.ajb_played_songs.recent(50).pluck(:song_id) + @jukebox.ajb_queue_items.pluck(:song_id)
-    whole_library = !@jukebox.jukebox_playlist_assignments.enabled.exists?
+    allowed = @jukebox.radio_allowed_song_ids
 
     # A tight genre setting can run dry (small genres have few sound-alikes). Rather than let the
     # music stop, loosen the genre limit step by step for this top-up only.
@@ -555,10 +595,11 @@ class Api::V1::JukeboxesController < ApplicationController
     # Last resort for a station with no playlists (nothing to start from, seed never analysed, or
     # everything nearby was played recently): any analysed music the listener has not blocked, so
     # the stream keeps going. The next top-up follows on from whatever this picks.
-    if added < need && whole_library
-      blocked = StationTaste.new(user: @jukebox.owner, station: @jukebox, learn: false).blocked_ids.to_a
-      Song.joins(:audio_feature).where("song_audio_features.speech < ?", SongRadio::SPEECH_CUTOFF)
-          .where.not(id: exclude + blocked).order(Arel.sql("RANDOM()")).limit(need - added).pluck(:id).each do |song_id|
+    if added < need && (allowed.nil? || @jukebox.station?)
+      blocked = StationTaste.new(user: @jukebox.owner, station: @jukebox.station, learn: false).blocked_ids.to_a
+      pool = Song.joins(:audio_feature).where("song_audio_features.speech < ?", SongRadio::SPEECH_CUTOFF)
+      pool = pool.where(id: allowed) if allowed
+      pool.where.not(id: exclude + blocked).order(Arel.sql("RANDOM()")).limit(need - added).pluck(:id).each do |song_id|
         added += 1 if @jukebox.ajb_queue_items.create(song_id: song_id, source: 'random').persisted?
       end
     end
@@ -691,6 +732,15 @@ class Api::V1::JukeboxesController < ApplicationController
 
   def station_json(jukebox)
     jukebox.station_json
+  end
+
+  # The caller's station given the id of its jukebox (what clients hold) or of the Station itself.
+  def station_runtime(id)
+    Jukebox.station_runtimes.find_by(id: id, owner_id: @current_api_user.id) || Station.for_user(@current_api_user).find(id).runtime!
+  end
+
+  def visible_playlists
+    Playlist.where("is_public = TRUE OR user_id = ?", @current_api_user.id)
   end
 
   # Collection actions belong to a person; the player daemon has no use for them.

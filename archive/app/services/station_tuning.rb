@@ -5,18 +5,21 @@ class StationTuning
 
   def initialize(jukebox, user)
     @jukebox, @user = jukebox, user
-    @taste = StationTaste.new(user: user, station: jukebox, learn: jukebox.radio_learn?)
+    @station = jukebox.station
+    @taste = StationTaste.new(user: user, station: @station, learn: jukebox.radio_learn?)
   end
 
   def as_json(*)
-    feedback = StationFeedback.current.where(user_id: @user.id, kind: %w[up down tired never])
-                              .where("kind IN ('tired','never') OR jukebox_id = ?", @jukebox.id)
-                              .order(created_at: :desc).limit(LIMIT * 4).pluck(:song_id, :kind, :created_at, :expires_at)
+    rows = StationFeedback.log_for(user: @user, station: @station).where(kind: %w[up down clear tired never])
+                          .order(created_at: :desc).pluck(:song_id, :kind, :created_at, :expires_at)
+    thumbs = StationFeedback.thumbs(rows.map { |song_id, kind, at, _| [ song_id, kind, at ] })
+    feedback = thumbs.map { |song_id, (kind, at)| [ song_id, kind, at, nil ] }.sort_by { |r| r[2] }.reverse +
+               rows.select { |_, kind, _, _| kind.in?(%w[tired never]) }
     played = @jukebox.ajb_played_songs.order(played_at: :desc).limit(30).pluck(:song_id, :played_at, :source)
     artist_ids = @taste.removed_artist_ids.to_a + @jukebox.radio_kept_artist_ids
     songs = Song.includes(:artist, :album).where(id: @jukebox.radio_seed_ids + feedback.map(&:first) + played.map(&:first)).index_by(&:id)
     artists = Artist.where(id: artist_ids).index_by(&:id)
-    standings = StationFeedback.standings(user: @user, song_ids: played.map(&:first), jukebox: @jukebox)
+    standings = StationFeedback.standings(user: @user, song_ids: played.map(&:first), station: @station)
     by_kind = feedback.group_by { |_, kind, _, _| kind }
     list = lambda do |kind|
       (by_kind[kind] || []).first(LIMIT).filter_map do |song_id, _, at, expires|

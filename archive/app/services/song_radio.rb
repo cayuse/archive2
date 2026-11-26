@@ -59,7 +59,14 @@ class SongRadio
     request_id = queue.requested.order(position: :desc).pick(:song_id) ||
                  jukebox.ajb_played_songs.order(played_at: :desc).limit(4).select(&:requested?).first&.song_id
     last_id = queue.order(position: :desc).pick(:song_id) || jukebox.ajb_played_songs.order(played_at: :desc).pick(:song_id)
+    station = jukebox.station
     seed_ids = jukebox.radio_seed_ids
+    # a station started from playlists: a fresh handful of their songs joins the seeds each time,
+    # so over a run of songs the station covers the whole playlist's sound
+    if station && seed_ids.size < MAX_SEEDS
+      pool = station.playlist_song_ids - seed_ids
+      seed_ids += pool.sample(MAX_SEEDS - seed_ids.size - (request_id ? 1 : 0)) if pool.any?
+    end
     # no saved seeds (a party jukebox, or a station from before seeds existed): follow the newest
     # request ever made, else the last song in line
     request_id ||= jukebox.ajb_played_songs.where(source: "requested").order(played_at: :desc).pick(:song_id) if seed_ids.empty?
@@ -69,12 +76,11 @@ class SongRadio
     anchors = ids.filter_map { |id| songs[id] }
     return nil if anchors.empty?
 
-    playlist_ids = jukebox.jukebox_playlist_assignments.enabled.pluck(:playlist_id)
     played = jukebox.ajb_played_songs
     new(seed: anchors.first, seeds: anchors.drop(1), after: last_id, exclude_seeds: false,
         exclude_ids: exclude_ids || (played.recent(50).pluck(:song_id) + queue.pluck(:song_id)),
-        allowed_ids: playlist_ids.any? ? PlaylistsSong.where(playlist_id: playlist_ids).pluck(:song_id) : nil,
-        user: jukebox.owner, station: jukebox, steer: jukebox.radio_steer,
+        allowed_ids: jukebox.radio_allowed_song_ids,
+        user: jukebox.owner, station: station, steer: jukebox.radio_steer,
         genre_mode: genre_mode || jukebox.radio_genre_mode,
         intensity: jukebox.radio_intensity, variety: jukebox.radio_variety, learn: jukebox.radio_learn?,
         position: played.count + queue.count)

@@ -90,27 +90,40 @@ to bigballs, migrations applied, verified healthy). Four slices:
 
 ## UNFINISHED — in rough priority order
 
-### 1. Increment 2 — the durable `Station` (the big one, NOT started)
-Today a "station" is a `Jukebox` (session prefix `station-`, `fill_mode: radio`)
-and `StationFeedback` hangs off `jukebox_id` — node-local, so a station can't be
-saved/propagated/resumed elsewhere. The refactor the owner asked for:
-- New `Station` model: durable, user-owned, UUID PK, `origin_archive` stamp,
-  holds seeds + tuning (intensity/variety/learn/requests_steer/genre/steer/
-  kept_artists — currently in `jukeboxes.radio_settings` JSON).
-- Re-point `StationFeedback` from `jukebox_id` → `station_id` so taste travels
-  with the station, not the machine.
-- `Jukebox` stays the node-local playback runtime; add `jukebox.station_id` to
-  bind a runtime jukebox to a durable `Station` (radio OR classic "og" queue —
-  both play styles).
-- Adapt `StationTaste`, `SongRadio` (`for_jukebox`), `StationTuning` to take a
-  `Station`. Update `stations_controller`, the api jukebox station actions, the
-  station views, `station.py`, and the station tests.
-- Old `station-` jukeboxes are disposable (owner said so) — no careful data
-  migration needed.
-- Hybrid asked for: a playlist can seed/inform a radio `Station`.
-- Payoff ("save a station + its gathered data, resume it on another peer") is
-  gated on sync, which is deferred (see #6). Build the model peer-safely now
-  (UUID PKs already everywhere, origin stamp) without wiring sync.
+### 1. Increment 2 — the durable `Station`: BUILT on branch `feature/station-model` (2026-11-25), NOT deployed
+Tested on staging (model tests, the API with two users, both player end-to-end scripts). Deploying
+it is one archive deploy + `db:migrate` (`20261126150000_create_stations`, which converts every
+existing station/radio jukebox and its feedback); the player daemon is unchanged.
+
+- **`Station`** (`app/models/station.rb`): durable, user-owned, UUID, `origin_archive` stamp. Holds
+  the recipe in `settings` (seeds, genre, steer, intensity, variety, learn, kept artists — the old
+  `jukeboxes.radio_settings` shape) and owns the feedback log.
+- **Jukebox is the runtime.** `jukeboxes.station_id`. Each station has a runtime jukebox on this
+  node (`station-…` session id, `Station#runtime!`, made on first use), and the station pages, API
+  and daemon still address a station by that jukebox's id — so nothing client-side had to change.
+  A party jukebox on radio fill gets a private ("implicit") station on first use, or can be bound
+  to one of the owner's stations in its edit form.
+- **Feedback is an append-only log** on `station_feedbacks.station_id`: up / down / clear / skip /
+  finished. The newest thumb or clear per song counts. `tired` / `never` belong to the person
+  (no station), so a copy never inherits someone's banned songs.
+- **Name**: "<seed song> Radio" (or "<playlist> Radio"), following the first seed until the owner
+  renames it (`name_edited`).
+- **From a playlist**: `station_playlists` links by reference, mode `inspire` (a few of its songs
+  join the seeds on every top-up, the station plays what sounds like them) or `only` (stays
+  inside the playlist). Editing the playlist changes the station.
+- **Copies without copying**: a copy is one row (`parent_id`, `forked_at`). It reads the parent's
+  log up to `forked_at` plus its own (`Station#lineage`, `StationFeedback.log_for`); its own thumbs
+  override inherited ones; the original never changes. Snapshot, not follow (owner's decision).
+- **Sharing**: per-station `shared` switch (off by default) on the tuning page; shared stations of
+  other people show under "From others" on the stations page with "Add to my stations".
+- **Delete**: the owner can always delete. With copies it is archived (`archived_at`, hidden) so
+  the copies keep their base; when the last copy goes, the archived original is pruned.
+- **Recipe digest**: SHA-256 of seeds + tuning + linked playlists. Starting a station whose recipe
+  the person already has returns the existing one; also a cheap change check for sync later.
+- Known behaviour: an `inspire` playlist station plays songs that sound like the playlist, so the
+  playlist's own songs turn up only when they are close neighbours of each other.
+- Still gated on sync (#6): actually moving a station to another peer. The model is ready for it
+  (UUIDs, origin stamp, append-only log that merges by union); nothing is wired.
 
 ### 2–5. DONE — server-side playback end to end (slice V above)
 Old items 2 (daemon drives any jukebox, hand-off, transport), 3 (node admin UI), 4 (`player_url`

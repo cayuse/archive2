@@ -1,4 +1,4 @@
-\restrict sZTgHXntYsqG3mS9mQlgkFTNATGcYujBExCR5m29N0fOWGI8G3lgWFrChGznNa0
+\restrict sVZ8KZ5Vm2Dnx69Rk0ajpzQnBEUwk06frecSdw5pP7TplmG2LpVBXvMCwmnjoGA
 
 -- Dumped from database version 15.19 (Debian 15.19-1.pgdg13+2)
 -- Dumped by pg_dump version 15.20 (Debian 15.20-0+deb12u1)
@@ -413,6 +413,7 @@ CREATE TABLE public.jukeboxes (
     admin_password character varying,
     server_playback boolean DEFAULT false NOT NULL,
     server_transport character varying DEFAULT 'stop'::character varying NOT NULL,
+    station_id uuid,
     CONSTRAINT check_positive_min_queue_length CHECK ((min_queue_length > 0)),
     CONSTRAINT check_positive_queue_refill_level CHECK ((queue_refill_level > 0))
 );
@@ -680,6 +681,44 @@ CREATE TABLE public.station_feedbacks (
     kind character varying NOT NULL,
     "position" double precision,
     expires_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    station_id uuid
+);
+
+
+--
+-- Name: station_playlists; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.station_playlists (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    station_id uuid NOT NULL,
+    playlist_id uuid NOT NULL,
+    mode character varying DEFAULT 'inspire'::character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: stations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.stations (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    name character varying NOT NULL,
+    name_edited boolean DEFAULT false NOT NULL,
+    permanent boolean DEFAULT false NOT NULL,
+    implicit boolean DEFAULT false NOT NULL,
+    shared boolean DEFAULT false NOT NULL,
+    settings jsonb DEFAULT '{}'::jsonb NOT NULL,
+    origin_archive character varying,
+    parent_id uuid,
+    forked_at timestamp(6) without time zone,
+    archived_at timestamp(6) without time zone,
+    recipe_digest character varying,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
 );
@@ -1046,6 +1085,22 @@ ALTER TABLE ONLY public.songs
 
 ALTER TABLE ONLY public.station_feedbacks
     ADD CONSTRAINT station_feedbacks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: station_playlists station_playlists_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.station_playlists
+    ADD CONSTRAINT station_playlists_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: stations stations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stations
+    ADD CONSTRAINT stations_pkey PRIMARY KEY (id);
 
 
 --
@@ -1440,6 +1495,13 @@ CREATE UNIQUE INDEX index_jukeboxes_on_session_id ON public.jukeboxes USING btre
 
 
 --
+-- Name: index_jukeboxes_on_station_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_jukeboxes_on_station_id ON public.jukeboxes USING btree (station_id);
+
+
+--
 -- Name: index_jukeboxes_on_status; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1762,10 +1824,45 @@ CREATE INDEX index_station_feedbacks_on_song_id ON public.station_feedbacks USIN
 
 
 --
+-- Name: index_station_feedbacks_on_station_id_and_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_station_feedbacks_on_station_id_and_created_at ON public.station_feedbacks USING btree (station_id, created_at);
+
+
+--
 -- Name: index_station_feedbacks_on_user_id_and_kind_and_song_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX index_station_feedbacks_on_user_id_and_kind_and_song_id ON public.station_feedbacks USING btree (user_id, kind, song_id);
+
+
+--
+-- Name: index_station_playlists_on_station_id_and_playlist_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_station_playlists_on_station_id_and_playlist_id ON public.station_playlists USING btree (station_id, playlist_id);
+
+
+--
+-- Name: index_stations_on_parent_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_stations_on_parent_id ON public.stations USING btree (parent_id);
+
+
+--
+-- Name: index_stations_on_recipe_digest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_stations_on_recipe_digest ON public.stations USING btree (recipe_digest);
+
+
+--
+-- Name: index_stations_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_stations_on_user_id ON public.stations USING btree (user_id);
 
 
 --
@@ -2044,6 +2141,14 @@ ALTER TABLE ONLY public.song_ratings
 
 
 --
+-- Name: stations fk_rails_991f66179f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stations
+    ADD CONSTRAINT fk_rails_991f66179f FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: active_storage_variant_records fk_rails_993965df05; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2076,11 +2181,35 @@ ALTER TABLE ONLY public.playlists_songs
 
 
 --
+-- Name: station_playlists fk_rails_b8bdc02130; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.station_playlists
+    ADD CONSTRAINT fk_rails_b8bdc02130 FOREIGN KEY (station_id) REFERENCES public.stations(id) ON DELETE CASCADE;
+
+
+--
 -- Name: playback_grants fk_rails_c112e16cb3; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.playback_grants
     ADD CONSTRAINT fk_rails_c112e16cb3 FOREIGN KEY (archive_node_id) REFERENCES public.archive_nodes(id) ON DELETE CASCADE;
+
+
+--
+-- Name: station_playlists fk_rails_c1efa06b23; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.station_playlists
+    ADD CONSTRAINT fk_rails_c1efa06b23 FOREIGN KEY (playlist_id) REFERENCES public.playlists(id) ON DELETE CASCADE;
+
+
+--
+-- Name: station_feedbacks fk_rails_c3364b53c4; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.station_feedbacks
+    ADD CONSTRAINT fk_rails_c3364b53c4 FOREIGN KEY (station_id) REFERENCES public.stations(id) ON DELETE CASCADE;
 
 
 --
@@ -2279,11 +2408,12 @@ ALTER PUBLICATION pub_archive ADD TABLE ONLY public.users;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict sZTgHXntYsqG3mS9mQlgkFTNATGcYujBExCR5m29N0fOWGI8G3lgWFrChGznNa0
+\unrestrict sVZ8KZ5Vm2Dnx69Rk0ajpzQnBEUwk06frecSdw5pP7TplmG2LpVBXvMCwmnjoGA
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261126150000'),
 ('20261126140000'),
 ('20261126130000'),
 ('20261126120100'),

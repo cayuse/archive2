@@ -19,6 +19,29 @@
     </div>
   </div>
 
+  <% if @playlists.any? %>
+    <div class="card mb-4">
+      <div class="card-header"><h5 class="mb-0 theme-text-primary">Start a new station from a playlist</h5></div>
+      <div class="card-body">
+        <div class="row g-2 align-items-center">
+          <div class="col-md-5">
+            <select id="new-station-playlist" class="form-select">
+              <% @playlists.each do |playlist| %><option value="<%= playlist.id %>"><%= playlist.name %></option><% end %>
+            </select>
+          </div>
+          <div class="col-md-5">
+            <select id="new-station-playlist-mode" class="form-select">
+              <option value="inspire">Sounds like this playlist, and beyond it</option>
+              <option value="only">Only songs from this playlist</option>
+            </select>
+          </div>
+          <div class="col-md-2 d-grid"><button class="btn btn-primary" id="new-station-playlist-go" type="button">Start station</button></div>
+        </div>
+        <p class="small theme-text-secondary mb-0 mt-2">The playlist stays linked: change it later and the station follows.</p>
+      </div>
+    </div>
+  <% end %>
+
   <div class="row" id="stations-list">
     <% @stations.each do |station| %>
       <div class="col-md-6 col-lg-4 mb-3">
@@ -27,12 +50,20 @@
             <h5 class="card-title theme-text-primary mb-1">
               <%= station.name %>
               <% if station.live? %><span class="badge bg-success ms-1">● Live</span><% end %>
+              <% if station.station&.shared? %><span class="badge bg-info ms-1">Shared</span><% end %>
             </h5>
+            <% if (source = station.station&.parent) %>
+              <p class="theme-text-secondary small mb-1">Copied from <%= source.user&.name || "someone" %>'s <%= source.name %></p>
+            <% end %>
             <% seeds = Song.includes(:artist).where(id: station.radio_seed_ids).index_by(&:id).values_at(*station.radio_seed_ids).compact %>
             <p class="theme-text-secondary small flex-grow-1 mb-2">
+              <% linked = station.station ? station.station.station_playlists.includes(:playlist).to_a : [] %>
+              <% if linked.any? %>
+                <%= linked.map { |l| l.mode == "only" ? "Only plays #{l.playlist&.name}" : "Sounds like #{l.playlist&.name}" }.to_sentence %>.
+              <% end %>
               <% if seeds.any? %>
                 Built around <%= seeds.first(3).map { |s| [ s.title, s.artist&.name ].compact.join(" by ") }.to_sentence %><%= " and #{seeds.size - 3} more" if seeds.size > 3 %>.
-              <% else %>
+              <% elsif linked.empty? %>
                 No seed yet. Start it from a song, or request one while it plays.
               <% end %>
             </p>
@@ -46,7 +77,7 @@
                   <%= button_to "Play on #{current_archive.name}'s speakers", server_playback_jukebox_path(station), method: :patch, params: { server_playback: 1, play: 1 }, class: "btn btn-outline-success btn-sm", form: { target: "_blank" } %>
                 <% end %>
               <% end %>
-              <% unless station.session_id == Jukebox.station_code(current_user) %>
+              <% unless station.station&.permanent? %>
                 <button type="button" class="btn btn-outline-danger btn-sm ms-auto" data-delete-station="<%= station.id %>" data-name="<%= station.name %>">Delete</button>
               <% end %>
             </div>
@@ -55,8 +86,14 @@
       </div>
     <% end %>
   </div>
+
+  <div id="shared-block" class="d-none">
+    <h2 class="h5 theme-text-primary mt-3">From others</h2>
+    <p class="theme-text-secondary small">Stations other people have shared. Adding one gives you your own copy, with everything it has learned so far; from then on yours and theirs go their own ways.</p>
+    <div class="row" id="shared-list"></div>
+  </div>
 </div>
 
 <script>window.STATIONS_CONFIG = { apiToken: <%= raw @api_token.to_json %> };</script>
-<script src="/javascripts/stations/stations.js?v=20261125a"></script>
+<script src="/javascripts/stations/stations.js?v=20261127a"></script>
 <script>StationsPage.initIndex();</script>
