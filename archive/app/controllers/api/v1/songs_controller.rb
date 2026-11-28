@@ -29,7 +29,7 @@ class Api::V1::SongsController < ApplicationController
     sort_order = params[:sort_order]&.downcase == "asc" ? "asc" : "desc"
 
     # Get songs with pagination
-    songs = Song.includes(:artist, :album, :genre)
+    songs = Song.live.includes(:artist, :album, :genre)
 
     # Multi-term AND search across title/artist/album/genre (same semantics
     # as the web UI's /songs/search, but token-authenticated).
@@ -102,6 +102,7 @@ class Api::V1::SongsController < ApplicationController
   end
 
   def download
+    @song = @song.playable_song   # a hidden copy plays and downloads as the copy that replaced it
     return render_no_audio unless @song.audio_file.attached?
     send_data @song.audio_file.download,
               filename: "#{@song.artist&.name || 'Unknown'} - #{@song.title}.#{@song.file_format}",
@@ -113,6 +114,7 @@ class Api::V1::SongsController < ApplicationController
     # them (needed for seeking + the lock-screen scrubber). ActiveStorage's
     # #download returns the whole blob and takes no args, so we slice the
     # requested range in Ruby.
+    @song = @song.playable_song   # a hidden copy plays as the copy that replaced it: never the old file
     return render_no_audio unless @song.audio_file.attached?
     data = @song.audio_file.download
     file_size = data.bytesize

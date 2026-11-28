@@ -338,7 +338,8 @@ CREATE TABLE public.intake_batches (
     finished_at timestamp(6) without time zone,
     error text,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    source character varying DEFAULT 'upload'::character varying NOT NULL
 );
 
 
@@ -357,6 +358,23 @@ CREATE TABLE public.intake_items (
     match_score double precision,
     song_id uuid,
     message text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    outcome character varying
+);
+
+
+--
+-- Name: intake_watch_files; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.intake_watch_files (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    watch character varying NOT NULL,
+    path text NOT NULL,
+    byte_size bigint NOT NULL,
+    file_mtime timestamp(6) without time zone NOT NULL,
+    intake_batch_id uuid,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
 );
@@ -612,6 +630,72 @@ CREATE TABLE public.song_file_tags (
 
 
 --
+-- Name: song_issues; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.song_issues (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    song_id uuid NOT NULL,
+    kind character varying NOT NULL,
+    source character varying NOT NULL,
+    related_song_id uuid,
+    detail jsonb DEFAULT '{}'::jsonb NOT NULL,
+    resolved_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: song_measurements; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.song_measurements (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    song_id uuid NOT NULL,
+    blob_checksum character varying,
+    measure_version integer NOT NULL,
+    score_version integer NOT NULL,
+    verdict character varying NOT NULL,
+    quality integer,
+    codec character varying,
+    kbps integer,
+    lossless boolean DEFAULT false NOT NULL,
+    bits integer,
+    sample_rate integer,
+    eff_khz double precision,
+    duration double precision,
+    loudness_lufs double precision,
+    problems jsonb DEFAULT '[]'::jsonb NOT NULL,
+    notes jsonb DEFAULT '[]'::jsonb NOT NULL,
+    data jsonb,
+    fingerprint bytea,
+    fingerprint_keys integer[],
+    acoustid_fingerprint text,
+    measured_at timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: song_merges; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.song_merges (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    song_id uuid NOT NULL,
+    canonical_song_id uuid NOT NULL,
+    reason character varying NOT NULL,
+    source character varying NOT NULL,
+    moves jsonb DEFAULT '[]'::jsonb NOT NULL,
+    reverted_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
 -- Name: song_neighbors; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -651,6 +735,7 @@ CREATE TABLE public.songs (
     artist_credit character varying,
     musicbrainz_recording_id uuid,
     musicbrainz_release_track_id uuid,
+    canonical_song_id uuid,
     CONSTRAINT check_positive_duration CHECK (((duration IS NULL) OR (duration > 0))),
     CONSTRAINT check_positive_file_size CHECK (((file_size IS NULL) OR (file_size > 0))),
     CONSTRAINT check_positive_track_number CHECK (((track_number IS NULL) OR (track_number > 0)))
@@ -939,6 +1024,14 @@ ALTER TABLE ONLY public.intake_items
 
 
 --
+-- Name: intake_watch_files intake_watch_files_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.intake_watch_files
+    ADD CONSTRAINT intake_watch_files_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: jukebox_playlist_assignments jukebox_playlist_assignments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1024,6 +1117,30 @@ ALTER TABLE ONLY public.song_embeddings
 
 ALTER TABLE ONLY public.song_file_tags
     ADD CONSTRAINT song_file_tags_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: song_issues song_issues_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.song_issues
+    ADD CONSTRAINT song_issues_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: song_measurements song_measurements_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.song_measurements
+    ADD CONSTRAINT song_measurements_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: song_merges song_merges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.song_merges
+    ADD CONSTRAINT song_merges_pkey PRIMARY KEY (id);
 
 
 --
@@ -1422,6 +1539,20 @@ CREATE INDEX index_intake_items_on_song_id ON public.intake_items USING btree (s
 
 
 --
+-- Name: index_intake_watch_files_on_intake_batch_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_intake_watch_files_on_intake_batch_id ON public.intake_watch_files USING btree (intake_batch_id);
+
+
+--
+-- Name: index_intake_watch_files_on_watch_and_path; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_intake_watch_files_on_watch_and_path ON public.intake_watch_files USING btree (watch, path);
+
+
+--
 -- Name: index_jukeboxes_on_created_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1660,6 +1791,62 @@ CREATE UNIQUE INDEX index_song_file_tags_on_song_id ON public.song_file_tags USI
 
 
 --
+-- Name: index_song_issues_on_kind_and_resolved_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_song_issues_on_kind_and_resolved_at ON public.song_issues USING btree (kind, resolved_at);
+
+
+--
+-- Name: index_song_issues_on_related_song_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_song_issues_on_related_song_id ON public.song_issues USING btree (related_song_id);
+
+
+--
+-- Name: index_song_issues_on_song_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_song_issues_on_song_id ON public.song_issues USING btree (song_id);
+
+
+--
+-- Name: index_song_measurements_on_fingerprint_keys; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_song_measurements_on_fingerprint_keys ON public.song_measurements USING gin (fingerprint_keys);
+
+
+--
+-- Name: index_song_measurements_on_song_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_song_measurements_on_song_id ON public.song_measurements USING btree (song_id);
+
+
+--
+-- Name: index_song_measurements_on_verdict; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_song_measurements_on_verdict ON public.song_measurements USING btree (verdict);
+
+
+--
+-- Name: index_song_merges_on_canonical_song_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_song_merges_on_canonical_song_id ON public.song_merges USING btree (canonical_song_id);
+
+
+--
+-- Name: index_song_merges_on_song_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_song_merges_on_song_id ON public.song_merges USING btree (song_id);
+
+
+--
 -- Name: index_song_neighbors_on_neighbor_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1692,6 +1879,13 @@ CREATE INDEX index_songs_on_album_id_and_track_number ON public.songs USING btre
 --
 
 CREATE INDEX index_songs_on_artist_id ON public.songs USING btree (artist_id);
+
+
+--
+-- Name: index_songs_on_canonical_song_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_songs_on_canonical_song_id ON public.songs USING btree (canonical_song_id);
 
 
 --
@@ -1930,6 +2124,14 @@ ALTER TABLE ONLY public.albums_genres
 
 
 --
+-- Name: song_issues fk_rails_17fe30ac09; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.song_issues
+    ADD CONSTRAINT fk_rails_17fe30ac09 FOREIGN KEY (related_song_id) REFERENCES public.songs(id) ON DELETE SET NULL;
+
+
+--
 -- Name: intake_batches fk_rails_1ad6d1bb6e; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1986,6 +2188,14 @@ ALTER TABLE ONLY public.ajb_queue_items
 
 
 --
+-- Name: song_merges fk_rails_4072468904; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.song_merges
+    ADD CONSTRAINT fk_rails_4072468904 FOREIGN KEY (canonical_song_id) REFERENCES public.songs(id) ON DELETE CASCADE;
+
+
+--
 -- Name: artists_genres fk_rails_44739bce00; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2023,6 +2233,14 @@ ALTER TABLE ONLY public.jukebox_playlist_assignments
 
 ALTER TABLE ONLY public.songs
     ADD CONSTRAINT fk_rails_5ce8fd4cc7 FOREIGN KEY (artist_id) REFERENCES public.artists(id);
+
+
+--
+-- Name: songs fk_rails_6272c17470; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.songs
+    ADD CONSTRAINT fk_rails_6272c17470 FOREIGN KEY (canonical_song_id) REFERENCES public.songs(id) ON DELETE SET NULL;
 
 
 --
@@ -2066,11 +2284,27 @@ ALTER TABLE ONLY public.song_neighbors
 
 
 --
+-- Name: song_measurements fk_rails_72b945a5b3; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.song_measurements
+    ADD CONSTRAINT fk_rails_72b945a5b3 FOREIGN KEY (song_id) REFERENCES public.songs(id) ON DELETE CASCADE;
+
+
+--
 -- Name: station_feedbacks fk_rails_7b3c8fdc43; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.station_feedbacks
     ADD CONSTRAINT fk_rails_7b3c8fdc43 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: song_merges fk_rails_7b8359ce70; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.song_merges
+    ADD CONSTRAINT fk_rails_7b8359ce70 FOREIGN KEY (song_id) REFERENCES public.songs(id) ON DELETE CASCADE;
 
 
 --
@@ -2202,6 +2436,14 @@ ALTER TABLE ONLY public.songs
 
 
 --
+-- Name: intake_watch_files fk_rails_d3aeff5362; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.intake_watch_files
+    ADD CONSTRAINT fk_rails_d3aeff5362 FOREIGN KEY (intake_batch_id) REFERENCES public.intake_batches(id) ON DELETE SET NULL;
+
+
+--
 -- Name: playlists fk_rails_d67ef1eb45; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2234,6 +2476,14 @@ ALTER TABLE ONLY public.song_artist_credits
 
 
 --
+-- Name: song_issues fk_rails_ee4d84e227; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.song_issues
+    ADD CONSTRAINT fk_rails_ee4d84e227 FOREIGN KEY (song_id) REFERENCES public.songs(id) ON DELETE CASCADE;
+
+
+--
 -- Name: songs fk_rails_f4e40cd655; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2248,6 +2498,7 @@ ALTER TABLE ONLY public.songs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261128120000'),
 ('20261126190000'),
 ('20261126180000'),
 ('20261126170000'),

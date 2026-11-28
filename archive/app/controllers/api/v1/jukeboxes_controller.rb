@@ -546,7 +546,7 @@ class Api::V1::JukeboxesController < ApplicationController
                    .pluck(:record_id)
 
     # First try: songs from assigned playlists that haven't been played recently and aren't already queued
-    available_songs = Song.joins(:audio_file_attachment)
+    available_songs = Song.live.joins(:audio_file_attachment)
                           .where(id: attached_ids)
                           .where(id: playlist_song_ids)
                           .where.not(id: recent_ids + queued_ids)
@@ -568,7 +568,7 @@ class Api::V1::JukeboxesController < ApplicationController
       Rails.logger.info "Adding #{remaining} repeated songs from assigned playlists for jukebox #{@jukebox.id} to meet minimum queue length"
 
       # Get all songs from assigned playlists (including repeats)
-      repeat_songs = Song.joins(:audio_file_attachment)
+      repeat_songs = Song.live.joins(:audio_file_attachment)
                          .where(id: attached_ids)
                          .where(id: playlist_song_ids)
                          .where.not(id: queued_ids) # Still exclude already queued
@@ -614,7 +614,7 @@ class Api::V1::JukeboxesController < ApplicationController
     # the stream keeps going. The next top-up follows on from whatever this picks.
     if added < need && (allowed.nil? || @jukebox.station?)
       blocked = StationTaste.new(user: @jukebox.owner, station: @jukebox.station, learn: false).blocked_ids.to_a
-      pool = Song.joins(:audio_feature).where("song_audio_features.speech < ?", SongRadio::SPEECH_CUTOFF)
+      pool = Song.live.joins(:audio_feature).where("song_audio_features.speech < ?", SongRadio::SPEECH_CUTOFF)
       pool = pool.where(id: allowed) if allowed
       pool.where.not(id: exclude + blocked).order(Arel.sql("RANDOM()")).limit(need - added).pluck(:id).each do |song_id|
         added += 1 if @jukebox.ajb_queue_items.create(song_id: song_id, source: "random").persisted?

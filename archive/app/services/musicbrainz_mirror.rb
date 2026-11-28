@@ -5,10 +5,17 @@
 # The mirror is a help and never a requirement: callers treat any error as "not found".
 class MusicbrainzMirror
   def self.configured? = ENV["MUSICBRAINZ_URL"].present?
+  # Only the intake worker queries the mirror, in the background, so a slow answer is better than
+  # none: the first lookup of an artist reads cold pages from bigballs' disks, and while downloads are
+  # unpacking there that took over 15 seconds (2026-11-28). A timed-out lookup files the album under
+  # its own tags, without MusicBrainz's.
+  STATEMENT_TIMEOUT = "120s"
+
   def self.default = configured? ? new(ENV["MUSICBRAINZ_URL"]) : nil
 
-  def initialize(url)
+  def initialize(url, statement_timeout: STATEMENT_TIMEOUT)
     @url = url
+    @statement_timeout = statement_timeout
   end
 
   def close
@@ -28,7 +35,7 @@ class MusicbrainzMirror
 
   def recording(gid)
     rows(<<~SQL, [ gid ]).first
-      select r.gid, r.name, r.length
+      select r.id, r.gid, r.name, r.length
       from (select id from recording where gid = $1 union select new_id from recording_gid_redirect where gid = $1) x
       join recording r on r.id = x.id
     SQL
@@ -145,7 +152,8 @@ class MusicbrainzMirror
       registry = PG::BasicTypeRegistry.new.register_default_types
       registry.alias_type(0, "uuid", "text")
       c.type_map_for_results = PG::BasicTypeMapForResults.new(c, registry: registry)
-      c.exec("set default_transaction_read_only = on; set search_path = musicbrainz, public; set statement_timeout = '15s'")
+      c.exec("set default_transaction_read_only = on; set search_path = musicbrainz, public")
+      c.exec_params("select set_config('statement_timeout', $1, false)", [ @statement_timeout ])
     end
   end
 

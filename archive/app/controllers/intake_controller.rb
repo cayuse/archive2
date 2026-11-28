@@ -9,6 +9,8 @@ class IntakeController < ApplicationController
   def index
     @batches = visible_batches.recent.limit(30).to_a
     @counts = IntakeItem.where(intake_batch_id: @batches.map(&:id)).group(:intake_batch_id, :status).count
+    @outcomes = IntakeItem.where(intake_batch_id: @batches.map(&:id), status: "imported").where.not(outcome: nil)
+                          .group(:intake_batch_id, :outcome).count
     @awaiting_analysis = Song.awaiting_analysis.count
   end
 

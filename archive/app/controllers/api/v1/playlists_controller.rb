@@ -94,7 +94,7 @@ class Api::V1::PlaylistsController < ApplicationController
   def add_song
     authorize @playlist, :manage_songs?
 
-    song = Song.find(params[:song_id])
+    song = Song.find(params[:song_id]).playable_song
     position = params[:position] || @playlist.songs.count + 1
 
     # Add song to playlist
@@ -174,6 +174,7 @@ class Api::V1::PlaylistsController < ApplicationController
   def append_songs(song_ids)
     return 0 if song_ids.empty?
 
+    song_ids = Song.playable_ids(song_ids)
     existing = PlaylistsSong.where(playlist_id: @playlist.id).pluck(:song_id).to_set
     valid_ids = Song.where(id: song_ids - existing.to_a).pluck(:id).to_set
     next_position = (PlaylistsSong.where(playlist_id: @playlist.id).maximum(:position) || 0) + 1

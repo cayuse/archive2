@@ -234,7 +234,7 @@ class SongRadio
 
   def neighbour_rows(from_ids)
     SongNeighbor.where(song_id: from_ids)
-                .joins("JOIN songs ON songs.id = song_neighbors.neighbor_id")
+                .joins("JOIN songs ON songs.id = song_neighbors.neighbor_id AND songs.canonical_song_id IS NULL")
                 .joins("JOIN song_audio_features f ON f.song_id = song_neighbors.neighbor_id")
                 .pluck(*COLUMNS.map { |c| Arel.sql(c) }, *DIALS.map { |d| Arel.sql("f.#{d}") })
   end
@@ -269,7 +269,7 @@ class SongRadio
   def home_candidates(context)
     ids = @home.reject { |id| @exclude.include?(id) }.sample(HOME_POOL, random: @random)
     return [] if ids.empty?
-    rows = Song.where(id: ids).joins("JOIN song_audio_features f ON f.song_id = songs.id")
+    rows = Song.live.where(id: ids).joins("JOIN song_audio_features f ON f.song_id = songs.id")
                .pluck(*COLUMNS[1..5].map { |c| Arel.sql(c) }, *DIALS.map { |d| Arel.sql("f.#{d}") })
                .map { |id, artist_id, genre_id, title, recording, *dials| to_row(id, artist_id, genre_id, title, recording, dials, 1.0) }
     rows.reject! { |row| rejected?(row, context) }

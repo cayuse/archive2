@@ -4,7 +4,7 @@ class SongsController < ApplicationController
   before_action :authorize_song!, only: [ :show, :edit, :update, :destroy ]
 
   def index
-    @songs = policy_scope(Song)
+    @songs = policy_scope(Song).live
                   .includes(:artist, :album, :genre)
                   .order(created_at: :desc)
                   .page(params[:page])
@@ -54,7 +54,7 @@ class SongsController < ApplicationController
     page = params[:page]&.to_i || 1
     per_page = params[:per_page]&.to_i || 50
 
-    @songs = policy_scope(Song)
+    @songs = policy_scope(Song).live
                   .includes(:artist, :album, :genre)
                   .order(created_at: :desc)
 

@@ -17,7 +17,7 @@ class GenresController < ApplicationController
   end
 
   def show
-    @songs = @genre.songs.includes(:artist, :album)
+    @songs = @genre.songs.live.includes(:artist, :album)
                    .order(:title)
                    .page(params[:page])
                    .per(params[:per_page] || 50)

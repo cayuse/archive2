@@ -194,10 +194,18 @@ Runs on Ruby 3.4.13 and Rails 8.1 since 2026-11-25 (was 3.2.5 / 8.0.2, both past
   regenerating; `bin/check` fails if it is present.
 
 - **Drop Box (built 2026-11-26, `docs/reference/INTAKE.md`)**. The analysis reserve has its API
-  (`docs/reference/ANALYSIS_API.md`); the client on the analysis PC is the owner's to write. Still to do: AcoustID fingerprints; the API upload (`Api::V1::SongsController#bulk_upload`,
+  (`docs/reference/ANALYSIS_API.md`); the client on the analysis PC is the owner's to write. Still to do: the API upload (`Api::V1::SongsController#bulk_upload`,
   used by `utilities/`) and the manual create/update paths in `SongsController` still find artists,
-  albums and genres by name the old way and trust client-supplied names; they should go through
-  `LibraryImporter` or the Drop Box. `AudioFileProcessor` is only used by those paths now.
+  albums and genres by name the old way and trust client-supplied names, and do not measure or merge;
+  they should go through `LibraryImporter` or the Drop Box. `AudioFileProcessor` is only used by those
+  paths now. AcoustID lookups are built but need `ACOUSTID_KEY` in `production.env`.
+- **Library quality (built 2026-11-28, `docs/reference/LIBRARY_QUALITY.md`)**. Every Drop Box file is
+  measured, fingerprinted and merged with the library's copies (hidden, never deleted; Restore on
+  `/library/quality`); Lidarr's root folder and `/datatank/downloads/music` are watched. Not done: the
+  audit's 12,740 duplicate copies in the existing library are not hidden (a one-off pass, the owner's
+  call); a broken download is not reported back to Lidarr; the tiered Lidarr wanted-list feed. Songs
+  added through the old paths above get no measurement until the audit runs again
+  (`library_tools/audit`, then `rake library:load_audit`).
 
 Found by the 2026-11-26 review of the reference docs against the code, not fixed yet. None is
 on a path used daily.

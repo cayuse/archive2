@@ -17,7 +17,8 @@ class AlbumsController < ApplicationController
   end
 
   def show
-    @songs = @album.songs.includes(:artist, :genre)
+    # the whole tracklist, hidden copies included (each says which copy it plays as)
+    @songs = @album.songs.includes(:artist, :genre, canonical_song: :album)
                    .order(:disc_number, :track_number, :title)
                    .page(params[:page])
                    .per(params[:per_page] || 50)

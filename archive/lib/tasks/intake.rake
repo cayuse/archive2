@@ -20,13 +20,20 @@ namespace :intake do
     # a batch left mid-way by a worker that was stopped is picked up again
     IntakeBatch.where(status: "processing").update_all(status: "queued")
     puts "intake worker watching #{Intake.root}"
+    IntakeWatcher.watches.each { |name, path| puts "  and the #{name} folder #{path}#{' (not there)' unless path.directory?}" }
+    puts "  (watched folders wait until the library's measurements are loaded: rake library:load_audit)" if IntakeWatcher.watches.any? && !IntakeWatcher.ready?
     last_prune = nil
+    last_watch = nil
     while running
       if (batch = IntakeBatch.claim_next)
         puts "#{Time.current.iso8601} batch #{batch.id} (#{batch.name})"
         IntakeProcessor.new(batch).run
         puts "#{Time.current.iso8601}   #{batch.reload.counts.inspect}#{" ERROR #{batch.error}" if batch.error}"
       else
+        if IntakeWatcher.watches.any? && (last_watch.nil? || last_watch < 1.minute.ago)
+          IntakeWatcher.scan_all.each { |b| puts "#{Time.current.iso8601} queued #{b.name} (#{b.source})" }
+          last_watch = Time.current
+        end
         if last_prune.nil? || last_prune < 1.hour.ago
           cleared = Intake.prune_originals
           puts "#{Time.current.iso8601} removed the kept originals of #{cleared} old drops" if cleared.positive?
@@ -43,6 +50,11 @@ namespace :intake do
       IntakeProcessor.new(batch, log: Logger.new($stdout)).run
       puts "#{batch.name}: #{batch.reload.counts.inspect}#{" ERROR #{batch.error}" if batch.error}"
     end
+  end
+
+  desc "Look at the watched folders (INTAKE_WATCH) once and queue what is new"
+  task watch: :environment do
+    IntakeWatcher.scan_all(log: Logger.new($stdout)).each { |b| puts "queued #{b.name}: #{IntakeWatchFile.where(intake_batch_id: b.id).count} files" }
   end
 
   desc "Drop a local file or folder into the drop box as a user: intake:drop[path,email]"

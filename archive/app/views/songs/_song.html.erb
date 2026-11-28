@@ -22,6 +22,10 @@
     <% else %>
       <span class="song-title">No title</span>
     <% end %>
+    <% if song.hidden? && song.canonical_song %>
+      <%# a hidden copy: kept so the album reads complete; it plays as the better copy %>
+      <small class="d-block theme-text-muted">plays as <%= link_to "the copy on #{song.canonical_song.album&.title || 'another release'}", song_path(song.canonical_song), class: "text-decoration-none" %></small>
+    <% end %>
   </td>
   
   <td>

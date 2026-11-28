@@ -6,12 +6,18 @@
 #   2. Anything that is not audio is rejected and listed. Audio is confirmed by decoding its
 #      headers (ffprobe), not by trusting the file name.
 #   3. A file already in the library (same bytes) is a duplicate: listed, not imported.
-#   4. The files of each folder are identified together against MusicBrainz (MusicbrainzMatcher).
-#      A track of a release the library already holds is a duplicate too.
-#   5. The tags are rewritten in the standard layout (TagWriter): MusicBrainz's values where the
+#   4. Every file is measured and fingerprinted (AudioAudit): its verdict (ok / weak / flawed / bad)
+#      and the numbers behind it, the same checks the whole library was audited with.
+#   5. The files of each folder are identified together against MusicBrainz (MusicbrainzMatcher).
+#      A file its tags cannot place is identified by its sound when AcoustID knows it (AcoustidClient).
+#   6. The tags are rewritten in the standard layout (TagWriter): MusicBrainz's values where the
 #      file was identified, the file's own values otherwise. The untouched original is kept in
-#      originals/ for Intake::KEEP_ORIGINALS.
-#   6. The file becomes a Song: stored, its tags recorded (song_file_tags), filed by LibraryImporter.
+#      originals/ for Intake::KEEP_ORIGINALS (not for a watched folder: that folder is the original).
+#   7. The file becomes a Song: stored, its tags recorded (song_file_tags), filed by LibraryImporter,
+#      its measurement kept.
+#   8. The song is merged with the library's other copies of the same recording (SongMerger): the
+#      better copy plays and the other is hidden onto it, nothing deleted. The item's outcome says
+#      which: new, better, not_better.
 #
 # Songs arrive without audio analysis; `Song.awaiting_analysis` is the reserve the offline
 # analysis run works through.
@@ -21,9 +27,10 @@
 class IntakeProcessor
   FORMATS = { "oga" => "ogg", "opus" => "ogg" }.freeze   # Song#file_format for extensions outside its list
 
-  def initialize(batch, mirror: MusicbrainzMirror.default, log: Rails.logger)
+  def initialize(batch, mirror: MusicbrainzMirror.default, acoustid: AcoustidClient.default, log: Rails.logger)
     @batch = batch
     @mirror = mirror
+    @acoustid = acoustid
     @log = log
   end
 
@@ -146,29 +153,55 @@ class IntakeProcessor
       IntakeItem.where(checksum: checksum, status: "imported").where.not(song_id: nil).first&.song
   end
 
-  # --- 4 to 6. a folder's worth of new audio ---
+  # --- 4 to 8. a folder's worth of new audio ---
 
   def import_folder(folder)
+    folder.each { |file| file[:audit] = audit(file) }
     matches = begin
       @mirror ? MusicbrainzMatcher.new(@mirror).match(folder.map { |f| { id: f[:rel], tags: f[:tags] } }) : {}
     rescue StandardError => e
       @log.warn "[Intake] MusicBrainz unavailable for #{File.dirname(folder.first[:rel])}: #{e.class}: #{e.message}"
       {}
     end
+    identify_by_sound(folder, matches)
     folder.each { |file| import(file, matches[file[:rel]]) }
+  end
+
+  # The file's measurement (lib/audio_audit), or nil when it cannot be measured: it is then imported
+  # without one, and not merged.
+  def audit(file)
+    AudioAudit.measure(file[:path], format_of(file[:rel]))
+  rescue AudioAudit::Error => e
+    @log.warn "[Intake] #{file[:rel]}: not measured: #{e.message}"
+    nil
+  end
+
+  # Files MusicBrainz could not place by their tags, looked up by their sound.
+  def identify_by_sound(folder, matches)
+    return unless @mirror && @acoustid
+    matcher = MusicbrainzMatcher.new(@mirror)
+    folder.each do |file|
+      next if matches[file[:rel]]
+      print = file[:audit]&.dig("acoustid")
+      next unless print
+      @acoustid.recording_ids(print["fingerprint"], print["duration"]).each do |gid|
+        found = matcher.match_recording(gid, file[:tags])
+        if found
+          matches[file[:rel]] = found
+          break
+        end
+      end
+    end
+  rescue StandardError => e
+    @log.warn "[Intake] AcoustID lookup failed: #{e.class}: #{e.message}"
   end
 
   def import(file, match)
     rel, path = file[:rel], file[:path]
-    if match && (song = same_track_in_library(match))
-      settle(rel, "duplicate", "This track of this release is already in the library", song: song,
-             identified: match.dig("match", "method"), match_score: match.dig("match", "score"))
-      return
-    end
     # MusicBrainz's values where it knows the file; what MusicBrainz does not describe (genre, composer,
     # language) stays as the file had it
     wanted = file[:tags].merge(match.to_h.except("match").compact)
-    keep_original(rel, move: false)
+    keep_original(rel, move: false) unless @batch.watched?
     note = retag(path, wanted)
 
     # stored first and outright: inside the transaction Active Storage would put off the upload until
@@ -188,7 +221,9 @@ class IntakeProcessor
     end
     identified = match ? match.dig("match", "method") : "tags"
     note ||= "Not found in MusicBrainz; filed under the file's own tags" unless match
-    settle(rel, "imported", note, song: song, identified: identified, match_score: match&.dig("match", "score"))
+    outcome, merged = merge(song, path, file[:audit])
+    settle(rel, "imported", [ note, merged ].compact.join(" ").presence, song: song, identified: identified,
+           match_score: match&.dig("match", "score"), outcome: outcome)
   rescue StandardError => e
     @log.error "[Intake] #{rel}: #{e.class}: #{e.message}"
     blob&.purge if blob && !blob.attachments.exists?
@@ -197,10 +232,29 @@ class IntakeProcessor
     FileUtils.rm_f(path)
   end
 
-  def same_track_in_library(match)
-    return nil unless match["musicbrainz_recording_id"] && match["musicbrainz_release_id"]
-    Song.joins(:album).find_by(musicbrainz_recording_id: match["musicbrainz_recording_id"],
-                               albums: { musicbrainz_release_id: match["musicbrainz_release_id"] })
+  # Keeps the measurement and merges the song with the library's other copies. Returns [outcome, note].
+  # A failure here never undoes the import: the song stays, live and unmerged, and the log says why.
+  def merge(song, path, audit)
+    return [ nil, "Not measured, so not compared with the library's other copies." ] unless audit
+    measurement = AudioAudit.measure_song!(song, path, json: audit)
+    SongIssue.record_quality!(song, measurement, source: "intake")
+    result = SongMerger.new(source: "intake", log: @log).merge(song)
+    [ result.outcome, merge_note(result, measurement) ]
+  rescue StandardError => e
+    @log.error "[Intake] merging #{song.id}: #{e.class}: #{e.message}"
+    [ nil, "Not compared with the library's other copies (#{e.class.name.demodulize})." ]
+  end
+
+  def merge_note(result, measurement)
+    quality = measurement.verdict == "ok" ? nil : "#{measurement.verdict.capitalize}: #{measurement.problems.map { |p| p['text'] }.join('; ')}."
+    note = case result.outcome
+    when "better"
+      n = result.others.size
+      "Better than the library's #{n == 1 ? 'copy' : "#{n} copies"} (#{result.why}); #{n == 1 ? 'it now plays' : 'they now play'} as this one."
+    when "not_better"
+      "Kept, hidden: the library's copy on \"#{result.canonical.album&.title || 'no album'}\" is as good or better (#{result.why})."
+    end
+    [ note, quality ].compact.join(" ").presence
   end
 
   # Returns a note for the item when the tags could not be rewritten (the file is imported as it came).

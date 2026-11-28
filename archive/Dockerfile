@@ -14,10 +14,12 @@ FROM ruby:3.4.13-slim AS base
 # Rails app lives here
 WORKDIR /rails
 
-# Install base packages and PostgreSQL client libraries
+# Install base packages and PostgreSQL client libraries. ffmpeg, numpy, scipy, fpcalc (libchromaprint-tools),
+# mp3val and flac measure every file the Drop Box takes in (lib/audio_audit)
 RUN mkdir -p /var/lib/apt/lists/partial && \
     apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libjemalloc2 libvips sqlite3 libpq-dev postgresql-client ffmpeg libavcodec-extra python3 python3-mutagen libarchive-tools && \
+    apt-get install --no-install-recommends -y curl libjemalloc2 libvips sqlite3 libpq-dev postgresql-client ffmpeg libavcodec-extra python3 python3-mutagen libarchive-tools \
+    python3-numpy python3-scipy libchromaprint-tools mp3val flac && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Set production environment

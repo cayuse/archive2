@@ -18,6 +18,13 @@ class Song < ApplicationRecord
   has_many :song_neighbors, -> { order(:rank) }, dependent: :destroy
   has_many :similar_songs, through: :song_neighbors, source: :neighbor
 
+  # Library quality (docs/reference/LIBRARY_QUALITY.md): the audit of this song's file, and copies of
+  # the same recording. A song with a canonical_song is a hidden copy: that song plays instead.
+  has_one :measurement, class_name: "SongMeasurement", dependent: :destroy
+  has_many :issues, class_name: "SongIssue", dependent: :destroy
+  belongs_to :canonical_song, class_name: "Song", optional: true
+  has_many :hidden_copies, class_name: "Song", foreign_key: :canonical_song_id, inverse_of: :canonical_song
+
   # Active Storage for audio file
   has_one_attached :audio_file
 
@@ -33,6 +40,10 @@ class Song < ApplicationRecord
   validate :audio_file_type
 
   # Scopes
+  # Live songs: the ones listed, searched, picked by stations and added to playlists. A hidden copy
+  # (canonical_song_id set) is still stored and still playable by id; it plays as its canonical song.
+  scope :live, -> { where(canonical_song_id: nil) }
+  scope :hidden, -> { where.not(canonical_song_id: nil) }
   scope :by_title, -> { order(:title) }
   scope :by_track, -> { order(:track_number) }
   scope :recent, -> { order(created_at: :desc) }
@@ -68,7 +79,7 @@ class Song < ApplicationRecord
   # The analysis reserve: songs with audio that the offline analysis run has not processed yet, so
   # they have no dials or sound-alike links and stations cannot pick them.
   scope :awaiting_analysis, -> {
-    joins(:audio_file_attachment).where.not(id: SongAudioFeature.select(:song_id))
+    live.joins(:audio_file_attachment).where.not(id: SongAudioFeature.select(:song_id))
   }
 
   # Callbacks
@@ -80,7 +91,20 @@ class Song < ApplicationRecord
   before_save :auto_complete_if_ready
 
 
+  # The ids of the songs that play for these ids, in order, without repeats; unknown ids dropped.
+  # Anything that adds songs to a playlist or a queue goes through this, so a hidden copy is never added.
+  def self.playable_ids(ids)
+    ids = Array(ids).map(&:to_s)
+    canonical = where(id: ids).pluck(:id, :canonical_song_id).to_h
+    ids.filter_map { |id| canonical.key?(id) ? (canonical[id] || id) : nil }.uniq
+  end
+
   # Instance methods
+  def hidden? = canonical_song_id.present?
+
+  # The song that plays for this one: itself, or the copy it was merged onto.
+  def playable_song = canonical_song || self
+
   def display_title
     title
   end

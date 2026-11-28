@@ -88,7 +88,7 @@ class IntakeProcessorTest < ActiveSupport::TestCase
     assert_match(/\AArchive cannot be read/, item.message)
   end
 
-  test "a file MusicBrainz knows is filed and tagged by MusicBrainz, and its release is not added twice" do
+  test "a file MusicBrainz knows is filed and tagged by MusicBrainz" do
     match = { "title" => "The Real Title", "artist" => "The Real Artist", "album" => "The Real Album", "album_artist" => "The Real Artist",
               "track_number" => 2, "track_total" => 10, "date_raw" => "2001-02-03", "year" => 2001,
               "musicbrainz_recording_id" => RECORDING, "musicbrainz_release_id" => RELEASE, "musicbrainz_artist_ids" => [ ARTIST ],
@@ -115,16 +115,120 @@ class IntakeProcessorTest < ActiveSupport::TestCase
         assert_equal [ "The Real Title", "The Real Album", RELEASE, "2001-02-03" ], written.values_at("title", "album", "musicbrainz_release_id", "date_raw")
       end
 
-      # a different rip of the same track of the same release
+      # a file whose tags claim the same track of the same release but which sounds different: the sound
+      # decides, not the tags, so it is filed as a song of its own
       Dir.mktmpdir do |dir|
         assert system("ffmpeg", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=220:duration=1", "-b:a", "32k", "#{dir}/other.mp3")
         @batch = IntakeBatch.create!(user: @user, name: "other rip")
         drop("y/other.mp3", "#{dir}/other.mp3")
       end
-      assert_no_difference "Song.count" do
+      assert_difference "Song.count", 1 do
         again = process(mirror: mirror)["y/other.mp3"]
-        assert_equal [ "duplicate", song ], [ again.status, again.song ]
+        assert_equal [ "imported", "new" ], [ again.status, again.outcome ]
+        assert_not song.reload.hidden?
       end
+    end
+  end
+
+  # Forty seconds of music-like sound (pink noise and two pulsing tones), made once per run, encoded as
+  # FLAC, 192k and 128k MP3: one recording, three copies of different quality.
+  def self.recording
+    @recording ||= begin
+      dir = Dir.mktmpdir("intake-recording")
+      ok = system("ffmpeg", "-loglevel", "error", "-f", "lavfi", "-i", "anoisesrc=d=40:c=pink:r=44100:a=0.25:seed=7",
+                  "-f", "lavfi", "-i", "sine=f=330:d=40:sample_rate=44100", "-f", "lavfi", "-i", "sine=f=523:d=40:sample_rate=44100",
+                  "-filter_complex", "[1]volume=0.3,tremolo=f=2:d=0.9[a];[2]volume=0.2,tremolo=f=3:d=0.9[b];[0][a][b]amix=inputs=3:normalize=0,pan=stereo|c0=c0|c1=c0",
+                  "-ar", "44100", "#{dir}/master.wav")
+      raise "ffmpeg failed" unless ok
+      system("ffmpeg", "-loglevel", "error", "-i", "#{dir}/master.wav", "-c:a", "flac", "#{dir}/song.flac", exception: true)
+      %w[128 192].each { |k| system("ffmpeg", "-loglevel", "error", "-i", "#{dir}/master.wav", "-c:a", "libmp3lame", "-b:a", "#{k}k", "#{dir}/song#{k}.mp3", exception: true) }
+      Minitest.after_run { FileUtils.rm_rf(dir) }
+      dir
+    end
+  end
+
+  def copy(name) = File.join(self.class.recording, name)
+
+  test "every imported file is measured and fingerprinted" do
+    drop("Band/Album/01 song.mp3", copy("song128.mp3"))
+    item = process["Band/Album/01 song.mp3"]
+    m = item.song.measurement
+    assert_equal [ "imported", "new" ], [ item.status, item.outcome ]
+    assert_equal [ "ok", "mp3", 128, false ], [ m.verdict, m.codec, m.kbps, m.lossless ]
+    assert_operator m.fingerprint_values.size, :>, 250
+    assert m.acoustid_fingerprint.present?
+    assert_equal item.song.audio_file.blob.checksum, m.blob_checksum
+  end
+
+  test "a better copy of a song the library has replaces it; a worse one is kept, hidden" do
+    drop("a/song.mp3", copy("song128.mp3"))
+    first = process["a/song.mp3"].song
+    list = Playlist.create!(name: "Mine", user: @user)
+    PlaylistsSong.create!(playlist: list, song: first)
+
+    @batch = IntakeBatch.create!(user: @user, name: "the flac")
+    drop("b/song.flac", copy("song.flac"))
+    better = process["b/song.flac"]
+    assert_equal [ "imported", "better" ], [ better.status, better.outcome ]
+    assert_match(/Better than the library's copy \(lossless against lossy/, better.message)
+    assert_equal better.song.id, first.reload.canonical_song_id
+    assert_equal [ better.song.id ], PlaylistsSong.where(playlist_id: list.id).pluck(:song_id), "the playlist plays the flac now"
+
+    @batch = IntakeBatch.create!(user: @user, name: "another mp3")
+    drop("c/song.mp3", copy("song192.mp3"))
+    worse = process["c/song.mp3"]
+    assert_equal [ "imported", "not_better" ], [ worse.status, worse.outcome ]
+    assert_match(/Kept, hidden/, worse.message)
+    assert_equal better.song.id, worse.song.canonical_song_id
+    assert_equal 1, Song.live.where(id: [ first.id, better.song.id, worse.song.id ]).count
+  end
+
+  test "a library copy that was never measured is measured before the merge, so it is not missed" do
+    old = Song.create!(title: "Same Title", file_format: "mp3")
+    File.open(copy("song128.mp3"), "rb") { |io| old.audio_file.attach(io: io, filename: "old.mp3", content_type: "audio/mpeg") }
+    assert_nil old.measurement
+    drop("x/song.flac", copy("song.flac"))
+    item = nil
+    TagWriter.stub :write, :unsupported do
+      tags = TagScanner.scan(copy("song.flac")).merge("title" => "Same Title")
+      TagScanner.stub :scan, tags do
+        item = process["x/song.flac"]
+      end
+    end
+    assert_equal [ "imported", "better" ], [ item.status, item.outcome ]
+    assert old.reload.measurement, "measured on the way"
+    assert_equal item.song.id, old.canonical_song_id
+  end
+
+  test "a file from a watched folder is not copied to originals: the folder keeps it" do
+    @batch = IntakeBatch.create!(user: @user, name: "lidarr: Band/Album", source: "watch:lidarr")
+    drop("Band/Album/01.flac", copy("song.flac"))
+    assert_equal "imported", process["Band/Album/01.flac"].status
+    assert_not File.exist?(@batch.originals_dir.join("Band/Album/01.flac"))
+  end
+
+  test "a file its tags cannot place is identified by its sound through AcoustID" do
+    match = { "title" => "Found By Sound", "artist" => "Somebody", "musicbrainz_recording_id" => RECORDING,
+              "match" => { "method" => "fingerprint", "score" => 1.0 } }
+    asked = []
+    matcher = Object.new
+    matcher.define_singleton_method(:match) { |entries| entries.to_h { |e| [ e[:id], nil ] } }
+    matcher.define_singleton_method(:match_recording) { |gid, _tags| asked << gid; match }
+    acoustid = Object.new
+    acoustid.define_singleton_method(:recording_ids) { |print, duration| print.present? && duration.to_f > 30 ? [ RECORDING ] : [] }
+    mirror = Object.new
+    def mirror.close = nil
+    def mirror.artist(_gid) = nil
+    def mirror.release(_gid) = nil
+    def mirror.recording(_gid) = nil
+
+    MusicbrainzMatcher.stub :new, matcher do
+      drop("untagged/track01.flac", copy("song.flac"))
+      @batch.finish_upload!
+      IntakeProcessor.new(@batch, mirror: mirror, acoustid: acoustid, log: Logger.new(IO::NULL)).run
+      item = @batch.reload.items.find_by!(relative_path: "untagged/track01.flac")
+      assert_equal [ "imported", "fingerprint", "Found By Sound" ], [ item.status, item.identified, item.song.title ]
+      assert_equal [ RECORDING ], asked
     end
   end
 

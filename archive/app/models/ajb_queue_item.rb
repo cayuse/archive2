@@ -2,6 +2,12 @@ class AjbQueueItem < ApplicationRecord
   belongs_to :jukebox
   belongs_to :song
 
+  # A hidden copy (Song#canonical_song) is queued as the copy that plays instead, however it was asked for.
+  before_validation(on: :create) do
+    canonical = song_id && Song.where(id: song_id).pick(:canonical_song_id)
+    self.song = Song.find(canonical) if canonical
+  end
+
   validates :jukebox_id, presence: true
   validates :song_id, presence: true
   validates :position, presence: true, numericality: { greater_than: 0 }

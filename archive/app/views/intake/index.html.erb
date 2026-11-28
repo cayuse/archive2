@@ -2,7 +2,7 @@
 <div class="container">
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <h1 class="h3 mb-0 theme-text-primary">Drop Box</h1>
-    <span class="theme-text-secondary small"><%= pluralize(@awaiting_analysis, "song") %> waiting for sound analysis</span>
+    <span class="theme-text-secondary small"><%= pluralize(@awaiting_analysis, "song") %> waiting for sound analysis<% if current_user.admin? %> · <%= link_to "Library quality", library_quality_path %><% end %></span>
   </div>
 
   <div id="intake-error" class="alert alert-danger d-none"></div>
@@ -40,11 +40,14 @@
             <% counts = IntakeItem::STATUSES.index_with { |s| @counts[[ batch.id, s ]].to_i } %>
             <tr>
               <td class="text-nowrap"><%= time_ago_in_words(batch.created_at) %> ago</td>
-              <td class="intake-path"><%= link_to batch.name, intake_batch_path(batch) %></td>
+              <td class="intake-path"><%= link_to batch.name, intake_batch_path(batch) %><% if batch.watched? %> <span class="badge bg-light text-dark border">watched folder</span><% end %></td>
               <% if current_user.admin? %><td><%= batch.user.name %></td><% end %>
               <td>
                 <% if batch.status == "done" %>
-                  <% if counts["imported"] > 0 %><span class="badge bg-success"><%= counts["imported"] %> added</span><% end %>
+                  <% upgrades, hidden = @outcomes[[ batch.id, "better" ]].to_i, @outcomes[[ batch.id, "not_better" ]].to_i %>
+                  <% if counts["imported"] - upgrades - hidden > 0 %><span class="badge bg-success"><%= counts["imported"] - upgrades - hidden %> added</span><% end %>
+                  <% if upgrades > 0 %><span class="badge bg-primary"><%= upgrades %> upgrades</span><% end %>
+                  <% if hidden > 0 %><span class="badge bg-secondary"><%= hidden %> kept, hidden</span><% end %>
                   <% if counts["duplicate"] > 0 %><span class="badge bg-secondary"><%= counts["duplicate"] %> already here</span><% end %>
                   <% if counts["rejected"] > 0 %><span class="badge bg-warning text-dark"><%= counts["rejected"] %> set aside</span><% end %>
                   <% if counts["failed"] > 0 || batch.error %><span class="badge bg-danger"><%= counts["failed"] %> failed</span><% end %>

@@ -7,8 +7,10 @@
 #   rejected   not something the library takes (not audio, unreadable archive, ...)
 #   expanded   an archive; its contents are listed as items of their own
 #   failed     something went wrong; +message+ says what
-# identified: "album" / "track" / "recording" / "ids" (found in MusicBrainz that way) or "tags" (not found;
-# filed under what the file's own tags say)
+# identified: "album" / "track" / "recording" / "ids" / "fingerprint" (found in MusicBrainz that way; fingerprint
+# means by its sound, through AcoustID) or "tags" (not found; filed under what the file's own tags say)
+# outcome (imported files): "new" (no other copy of the recording), "better" (the library's copies now play
+# as this one), "not_better" (kept, hidden onto the library's as-good copy); nil when it was not measured
 class IntakeItem < ApplicationRecord
   STATUSES = %w[received imported duplicate rejected expanded failed].freeze
 
@@ -18,7 +20,7 @@ class IntakeItem < ApplicationRecord
   validates :status, inclusion: { in: STATUSES }
 
   def as_status_json
-    { path: relative_path, status: status, identified: identified, message: message, size: byte_size,
+    { path: relative_path, status: status, identified: identified, outcome: outcome, message: message, size: byte_size,
       song: song && { id: song.id, title: song.title, artist: song.artist_display, album: song.album&.title,
                       track: song.track_number, needs_review: song.processing_status == "needs_review" } }
   end

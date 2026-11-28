@@ -60,7 +60,8 @@ class Api::V1::AudioFilesController < ApplicationController
   private
 
   def set_song
-    @song = Song.includes(:artist, :album).find(params[:id])
+    # a hidden copy plays as the copy that replaced it (a stale queue or link never plays the old file)
+    @song = Song.includes(:artist, :album).find(params[:id]).playable_song
   end
 
   def handle_range_request

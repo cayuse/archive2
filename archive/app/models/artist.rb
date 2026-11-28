@@ -44,7 +44,7 @@ class Artist < ApplicationRecord
 
   # Songs where this is the main artist, plus songs the artist is credited on (features).
   def all_songs
-    Song.where(artist_id: id).or(Song.where(id: song_artist_credits.select(:song_id)))
+    Song.live.where(artist_id: id).or(Song.live.where(id: song_artist_credits.select(:song_id)))
   end
 
   def song_count

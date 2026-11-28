@@ -116,20 +116,36 @@ class MusicbrainzMatcher
     # no length to go on and several different recordings of that title: cannot tell them apart
     return nil if found.empty? || (tags["duration_seconds"].to_f.zero? && found.size > 1)
     recording = found.min_by { |r| [ r["length"] ? (tags["duration_seconds"].to_f - r["length"] / 1000.0).abs : LENGTH_SLACK, r["id"] ] }
+    describe(recording, tags, "recording")
+  end
 
+  public
+
+  # A file identified by its sound (AcoustID gave the recording): the release is the one the file's
+  # album tag names, when MusicBrainz has the recording on it. nil when the mirror has no such recording,
+  # or its length is far from the file's.
+  def match_recording(gid, tags)
+    recording = @mirror.recording(gid)
+    return nil unless recording && close_enough?(tags["duration_seconds"], recording["length"])
+    describe(recording, tags, "fingerprint")
+  end
+
+  private
+
+  def describe(recording, tags, method)
     if tags["album"].present?
       release = @mirror.releases_of_recording(recording["id"])
                        .select { |r| norm(r["name"]) == norm(tags["album"]) }
                        .min_by { |r| [ r["status"] == "Official" ? 0 : 1, r["id"] ] }
       if release
         track = @mirror.tracks(release["id"]).find { |t| t["recording_gid"] == recording["gid"] }
-        return canonical(@mirror.release_details(release["id"]), track, "track", 1.0) if track
+        return canonical(@mirror.release_details(release["id"]), track, method == "fingerprint" ? "fingerprint" : "track", 1.0) if track
       end
     end
     credit = @mirror.recording_credit(recording["id"])
     { "title" => recording["name"], "artist" => credit["credit"], "musicbrainz_recording_id" => recording["gid"],
       "musicbrainz_artist_ids" => credit["artists"].map { |a| a["gid"] }, "artist_sort" => sort_names(credit["artists"]),
-      "match" => { "method" => "recording", "score" => 1.0 } }
+      "match" => { "method" => method, "score" => 1.0 } }
   end
 
   def canonical(release, track, method, score)

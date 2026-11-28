@@ -182,7 +182,7 @@ class Api::V1::GuestController < ApplicationController
     per_page = params[:per_page]&.to_i || 50
 
     # Use the same search logic as the main songs controller
-    songs = Song.includes(:artist, :album, :genre)
+    songs = Song.live.includes(:artist, :album, :genre)
                 .order(created_at: :desc)
 
     if query.present?

@@ -11,7 +11,7 @@ class PublicSongsController < ApplicationController
   # GET /s/:token
   def play
     song_id = SongPlayToken.verify(params[:token])
-    song = song_id && Song.find_by(id: song_id)
+    song = song_id && Song.find_by(id: song_id)&.playable_song
 
     unless song&.audio_file&.attached?
       # verify returns nil for a tampered/expired token; cover the missing-song

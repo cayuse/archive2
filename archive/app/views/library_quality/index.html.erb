@@ -1,0 +1,65 @@
+<% describe = ->(song) { m = song.measurement; m ? [ m.codec, (m.lossless && m.bits ? "#{m.bits}-bit/#{format('%g', m.sample_rate / 1000.0)} kHz" : (m.kbps ? "#{m.kbps}k" : nil)), m.verdict == "ok" ? nil : m.verdict ].compact.join(" ") : "not measured" } %>
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h1 class="h3 mb-0 theme-text-primary">Library quality</h1>
+    <span class="theme-text-secondary small">
+      <%= number_with_delimiter(@counts[:measured]) %> of <%= number_with_delimiter(@counts[:songs]) %> songs measured ·
+      <%= number_with_delimiter(@counts[:hidden]) %> hidden copies
+    </span>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header d-flex flex-wrap gap-2 align-items-center">
+      <h5 class="mb-0 theme-text-primary me-2">Wanted</h5>
+      <% LibraryQualityController::WANTED_KINDS.each do |kind, label| %>
+        <%= link_to "#{label} (#{number_with_delimiter(@counts[:wanted][kind].to_i)})", library_quality_path(kind: kind),
+                    class: "btn btn-sm #{kind == @kind ? 'btn-primary' : 'btn-outline-primary'}" %>
+      <% end %>
+    </div>
+    <div class="card-body small theme-text-secondary pb-0">Songs whose only playing copy is <%= LibraryQualityController::WANTED_KINDS[@kind].downcase %>, most played first. A better copy arriving through the Drop Box or a watched folder replaces it by itself.</div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 align-middle">
+        <thead><tr><th>Song</th><th>File</th><th>What is wrong</th></tr></thead>
+        <tbody>
+          <% @wanted.each do |issue| %>
+            <tr>
+              <td><%= link_to issue.song.title, song_path(issue.song) %><div class="small theme-text-secondary"><%= [ issue.song.artist_display, issue.song.album&.title ].compact.join(" · ") %></div></td>
+              <td class="text-nowrap small"><%= describe.(issue.song) %></td>
+              <td class="small"><%= Array(issue.detail["problems"]).map { |p| p["text"] }.join("; ") %></td>
+            </tr>
+          <% end %>
+          <% if @wanted.empty? %><tr><td colspan="3" class="theme-text-secondary">Nothing here.</td></tr><% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h5 class="mb-0 theme-text-primary">Merged copies</h5></div>
+    <div class="card-body small theme-text-secondary pb-0">Each hidden copy is still stored. Restore makes it play as its own copy again and puts back every playlist slot, queued play and vote that moved.</div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 align-middle">
+        <thead><tr><th>When</th><th>Hidden copy</th><th>Plays as</th><th>Why</th><th></th></tr></thead>
+        <tbody>
+          <% @merges.each do |merge| %>
+            <tr class="<%= 'theme-text-muted' if merge.reverted_at %>">
+              <td class="text-nowrap small"><%= time_ago_in_words(merge.created_at) %> ago</td>
+              <td><%= link_to merge.song.title, song_path(merge.song) %><div class="small theme-text-secondary"><%= [ merge.song.album&.title, describe.(merge.song) ].compact.join(" · ") %></div></td>
+              <td><%= link_to merge.canonical_song.title, song_path(merge.canonical_song) %><div class="small theme-text-secondary"><%= [ merge.canonical_song.album&.title, describe.(merge.canonical_song) ].compact.join(" · ") %></div></td>
+              <td class="small"><%= { "superseded" => "a better copy arrived", "duplicate" => "arrived second, not better", "manual" => "by hand" }[merge.reason] %><% why = merge.song.issues.where(related_song_id: merge.canonical_song_id).pick(:detail)&.dig("why") %><%= ": #{why}" if why %></td>
+              <td class="text-end">
+                <% if merge.reverted_at %>
+                  <span class="badge bg-light text-dark border">restored</span>
+                <% else %>
+                  <%= button_to "Restore", restore_library_quality_merge_path(merge), method: :post, class: "btn btn-sm btn-outline-secondary",
+                                form: { data: { turbo_confirm: "Make this copy play as itself again?" } } %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+          <% if @merges.empty? %><tr><td colspan="5" class="theme-text-secondary">No copies merged yet.</td></tr><% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

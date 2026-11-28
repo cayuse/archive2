@@ -129,7 +129,9 @@ window.IntakePage = (function () {
     rejected: ["bg-warning text-dark", "Set aside"], expanded: ["bg-info text-dark", "Unpacked"], failed: ["bg-danger", "Failed"],
   };
   const HOW = { album: "Recognised as part of its album", track: "Recognised by artist, title and album", recording: "Recognised by artist and title",
-    ids: "Recognised by the IDs in its tags", tags: "Not in MusicBrainz" };
+    ids: "Recognised by the IDs in its tags", fingerprint: "Recognised by its sound (AcoustID)", tags: "Not in MusicBrainz" };
+  // what the merge with the library's other copies made of an added file
+  const OUTCOME = { better: ["bg-primary", "Upgrade"], not_better: ["bg-secondary", "Kept, hidden"] };
 
   function cell(text, cls) {
     const td = document.createElement("td");
@@ -158,8 +160,9 @@ window.IntakePage = (function () {
       row.appendChild(cell(item.path.slice(cut + 1), "intake-path"));
       const result = cell(null, "intake-status");
       const badge = document.createElement("span");
-      badge.className = "badge " + BADGE[item.status][0];
-      badge.textContent = BADGE[item.status][1];
+      const look = (item.status === "imported" && OUTCOME[item.outcome]) || BADGE[item.status];
+      badge.className = "badge " + look[0];
+      badge.textContent = look[1];
       result.appendChild(badge);
       const note = [item.status === "imported" || item.status === "duplicate" ? HOW[item.identified] : null, item.message].filter(Boolean).join(". ");
       if (note) { const small = document.createElement("div"); small.className = "small theme-text-secondary text-wrap"; small.textContent = note; result.appendChild(small); }

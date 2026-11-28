@@ -132,6 +132,8 @@ Rails.application.routes.draw do
   post "intake/batches/:id/files", to: "intake#upload", as: :intake_batch_files
   post "intake/batches/:id/finish", to: "intake#finish", as: :intake_batch_finish
   get "upload", to: redirect("/intake")
+  get "library/quality", to: "library_quality#index", as: :library_quality
+  post "library/quality/merges/:id/restore", to: "library_quality#restore", as: :restore_library_quality_merge
 
   # API routes
   namespace :api do

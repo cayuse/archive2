@@ -21,6 +21,9 @@ class IntakeBatch < ApplicationRecord
     end
   end
 
+  # A batch the intake worker made from a watched folder (IntakeWatcher), not a drop on the page.
+  def watched? = source.to_s.start_with?("watch:")
+
   def incoming_dir = Intake.root.join("incoming", id)
   def work_dir = Intake.root.join("work", id)
   def originals_dir = Intake.root.join("originals", id)
@@ -41,7 +44,7 @@ class IntakeBatch < ApplicationRecord
   def counts = items.group(:status).count
 
   def as_status_json
-    { id: id, name: name, status: status, counts: counts, error: error,
+    { id: id, name: name, status: status, source: source, counts: counts, error: error,
       items: items.order(:relative_path).includes(song: [ :artist, :album ]).map(&:as_status_json) }
   end
 end

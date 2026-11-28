@@ -101,7 +101,7 @@ class PlaylistsController < ApplicationController
       return
     end
 
-    song_ids = params[:song_ids]
+    song_ids = params[:song_ids].present? ? Song.playable_ids(params[:song_ids]) : nil
 
     if song_ids.present?
       # Start position at 1,000,000 to add new songs at the end
