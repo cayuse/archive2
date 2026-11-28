@@ -19,6 +19,7 @@ namespace :intake do
     next unless running
     # a batch left mid-way by a worker that was stopped is picked up again
     IntakeBatch.where(status: "processing").update_all(status: "queued")
+    IntakeWatcher.clear_unfinished
     puts "intake worker watching #{Intake.root}"
     IntakeWatcher.watches.each { |name, path| puts "  and the #{name} folder #{path}#{' (not there)' unless path.directory?}" }
     puts "  (watched folders wait until the library's measurements are loaded: rake library:load_audit)" if IntakeWatcher.watches.any? && !IntakeWatcher.ready?

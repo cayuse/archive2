@@ -37,6 +37,12 @@ class IntakeBatch < ApplicationRecord
     target
   end
 
+  # Removes a batch that never got going (nothing taken, or left half-sent) and the files it received.
+  def discard!
+    FileUtils.rm_rf(incoming_dir)
+    destroy!
+  end
+
   def finish_upload!
     update!(status: "queued") if status == "uploading"
   end

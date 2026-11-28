@@ -20,6 +20,9 @@ class IntakeWatcher
   SKIP = /\A(\.|~\$)|\A(Thumbs\.db|desktop\.ini)\z|\.(part|partial|tmp|temp|crdownload|!qb|download|aria2)\z/i
   # how many folder levels make one unit: Lidarr is always Artist/Album; elsewhere the top folder
   DEPTH = { "lidarr" => 2 }.freeze
+  # units queued per look: a backlog (Lidarr delivered 321 GB before the first look) is taken a few
+  # albums at a time, so copying and importing take turns instead of copying everything first
+  UNITS_PER_SCAN = 5
 
   def self.watches
     ENV.fetch("INTAKE_WATCH", "").split(";").filter_map do |pair|
@@ -33,13 +36,30 @@ class IntakeWatcher
 
   # Watching waits until the library's own measurements are loaded (rake library:load_audit): until
   # then every arriving copy would look new, and nothing would be merged.
-  def self.ready? = IntakeWatchFile.table_exists? && SongMeasurement.exists?
+  # (asks the database each time: Model.table_exists? is cached for the life of the process, and the
+  # worker starts before its release's migration has run)
+  def self.ready?
+    conn = ActiveRecord::Base.connection
+    conn.table_exists?("intake_watch_files") && conn.table_exists?("song_measurements") && SongMeasurement.exists?
+  end
 
-  # Looks at every watched folder once. Returns the batches it queued.
-  def self.scan_all(now: Time.current, log: Rails.logger)
+  # Looks at the watched folders once and queues up to +limit+ units. Returns the batches it queued.
+  def self.scan_all(now: Time.current, log: Rails.logger, limit: UNITS_PER_SCAN)
     user = self.user
     return [] unless user && ready?
-    watches.flat_map { |name, root| new(name, root, user: user, now: now, log: log).scan }
+    watches.each_with_object([]) do |(name, root), queued|
+      break queued if queued.size >= limit
+      queued.concat(new(name, root, user: user, now: now, log: log).scan(limit: limit - queued.size))
+    end
+  end
+
+  # A batch a stopped worker left half-copied: its files were never marked as taken, so they are
+  # taken again on the next look. Removes such batches and their copies.
+  def self.clear_unfinished
+    IntakeBatch.where(status: "uploading").where("source like 'watch:%'").find_each do |batch|
+      IntakeWatchFile.where(intake_batch_id: batch.id).delete_all
+      batch.discard!
+    end
   end
 
   def initialize(name, root, user:, now: Time.current, log: Rails.logger)
@@ -50,16 +70,20 @@ class IntakeWatcher
     @log = log
   end
 
-  def scan
+  def scan(limit: nil)
     return [] unless @root.directory?
     units = Hash.new { |h, k| h[k] = [] }
     each_file { |rel, stat| units[unit_of(rel)] << [ rel, stat.size, stat.mtime ] }
-    units.filter_map do |unit, files|
+    queued = []
+    units.sort.each do |unit, files|
+      break if limit && queued.size >= limit
       next if files.map(&:last).max > @now - SETTLE   # still arriving
       known = IntakeWatchFile.where(watch: @name, path: files.map(&:first)).index_by(&:path)
       fresh = files.reject { |rel, size, mtime| known[rel]&.same_as?(size, mtime) }
-      queue(unit, fresh) if fresh.any?
+      batch = queue(unit, fresh) if fresh.any?
+      queued << batch if batch
     end
+    queued
   end
 
   private
@@ -88,15 +112,22 @@ class IntakeWatcher
   def queue(unit, files)
     batch = IntakeBatch.create!(user: @user, name: "#{@name}: #{unit == '.' ? 'loose files' : unit}".first(250),
                                 source: "watch:#{@name}")
-    taken = 0
-    files.each do |rel, size, mtime|
+    taken = files.select do |rel, _size, _mtime|
       File.open(@root.join(rel), "rb") { |io| batch.receive!(io, rel) }
-      IntakeWatchFile.upsert({ watch: @name, path: rel, byte_size: size, file_mtime: mtime, intake_batch_id: batch.id,
-                               created_at: @now, updated_at: @now }, unique_by: [ :watch, :path ])
-      taken += 1
+      true
     rescue SystemCallError, ArgumentError => e
-      @log.warn "[IntakeWatcher] #{@name}/#{rel}: #{e.message}"   # gone or unreadable: tried again next scan
+      @log.warn "[IntakeWatcher] #{@name}/#{rel}: #{e.message}"   # gone or unreadable: tried again next look
+      false
     end
-    taken.zero? ? batch.destroy && nil : batch.tap(&:finish_upload!)
+    return batch.discard! && nil if taken.empty?
+    # marked as taken only once the whole batch is copied and queued: a worker stopped mid-copy leaves
+    # a batch that clear_unfinished removes, and its files are taken again
+    IntakeBatch.transaction do
+      batch.finish_upload!
+      IntakeWatchFile.upsert_all(taken.map { |rel, size, mtime|
+        { watch: @name, path: rel, byte_size: size, file_mtime: mtime, intake_batch_id: batch.id, created_at: @now, updated_at: @now }
+      }, unique_by: [ :watch, :path ])
+    end
+    batch
   end
 end

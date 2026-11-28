@@ -66,6 +66,26 @@ class IntakeWatcherTest < ActiveSupport::TestCase
     assert_equal [ "amazon-order.zip", "loose 1.mp3", "loose 2.flac" ], taken(loose)
   end
 
+  test "a backlog is taken a few albums per look, so importing can start" do
+    7.times { |i| put("Artist #{i}/Album/01.flac") }
+    SongMeasurement.create!(song: songs(:one), measure_version: 2, score_version: 1, verdict: "ok", measured_at: Time.current)
+    with_env("INTAKE_WATCH" => "lidarr=#{@root}", "INTAKE_WATCH_USER" => nil) do
+      assert_equal IntakeWatcher::UNITS_PER_SCAN, IntakeWatcher.scan_all(now: @later).size
+      assert_equal 7 - IntakeWatcher::UNITS_PER_SCAN, IntakeWatcher.scan_all(now: @later).size
+      assert_empty IntakeWatcher.scan_all(now: @later)
+    end
+  end
+
+  test "a batch a stopped worker left half-copied is removed, and its files are taken again" do
+    put("Band/Album/01.mp3")
+    half = IntakeBatch.create!(user: @user, name: "lidarr: Band/Album", source: "watch:lidarr")
+    File.open(@root.join("Band/Album/01.mp3"), "rb") { |io| half.receive!(io, "Band/Album/01.mp3") }
+    IntakeWatcher.clear_unfinished
+    assert_not IntakeBatch.exists?(half.id)
+    assert_not File.exist?(half.incoming_dir)
+    assert_equal 1, scan.size
+  end
+
   test "watching waits until the library's measurements are loaded" do
     put("Band/Album/01.mp3")
     with_env("INTAKE_WATCH" => "lidarr=#{@root}", "INTAKE_WATCH_USER" => nil) do
